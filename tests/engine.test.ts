@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { game } from '../src/game';
+import { CoreHost, MemoryStore, game } from '../src/game';
 import type { Command, GameEvent, RoundState, RunState, StepResult } from '../src/game';
 
 function start(seed = 'test-seed'): StepResult {
@@ -369,6 +369,39 @@ describe('core purity', () => {
       }
     }
     expect(offenders).toEqual([]);
+  });
+});
+
+describe('save host', () => {
+  it('saves after every step and resumes the same run', () => {
+    const store = new MemoryStore();
+    const host = new CoreHost({ core: game, store });
+    host.start('host-seed');
+    expect(store.load()).toBeTruthy();
+
+    host.dispatch({ type: 'guess', word: 'slate' });
+    const snapshot = game.serialize(host.current as RunState);
+
+    const restored = new CoreHost({ core: game, store });
+    expect(restored.resume()).toEqual([]);
+    expect(game.serialize(restored.current as RunState)).toBe(snapshot);
+    expect(restored.view()).toEqual(host.view());
+  });
+
+  it('wipes the active save when the run ends', () => {
+    const store = new MemoryStore();
+    const host = new CoreHost({ core: game, store });
+    host.start('defeat-seed');
+    const state = host.current as RunState;
+    state.hp = 1;
+    state.armor = 0;
+    state.maxArmor = 0;
+    state.round!.remainingMs = 1;
+
+    const events = host.dispatch({ type: 'tick', dtMs: 2_000 });
+    expect(events.some((event) => event.type === 'runEnded')).toBe(true);
+    expect(host.current?.over?.result).toBe('defeat');
+    expect(store.load()).toBeNull();
   });
 });
 
