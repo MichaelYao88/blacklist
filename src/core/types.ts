@@ -48,6 +48,7 @@ export type HookName =
   | 'onEat'
   | 'onTimerTick'
   | 'onPurchase'
+  | 'onDamageTaken'
   | 'onDeath'
   | 'onBlacklistChanged'
   | 'onPuzzleSolved';
@@ -121,6 +122,7 @@ export interface SummaryState {
   elapsedMs: number;
   boss?: BossId;
   rewardPending: boolean;
+  gold: number;
 }
 
 export interface RewardOption {
@@ -128,6 +130,7 @@ export interface RewardOption {
   kind: 'gold' | 'spell' | 'upgrade' | 'item';
   def?: string;
   amount?: number;
+  rarity?: 'common' | 'rare';
   label: string;
   description: string;
 }
@@ -230,6 +233,7 @@ export interface HookPayloads {
   onEat: { food: string };
   onTimerTick: { remainingMs: number; dtMs: number };
   onPurchase: { offer: Offer };
+  onDamageTaken: { incoming: number; dealt: number; armorUsed: number; source: Source };
   onDeath: { source: string };
   onBlacklistChanged: {
     list: string[];
@@ -250,6 +254,8 @@ export interface ItemDef {
   description: string;
   price: number;
   kind: ItemKind;
+  /** Rare relics are boss prizes. They are never sold in shops and take no slot. */
+  rarity?: 'common' | 'rare';
   slots?: number;
   initial?: Record<string, number>;
   on?: Reactors<ItemCtx>;
@@ -403,6 +409,7 @@ export type PhaseView =
       elapsedMs: number;
       boss?: BossId;
       rewardPending: boolean;
+      gold: number;
     }
   | { kind: 'reward'; options: RewardOption[]; boss: boolean; chosen?: string }
   | { kind: 'shop'; offers: Offer[]; rerollCost: number }

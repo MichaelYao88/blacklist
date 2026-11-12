@@ -19,6 +19,16 @@ import {
 } from '../content';
 import { LocalStore, hasSave, readMeta, recordOutcome, recordStart } from './store';
 import { describeEvent, escapeHtml, formatTime, reasonText, roman } from './format';
+import {
+  bossColor,
+  enemyArt,
+  foodIcon,
+  itemIcon,
+  playerArt,
+  spellIcon,
+  upgradeIcon,
+} from './icons';
+import { sfx } from './audio';
 
 const app = document.getElementById('app');
 if (!app) throw new Error('Missing #app root');
@@ -43,16 +53,18 @@ let chronicle: ChronicleLine[] = [];
 let shake = false;
 let shakeTimer: number | undefined;
 let lastTick = performance.now();
-
-const SIGILS: Record<string, string> = {
-  editor: '✎',
-  sleeper: '☾',
-  censor: '▣',
-  auditor: '∑',
-  'vowel-fog': '◌',
-  monochrome: '◐',
-  gauntlet: '⟳',
-};
+let paused = false;
+let soundMuted = sfx.muted;
+let heartbeatSecond = -1;
+interface DamageFx {
+  id: number;
+  hpLost: number;
+  armorSpent: number;
+  incoming: number;
+}
+let damageFx: DamageFx | null = null;
+let damageTimer: number | undefined;
+let damageSeq = 0;
 
 const KIND_LABELS: Record<Offer['kind'], string> = {
   item: 'ITEM',
@@ -72,13 +84,20 @@ function notify(text: string, kind: Notice['kind'] = 'info'): void {
   }, 3200);
 }
 
-function flashDamage(): void {
-  shake = true;
+function flashDamage(hpLost: number, armorSpent: number, incoming: number): void {
+  damageSeq += 1;
+  damageFx = { id: damageSeq, hpLost, armorSpent, incoming };
+  shake = hpLost > 0;
   if (shakeTimer) window.clearTimeout(shakeTimer);
   shakeTimer = window.setTimeout(() => {
     shake = false;
     render();
-  }, 320);
+  }, 380);
+  if (damageTimer) window.clearTimeout(damageTimer);
+  damageTimer = window.setTimeout(() => {
+    damageFx = null;
+    render();
+  }, 1200);
 }
 
 function eventKind(event: GameEvent): ChronicleLine['kind'] {
@@ -110,14 +129,42 @@ function processEvents(events: GameEvent[]): void {
     if (text) chronicle.unshift({ text, kind: eventKind(event) });
     chronicle = chronicle.slice(0, 50);
 
-    if (event.type === 'guessRejected') notify(reasonText(event.reason), 'bad');
-    if (event.type === 'shopRejected') notify(event.reason, 'bad');
-    if (event.type === 'spellRejected') notify(event.reason, 'bad');
+    if (event.type === 'guessRejected') {
+      notify(reasonText(event.reason), 'bad');
+      sfx.play('error');
+    }
+    if (event.type === 'shopRejected') {
+      notify(event.reason, 'bad');
+      sfx.play('error');
+    }
+    if (event.type === 'spellRejected') {
+      notify(event.reason, 'bad');
+      sfx.play('error');
+    }
     if (event.type === 'message') notify(event.text, 'info');
     if (event.type === 'happeningResolved') notify(event.text, event.success ? 'good' : 'bad');
-    if (event.type === 'damageTaken' && event.dealt > 0) flashDamage();
-    if (event.type === 'timeExpired') notify("TIME'S UP", 'bad');
-    if (event.type === 'puzzleSolved') notify(`Puzzle ${event.index}/${event.total} solved`, 'good');
+    if (event.type === 'damageTaken') {
+      if (event.dealt > 0) {
+        flashDamage(event.dealt, 0, event.incoming);
+        sfx.play('hit');
+      } else if (event.armorUsed > 0) {
+        flashDamage(0, event.armorUsed, event.incoming);
+        sfx.play('armor');
+      } else if (event.incoming > 0) {
+        flashDamage(0, 0, event.incoming);
+        sfx.play('block');
+      }
+    }
+    if (event.type === 'healed') sfx.play('coin');
+    if (event.type === 'timeExpired') {
+      notify("TIME'S UP", 'bad');
+      sfx.play('error');
+    }
+    if (event.type === 'puzzleSolved') {
+      notify(`Puzzle ${event.index}/${event.total} solved`, 'good');
+      sfx.play('solve');
+    }
+    if (event.type === 'rewardChosen' || event.type === 'offerBought') sfx.play('buy');
     if (event.type === 'runEnded') {
       const view = host.view();
       recordOutcome(event.result, view?.act ?? 0);
@@ -125,6 +172,7 @@ function processEvents(events: GameEvent[]): void {
         event.result === 'victory' ? 'THE LIST IS YOURS' : 'THE LIST CLOSES',
         event.result === 'victory' ? 'good' : 'bad',
       );
+      sfx.play(event.result === 'victory' ? 'win' : 'death');
     }
   }
 }
@@ -149,6 +197,9 @@ function startNewRun(): void {
   input = '';
   chronicle = [];
   notice = null;
+  paused = false;
+  damageFx = null;
+  heartbeatSecond = -1;
   processEvents(events);
   lastTick = performance.now();
   render();
@@ -165,6 +216,9 @@ function resumeRun(): void {
   input = '';
   chronicle = [{ text: 'Active run restored.', kind: 'info' }];
   notice = null;
+  paused = false;
+  damageFx = null;
+  heartbeatSecond = -1;
   lastTick = performance.now();
   render();
 }
@@ -198,27 +252,46 @@ function submitGuess(): void {
 // ── click / keyboard wiring ────────────────────────────────────────────────
 
 app.addEventListener('click', (event) => {
+  sfx.unlock();
   const target = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-action]');
   if (!target) return;
   event.preventDefault();
   const action = target.dataset.action;
   switch (action) {
-    case 'new-run':
-      startNewRun();
+    case 'pause':
+      paused = true;
+      lastTick = performance.now();
+      render();
       break;
     case 'resume':
       resumeRun();
       break;
+    case 'unpause':
+      paused = false;
+      lastTick = performance.now();
+      render();
+      break;
+    case 'sound':
+      soundMuted = sfx.toggle();
+      render();
+      break;
+    case 'new-run':
+      startNewRun();
+      break;
     case 'help':
       screen = 'help';
+      lastTick = performance.now();
       render();
       break;
     case 'back':
       screen = host.hasRun ? 'run' : 'title';
+      paused = false;
+      lastTick = performance.now();
       render();
       break;
     case 'title':
       screen = 'title';
+      lastTick = performance.now();
       render();
       break;
     case 'abandon': {
@@ -273,10 +346,23 @@ app.addEventListener('click', (event) => {
 });
 
 window.addEventListener('keydown', (event) => {
+  sfx.unlock();
   if (screen !== 'run') return;
   if (event.metaKey || event.ctrlKey || event.altKey) return;
   const view = host.view();
   if (!view) return;
+
+  if (event.key === 'Escape' || event.key === ' ') {
+    if (view.phase.kind !== 'over') {
+      event.preventDefault();
+      paused = !paused;
+      lastTick = performance.now();
+      render();
+    }
+    return;
+  }
+
+  if (paused) return;
 
   if (view.pendingPurge > 0) {
     if (/^[a-z]$/i.test(event.key)) {
@@ -304,14 +390,39 @@ window.setInterval(() => {
   const now = performance.now();
   const dt = now - lastTick;
   lastTick = now;
-  if (screen !== 'run' || document.hidden) return;
+  if (screen !== 'run' || document.hidden || paused) return;
   const view = host.view();
-  if (!view || view.phase.kind !== 'round') return;
+  if (!view || view.phase.kind !== 'round') {
+    heartbeatSecond = -1;
+    return;
+  }
   if (view.pendingPurge > 0) return;
   const events = host.dispatch({ type: 'tick', dtMs: dt });
   if (events.length > 0) processEvents(events);
+
+  const current = host.view();
+  if (current && current.phase.kind === 'round') {
+    const remaining = current.phase.board.remainingMs;
+    if (remaining !== null && remaining > 0 && remaining <= 10_000) {
+      const second = Math.ceil(remaining / 1_000);
+      if (second !== heartbeatSecond) {
+        heartbeatSecond = second;
+        sfx.play('tick');
+      }
+    } else {
+      heartbeatSecond = -1;
+    }
+  }
   render();
 }, 1_000);
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && screen === 'run' && host.view()?.phase.kind !== 'over') {
+    paused = true;
+    lastTick = performance.now();
+    render();
+  }
+});
 
 // ── rendering ──────────────────────────────────────────────────────────────
 
@@ -351,7 +462,7 @@ function renderTitle(): string {
     </div>
     <p class="kicker">A WORD ROGUELIKE</p>
     <h1 class="logo">BLACK<span>LIST</span></h1>
-    <p class="tagline">Every word you guess is a word you can never guess again.</p>
+    <p class="tagline">The first word of every round is a word you can never say again.</p>
     <div class="title-actions">
       <button class="btn primary big" data-action="new-run">NEW RUN</button>
       ${saved ? `<button class="btn big" data-action="resume">CONTINUE</button>` : ''}
@@ -380,7 +491,7 @@ function renderHelp(): string {
     <div class="rules-grid">
       <article class="rule-card">
         <h3>The blacklist</h3>
-        <p>Every word you enter is added to a 16-word blacklist. You can never guess those words again. When the list is full, the oldest word is evicted. The answer is always picked from words that are not on the list.</p>
+        <p>The <b>first word</b> of every round is added to a 16-word blacklist. You can never guess those words again. When the list is full, the oldest word is evicted. The answer is always picked from words that are not on the list.</p>
       </article>
       <article class="rule-card">
         <h3>Damage</h3>
@@ -400,15 +511,15 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>Bosses</h3>
-        <p>Each act ends with a boss that changes how much of the board you are allowed to see. The Editor hides suffixes. The Censor uses the hardest answers. The Gauntlet asks for three solves on one clock.</p>
+        <p>Each act ends with a boss that changes how much of the board you are allowed to see. Beating one offers three rare relics with passive effects. Relics take no slots.</p>
       </article>
       <article class="rule-card">
         <h3>The run</h3>
-        <p>Three acts. Five nodes per act: two rounds, a shop or happening, another round, then a boss. Solve a round to pick one of three rewards. Defeat wipes the save. Victory keeps your meta record.</p>
+        <p>Three acts. Five nodes per act: two rounds, a shop or happening, another round, then a boss. Every finished encounter pays gold; solves also offer one of three rewards. Defeat wipes the save. Victory keeps your meta record.</p>
       </article>
       <article class="rule-card">
         <h3>Controls</h3>
-        <p>Type letters, <b>Backspace</b> to delete, <b>Enter</b> to submit. You can also click the on-screen keyboard. Spells and usable items are on the right. The purge modal accepts any letter.</p>
+        <p>Type letters, <b>Backspace</b> to delete, <b>Enter</b> to submit. <b>Space</b> or <b>Esc</b> pauses the clock. You can also click the on-screen keyboard. Spells and usable items are on the right. The purge modal accepts any letter.</p>
       </article>
     </div>
     <div class="help-actions">
@@ -418,26 +529,91 @@ function renderHelp(): string {
 }
 
 function renderTopbar(view: RunView): string {
-  const hpPct = Math.max(0, Math.min(100, (view.hp / Math.max(1, view.maxHp)) * 100));
-  const low = view.hp <= view.maxHp * 0.3;
   return `
   <header class="topbar">
     <div class="brand">BLACKLIST</div>
     <div class="top-stats">
-      <div class="hp-stat ${low ? 'low' : ''}" title="Hit points">
-        <span class="stat-label">HP</span>
-        <div class="hp-bar"><i style="width:${hpPct}%"></i></div>
-        <b>${view.hp}/${view.maxHp}</b>
-      </div>
-      <div class="chip-stat" title="Armor charges">◈ <b>${view.armor}</b><span>/${view.maxArmor}</span></div>
       <div class="chip-stat gold" title="Gold">¤ <b>${view.gold}</b></div>
       <div class="chip-stat" title="Act">ACT ${roman(view.act + 1)}</div>
+      <div class="chip-stat" title="Node">NODE ${view.nodeIndex + 1}/${view.nodes.length}</div>
     </div>
     <div class="top-actions">
+      <button class="btn tiny ghost sound-btn" data-action="sound" title="${soundMuted ? 'Unmute sound' : 'Mute sound'}" aria-label="${soundMuted ? 'Unmute sound' : 'Mute sound'}">${soundMuted ? '🔇' : '🔊'}</button>
+      <button class="btn tiny" data-action="pause" ${paused ? 'disabled' : ''}>⏸ PAUSE</button>
       <button class="btn tiny ghost" data-action="help">RULES</button>
       <button class="btn tiny danger" data-action="abandon">ABANDON</button>
     </div>
   </header>`;
+}
+
+function renderBattleBar(view: RunView): string {
+  const phase = view.phase;
+  const bossId = phase.kind === 'round' || phase.kind === 'summary' ? phase.boss : undefined;
+  const boss = bossId ? BOSS_BY_ID.get(bossId) : undefined;
+  const pct = Math.max(0, Math.min(100, (view.hp / Math.max(1, view.maxHp)) * 100));
+  const low = view.hp <= view.maxHp * 0.3;
+  const pips = Array.from({ length: Math.max(0, view.maxArmor) }, (_, index) =>
+    `<i class="${index < view.armor ? 'on' : ''}"></i>`,
+  ).join('');
+  const phaseLabel =
+    phase.kind === 'round'
+      ? `ROUND ${view.nodeIndex + 1}`
+      : phase.kind === 'summary'
+        ? 'ROUND OVER'
+        : phase.kind === 'reward'
+          ? 'REWARD'
+          : phase.kind === 'shop'
+            ? 'SHOP'
+            : phase.kind === 'happening'
+              ? 'INTERRUPTION'
+              : 'THE LIST';
+  const fx = damageFx
+    ? `<div class="damage-fx" data-seq="${damageFx.id}">
+        ${damageFx.armorSpent > 0 ? `<span class="fx-armor">−${damageFx.armorSpent} ARMOR</span>` : ''}
+        ${damageFx.hpLost > 0 ? `<span class="fx-hp">−${damageFx.hpLost} HP</span>` : ''}
+        ${damageFx.armorSpent === 0 && damageFx.hpLost === 0
+          ? `<span class="fx-block">BLOCKED ${damageFx.incoming}</span>`
+          : ''}
+        ${damageFx.hpLost > 0 && damageFx.incoming > damageFx.hpLost
+          ? `<span class="fx-raw">HIT ${damageFx.incoming}</span>`
+          : ''}
+      </div>`
+    : '';
+
+  return `
+  <section class="battle-bar ${low ? 'critical' : ''}" aria-label="Combat status">
+    <div class="combatant player ${low ? 'low' : ''} ${damageFx && damageFx.hpLost > 0 ? 'hit' : ''}">
+      <div class="portrait player-portrait">${playerArt(pct / 100)}</div>
+      <div class="combatant-main">
+        <div class="combatant-top">
+          <span class="combatant-name">THE RUNNER</span>
+          <b class="hp-numbers">${view.hp}<em>/${view.maxHp}</em></b>
+        </div>
+        <div class="big-hp" role="progressbar" aria-valuemin="0" aria-valuemax="${view.maxHp}" aria-valuenow="${view.hp}">
+          <i style="width:${pct}%"></i>
+          <span class="hp-gloss"></span>
+        </div>
+        <div class="armor-line">
+          <span class="armor-pips">${pips}</span>
+          <span class="armor-text">ARMOR ${view.armor}/${view.maxArmor}</span>
+        </div>
+      </div>
+      ${fx}
+    </div>
+    <div class="battle-mid">
+      <span class="vs">VS</span>
+      <span class="mid-label">${phaseLabel}</span>
+    </div>
+    <div class="combatant enemy ${boss ? 'boss' : ''}" style="--enemy:${bossColor(bossId)}">
+      <div class="portrait enemy-portrait">${enemyArt(bossId)}</div>
+      <div class="combatant-main">
+        <div class="combatant-top">
+          <span class="combatant-name">${boss ? escapeHtml(boss.name) : 'THE LIST'}</span>
+        </div>
+        <p class="enemy-line">${boss ? 'HOSTILE' : 'WATCHING'}</p>
+      </div>
+    </div>
+  </section>`;
 }
 
 function renderPath(view: RunView): string {
@@ -464,7 +640,7 @@ function renderBossPanel(view: RunView, bossId?: string): string {
     return `
     <aside class="panel boss-panel empty">
       <p class="panel-kicker">THE OPPOSITION</p>
-      <div class="boss-sigil">·</div>
+      <div class="boss-art">${enemyArt()}</div>
       <h2>Act ${roman(view.act + 1)}</h2>
       <p class="muted">The next word is already waiting. No boss in this node.</p>
       <div class="seedline">SEED ${escapeHtml(host.current?.seed ?? '')}</div>
@@ -472,9 +648,9 @@ function renderBossPanel(view: RunView, bossId?: string): string {
   }
 
   return `
-  <aside class="panel boss-panel">
+  <aside class="panel boss-panel" style="--enemy:${bossColor(boss.id)}">
     <p class="panel-kicker">THE OPPOSITION</p>
-    <div class="boss-sigil">${SIGILS[boss.id] ?? '☠'}</div>
+    <div class="boss-art">${enemyArt(boss.id)}</div>
     <h2>${escapeHtml(boss.name)}</h2>
     <p class="muted">${escapeHtml(boss.description)}</p>
     ${stateEntries.length > 0 ? `<div class="boss-state">${stateEntries.map(([key, value]) => `<span>${escapeHtml(key) === 'woke' ? (value ? 'AWAKE' : 'ASLEEP') : `${escapeHtml(key)} ${value}`}</span>`).join('')}</div>` : ''}
@@ -522,9 +698,14 @@ function renderItem(view: RunView, item: ItemView): string {
     .map(([key, value]) => `<span class="data-chip">${escapeHtml(key)} ${value}</span>`)
     .join('');
   const usable = Boolean(def?.onUse);
+  const rarity = def?.rarity === 'rare' ? 'RELIC' : def?.kind === 'consumable' ? 'USE' : 'GEAR';
   return `
-  <article class="item-card">
-    <div class="item-top"><b>${escapeHtml(name)}</b><span class="tag">${def?.kind === 'consumable' ? 'USE' : 'GEAR'}</span></div>
+  <article class="item-card ${def?.rarity === 'rare' ? 'rare' : ''}">
+    <div class="item-top">
+      <span class="item-emoji" aria-hidden="true">${itemIcon(item.id)}</span>
+      <b>${escapeHtml(name)}</b>
+      <span class="tag">${rarity}</span>
+    </div>
     <p>${escapeHtml(description)}</p>
     ${data ? `<div class="data-row">${data}</div>` : ''}
     ${usable ? `<button class="btn tiny" data-action="use" data-id="${escapeHtml(item.instance)}">USE</button>` : ''}
@@ -538,7 +719,11 @@ function renderSpell(view: RunView, spell: SpellView): string {
   const canCast = def ? def.usable === 'any' || view.phase.kind === 'round' : false;
   return `
   <article class="spell-card">
-    <div class="item-top"><b>${escapeHtml(name)}</b><span class="tag">SPELL</span></div>
+    <div class="item-top">
+      <span class="item-emoji" aria-hidden="true">${spellIcon(spell.id)}</span>
+      <b>${escapeHtml(name)}</b>
+      <span class="tag">SPELL</span>
+    </div>
     <p>${escapeHtml(description)}</p>
     <button class="btn tiny" data-action="cast" data-id="${escapeHtml(spell.instance)}" ${canCast ? '' : 'disabled'}>CAST</button>
   </article>`;
@@ -580,7 +765,7 @@ function renderBoard(view: RunView, board: BoardView): string {
   const pct = board.remainingMs === null || !board.timerStartMs
     ? 100
     : Math.max(0, Math.min(100, (board.remainingMs / board.timerStartMs) * 100));
-  const urgent = board.remainingMs !== null && board.remainingMs <= 10_000;
+  const urgent = board.remainingMs !== null && board.remainingMs <= 15_000;
   const gauntlet = board.gauntletTotal > 1
     ? `<span class="fact gauntlet">PUZZLE ${board.gauntletIndex + 1}/${board.gauntletTotal}</span>`
     : '';
@@ -641,52 +826,68 @@ function renderSummary(view: RunView, phase: Extract<PhaseView, { kind: 'summary
       <div><b>${phase.guesses}</b><span>guesses</span></div>
       <div><b>${formatTime(phase.elapsedMs)}</b><span>on the clock</span></div>
       <div><b>${phase.outcome === 'solved' ? 'YES' : 'NO'}</b><span>solved</span></div>
+      <div class="gold-fact"><b>+${phase.gold}</b><span>gold</span></div>
     </div>
     <p class="muted">${phase.outcome === 'solved'
-      ? 'The word goes on the blacklist with every other guess. Choose a reward and keep moving.'
+      ? 'The first word of the round is on the blacklist now. Choose a reward and keep moving.'
       : phase.outcome === 'timeout'
-        ? 'The clock took its cut. No reward. The run continues if you do.'
+        ? 'The clock took its cut, but the encounter still paid. No reward this time. The run continues if you do.'
         : 'The run is over. The save is gone.'}</p>
     ${phase.outcome !== 'died' ? `<button class="btn primary big" data-action="continue">${phase.rewardPending ? 'CLAIM REWARD →' : 'NEXT NODE →'}</button>` : ''}
   </div>`;
 }
 
 function renderReward(phase: Extract<PhaseView, { kind: 'reward' }>): string {
+  const boss = phase.boss;
   return `
-  <div class="phase-card reward">
-    <p class="panel-kicker">${phase.boss ? 'BOSS REWARD' : 'REWARD'}</p>
-    <h2>Take one</h2>
-    <p class="muted">Rewards are permanent for this run.</p>
+  <div class="phase-card reward ${boss ? 'boss-reward' : ''}">
+    <p class="panel-kicker">${boss ? 'BOSS RELIC' : 'REWARD'}</p>
+    <h2>${boss ? 'Claim a relic' : 'Take one'}</h2>
+    <p class="muted">${boss
+      ? 'Rare passives. They take no slots and last for the rest of the run.'
+      : 'Rewards are permanent for this run.'}</p>
     <div class="reward-grid">
-      ${phase.options.map((option) => `
-        <button class="reward-card ${option.kind}" data-action="reward" data-id="${escapeHtml(option.id)}">
-          <span class="tag">${option.kind.toUpperCase()}</span>
+      ${phase.options.map((option) => {
+        const icon = option.kind === 'item'
+          ? itemIcon(option.def ?? '')
+          : option.kind === 'spell'
+            ? spellIcon(option.def ?? '')
+            : option.kind === 'upgrade'
+              ? upgradeIcon(option.def ?? '')
+              : '¤';
+        const tag = option.rarity === 'rare' ? 'RELIC' : option.kind.toUpperCase();
+        return `
+        <button class="reward-card ${option.kind} ${option.rarity === 'rare' ? 'rare' : ''}" data-action="reward" data-id="${escapeHtml(option.id)}">
+          <span class="reward-icon" aria-hidden="true">${icon}</span>
+          <span class="tag">${tag}</span>
           <b>${escapeHtml(option.label)}</b>
           <span>${escapeHtml(option.description)}</span>
-        </button>`).join('')}
+        </button>`;
+      }).join('')}
     </div>
   </div>`;
 }
 
-function offerInfo(offer: Offer): { name: string; description: string; slots: number } {
+function offerInfo(offer: Offer): { name: string; description: string; slots: number; icon: string } {
   if (offer.kind === 'item') {
     const def = ITEM_BY_ID.get(offer.def);
     return {
       name: def?.name ?? offer.def,
       description: def?.description ?? '',
       slots: def?.slots ?? (def?.kind === 'gear' ? 1 : 0),
+      icon: itemIcon(offer.def),
     };
   }
   if (offer.kind === 'spell') {
     const def = SPELL_BY_ID.get(offer.def);
-    return { name: def?.name ?? offer.def, description: def?.description ?? '', slots: 0 };
+    return { name: def?.name ?? offer.def, description: def?.description ?? '', slots: 0, icon: spellIcon(offer.def) };
   }
   if (offer.kind === 'eat') {
     const def = FOOD_BY_ID.get(offer.def);
-    return { name: def?.name ?? offer.def, description: def?.description ?? '', slots: 0 };
+    return { name: def?.name ?? offer.def, description: def?.description ?? '', slots: 0, icon: foodIcon(offer.def) };
   }
   const def = UPGRADE_BY_ID.get(offer.def);
-  return { name: def?.name ?? offer.def, description: def?.description ?? '', slots: 0 };
+  return { name: def?.name ?? offer.def, description: def?.description ?? '', slots: 0, icon: upgradeIcon(offer.def) };
 }
 
 function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>): string {
@@ -697,7 +898,10 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
       const cannotAfford = view.gold < offer.price;
       return `
       <article class="offer-card ${cannotAfford || noRoom ? 'unavailable' : ''}">
-        <span class="tag">${KIND_LABELS[offer.kind]}</span>
+        <div class="offer-top">
+          <span class="item-emoji" aria-hidden="true">${info.icon}</span>
+          <span class="tag">${KIND_LABELS[offer.kind]}</span>
+        </div>
         <h3>${escapeHtml(info.name)}</h3>
         <p>${escapeHtml(info.description)}</p>
         ${noRoom ? `<span class="warn">No free slots</span>` : ''}
@@ -708,7 +912,7 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
 
   const sellable = view.items.map((item) => {
     const def = ITEM_BY_ID.get(item.id);
-    return `<div class="sell-row"><span>${escapeHtml(def?.name ?? item.id)}</span><button class="btn tiny" data-action="sell" data-id="${escapeHtml(item.instance)}">SELL ${item.sellValue} G</button></div>`;
+    return `<div class="sell-row"><span>${itemIcon(item.id)} ${escapeHtml(def?.name ?? item.id)}</span><button class="btn tiny" data-action="sell" data-id="${escapeHtml(item.instance)}">SELL ${item.sellValue} G</button></div>`;
   }).join('');
 
   return `
@@ -726,7 +930,7 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
       <button class="btn ghost" data-action="continue">LEAVE →</button>
     </div>
     ${sellable ? `<details class="sell-box"><summary>Sell items</summary>${sellable}</details>` : ''}
-    <p class="hint">Food is eaten on purchase and takes no slot. Items do.</p>
+    <p class="hint">Food is eaten on purchase and takes no slot. Relics are boss-only and never appear here.</p>
   </div>`;
 }
 
@@ -819,23 +1023,50 @@ function phasePanel(view: RunView): string {
   }
 }
 
+function renderPauseOverlay(): string {
+  return `
+  <div class="pause-overlay">
+    <div class="pause-card">
+      <span class="pause-icon" aria-hidden="true">⏸</span>
+      <p class="panel-kicker">PAUSED</p>
+      <h2>The clock is stopped</h2>
+      <p class="muted">Take your time. Nothing moves until you come back.</p>
+      <div class="pause-actions">
+        <button class="btn primary big" data-action="unpause">RESUME</button>
+        <button class="btn ghost" data-action="help">RULES</button>
+      </div>
+      <p class="hint">Space or Esc also resumes.</p>
+    </div>
+  </div>`;
+}
+
 function renderRun(view: RunView): string {
   const phase = view.phase;
   const bossId = phase.kind === 'round' || phase.kind === 'summary' ? phase.boss : undefined;
   const over = phase.kind === 'over';
+  const tense =
+    phase.kind === 'round' &&
+    phase.board.remainingMs !== null &&
+    phase.board.remainingMs > 0 &&
+    phase.board.remainingMs <= 15_000;
 
   return `
-  <div class="shell ${shake ? 'shake' : ''}">
+  <div class="shell ${shake ? 'shake' : ''} ${tense ? 'tense' : ''}">
+    ${tense ? `<div class="danger-vignette" aria-hidden="true"></div>` : ''}
     ${renderTopbar(view)}
     ${renderPath(view)}
     ${over
       ? `<main class="over-layout">${phasePanel(view)}</main>`
       : `<main class="layout">
           ${renderBossPanel(view, bossId)}
-          <section class="center-column">${phasePanel(view)}</section>
+          <section class="center-column">
+            ${renderBattleBar(view)}
+            ${phasePanel(view)}
+          </section>
           ${renderSidePanel(view)}
         </main>`}
     ${renderPurgeModal(view)}
+    ${paused && !over ? renderPauseOverlay() : ''}
   </div>`;
 }
 

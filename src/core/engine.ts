@@ -28,7 +28,7 @@ import type {
   HookName,
   HookPayloads,
 } from './types';
-import { hashSeed, rngChance, rngInt, rngPick, rngNext } from './rng';
+import { hashSeed, rngChance, rngInt, rngPick, rngNext, rngShuffle } from './rng';
 import { scoreGuess } from './score';
 
 const VERSION = 1;
@@ -370,6 +370,9 @@ export function createCore(content: Content): Core {
       source,
     });
 
+    runHook(rt, 'onDamageTaken', { incoming: modified, dealt, armorUsed, source });
+    if (isOver(state)) return;
+
     if (state.hp <= 0) finishDeath(rt, options.timeout ? 'the clock' : 'damage');
   }
 
@@ -599,7 +602,7 @@ export function createCore(content: Content): Core {
           state.items.filter((i) => itemById.get(i.id)?.kind === 'gear').map((i) => i.id),
         );
         const pool = content.items.filter(
-          (i) => i.kind !== 'gear' || !owned.has(i.id),
+          (i) => i.rarity !== 'rare' && (i.kind !== 'gear' || !owned.has(i.id)),
         );
         if (pool.length > 0) addItem(rt, rngPick(state, pool).id);
         break;
@@ -817,10 +820,18 @@ export function createCore(content: Content): Core {
       if (round.gauntletTotal > 1) round.gauntletAnswers.push(round.answer);
       state.lastAnswer = round.answer;
       if (round.boss) state.stats.bosses++;
+    }
 
-      const gold = 6 + 2 * state.stats.rounds;
-      changeGold(rt, gold, RULES);
+    // Every finished encounter pays out. A solve pays the full prize; a
+    // timeout still leaves a few coins so a bad round is not a dead run.
+    const goldAward = outcome === 'solved'
+      ? 6 + 2 * state.stats.rounds
+      : outcome === 'timeout'
+        ? 3 + state.act
+        : 0;
+    if (goldAward > 0) changeGold(rt, goldAward, RULES);
 
+    if (outcome === 'solved') {
       runHook(rt, 'onSolve', {
         guesses: round.totalGuesses,
         elapsedMs: round.elapsedMs,
@@ -849,6 +860,7 @@ export function createCore(content: Content): Core {
       elapsedMs: round.elapsedMs,
       boss: round.boss,
       rewardPending: outcome === 'solved',
+      gold: goldAward,
     };
     state.phase = 'summary';
 
@@ -1023,7 +1035,9 @@ export function createCore(content: Content): Core {
     }
     rt.events.push(...hookEvents);
 
-    addBlacklist(rt, word);
+    // Only the first word of a round goes on the blacklist. Later guesses
+    // still reveal information, but they do not burn more of the list.
+    if (round.guesses.length === 1) addBlacklist(rt, word);
 
     if (isOver(state)) return;
 
@@ -1049,9 +1063,48 @@ export function createCore(content: Content): Core {
   function makeRewards(rt: Runtime): RewardOption[] {
     const state = rt.state;
     const options: RewardOption[] = [];
-    const isBoss = Boolean(state.summary?.boss);
 
-    const goldAmount = 8 + 3 * state.act + (isBoss ? 8 : 0);
+    // Bosses do not hand out coins or ordinary spells. They hand over a
+    // relic: three rare passives, one of which is yours to keep.
+    if (state.summary?.boss) {
+      const owned = new Set(state.items.map((i) => i.id));
+      const rare = content.items.filter((i) => i.rarity === 'rare');
+      const unowned = rare.filter((i) => !owned.has(i.id));
+      const fallback = rare.filter((i) => owned.has(i.id));
+      const ordered = [...rngShuffle(state, unowned), ...rngShuffle(state, fallback)];
+      const picks: ItemDef[] = [];
+      const seen = new Set<string>();
+
+      for (const item of ordered) {
+        if (picks.length >= 3) break;
+        if (seen.has(item.id)) continue;
+        seen.add(item.id);
+        picks.push(item);
+      }
+
+      for (const item of picks) {
+        options.push({
+          id: `item:${item.id}`,
+          kind: 'item',
+          def: item.id,
+          rarity: 'rare',
+          label: item.name,
+          description: item.description,
+        });
+      }
+      if (options.length === 0) {
+        options.push({
+          id: 'gold',
+          kind: 'gold',
+          amount: 30,
+          label: '30 gold',
+          description: 'The vault is empty, but the coins are real.',
+        });
+      }
+      return options;
+    }
+
+    const goldAmount = 8 + 3 * state.act;
     options.push({
       id: 'gold',
       kind: 'gold',
@@ -1080,23 +1133,6 @@ export function createCore(content: Content): Core {
         label: upgrade.name,
         description: upgrade.description,
       });
-    }
-
-    if (isBoss) {
-      const owned = new Set(
-        state.items.filter((i) => itemById.get(i.id)?.kind === 'gear').map((i) => i.id),
-      );
-      const pool = content.items.filter((i) => i.kind !== 'gear' || !owned.has(i.id));
-      if (pool.length > 0) {
-        const item = rngPick(state, pool);
-        options.push({
-          id: `item:${item.id}`,
-          kind: 'item',
-          def: item.id,
-          label: item.name,
-          description: item.description,
-        });
-      }
     }
 
     return options;
@@ -1146,7 +1182,7 @@ export function createCore(content: Content): Core {
       state.items.filter((i) => itemById.get(i.id)?.kind === 'gear').map((i) => i.id),
     );
     const itemPool = content.items.filter(
-      (i) => i.kind !== 'gear' || !ownedGear.has(i.id),
+      (i) => i.rarity !== 'rare' && (i.kind !== 'gear' || !ownedGear.has(i.id)),
     );
     const offers: Offer[] = [];
     const picked: Array<{ kind: Offer['kind']; def: string; price: number }> = [];
@@ -1530,6 +1566,7 @@ export function createCore(content: Content): Core {
           elapsedMs: state.summary?.elapsedMs ?? 0,
           boss: state.summary?.boss,
           rewardPending: state.summary?.rewardPending ?? false,
+          gold: state.summary?.gold ?? 0,
         };
         break;
       case 'reward':

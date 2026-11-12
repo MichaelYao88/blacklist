@@ -402,6 +402,149 @@ export const ITEMS: ItemDef[] = [
     onAcquire: () => [{ type: 'maxHp', delta: -10 }],
     on: { onRoundStart: () => [{ type: 'freeGuesses', count: 1 }] },
   }),
+
+  // ── boss relics ─────────────────────────────────────────────────────────
+  // Rare passives. They take no slots, never appear in shops, and are only
+  // offered as boss prizes. Several of them feed the spell engine.
+
+  defineItem({
+    id: 'oracle-skull',
+    name: 'Oracle Skull',
+    description: 'At the start of every round, gain Omen.',
+    price: 20,
+    kind: 'gear',
+    rarity: 'rare',
+    slots: 0,
+    on: { onRoundStart: () => [{ type: 'giveSpell', spell: 'omen' }] },
+  }),
+  defineItem({
+    id: 'thorn-crown',
+    name: 'Thorn Crown',
+    description: 'When a hit gets through, 40% chance to gain a random spell.',
+    price: 20,
+    kind: 'gear',
+    rarity: 'rare',
+    slots: 0,
+    on: {
+      onDamageTaken: (_ctx, p) =>
+        p.dealt > 0 ? [{ type: 'giveSpell', spell: 'random', chancePct: 40 }] : [],
+    },
+  }),
+  defineItem({
+    id: 'echo-chamber',
+    name: 'Echo Chamber',
+    description: 'Every second guess in a round, gain a random spell.',
+    price: 20,
+    kind: 'gear',
+    rarity: 'rare',
+    slots: 0,
+    initial: { guesses: 0 },
+    on: {
+      onRoundStart: () => [{ type: 'setItemData', stat: 'guesses', value: 0 }],
+      onGuessScored: (ctx) => {
+        const next = ctx.self.data.guesses + 1;
+        return [
+          { type: 'grow', stat: 'guesses', by: 1 },
+          ...(next % 2 === 0 ? [{ type: 'giveSpell' as const, spell: 'random' as const }] : []),
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'phoenix-egg',
+    name: 'Phoenix Egg',
+    description: 'The first time you die, revive at 50% HP and gain Restore. Consumed.',
+    price: 24,
+    kind: 'gear',
+    rarity: 'rare',
+    slots: 0,
+    on: {
+      onDeath: (ctx) => [
+        { type: 'revive', hp: Math.ceil(ctx.state.maxHp * 0.5) },
+        { type: 'giveSpell', spell: 'restore' },
+        { type: 'consumeSelf' },
+      ],
+    },
+  }),
+  defineItem({
+    id: 'chrono-anchor',
+    name: 'Chrono Anchor',
+    description: 'Every round starts with +20 seconds. Gain Time Warp on solve.',
+    price: 22,
+    kind: 'gear',
+    rarity: 'rare',
+    slots: 0,
+    on: {
+      onRoundStart: () => [{ type: 'addTime', ms: 20_000 }],
+      onSolve: () => [{ type: 'giveSpell', spell: 'time-warp' }],
+    },
+  }),
+  defineItem({
+    id: 'midas-relic',
+    name: 'Midas Relic',
+    description: 'Gain 6 gold on solve. Gain a random spell whenever you eat.',
+    price: 20,
+    kind: 'gear',
+    rarity: 'rare',
+    slots: 0,
+    on: {
+      onSolve: () => [{ type: 'gold', amount: 6 }],
+      onEat: () => [{ type: 'giveSpell', spell: 'random' }],
+    },
+  }),
+  defineItem({
+    id: 'vowel-sigil',
+    name: 'Vowel Sigil',
+    description: 'Solve a round in under 60 seconds to gain Omen.',
+    price: 18,
+    kind: 'gear',
+    rarity: 'rare',
+    slots: 0,
+    on: {
+      onSolve: (_ctx, p) =>
+        p.elapsedMs < 60_000 ? [{ type: 'giveSpell', spell: 'omen' }] : [],
+    },
+  }),
+  defineItem({
+    id: 'blacklist-idol',
+    name: 'Blacklist Idol',
+    description: 'When the blacklist fills, gain a random spell. Once per round.',
+    price: 20,
+    kind: 'gear',
+    rarity: 'rare',
+    slots: 0,
+    initial: { used: 0 },
+    on: {
+      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
+      onBlacklistChanged: (ctx, p) => {
+        if (ctx.self.data.used || p.list.length < p.capacity) return [];
+        return [
+          { type: 'giveSpell', spell: 'random' },
+          { type: 'setItemData', stat: 'used', value: 1 },
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'loaded-dice',
+    name: 'Loaded Dice',
+    description: 'The first paid guess of every round is free.',
+    price: 20,
+    kind: 'gear',
+    rarity: 'rare',
+    slots: 0,
+    initial: { used: 0 },
+    on: {
+      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
+      onGuessScored: (ctx, p) => {
+        if (ctx.self.data.used || p.guess.free || p.paidIndex > 0) return [];
+        return [
+          { type: 'makeGuessFree' },
+          { type: 'setItemData', stat: 'used', value: 1 },
+        ];
+      },
+    },
+  }),
 ];
 
 export const ITEM_BY_ID = new Map(ITEMS.map((i) => [i.id, i]));

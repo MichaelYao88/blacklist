@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CoreHost, MemoryStore, game } from '../src/game';
 import type { Command, GameEvent, RoundState, RunState, StepResult } from '../src/game';
+import { ITEM_BY_ID } from '../src/content';
 
 function start(seed = 'test-seed'): StepResult {
   return game.newRun({ seed });
@@ -47,7 +48,7 @@ describe('new run', () => {
 });
 
 describe('guessing and the blacklist', () => {
-  it('makes the first two guesses free and blacklists each word', () => {
+  it('makes the first two guesses free and blacklists only the first word', () => {
     const { state } = start();
     setAnswer(state, 'crane');
 
@@ -60,7 +61,7 @@ describe('guessing and the blacklist', () => {
     const second = act(first.state, { type: 'guess', word: 'pious' });
     expect(second.state.hp).toBe(40);
     expect(second.state.round?.freeLeft).toBe(0);
-    expect(second.state.blacklist).toEqual(['slate', 'pious']);
+    expect(second.state.blacklist).toEqual(['slate']);
 
     const rejected = act(second.state, { type: 'guess', word: 'slate' });
     expect(rejected.events).toContainEqual({
@@ -89,15 +90,14 @@ describe('guessing and the blacklist', () => {
     const { state } = start();
     setAnswer(state, 'crane');
     state.blacklistCapacity = 2;
+    state.blacklist = ['crane', 'pious'];
     state.round!.freeLeft = 20;
 
-    let current = act(state, { type: 'guess', word: 'slate' });
-    current = act(current.state, { type: 'guess', word: 'pious' });
-    current = act(current.state, { type: 'guess', word: 'tiger' });
+    const current = act(state, { type: 'guess', word: 'tiger' });
 
     expect(current.state.blacklist).toEqual(['pious', 'tiger']);
     const changes = current.events.filter((e) => e.type === 'blacklistChanged');
-    expect(changes.at(-1)).toMatchObject({ added: 'tiger', evicted: ['slate'] });
+    expect(changes.at(-1)).toMatchObject({ added: 'tiger', evicted: ['crane'] });
   });
 });
 
@@ -114,6 +114,8 @@ describe('timer and damage', () => {
     expect(result.state.phase).toBe('summary');
     expect(result.state.summary?.outcome).toBe('timeout');
     expect(result.state.summary?.rewardPending).toBe(false);
+    expect(result.state.summary?.gold).toBe(3);
+    expect(result.state.gold).toBe(13);
     expect(result.state.stats.timeouts).toBe(1);
     expect(eventTypes(result.events)).toContain('timeExpired');
     expect(eventTypes(result.events)).toContain('roundEnded');
@@ -235,6 +237,7 @@ describe('round rewards', () => {
     const solved = act(state, { type: 'guess', word: 'crane' });
     expect(solved.state.phase).toBe('summary');
     expect(solved.state.summary?.rewardPending).toBe(true);
+    expect(solved.state.summary?.gold).toBe(6);
 
     const reward = act(solved.state, { type: 'continue' });
     expect(reward.state.phase).toBe('reward');
@@ -245,6 +248,31 @@ describe('round rewards', () => {
     expect(chosen.state.nodeIndex).toBe(1);
     expect(chosen.state.gold).toBe(24);
     expect(eventTypes(chosen.events)).toContain('rewardChosen');
+  });
+
+  it('offers three rare relics after a boss and no ordinary reward', () => {
+    const { state } = start();
+    state.phase = 'summary';
+    state.summary = {
+      outcome: 'solved',
+      answer: 'crane',
+      guesses: 1,
+      elapsedMs: 1_000,
+      boss: 'editor',
+      rewardPending: true,
+      gold: 20,
+    };
+
+    const reward = act(state, { type: 'continue' });
+    expect(reward.state.phase).toBe('reward');
+    expect(reward.state.reward?.boss).toBe(true);
+    const options = reward.state.reward?.options ?? [];
+    expect(options).toHaveLength(3);
+    for (const option of options) {
+      expect(option.kind).toBe('item');
+      expect(option.rarity).toBe('rare');
+      expect(ITEM_BY_ID.get(option.def ?? '')?.rarity).toBe('rare');
+    }
   });
 });
 

@@ -2,7 +2,7 @@
 
 A word roguelike about the words you can never say again.
 
-Every word you guess is added to a 16-word blacklist. You can never guess it again, and the hidden answer is never chosen from that list. Solve the word before the clock or your health runs out. Three acts. Seven bosses. One active save, and defeat wipes it.
+The first word of every round is added to a 16-word blacklist. You can never guess it again, and the hidden answer is never chosen from that list. Solve the word before the clock or your health runs out. Three acts. Seven bosses. One active save, and defeat wipes it.
 
 **Play:** https://michaelayao88.github.io/blacklist/
 
@@ -13,13 +13,14 @@ Every word you guess is added to a 16-word blacklist. You can never guess it aga
 ## What is in the vertical slice
 
 - Wordle-style scoring with duplicate-letter handling
-- A persistent 16-word blacklist with oldest-first eviction
+- A 16-word blacklist that records the first guess of each round, with oldest-first eviction
 - A shrinking round timer, scaling damage and per-round armor charges
 - Three acts, five nodes per act: `round → round → support → round → boss`
 - Shops with rerolls, food, spells and permanent upgrades
 - Happenings with visible odds and persistent consequences
-- Post-solve rewards: gold, a spell, or a permanent attribute
-- 35+ items, 8 spells, 4 foods and 7 happenings
+- Every finished encounter pays gold; solves also offer one of three rewards: gold, a spell, or a permanent attribute
+- Bosses award one of three rare relics with passive effects; relics take no slots and never appear in shops
+- 45 items (36 shop items + 9 rare boss relics), 8 spells, 4 foods and 7 happenings
 - Seven bosses:
   - **The Editor** — hides the last three tiles of each guess
   - **The Sleeper** — wakes after two hits in a guess and hits for 10
@@ -29,7 +30,8 @@ Every word you guess is added to a 16-word blacklist. You can never guess it aga
   - **Monochrome** — every present letter is ambiguous, never positioned
   - **The Gauntlet** — three puzzles, one shared 150-second clock, no per-guess damage
 - One exact-state autosave slot. Defeat clears it. Victory clears it and updates meta stats.
-- Keyboard, on-screen keyboard die, colorblind symbols, reduced-motion-friendly CSS.
+- Combat HUD with player and enemy art, damage popups and a low-time warning
+- Pause (Space or Esc), mute, synthesized SFX, keyboard and on-screen keyboard, colorblind symbols, reduced-motion-friendly CSS
 
 Not in this version: ascension, daily seeds, meta unlocks beyond win/run counters, dordle grids, Antiwordle, liar clues, Green Warden. The state and seed plumbing is already there for those.
 
@@ -52,6 +54,7 @@ Not in this version: ascension, daily seeds, meta unlocks beyond win/run counter
 | Timeout damage | `ceil(maxHp × 0.35) + 5`, bypasses armor, ends the round |
 | Armor | one charge absorbs one whole damage event; refills each round |
 | Solve gold | `6 + 2 × roundsSeen`, plus item effects |
+| Timeout gold | `3 + act`; a death pays nothing |
 | Shop reroll | starts at 2 gold, +1 per reroll |
 
 The answer pool excludes the blacklist, already-used answers and purged letters.
