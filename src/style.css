@@ -2069,6 +2069,181 @@ button {
   50% { transform: scale(1.035); }
 }
 
+/* countdown */
+
+.countdown-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 54;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, rgba(10, 8, 15, 0.72), rgba(6, 5, 9, 0.9));
+  backdrop-filter: blur(3px);
+  animation: fade-in 140ms ease both;
+}
+
+.countdown-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  animation: pop-in 200ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+.countdown-kicker {
+  color: var(--gold);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.26em;
+}
+
+.countdown-number {
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: clamp(5rem, 18vw, 11rem);
+  font-weight: 500;
+  line-height: 0.9;
+  text-shadow: 0 0 60px rgba(231, 184, 90, 0.35), 0 0 18px rgba(139, 107, 217, 0.4);
+  animation: countdown-pop 360ms cubic-bezier(0.2, 0.9, 0.3, 1.25) both;
+}
+
+.countdown-label {
+  color: var(--muted);
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.28em;
+}
+
+@keyframes countdown-pop {
+  0% { opacity: 0.25; transform: scale(1.35); }
+  45% { opacity: 1; transform: scale(1); }
+  100% { opacity: 1; transform: scale(0.96); }
+}
+
+/* shop loadout */
+
+.loadout {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  text-align: left;
+}
+
+.loadout-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.loadout .hint {
+  margin: 4px 0 10px;
+}
+
+.slot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 7px;
+  min-height: 58px;
+  padding: 7px;
+  border: 1px dashed var(--line-2);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.014);
+}
+
+.slot-socket {
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  border: 1px dashed var(--line);
+  border-radius: 7px;
+  color: var(--faint);
+  font-size: 0.5rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.loadout-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 7px 9px;
+  border: 1px solid rgba(231, 184, 90, 0.35);
+  border-radius: 7px;
+  background: linear-gradient(180deg, rgba(231, 184, 90, 0.1), rgba(255, 255, 255, 0.015));
+  color: var(--ink);
+  cursor: grab;
+  user-select: none;
+  transition: border-color 120ms ease, transform 120ms ease;
+}
+
+.loadout-chip:hover {
+  border-color: var(--gold);
+  transform: translateY(-1px);
+}
+
+.loadout-chip.bagged {
+  border-color: var(--line-2);
+  background: rgba(255, 255, 255, 0.02);
+  opacity: 0.85;
+}
+
+.loadout-chip.dragging {
+  opacity: 0.4;
+}
+
+.loadout-chip b {
+  overflow: hidden;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bag-zone {
+  margin-top: 9px;
+  padding: 8px;
+  border: 1px dashed var(--line-2);
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.bag-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 7px;
+  margin-top: 7px;
+}
+
+.bag-zone .empty-note {
+  margin: 6px 0 0;
+  font-size: 0.68rem;
+}
+
+.stack-badge {
+  padding: 1px 5px;
+  border: 1px solid rgba(139, 107, 217, 0.45);
+  border-radius: 999px;
+  color: #c8b6f2;
+  font-size: 0.6rem;
+  font-weight: 800;
+}
+
+.item-card.in-bag {
+  opacity: 0.72;
+  border-style: dashed;
+}
+
+.bag-note {
+  margin: 0;
+  color: var(--faint);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 /* pause */
 
 .pause-overlay {

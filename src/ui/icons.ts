@@ -36,6 +36,14 @@ const ITEM_ICONS: Record<string, string> = {
   sundial: '☀️',
   'glass-cannon': '💥',
   'loose-tongue': '👅',
+  'waste-basket': '🗑️',
+  'mimic-mouth': '👄',
+  'dead-letter': '✉️',
+  'vowel-tithe': '🔠',
+  'cracked-orb': '🔮',
+  'sticky-fingers': '🖐️',
+  'nest-egg': '🪺',
+  'last-word': '🕯️',
   'oracle-skull': '💀',
   'thorn-crown': '👑',
   'echo-chamber': '🕳️',
@@ -63,6 +71,7 @@ const FOOD_ICONS: Record<string, string> = {
   feast: '🍗',
   candy: '🍬',
   coffee: '☕',
+  'mystery-stew': '🍲',
 };
 
 const UPGRADE_ICONS: Record<string, string> = {
@@ -70,7 +79,7 @@ const UPGRADE_ICONS: Record<string, string> = {
   plating: '🛡️',
   chronos: '⏳',
   satchel: '🎒',
-  ledger: '📓',
+  bounty: '💰',
 };
 
 const BOSS_SIGILS: Record<string, string> = {

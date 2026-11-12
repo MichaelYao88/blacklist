@@ -33,11 +33,11 @@ export const UPGRADES: UpgradeDef[] = [
     effects: [{ type: 'slots', delta: 1 }],
   }),
   defineUpgrade({
-    id: 'ledger',
-    name: 'Ledger',
-    description: '+2 blacklist capacity.',
-    price: 6,
-    effects: [{ type: 'blacklistCapacity', delta: 2 }],
+    id: 'bounty',
+    name: 'Bounty',
+    description: '+2 gold from every solve.',
+    price: 9,
+    effects: [{ type: 'solveGold', amount: 2 }],
   }),
 ];
 

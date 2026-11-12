@@ -32,6 +32,16 @@ export const FOODS: FoodDef[] = [
     price: 3,
     effects: [{ type: 'addTime', ms: 10_000 }],
   }),
+  defineFood({
+    id: 'mystery-stew',
+    name: 'Mystery Stew',
+    description: 'Gain two random spells. No slot.',
+    price: 8,
+    effects: [
+      { type: 'giveSpell', spell: 'random' },
+      { type: 'giveSpell', spell: 'random' },
+    ],
+  }),
 ];
 
 export const FOOD_BY_ID = new Map(FOODS.map((f) => [f.id, f]));

@@ -17,6 +17,7 @@ import type {
   PresentedGuess,
   RewardOption,
   RoundState,
+  RunNode,
   RunState,
   RunView,
   ScoredGuess,
@@ -31,10 +32,10 @@ import type {
 import { hashSeed, rngChance, rngInt, rngPick, rngNext, rngShuffle } from './rng';
 import { scoreGuess } from './score';
 
-const VERSION = 1;
+const VERSION = 2;
 const WORD_LENGTH = 5;
-const RUN_LENGTH = 15;
-const NODES_PER_ACT = 5;
+const ACTS = 5;
+const NODES_PER_ACT = 6;
 
 const RULES: Source = { kind: 'rules' };
 
@@ -82,18 +83,25 @@ export function createCore(content: Content): Core {
 
   const itemSlots = (def: ItemDef): number => def.slots ?? (def.kind === 'gear' ? 1 : 0);
 
+  /** Slots are only consumed by equipped items. Bagged items are inert. */
+  const isEquipped = (item: ItemInstance, def?: ItemDef): boolean =>
+    item.equipped !== false && (def ? itemSlots(def) > 0 : true);
+
   const usedSlots = (state: RunState): number =>
     state.items.reduce((sum, item) => {
       const def = itemDef(item);
-      return sum + (def ? itemSlots(def) : 1);
+      if (!def || !isEquipped(item, def)) return sum;
+      return sum + itemSlots(def);
     }, 0);
 
-  const canAddItem = (state: RunState, def: ItemDef, replaceSlots = 0): boolean =>
-    usedSlots(state) - replaceSlots + itemSlots(def) <= state.slots;
+  const canEquip = (state: RunState, def: ItemDef): boolean =>
+    usedSlots(state) + itemSlots(def) <= state.slots;
 
   /** Loose Tongue and friends: any five letters become a legal probe. */
   const allowsInvalidGuesses = (state: RunState): boolean =>
-    state.items.some((item) => itemById.get(item.id)?.allowInvalidGuesses === true);
+    state.items.some(
+      (item) => itemById.get(item.id)?.allowInvalidGuesses === true && isEquipped(item, itemById.get(item.id)),
+    );
 
   const itemView = (state: RunState, item: ItemInstance): ItemView => {
     const def = itemById.get(item.id);
@@ -102,6 +110,8 @@ export function createCore(content: Content): Core {
       id: item.id,
       data: { ...item.data },
       kind: def?.kind ?? 'gear',
+      slots: def ? itemSlots(def) : 1,
+      equipped: def ? isEquipped(item, def) : false,
       sellValue: def ? (def.sellValue ? def.sellValue({ state, self: item }) : Math.floor(def.price / 2)) : 0,
     };
   };
@@ -260,21 +270,50 @@ export function createCore(content: Content): Core {
     const state = rt.state;
     const def = itemById.get(id);
     if (!def) return false;
-    if (!canAddItem(state, def)) {
-      emit(rt, { type: 'message', text: `No room for ${def.name}. Sell something first.` });
-      return false;
-    }
+    const equip = itemSlots(def) === 0 || canEquip(state, def);
     const item: ItemInstance = {
       instance: uid(state, 'i'),
       id: def.id,
       data: { ...(def.initial ?? {}) },
+      equipped: equip,
     };
     state.items.push(item);
     emit(rt, { type: 'itemAcquired', item: itemView(state, item) });
+    if (!equip) {
+      emit(rt, {
+        type: 'message',
+        text: `No free slot for ${def.name}. It is in your bag — equip it in a shop.`,
+      });
+    }
     if (def.onAcquire) {
       applyEffects(rt, def.onAcquire({ state, self: item }), { kind: 'item', instance: item.instance }, item.instance);
     }
     return true;
+  }
+
+  function equipItem(rt: Runtime, instance: InstanceId): void {
+    const state = rt.state;
+    const item = findItem(state, instance);
+    if (!item) return;
+    const def = itemById.get(item.id);
+    if (!def) return;
+    if (itemSlots(def) === 0 || item.equipped !== false) return;
+    if (!canEquip(state, def)) {
+      emit(rt, { type: 'message', text: `No free slot for ${def.name}. Unequip something first.` });
+      return;
+    }
+    item.equipped = true;
+    emit(rt, { type: 'itemEquipped', instance, equipped: true });
+  }
+
+  function unequipItem(rt: Runtime, instance: InstanceId): void {
+    const state = rt.state;
+    const item = findItem(state, instance);
+    if (!item) return;
+    const def = itemById.get(item.id);
+    if (!def || itemSlots(def) === 0 || item.equipped === false) return;
+    item.equipped = false;
+    emit(rt, { type: 'itemEquipped', instance, equipped: false });
   }
 
   function removeItem(rt: Runtime, instance: InstanceId, reason: 'sold' | 'consumed' | 'replaced'): void {
@@ -319,7 +358,7 @@ export function createCore(content: Content): Core {
     let modified = amount;
     for (const item of state.items.slice()) {
       const def = itemById.get(item.id);
-      if (!def?.modifyDamage) continue;
+      if (!def?.modifyDamage || !isEquipped(item, def)) continue;
       modified = def.modifyDamage({ state, self: item }, modified);
     }
     modified = Math.max(0, Math.floor(modified));
@@ -470,6 +509,10 @@ export function createCore(content: Content): Core {
       case 'gold':
         changeGold(rt, effect.amount, source);
         break;
+      case 'solveGold':
+        state.bonusSolveGold = Math.max(0, state.bonusSolveGold + effect.amount);
+        emit(rt, { type: 'attributeChanged', stat: 'bonusSolveGold', value: state.bonusSolveGold });
+        break;
       case 'addTime': {
         const round = state.round;
         if (!round || round.remainingMs === null) break;
@@ -562,10 +605,6 @@ export function createCore(content: Content): Core {
       case 'clearBlacklist':
         clearBlacklist(rt);
         break;
-      case 'blacklistCapacity':
-        state.blacklistCapacity = Math.max(1, state.blacklistCapacity + effect.delta);
-        emit(rt, { type: 'attributeChanged', stat: 'blacklistCapacity', value: state.blacklistCapacity });
-        break;
       case 'blacklistAddRandom':
         addRandomBlacklist(rt, effect.count);
         break;
@@ -620,6 +659,9 @@ export function createCore(content: Content): Core {
       case 'eat':
         eatFood(rt, effect.food);
         break;
+      case 'eatRandom':
+        if (content.foods.length > 0) eatFood(rt, rngPick(state, content.foods).id);
+        break;
       case 'slots':
         state.slots = Math.max(0, state.slots + effect.delta);
         emit(rt, { type: 'slotsChanged', slots: state.slots });
@@ -663,7 +705,8 @@ export function createCore(content: Content): Core {
     for (const item of state.items.slice()) {
       if (!findItem(state, item.instance)) continue;
       const def = itemById.get(item.id);
-      const handler = def?.on?.[hook] as
+      if (!def || !isEquipped(item, def)) continue;
+      const handler = def.on?.[hook] as
         | ((ctx: { state: RunState; self: ItemInstance }, payload: HookPayloads[H]) => Effect[])
         | undefined;
       if (!handler) continue;
@@ -761,7 +804,7 @@ export function createCore(content: Content): Core {
       guesses: [],
       freeLeft: 2,
       paidGuesses: 0,
-      baseDamage: 1 + state.act + state.bonusBaseDamage,
+      baseDamage: 1 + state.act + Math.floor(state.stats.rounds / 3) + state.bonusBaseDamage,
       elapsedMs: 0,
       remainingMs: remaining,
       timerStartMs: timerStart,
@@ -835,7 +878,7 @@ export function createCore(content: Content): Core {
     // Every finished encounter pays out. A solve pays the full prize; a
     // timeout still leaves a few coins so a bad round is not a dead run.
     const goldAward = outcome === 'solved'
-      ? 6 + 2 * state.stats.rounds
+      ? 6 + 2 * state.stats.rounds + state.bonusSolveGold
       : outcome === 'timeout'
         ? 3 + state.act
         : 0;
@@ -1116,6 +1159,8 @@ export function createCore(content: Content): Core {
       return options;
     }
 
+    // Ordinary victories pay coins, sometimes a spell, and only rarely a
+    // piece of gear or a meal. Shops and events are the reliable source.
     const goldAmount = 8 + 3 * state.act;
     options.push({
       id: 'gold',
@@ -1125,7 +1170,7 @@ export function createCore(content: Content): Core {
       description: 'A handful of coins. Always useful.',
     });
 
-    if (content.spells.length > 0) {
+    if (content.spells.length > 0 && rngChance(state, 70)) {
       const spell = rngPick(state, content.spells);
       options.push({
         id: `spell:${spell.id}`,
@@ -1134,17 +1179,40 @@ export function createCore(content: Content): Core {
         label: spell.name,
         description: spell.description,
       });
+    } else {
+      options.push({
+        id: 'gold-extra',
+        kind: 'gold',
+        amount: goldAmount + 5,
+        label: `${goldAmount + 5} gold`,
+        description: 'A heavier purse instead of a spell.',
+      });
     }
 
-    if (content.upgrades.length > 0) {
-      const upgrade = rngPick(state, content.upgrades);
-      options.push({
-        id: `upgrade:${upgrade.id}`,
-        kind: 'upgrade',
-        def: upgrade.id,
-        label: upgrade.name,
-        description: upgrade.description,
-      });
+    if (rngChance(state, 30)) {
+      const itemPool = content.items.filter(
+        (i) => i.rarity !== 'rare' && (i.kind !== 'gear' || !state.items.some((owned) => owned.id === i.id)),
+      );
+      const roll = rngNext(state);
+      if (roll < 0.6 && itemPool.length > 0) {
+        const item = rngPick(state, itemPool);
+        options.push({
+          id: `item:${item.id}`,
+          kind: 'item',
+          def: item.id,
+          label: item.name,
+          description: item.description,
+        });
+      } else if (content.foods.length > 0) {
+        const food = rngPick(state, content.foods);
+        options.push({
+          id: `eat:${food.id}`,
+          kind: 'eat',
+          def: food.id,
+          label: food.name,
+          description: food.description,
+        });
+      }
     }
 
     return options;
@@ -1179,6 +1247,8 @@ export function createCore(content: Content): Core {
       if (upgrade) applyEffects(rt, upgrade.effects, { kind: 'rules' });
     } else if (option.kind === 'item' && option.def) {
       if (!addItem(rt, option.def)) return;
+    } else if (option.kind === 'eat' && option.def) {
+      eatFood(rt, option.def);
     }
 
     if (isOver(state)) return;
@@ -1199,13 +1269,11 @@ export function createCore(content: Content): Core {
     const offers: Offer[] = [];
     const picked: Array<{ kind: Offer['kind']; def: string; price: number }> = [];
 
-    if (itemPool.length > 0) {
-      const item = rngPick(state, itemPool);
+    // Shops sell gear, food and permanent upgrades. Spells are never on the
+    // shelf: they come from food and from item triggers.
+    const picks = rngShuffle(state, itemPool).slice(0, 2);
+    for (const item of picks) {
       picked.push({ kind: 'item', def: item.id, price: item.price });
-    }
-    if (content.spells.length > 0) {
-      const spell = rngPick(state, content.spells);
-      picked.push({ kind: 'spell', def: spell.id, price: spell.price });
     }
     if (content.foods.length > 0) {
       const food = rngPick(state, content.foods);
@@ -1249,14 +1317,6 @@ export function createCore(content: Content): Core {
     if (state.gold < offer.price) {
       emit(rt, { type: 'shopRejected', offerId, reason: 'Not enough gold.' });
       return;
-    }
-
-    if (offer.kind === 'item') {
-      const def = itemById.get(offer.def);
-      if (def && !canAddItem(state, def)) {
-        emit(rt, { type: 'shopRejected', offerId, reason: 'No free slots.' });
-        return;
-      }
     }
 
     if (!spendGold(rt, offer.price)) return;
@@ -1308,8 +1368,10 @@ export function createCore(content: Content): Core {
     const value = def.sellValue
       ? def.sellValue({ state, self: item })
       : Math.floor(def.price / 2);
+    const view = itemView(state, item);
     removeItem(rt, instance, 'sold');
     changeGold(rt, value, RULES);
+    runHook(rt, 'onSell', { item: view });
   }
 
   function openHappening(rt: Runtime): void {
@@ -1708,6 +1770,12 @@ export function createCore(content: Content): Core {
       case 'sell':
         sellItem(rt, cmd.instance);
         break;
+      case 'equipItem':
+        equipItem(rt, cmd.instance);
+        break;
+      case 'unequipItem':
+        unequipItem(rt, cmd.instance);
+        break;
       case 'choose':
         chooseHappening(rt, cmd.optionId);
         break;
@@ -1727,16 +1795,20 @@ export function createCore(content: Content): Core {
   function rollNodes(state: RunState): void {
     const nodes: RunState['nodes'] = [];
     const usedBosses = new Set<string>();
-    for (let act = 0; act < 3; act++) {
-      const support: 'shop' | 'happening' = rngChance(state, 50) ? 'shop' : 'happening';
+    for (let act = 0; act < ACTS; act++) {
       const bossPool = content.bosses.filter(
         (b) => b.acts.includes(act) && !usedBosses.has(b.id),
       );
-      const boss = bossPool.length > 0 ? rngPick(state, bossPool) : undefined;
+      const fallback = content.bosses.filter((b) => !usedBosses.has(b.id));
+      const pool = bossPool.length > 0 ? bossPool : fallback;
+      const boss = pool.length > 0 ? rngPick(state, pool) : undefined;
       if (boss) usedBosses.add(boss.id);
+      const support = (): RunNode =>
+        rngChance(state, 60) ? { kind: 'shop' } : { kind: 'happening' };
       nodes.push({ kind: 'round' });
+      nodes.push(support());
       nodes.push({ kind: 'round' });
-      nodes.push({ kind: support });
+      nodes.push(support());
       nodes.push({ kind: 'round' });
       nodes.push({ kind: 'boss', boss: boss?.id });
     }
@@ -1765,6 +1837,7 @@ export function createCore(content: Content): Core {
       slots: 4,
       bonusTimeMs: 0,
       bonusBaseDamage: 0,
+      bonusSolveGold: 0,
       items: [],
       spells: [],
       blacklist: [],
@@ -1810,11 +1883,18 @@ export function createCore(content: Content): Core {
     try {
       const parsed = JSON.parse(json) as Partial<RunState> | null;
       if (!parsed || typeof parsed !== 'object') return null;
-      if (parsed.version !== VERSION) return null;
+      if (parsed.version !== VERSION && parsed.version !== 1) return null;
       if (!Array.isArray(parsed.nodes) || !Array.isArray(parsed.items)) return null;
       if (typeof parsed.hp !== 'number' || typeof parsed.maxHp !== 'number') return null;
       if (typeof parsed.rng !== 'number') return null;
-      return parsed as RunState;
+
+      const state = parsed as RunState;
+      state.version = VERSION;
+      state.bonusSolveGold = typeof state.bonusSolveGold === 'number' ? state.bonusSolveGold : 0;
+      for (const item of state.items) {
+        if (typeof item.equipped !== 'boolean') item.equipped = true;
+      }
+      return state;
     } catch {
       return null;
     }

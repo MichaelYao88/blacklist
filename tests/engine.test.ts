@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CoreHost, MemoryStore, game } from '../src/game';
 import type { Command, GameEvent, RoundState, RunState, StepResult } from '../src/game';
-import { ITEM_BY_ID } from '../src/content';
+import { FOOD_BY_ID, ITEM_BY_ID, UPGRADES } from '../src/content';
 
 function start(seed = 'test-seed'): StepResult {
   return game.newRun({ seed });
@@ -22,7 +22,7 @@ function eventTypes(events: GameEvent[]): string[] {
 }
 
 describe('new run', () => {
-  it('starts a seeded three-act run with default stats', () => {
+  it('starts a seeded five-act run with default stats', () => {
     const { state, events } = start();
     expect(state.phase).toBe('round');
     expect(state.hp).toBe(40);
@@ -32,8 +32,9 @@ describe('new run', () => {
     expect(state.gold).toBe(10);
     expect(state.slots).toBe(4);
     expect(state.blacklistCapacity).toBe(16);
-    expect(state.nodes).toHaveLength(15);
-    expect(state.nodes.filter((n) => n.kind === 'boss')).toHaveLength(3);
+    expect(state.nodes).toHaveLength(30);
+    expect(state.nodes.filter((n) => n.kind === 'boss')).toHaveLength(5);
+    expect(state.nodes.filter((n) => n.kind === 'shop' || n.kind === 'happening')).toHaveLength(10);
     expect(state.round?.answer).toHaveLength(5);
     expect(eventTypes(events)).toContain('runStarted');
     expect(eventTypes(events)).toContain('nodeEntered');
@@ -241,10 +242,12 @@ describe('round rewards', () => {
 
     const reward = act(solved.state, { type: 'continue' });
     expect(reward.state.phase).toBe('reward');
-    expect(reward.state.reward?.options).toHaveLength(3);
+    const options = reward.state.reward?.options ?? [];
+    expect(options.length).toBeGreaterThanOrEqual(2);
+    expect(options.some((option) => option.kind === 'gold')).toBe(true);
+    expect(options.some((option) => option.kind === 'upgrade')).toBe(false);
 
     const chosen = act(reward.state, { type: 'chooseReward', optionId: 'gold' });
-    expect(chosen.state.phase).toBe('round');
     expect(chosen.state.nodeIndex).toBe(1);
     expect(chosen.state.gold).toBe(24);
     expect(eventTypes(chosen.events)).toContain('rewardChosen');
@@ -277,7 +280,7 @@ describe('round rewards', () => {
 });
 
 describe('full run', () => {
-  it('plays a perfect run through all three acts to victory', () => {
+  it('plays a perfect run through all five acts to victory', () => {
     let result = start('perfect-run');
     let steps = 0;
 
@@ -309,9 +312,9 @@ describe('full run', () => {
     expect(steps).toBeLessThan(400);
     expect(result.state.phase).toBe('over');
     expect(result.state.over?.result).toBe('victory');
-    expect(result.state.nodeIndex).toBe(15);
-    expect(result.state.stats.bosses).toBe(3);
-    expect(result.state.stats.rounds).toBe(12);
+    expect(result.state.nodeIndex).toBe(30);
+    expect(result.state.stats.bosses).toBe(5);
+    expect(result.state.stats.rounds).toBe(20);
     expect(game.view(result.state).phase.kind).toBe('over');
     const finalView = game.view(result.state);
     if (finalView.phase.kind === 'over') {
@@ -321,36 +324,40 @@ describe('full run', () => {
 });
 
 describe('shop', () => {
-  it('buys, rerolls and leaves without breaking the node flow', () => {
-    let result = start('shop-seed-0');
-    for (let i = 0; i < 80; i++) {
-      const candidate = start(`shop-seed-${i}`);
-      if (candidate.state.nodes[2]?.kind === 'shop') {
-        result = candidate;
-        break;
+  function reachShop(): StepResult {
+    for (let i = 0; i < 120; i++) {
+      let result = start(`shop-seed-${i}`);
+      if (result.state.nodes[1]?.kind !== 'shop') continue;
+      let guard = 0;
+      while (result.state.phase !== 'shop' && result.state.phase !== 'over' && guard < 40) {
+        guard++;
+        const state = result.state;
+        if (state.phase === 'round' && state.round) {
+          result = act(state, { type: 'guess', word: state.round.answer });
+        } else if (state.phase === 'summary') {
+          result = act(state, { type: 'continue' });
+        } else if (state.phase === 'reward') {
+          result = act(state, { type: 'chooseReward', optionId: 'gold' });
+        } else {
+          break;
+        }
       }
+      if (result.state.phase === 'shop') return result;
     }
-    expect(result.state.nodes[2]?.kind).toBe('shop');
-    let guard = 0;
-    while (result.state.phase !== 'shop' && result.state.phase !== 'over' && guard < 80) {
-      guard++;
-      const state = result.state;
-      if (state.phase === 'round' && state.round) {
-        result = act(state, { type: 'guess', word: state.round.answer });
-      } else if (state.phase === 'summary') {
-        result = act(state, { type: 'continue' });
-      } else if (state.phase === 'reward') {
-        result = act(state, { type: 'chooseReward', optionId: 'gold' });
-      } else if (state.phase === 'happening') {
-        result = state.happening?.resolved
-          ? act(state, { type: 'continue' })
-          : act(state, { type: 'choose', optionId: state.happening?.options[0]?.id ?? '' });
-      } else {
-        break;
-      }
-    }
+    throw new Error('no shop seed found');
+  }
 
-    expect(result.state.phase).toBe('shop');
+  it('sells gear, food and upgrades but never spells', () => {
+    const result = reachShop();
+    const offers = result.state.shop?.offers ?? [];
+    expect(offers.filter((offer) => offer.kind === 'item')).toHaveLength(2);
+    expect(offers.filter((offer) => offer.kind === 'spell')).toHaveLength(0);
+    expect(offers.filter((offer) => offer.kind === 'eat').length).toBeGreaterThanOrEqual(1);
+    expect(offers.filter((offer) => offer.kind === 'upgrade')).toHaveLength(1);
+  });
+
+  it('buys, rerolls and leaves without breaking the node flow', () => {
+    const result = reachShop();
     const shop = result.state.shop!;
     expect(shop.offers.length).toBe(4);
 
@@ -369,10 +376,41 @@ describe('shop', () => {
     expect(left.state.nodeIndex).toBe(nodeBefore + 1);
     expect(left.state.phase).toBe('round');
   });
+
+  it('puts gear in the bag when slots are full and equips it on command', () => {
+    const result = reachShop();
+    result.state.gold = 100;
+    result.state.slots = 0;
+    const offer = result.state.shop!.offers.find((o) => o.kind === 'item');
+    expect(offer).toBeTruthy();
+
+    const bought = act(result.state, { type: 'buy', offerId: offer!.id });
+    const item = bought.state.items.at(-1);
+    expect(item?.equipped).toBe(false);
+    expect(game.view(bought.state).slots.used).toBe(0);
+
+    bought.state.slots = 1;
+    const equipped = act(bought.state, { type: 'equipItem', instance: item!.instance });
+    expect(equipped.state.items.at(-1)?.equipped).toBe(true);
+    expect(game.view(equipped.state).slots.used).toBe(1);
+
+    const unequipped = act(equipped.state, { type: 'unequipItem', instance: item!.instance });
+    expect(unequipped.state.items.at(-1)?.equipped).toBe(false);
+    expect(game.view(unequipped.state).slots.used).toBe(0);
+  });
+
+  it('scales base damage with rounds cleared', () => {
+    const result = reachShop();
+    const reaching = result.state;
+    reaching.stats.rounds = 6;
+    const next = act(reaching, { type: 'continue' });
+    expect(next.state.phase).toBe('round');
+    expect(next.state.round?.baseDamage).toBe(3);
+  });
 });
 
 describe('nonsense guesses', () => {
-  it('rejects off-dictionary words until Loose Tongue is owned', () => {
+  it('rejects off-dictionary words until Loose Tongue is equipped', () => {
     const { state } = start();
     setAnswer(state, 'crane');
 
@@ -384,8 +422,12 @@ describe('nonsense guesses', () => {
     });
     expect(rejected.state.round?.guesses).toHaveLength(0);
 
-    state.items.push({ instance: 'i-loose', id: 'loose-tongue', data: {} });
-    const accepted = act(state, { type: 'guess', word: 'aeiou' });
+    state.items.push({ instance: 'i-loose', id: 'loose-tongue', data: {}, equipped: false });
+    const bagged = act(state, { type: 'guess', word: 'aeiou' });
+    expect(eventTypes(bagged.events)).toContain('guessRejected');
+
+    const equipped = act(state, { type: 'equipItem', instance: 'i-loose' });
+    const accepted = act(equipped.state, { type: 'guess', word: 'aeiou' });
     expect(eventTypes(accepted.events)).toContain('guessScored');
     expect(accepted.state.round?.guesses).toHaveLength(1);
     expect(accepted.state.blacklist).toEqual(['aeiou']);
@@ -433,6 +475,20 @@ describe('solving and dying', () => {
     const dead = act(state, { type: 'guess', word: 'pious' });
     expect(dead.state.over?.answer).toBe('crane');
     expect(dead.state.over?.answers).toEqual(['apple', 'beard', 'crane']);
+  });
+});
+
+describe('content rules', () => {
+  it('sells no blacklist capacity upgrades', () => {
+    expect(UPGRADES.some((upgrade) => upgrade.id === 'ledger')).toBe(false);
+    expect(
+      UPGRADES.some((upgrade) => upgrade.description.toLowerCase().includes('blacklist capacity')),
+    ).toBe(false);
+  });
+
+  it('offers some food that grants random spells', () => {
+    expect(FOOD_BY_ID.get('mystery-stew')).toBeDefined();
+    expect(FOOD_BY_ID.get('candy')).toBeDefined();
   });
 });
 

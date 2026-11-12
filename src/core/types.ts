@@ -48,6 +48,7 @@ export type HookName =
   | 'onEat'
   | 'onTimerTick'
   | 'onPurchase'
+  | 'onSell'
   | 'onDamageTaken'
   | 'onDeath'
   | 'onBlacklistChanged'
@@ -79,6 +80,8 @@ export interface ItemInstance {
   instance: InstanceId;
   id: ItemId;
   data: Record<string, number>;
+  /** Equipped items are active and occupy slots. Bagged items do nothing. */
+  equipped?: boolean;
 }
 export interface SpellInstance {
   instance: InstanceId;
@@ -127,7 +130,7 @@ export interface SummaryState {
 
 export interface RewardOption {
   id: string;
-  kind: 'gold' | 'spell' | 'upgrade' | 'item';
+  kind: 'gold' | 'spell' | 'upgrade' | 'item' | 'eat';
   def?: string;
   amount?: number;
   rarity?: 'common' | 'rare';
@@ -178,6 +181,7 @@ export type Effect =
   | { type: 'maxArmor'; delta: number }
   | { type: 'revive'; hp: number }
   | { type: 'gold'; amount: number }
+  | { type: 'solveGold'; amount: number }
   | { type: 'addTime'; ms: number }
   | { type: 'timeBonus'; ms: number }
   | { type: 'freezeTime'; ms: number }
@@ -189,7 +193,6 @@ export type Effect =
   | { type: 'revealLetter'; letter: Letter }
   | { type: 'purgeLetter'; letter: Letter }
   | { type: 'clearBlacklist' }
-  | { type: 'blacklistCapacity'; delta: number }
   | { type: 'blacklistAddRandom'; count: number }
   | { type: 'blacklistRemoveRandom'; count: number }
   | { type: 'giveSpell'; spell: SpellId | 'random'; chancePct?: number }
@@ -200,6 +203,7 @@ export type Effect =
   | { type: 'addItem'; item: ItemId }
   | { type: 'addRandomItem' }
   | { type: 'eat'; food: string }
+  | { type: 'eatRandom' }
   | { type: 'slots'; delta: number }
   | { type: 'pendingPurge'; count: number }
   | { type: 'bossData'; key: string; value: number }
@@ -233,6 +237,7 @@ export interface HookPayloads {
   onEat: { food: string };
   onTimerTick: { remainingMs: number; dtMs: number };
   onPurchase: { offer: Offer };
+  onSell: { item: ItemView };
   onDamageTaken: { incoming: number; dealt: number; armorUsed: number; source: Source };
   onDeath: { source: string };
   onBlacklistChanged: {
@@ -355,6 +360,7 @@ export interface RunState {
   slots: number;
   bonusTimeMs: number;
   bonusBaseDamage: number;
+  bonusSolveGold: number;
   items: ItemInstance[];
   spells: SpellInstance[];
   blacklist: string[];
@@ -378,6 +384,8 @@ export interface ItemView {
   id: ItemId;
   data: Record<string, number>;
   kind: ItemKind;
+  slots: number;
+  equipped: boolean;
   sellValue: number;
 }
 export interface SpellView {
@@ -460,6 +468,8 @@ export type Command =
   | { type: 'buy'; offerId: string }
   | { type: 'reroll' }
   | { type: 'sell'; instance: InstanceId }
+  | { type: 'equipItem'; instance: InstanceId }
+  | { type: 'unequipItem'; instance: InstanceId }
   | { type: 'choose'; optionId: string }
   | { type: 'chooseReward'; optionId: string }
   | { type: 'continue' };
@@ -525,6 +535,7 @@ export type GameEvent =
   | { type: 'itemRemoved'; instance: InstanceId; reason: 'sold' | 'consumed' | 'replaced' }
   | { type: 'itemTriggered'; instance: InstanceId; hook: HookName }
   | { type: 'itemGrew'; instance: InstanceId; stat: string; value: number }
+  | { type: 'itemEquipped'; instance: InstanceId; equipped: boolean }
   | { type: 'itemDataChanged'; instance: InstanceId; stat: string; value: number }
   | { type: 'slotsChanged'; slots: number }
   | { type: 'spellGained'; spell: SpellView }

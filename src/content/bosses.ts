@@ -12,7 +12,7 @@ export const BOSSES: BossDef[] = [
     id: 'editor',
     name: 'The Editor',
     description: 'Suffix. The last three tiles of every guess are covered.',
-    acts: [0],
+    acts: [0, 3],
     timerMs: null,
     present: (_ctx, g) => ({
       word: g.word,
@@ -23,7 +23,7 @@ export const BOSSES: BossDef[] = [
     id: 'sleeper',
     name: 'The Sleeper',
     description: 'Asleep. Wake it with two hits in one guess and it deals 10 damage.',
-    acts: [0],
+    acts: [0, 3],
     timerMs: null,
     initialState: { woke: 0 },
     on: {
@@ -44,7 +44,7 @@ export const BOSSES: BossDef[] = [
     id: 'censor',
     name: 'The Censor',
     description: 'Mastermind. Drawn from the hardest answers. The first tile of every guess is covered.',
-    acts: [1],
+    acts: [1, 4],
     timerMs: null,
     answerPool: 'hard',
     present: (_ctx, g) => ({
@@ -56,7 +56,7 @@ export const BOSSES: BossDef[] = [
     id: 'auditor',
     name: 'The Auditor',
     description: 'Counts only. You see how many greens and yellows, never where they are.',
-    acts: [1],
+    acts: [1, 4],
     timerMs: null,
     present: (_ctx, g) => ({
       word: g.word,
@@ -68,7 +68,7 @@ export const BOSSES: BossDef[] = [
     id: 'vowel-fog',
     name: 'Vowel Fog',
     description: 'Vowels are clear-coloured: you know they are present, not whether they are green or yellow.',
-    acts: [1],
+    acts: [1, 4],
     timerMs: null,
     present: (_ctx, g) => ({
       word: g.word,
@@ -81,7 +81,7 @@ export const BOSSES: BossDef[] = [
     id: 'monochrome',
     name: 'Monochrome',
     description: 'Every present tile is the same colour. You know the letters, not the positions.',
-    acts: [2],
+    acts: [2, 3],
     timerMs: null,
     present: (_ctx, g) => ({
       word: g.word,
@@ -92,7 +92,7 @@ export const BOSSES: BossDef[] = [
     id: 'gauntlet',
     name: 'The Gauntlet',
     description: 'Three puzzles. One shared 150-second clock. No damage per guess.',
-    acts: [2],
+    acts: [2, 4],
     timerMs: 150_000,
     gauntlet: { puzzles: 3, timerMs: 150_000 },
     noGuessDamage: true,
@@ -101,3 +101,4 @@ export const BOSSES: BossDef[] = [
 
 export const BOSS_BY_ID = new Map(BOSSES.map((b) => [b.id, b]));
 export { standard };
+

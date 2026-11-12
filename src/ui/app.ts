@@ -65,6 +65,9 @@ interface DamageFx {
 let damageFx: DamageFx | null = null;
 let damageTimer: number | undefined;
 let damageSeq = 0;
+let countdownUntil = 0;
+const COUNTDOWN_MS = 2_400;
+let lastPathNode = -1;
 
 const KIND_LABELS: Record<Offer['kind'], string> = {
   item: 'ITEM',
@@ -164,6 +167,11 @@ function processEvents(events: GameEvent[]): void {
       notify(`Puzzle ${event.index}/${event.total} solved`, 'good');
       sfx.play('solve');
     }
+    if (event.type === 'roundStarted') {
+      countdownUntil = performance.now() + COUNTDOWN_MS;
+      heartbeatSecond = -1;
+      sfx.play('tick');
+    }
     if (event.type === 'rewardChosen' || event.type === 'offerBought') sfx.play('buy');
     if (event.type === 'runEnded') {
       const view = host.view();
@@ -219,6 +227,7 @@ function resumeRun(): void {
   paused = false;
   damageFx = null;
   heartbeatSecond = -1;
+  countdownUntil = 0;
   lastTick = performance.now();
   render();
 }
@@ -331,6 +340,12 @@ app.addEventListener('click', (event) => {
     case 'sell':
       dispatchCommand({ type: 'sell', instance: target.dataset.id ?? '' });
       break;
+    case 'equip':
+      dispatchCommand({ type: 'equipItem', instance: target.dataset.id ?? '' });
+      break;
+    case 'unequip':
+      dispatchCommand({ type: 'unequipItem', instance: target.dataset.id ?? '' });
+      break;
     case 'choose':
       dispatchCommand({ type: 'choose', optionId: target.dataset.id ?? '' });
       break;
@@ -342,6 +357,39 @@ app.addEventListener('click', (event) => {
       break;
     default:
       break;
+  }
+});
+
+// Drag a piece of gear between the slot sockets and the bag in a shop.
+app.addEventListener('dragstart', (event) => {
+  const chip = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-item]');
+  if (!chip) return;
+  event.dataTransfer?.setData('text/plain', chip.dataset.item ?? '');
+  if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
+  chip.classList.add('dragging');
+});
+
+app.addEventListener('dragend', (event) => {
+  (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-item]')?.classList.remove('dragging');
+});
+
+app.addEventListener('dragover', (event) => {
+  if ((event.target as HTMLElement | null)?.closest('[data-drop]')) {
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+  }
+});
+
+app.addEventListener('drop', (event) => {
+  const zone = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-drop]');
+  if (!zone) return;
+  event.preventDefault();
+  const instance = event.dataTransfer?.getData('text/plain');
+  if (!instance) return;
+  if (zone.dataset.drop === 'slot') {
+    dispatchCommand({ type: 'equipItem', instance });
+  } else {
+    dispatchCommand({ type: 'unequipItem', instance });
   }
 });
 
@@ -396,6 +444,11 @@ window.setInterval(() => {
     heartbeatSecond = -1;
     return;
   }
+  // The clock does not start until the countdown ends.
+  if (now < countdownUntil) {
+    render();
+    return;
+  }
   if (view.pendingPurge > 0) return;
   const events = host.dispatch({ type: 'tick', dtMs: dt });
   if (events.length > 0) processEvents(events);
@@ -436,7 +489,12 @@ function render(): void {
     app!.innerHTML = renderHelp();
   } else {
     app!.innerHTML = renderRun(view as RunView);
+    const current = app!.querySelector<HTMLElement>('.path-chip.current');
+    if (current && typeof current.scrollIntoView === 'function' && lastPathNode !== view?.nodeIndex) {
+      current.scrollIntoView({ block: 'nearest', inline: 'center' });
+    }
   }
+  lastPathNode = view?.nodeIndex ?? -1;
   app!.insertAdjacentHTML('beforeend', noticeHtml());
 }
 
@@ -495,7 +553,7 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>Damage</h3>
-        <p>Your first <b>2 guesses</b> each round are free. After that, a wrong guess costs <b>1 + act</b> damage, plus 1 for each paid guess you already made. A correct guess never hurts you.</p>
+        <p>Your first <b>2 guesses</b> each round are free. After that, a wrong guess costs <b>1 + act + 1 per 3 rounds cleared</b> damage, plus 1 for each paid guess you already made. A correct guess never hurts you.</p>
       </article>
       <article class="rule-card">
         <h3>Armor</h3>
@@ -507,7 +565,7 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>Items & spells</h3>
-        <p>Items take slots unless they are food or consumables. Spells take no slots and are one-use. Some items grow stronger as you solve, eat, cast, or hold them. Some items hand you spells when a condition is met. <b>Loose Tongue</b> lets you guess any five letters, dictionary or not.</p>
+        <p>Items only work while they are <b>equipped</b> in a slot. Extra gear goes to your bag, and shops are where you drag pieces between the bag and your slots. Spells stack: duplicates sit in one pile. They come from food and from item triggers, never from the shop shelf. <b>Loose Tongue</b> lets you guess any five letters, dictionary or not.</p>
       </article>
       <article class="rule-card">
         <h3>Bosses</h3>
@@ -515,7 +573,7 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>The run</h3>
-        <p>Three acts. Five nodes per act: two rounds, a shop or happening, another round, then a boss. Every finished encounter pays gold; solves also offer one of three rewards. Defeat wipes the save and shows you the word you missed. Victory keeps your meta record.</p>
+        <p>Five acts. Six nodes per act: three rounds, two shops or happenings, then a boss. Every finished encounter pays gold; solves offer coins, sometimes a spell, and rarely a piece of gear or a meal. Shops are where you buy what you want. Defeat wipes the save and shows you the word you missed. Victory keeps your meta record.</p>
       </article>
       <article class="rule-card">
         <h3>Controls</h3>
@@ -624,7 +682,7 @@ function renderPath(view: RunView): string {
     const icon = node.kind === 'boss' ? '☠' : node.kind === 'shop' ? '$' : node.kind === 'happening' ? '?' : '•';
     const label = boss ? boss.name : node.kind === 'round' ? 'Round' : node.kind === 'shop' ? 'Shop' : 'Happening';
     const classes = ['path-chip', node.kind, done ? 'done' : '', current ? 'current' : ''].filter(Boolean).join(' ');
-    return `<span class="${classes}" title="Act ${Math.floor(index / 5) + 1} · ${escapeHtml(label)}">
+    return `<span class="${classes}" title="Act ${Math.floor(index / 6) + 1} · ${escapeHtml(label)}">
       <i>${icon}</i><em>${index + 1}</em>
     </span>`;
   }).join('');
@@ -663,9 +721,17 @@ function renderSidePanel(view: RunView): string {
     ? view.items.map((item) => renderItem(view, item)).join('')
     : `<p class="empty-note">No items yet. Shops and bosses fix that.</p>`;
 
-  const spells = view.spells.length
-    ? view.spells.map((spell) => renderSpell(view, spell)).join('')
-    : `<p class="empty-note">No spells. Some items give them on a condition.</p>`;
+  const stacks = new Map<string, { spell: SpellView; count: number }>();
+  for (const spell of view.spells) {
+    const entry = stacks.get(spell.id);
+    if (entry) entry.count += 1;
+    else stacks.set(spell.id, { spell, count: 1 });
+  }
+  const spells = stacks.size
+    ? [...stacks.values()].map(({ spell, count }) => renderSpell(view, spell, count)).join('')
+    : `<p class="empty-note">No spells. Food and item triggers make them.</p>`;
+
+  const bagged = view.items.filter((item) => !item.equipped && item.slots > 0).length;
 
   const blacklist = view.blacklist.length
     ? view.blacklist.map((word, index) => `<li><span>${String(index + 1).padStart(2, '0')}</span>${escapeHtml(word)}</li>`).join('')
@@ -674,7 +740,7 @@ function renderSidePanel(view: RunView): string {
   return `
   <aside class="panel side-panel">
     <section>
-      <div class="panel-head"><span class="panel-kicker">ITEMS</span><span class="count">${view.slots.used}/${view.slots.total}</span></div>
+      <div class="panel-head"><span class="panel-kicker">ITEMS</span><span class="count">${view.slots.used}/${view.slots.total}${bagged ? ` · ${bagged} BAG` : ''}</span></div>
       <div class="item-list">${items}</div>
     </section>
     <section>
@@ -698,9 +764,15 @@ function renderItem(view: RunView, item: ItemView): string {
     .map(([key, value]) => `<span class="data-chip">${escapeHtml(key)} ${value}</span>`)
     .join('');
   const usable = Boolean(def?.onUse);
-  const rarity = def?.rarity === 'rare' ? 'RELIC' : def?.kind === 'consumable' ? 'USE' : 'GEAR';
+  const rarity = !item.equipped && item.slots > 0
+    ? 'BAG'
+    : def?.rarity === 'rare'
+      ? 'RELIC'
+      : def?.kind === 'consumable'
+        ? 'USE'
+        : 'GEAR';
   return `
-  <article class="item-card ${def?.rarity === 'rare' ? 'rare' : ''}">
+  <article class="item-card ${def?.rarity === 'rare' ? 'rare' : ''} ${!item.equipped && item.slots > 0 ? 'in-bag' : ''}">
     <div class="item-top">
       <span class="item-emoji" aria-hidden="true">${itemIcon(item.id)}</span>
       <b>${escapeHtml(name)}</b>
@@ -708,11 +780,12 @@ function renderItem(view: RunView, item: ItemView): string {
     </div>
     <p>${escapeHtml(description)}</p>
     ${data ? `<div class="data-row">${data}</div>` : ''}
+    ${!item.equipped && item.slots > 0 ? `<p class="bag-note">In the bag. Equip it in a shop.</p>` : ''}
     ${usable ? `<button class="btn tiny" data-action="use" data-id="${escapeHtml(item.instance)}">USE</button>` : ''}
   </article>`;
 }
 
-function renderSpell(view: RunView, spell: SpellView): string {
+function renderSpell(view: RunView, spell: SpellView, count: number): string {
   const def = SPELL_BY_ID.get(spell.id);
   const name = def?.name ?? spell.id;
   const description = def?.description ?? '';
@@ -722,6 +795,7 @@ function renderSpell(view: RunView, spell: SpellView): string {
     <div class="item-top">
       <span class="item-emoji" aria-hidden="true">${spellIcon(spell.id)}</span>
       <b>${escapeHtml(name)}</b>
+      ${count > 1 ? `<span class="stack-badge">×${count}</span>` : ''}
       <span class="tag">SPELL</span>
     </div>
     <p>${escapeHtml(description)}</p>
@@ -849,7 +923,7 @@ function renderReward(phase: Extract<PhaseView, { kind: 'reward' }>): string {
     <h2>${boss ? 'Claim a relic' : 'Take one'}</h2>
     <p class="muted">${boss
       ? 'Rare passives. They take no slots and last for the rest of the run.'
-      : 'Rewards are permanent for this run.'}</p>
+      : 'Mostly coins. Sometimes a spell. Rarely, a find.'}</p>
     <div class="reward-grid">
       ${phase.options.map((option) => {
         const icon = option.kind === 'item'
@@ -858,7 +932,9 @@ function renderReward(phase: Extract<PhaseView, { kind: 'reward' }>): string {
             ? spellIcon(option.def ?? '')
             : option.kind === 'upgrade'
               ? upgradeIcon(option.def ?? '')
-              : '¤';
+              : option.kind === 'eat'
+                ? foodIcon(option.def ?? '')
+                : '¤';
         const tag = option.rarity === 'rare' ? 'RELIC' : option.kind.toUpperCase();
         return `
         <button class="reward-card ${option.kind} ${option.rarity === 'rare' ? 'rare' : ''}" data-action="reward" data-id="${escapeHtml(option.id)}">
@@ -898,18 +974,16 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
   const offers = phase.offers.length
     ? phase.offers.map((offer) => {
       const info = offerInfo(offer);
-      const noRoom = info.slots > 0 && view.slots.used + info.slots > view.slots.total;
       const cannotAfford = view.gold < offer.price;
       return `
-      <article class="offer-card ${cannotAfford || noRoom ? 'unavailable' : ''}">
+      <article class="offer-card ${cannotAfford ? 'unavailable' : ''}">
         <div class="offer-top">
           <span class="item-emoji" aria-hidden="true">${info.icon}</span>
           <span class="tag">${KIND_LABELS[offer.kind]}</span>
         </div>
         <h3>${escapeHtml(info.name)}</h3>
         <p>${escapeHtml(info.description)}</p>
-        ${noRoom ? `<span class="warn">No free slots</span>` : ''}
-        <button class="btn primary" data-action="buy" data-id="${escapeHtml(offer.id)}" ${cannotAfford || noRoom ? 'disabled' : ''}>${offer.price} G</button>
+        <button class="btn primary" data-action="buy" data-id="${escapeHtml(offer.id)}" ${cannotAfford ? 'disabled' : ''}>${offer.price} G</button>
       </article>`;
     }).join('')
     : `<p class="empty-note">The shelves are bare. Reroll or leave.</p>`;
@@ -918,6 +992,43 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
     const def = ITEM_BY_ID.get(item.id);
     return `<div class="sell-row"><span>${itemIcon(item.id)} ${escapeHtml(def?.name ?? item.id)}</span><button class="btn tiny" data-action="sell" data-id="${escapeHtml(item.instance)}">SELL ${item.sellValue} G</button></div>`;
   }).join('');
+
+  const gear = view.items.filter((item) => item.slots > 0);
+  const equippedGear = gear.filter((item) => item.equipped);
+  const bagged = gear.filter((item) => !item.equipped);
+  const freeSlots = Math.max(0, view.slots.total - equippedGear.length);
+
+  const chips = (items: ItemView[], inSlot: boolean) => items.map((item) => {
+    const def = ITEM_BY_ID.get(item.id);
+    return `<div class="loadout-chip ${inSlot ? 'equipped' : 'bagged'}" draggable="true"
+      data-item="${escapeHtml(item.instance)}"
+      data-action="${inSlot ? 'unequip' : 'equip'}" data-id="${escapeHtml(item.instance)}"
+      title="${inSlot ? 'Drag to the bag or click to unequip' : 'Drag to a slot or click to equip'}">
+      <span class="item-emoji" aria-hidden="true">${itemIcon(item.id)}</span>
+      <b>${escapeHtml(def?.name ?? item.id)}</b>
+    </div>`;
+  }).join('');
+
+  const slots = [
+    ...chips(equippedGear, true),
+    ...Array.from({ length: freeSlots }, () => `<div class="slot-socket" data-drop="slot"><span>EMPTY</span></div>`),
+  ].join('');
+
+  const loadout = `
+    <div class="loadout">
+      <div class="loadout-head">
+        <span class="panel-kicker">LOADOUT</span>
+        <span class="count">${view.slots.used}/${view.slots.total} SLOTS</span>
+      </div>
+      <p class="hint">This shop is where you rearrange gear. Drag a piece between the slots and the bag, or click it.</p>
+      <div class="slot-grid" data-drop="slot">${slots}</div>
+      <div class="bag-zone" data-drop="bag">
+        <span class="panel-kicker">BAG${bagged.length ? ` · ${bagged.length}` : ''}</span>
+        ${bagged.length
+          ? `<div class="bag-grid">${chips(bagged, false)}</div>`
+          : `<p class="empty-note">Nothing in the bag. Drag a piece here to switch it off.</p>`}
+      </div>
+    </div>`;
 
   return `
   <div class="phase-card shop">
@@ -933,8 +1044,9 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
       <button class="btn" data-action="reroll">REROLL · ${phase.rerollCost} G</button>
       <button class="btn ghost" data-action="continue">LEAVE →</button>
     </div>
+    ${loadout}
     ${sellable ? `<details class="sell-box"><summary>Sell items</summary>${sellable}</details>` : ''}
-    <p class="hint">Food is eaten on purchase and takes no slot. Relics are boss-only and never appear here.</p>
+    <p class="hint">Food is eaten on purchase and takes no slot. Spells are not sold here — food and item triggers make them. Relics never appear in shops.</p>
   </div>`;
 }
 
@@ -981,7 +1093,7 @@ function renderOver(phase: Extract<PhaseView, { kind: 'over' }>): string {
     <p class="kicker">RUN OVER</p>
     <h1>${victory ? 'THE LIST IS YOURS' : 'THE LIST CLOSES'}</h1>
     <p class="tagline">${victory
-      ? 'Three acts. Every boss. The words you gave up are the ones that carried you.'
+      ? 'Five acts. Every boss. The words you gave up are the ones that carried you.'
       : 'The word that ended you is written below. It will not be so kind next time.'}</p>
     ${reveal}
     <div class="stats-grid">
@@ -1063,6 +1175,10 @@ function renderRun(view: RunView): string {
     phase.board.remainingMs !== null &&
     phase.board.remainingMs > 0 &&
     phase.board.remainingMs <= 15_000;
+  const now = performance.now();
+  const count = phase.kind === 'round' && !paused && now < countdownUntil
+    ? Math.max(1, Math.ceil((countdownUntil - now) / 800))
+    : 0;
 
   return `
   <div class="shell ${shake ? 'shake' : ''} ${tense ? 'tense' : ''}">
@@ -1080,6 +1196,13 @@ function renderRun(view: RunView): string {
           ${renderSidePanel(view)}
         </main>`}
     ${renderPurgeModal(view)}
+    ${count > 0 ? `<div class="countdown-overlay" aria-live="assertive">
+        <div class="countdown-card">
+          <span class="countdown-kicker">ROUND ${view.nodeIndex + 1}</span>
+          <b class="countdown-number" data-count="${count}">${count}</b>
+          <span class="countdown-label">READ THE LIST</span>
+        </div>
+      </div>` : ''}
     ${paused && !over ? renderPauseOverlay() : ''}
   </div>`;
 }

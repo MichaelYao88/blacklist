@@ -2,7 +2,7 @@
 
 A word roguelike about the words you can never say again.
 
-The first word of every round is added to a 16-word blacklist. You can never guess it again, and the hidden answer is never chosen from that list. Solve the word before the clock or your health runs out. Three acts. Seven bosses. One active save, and defeat wipes it.
+The first word of every round is added to a 16-word blacklist. You can never guess it again, and the hidden answer is never chosen from that list. Solve the word before the clock or your health runs out. Five acts. Seven bosses. One active save, and defeat wipes it.
 
 **Play:** https://michaelayao88.github.io/blacklist/
 
@@ -13,17 +13,19 @@ The first word of every round is added to a 16-word blacklist. You can never gue
 ## What is in the vertical slice
 
 - Wordle-style scoring with duplicate-letter handling
-- A 16-word blacklist that records the first guess of each round, with oldest-first eviction
+- A fixed 16-word blacklist that records the first guess of each round, with oldest-first eviction (no capacity upgrades)
 - A shrinking round timer, scaling damage and per-round armor charges
 - Correct guesses never deal damage; wrong paid guesses do
-- Three acts, five nodes per act: `round → round → support → round → boss`
-- Shops with rerolls, food, spells and permanent upgrades
+- Five acts, six nodes per act: `round → support → round → support → round → boss` (30 encounters)
+- Shops with rerolls, food and permanent upgrades — never spells
+- Item slots with equip/unequip: only equipped gear is active, and each shop has a drag-and-drop loadout
 - **Loose Tongue**, an item that lets you guess five-letter nonsense for free-form letter probes
+- Spells stack by type and come from food and item triggers, not shelves
 - Happenings with visible odds and persistent consequences
-- Every finished encounter pays gold; solves also offer one of three rewards: gold, a spell, or a permanent attribute
+- Every finished encounter pays gold; solves offer coins, usually a spell, and only rarely gear or a meal
 - Bosses award one of three rare relics with passive effects; relics take no slots and never appear in shops
 - Defeat reveals the answer you missed (all of them, on The Gauntlet)
-- 46 items (37 shop items + 9 rare boss relics), 8 spells, 4 foods and 7 happenings
+- 54 items (45 shop items + 9 rare boss relics), 8 spells, 5 foods and 13 happenings
 - Seven bosses:
   - **The Editor** — hides the last three tiles of each guess
   - **The Sleeper** — wakes after two hits in a guess and hits for 10
@@ -46,18 +48,20 @@ Not in this version: ascension, daily seeds, meta unlocks beyond win/run counter
 |---|---|
 | Starting HP | 40 |
 | Starting armor | 1 charge |
-| Starting item slots | 4 |
+| Starting item slots | 4 (only equipped gear counts) |
 | Free guesses per round | 2 |
 | Starting gold | 10 |
-| Blacklist capacity | 16 |
+| Blacklist capacity | 16, fixed |
 | Normal timer | `max(45s, 150s − 6s × roundsSeen − 10s × ascension) + timeBonus` |
 | Boss timer | none, except The Gauntlet |
-| Base damage | `1 + act` |
+| Base damage | `1 + act + ⌊roundsSeen / 3⌋` |
 | Paid guess damage | `base + paidGuessesThisRound`, only on a wrong guess |
 | Timeout damage | `ceil(maxHp × 0.35) + 5`, bypasses armor, ends the round |
 | Armor | one charge absorbs one whole damage event; refills each round |
-| Solve gold | `6 + 2 × roundsSeen`, plus item effects |
+| Solve gold | `6 + 2 × roundsSeen + solveGoldBonus`, plus item effects |
 | Timeout gold | `3 + act`; a death pays nothing |
+| Solve reward | gold always, ~70% a spell, ~30% a food or item |
+| Boss reward | one of three rare relics |
 | Shop reroll | starts at 2 gold, +1 per reroll |
 
 The answer pool excludes the blacklist, already-used answers and purged letters.

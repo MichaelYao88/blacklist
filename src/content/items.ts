@@ -279,10 +279,13 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'black-market-ledger',
     name: 'Black Market Ledger',
-    description: '+4 blacklist slots when acquired.',
-    price: 7,
+    description: 'Every shop purchase has a 40% chance to grant a random spell.',
+    price: 8,
     kind: 'gear',
-    onAcquire: () => [{ type: 'blacklistCapacity', delta: 4 }],
+    on: {
+      onPurchase: () =>
+        [{ type: 'giveSpell', spell: 'random', chancePct: 40 }],
+    },
   }),
   defineItem({
     id: 'purge-token',
@@ -409,6 +412,109 @@ export const ITEMS: ItemDef[] = [
     price: 7,
     kind: 'gear',
     allowInvalidGuesses: true,
+  }),
+
+  // ── spell engines ───────────────────────────────────────────────────────
+  // Passive items that turn a condition into a spell. Spells stack, so these
+  // are the main way to build a real arsenal without a spell shelf.
+
+  defineItem({
+    id: 'mimic-mouth',
+    name: 'Mimic Mouth',
+    description: 'A guess with four or more revealed letters grants a random spell.',
+    price: 9,
+    kind: 'gear',
+    on: {
+      onGuessScored: (_ctx, p) =>
+        p.guess.truth.filter((tile) => tile !== 'absent').length >= 4
+          ? [{ type: 'giveSpell', spell: 'random' }]
+          : [],
+    },
+  }),
+  defineItem({
+    id: 'dead-letter',
+    name: 'Dead Letter',
+    description: 'When the clock runs out, gain two random spells.',
+    price: 8,
+    kind: 'gear',
+    on: {
+      onRoundEnd: (_ctx, p) =>
+        p.outcome === 'timeout'
+          ? [{ type: 'giveSpell', spell: 'random' }, { type: 'giveSpell', spell: 'random' }]
+          : [],
+    },
+  }),
+  defineItem({
+    id: 'vowel-tithe',
+    name: 'Vowel Tithe',
+    description: 'Casting a spell has a 30% chance to grant another random spell.',
+    price: 9,
+    kind: 'gear',
+    on: {
+      onSpellCast: () => [{ type: 'giveSpell', spell: 'random', chancePct: 30 }],
+    },
+  }),
+  defineItem({
+    id: 'cracked-orb',
+    name: 'Cracked Orb',
+    description: 'Each round has a 25% chance to open with a random spell.',
+    price: 9,
+    kind: 'gear',
+    on: {
+      onRoundStart: () => [{ type: 'giveSpell', spell: 'random', chancePct: 25 }],
+    },
+  }),
+  defineItem({
+    id: 'sticky-fingers',
+    name: 'Sticky Fingers',
+    description: 'Every third shop purchase grants a random spell.',
+    price: 9,
+    kind: 'gear',
+    initial: { buys: 0 },
+    on: {
+      onPurchase: (ctx) => {
+        const next = ctx.self.data.buys + 1;
+        return [
+          { type: 'grow', stat: 'buys', by: 1 },
+          ...(next % 3 === 0 ? [{ type: 'giveSpell' as const, spell: 'random' as const }] : []),
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'nest-egg',
+    name: 'Nest Egg',
+    description: 'Gain 3 gold every time you solve a round.',
+    price: 8,
+    kind: 'gear',
+    on: { onSolve: () => [{ type: 'gold', amount: 3 }] },
+  }),
+  defineItem({
+    id: 'last-word',
+    name: 'Last Word',
+    description: 'The first time you drop below 25% HP, gain two random spells.',
+    price: 12,
+    kind: 'gear',
+    rarity: 'common',
+    initial: { used: 0 },
+    on: {
+      onDamageTaken: (ctx) => {
+        if (ctx.self.data.used || ctx.state.hp > ctx.state.maxHp * 0.25) return [];
+        return [
+          { type: 'giveSpell', spell: 'random' },
+          { type: 'giveSpell', spell: 'random' },
+          { type: 'setItemData', stat: 'used', value: 1 },
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'waste-basket',
+    name: 'Waste Basket',
+    description: 'Selling an item always returns one extra gold and a 25% chance of a spell.',
+    price: 7,
+    kind: 'gear',
+    on: { onSell: () => [{ type: 'gold', amount: 1 }, { type: 'giveSpell', spell: 'random', chancePct: 25 }] },
   }),
 
   // ── boss relics ─────────────────────────────────────────────────────────

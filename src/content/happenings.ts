@@ -111,11 +111,11 @@ export const HAPPENINGS: HappeningDef[] = [
     description: 'A stall that sells things with the labels scratched off.',
     options: [
       {
-        id: 'capacity',
-        label: 'Buy a bigger book',
-        description: '+2 blacklist capacity.',
-        costGold: 4,
-        outcomes: [{ chancePct: 100, text: 'The book grows heavier. +2 blacklist capacity.', effects: [{ type: 'blacklistCapacity', delta: 2 }] }],
+        id: 'spell',
+        label: 'Buy a bottled spell',
+        description: 'Gain a random spell.',
+        costGold: 5,
+        outcomes: [{ chancePct: 100, text: 'The bottle is warm. A new spell is yours.', effects: [{ type: 'giveSpell', spell: 'random' }] }],
       },
       {
         id: 'armor',
@@ -125,6 +125,142 @@ export const HAPPENINGS: HappeningDef[] = [
         outcomes: [{ chancePct: 100, text: 'The plate is ugly, but it will hold. +1 armor.', effects: [{ type: 'maxArmor', delta: 1 }] }],
       },
       { id: 'leave', label: 'Leave', description: 'Nothing happens.', outcomes: [{ chancePct: 100, text: 'You leave with your gold.', effects: [] }] },
+    ],
+  }),
+  defineHappening({
+    id: 'ink-stain',
+    name: 'The Ink Stain',
+    description: 'A spilled pot of ink is writing a sentence without a hand.',
+    options: [
+      {
+        id: 'read',
+        label: 'Read the sentence',
+        description: '60%: gain a random spell. 40%: a random word joins your blacklist.',
+        outcomes: [
+          { chancePct: 60, text: 'The ink spells out something useful. A new spell.', effects: [{ type: 'giveSpell', spell: 'random' }] },
+          { chancePct: 40, text: 'The sentence is your name. The list grows.', effects: [{ type: 'blacklistAddRandom', count: 1 }] },
+        ],
+      },
+      {
+        id: 'smear',
+        label: 'Smear it across the page',
+        description: 'Erase one blacklisted word.',
+        outcomes: [{ chancePct: 100, text: 'The ink runs. One word is gone from the list.', effects: [{ type: 'blacklistRemoveRandom', count: 1 }] }],
+      },
+    ],
+  }),
+  defineHappening({
+    id: 'letter-garden',
+    name: 'The Letter Garden',
+    description: 'Rows of letters grow out of dark soil. Something is buried under them.',
+    options: [
+      {
+        id: 'pull',
+        label: 'Pull a root',
+        description: '50%: +1 item slot. 50%: take 4 damage.',
+        outcomes: [
+          { chancePct: 50, text: 'A leather strap comes up with the root. +1 item slot.', effects: [{ type: 'slots', delta: 1 }] },
+          { chancePct: 50, text: 'The root pulls back. −4 HP.', effects: [{ type: 'damage', amount: 4 }] },
+        ],
+      },
+      {
+        id: 'eat',
+        label: 'Eat a letter',
+        description: 'Heal 6 HP and trigger any on-eat effects.',
+        outcomes: [{ chancePct: 100, text: 'It tastes like copper and rain.', effects: [{ type: 'heal', amount: 6 }, { type: 'eatRandom' }] }],
+      },
+    ],
+  }),
+  defineHappening({
+    id: 'scrap-cart',
+    name: 'The Scrap Cart',
+    description: 'A cart of dented gear and half-eaten meals. The owner does not look up.',
+    options: [
+      {
+        id: 'gear',
+        label: 'Buy a random item',
+        description: 'Pay 8 gold for a random item.',
+        costGold: 8,
+        outcomes: [{ chancePct: 100, text: 'You dig something out of the pile.', effects: [{ type: 'addRandomItem' }] }],
+      },
+      {
+        id: 'meal',
+        label: 'Buy a random meal',
+        description: 'Pay 4 gold to eat something random.',
+        costGold: 4,
+        outcomes: [{ chancePct: 100, text: 'You eat whatever is in the bowl.', effects: [{ type: 'eatRandom' }] }],
+      },
+      { id: 'leave', label: 'Walk past', description: 'Nothing happens.', outcomes: [{ chancePct: 100, text: 'The cart creaks on.', effects: [] }] },
+    ],
+  }),
+  defineHappening({
+    id: 'echo-well',
+    name: 'The Echo Well',
+    description: 'A well that repeats the last thing you dropped in, in your own voice.',
+    options: [
+      {
+        id: 'listen',
+        label: 'Lower the bucket',
+        description: '70%: erase a blacklisted word. 30%: add one.',
+        outcomes: [
+          { chancePct: 70, text: 'The echo comes back cleaner than it went in.', effects: [{ type: 'blacklistRemoveRandom', count: 1 }] },
+          { chancePct: 30, text: 'Something else answers. A word joins the list.', effects: [{ type: 'blacklistAddRandom', count: 1 }] },
+        ],
+      },
+      {
+        id: 'coins',
+        label: 'Throw in coins',
+        description: 'Pay 3 gold. 60%: gain 9 gold. 40%: nothing.',
+        costGold: 3,
+        outcomes: [
+          { chancePct: 60, text: 'The well returns your coins with interest.', effects: [{ type: 'gold', amount: 9 }] },
+          { chancePct: 40, text: 'The well keeps them. Rude.', effects: [] },
+        ],
+      },
+    ],
+  }),
+  defineHappening({
+    id: 'revisor',
+    name: 'The Revisor',
+    description: 'A thin figure with a red pen and no face to speak of.',
+    options: [
+      {
+        id: 'accept',
+        label: 'Accept the edits',
+        description: '55%: gain a random spell. 45%: take 5 damage.',
+        outcomes: [
+          { chancePct: 55, text: 'The red ink rewrites something in your favour. A spell.', effects: [{ type: 'giveSpell', spell: 'random' }] },
+          { chancePct: 45, text: 'The red ink finds a flaw. −5 HP.', effects: [{ type: 'damage', amount: 5 }] },
+        ],
+      },
+      {
+        id: 'refuse',
+        label: 'Refuse the edits',
+        description: 'Gain 3 gold and move on.',
+        outcomes: [{ chancePct: 100, text: 'You keep the original draft. It is worth something.', effects: [{ type: 'gold', amount: 3 }] }],
+      },
+    ],
+  }),
+  defineHappening({
+    id: 'bone-dice',
+    name: 'Bone Dice',
+    description: 'Two dice carved from something that used to answer questions.',
+    options: [
+      {
+        id: 'roll',
+        label: 'Roll for a spell',
+        description: '50%: gain a random spell. 50%: lose 4 HP.',
+        outcomes: [
+          { chancePct: 50, text: 'Double six. A spell falls out of the cup.', effects: [{ type: 'giveSpell', spell: 'random' }] },
+          { chancePct: 50, text: 'Snake eyes. Something bites your hand. −4 HP.', effects: [{ type: 'damage', amount: 4 }] },
+        ],
+      },
+      {
+        id: 'leave',
+        label: 'Leave the dice alone',
+        description: 'Nothing happens.',
+        outcomes: [{ chancePct: 100, text: 'They keep rattling after you leave.', effects: [] }],
+      },
     ],
   }),
 ];
