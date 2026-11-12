@@ -4,7 +4,9 @@ A word roguelike about the words you can never say again.
 
 Every word you guess is added to a 16-word blacklist. You can never guess it again, and the hidden answer is never chosen from that list. Solve the word before the clock or your health runs out. Three acts. Six bosses. One active save, and defeat wipes it.
 
-**Play:** https://michaelayao88.github.io/blacklist/ *(after the first Pages deploy)*
+**Play:** https://michaelayao88.github.io/blacklist/
+
+![BLACKLIST](docs/preview.png)
 
 ---
 
