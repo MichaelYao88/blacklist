@@ -604,10 +604,11 @@ function renderTopbar(view: RunView): string {
   </header>`;
 }
 
-function renderBattleBar(view: RunView): string {
+function renderCombatPanel(view: RunView, bossId?: string): string {
   const phase = view.phase;
-  const bossId = phase.kind === 'round' || phase.kind === 'summary' ? phase.boss : undefined;
   const boss = bossId ? BOSS_BY_ID.get(bossId) : undefined;
+  const board = phase.kind === 'round' ? phase.board : null;
+  const stateEntries = board ? Object.entries(board.bossState) : [];
   const pct = Math.max(0, Math.min(100, (view.hp / Math.max(1, view.maxHp)) * 100));
   const low = view.hp <= view.maxHp * 0.3;
   const pips = Array.from({ length: Math.max(0, view.maxArmor) }, (_, index) =>
@@ -639,39 +640,46 @@ function renderBattleBar(view: RunView): string {
     : '';
 
   return `
-  <section class="battle-bar ${low ? 'critical' : ''}" aria-label="Combat status">
-    <div class="combatant player ${low ? 'low' : ''} ${damageFx && damageFx.hpLost > 0 ? 'hit' : ''}">
-      <div class="portrait player-portrait">${playerArt(pct / 100)}</div>
-      <div class="combatant-main">
-        <div class="combatant-top">
-          <span class="combatant-name">THE RUNNER</span>
-          <b class="hp-numbers">${view.hp}<em>/${view.maxHp}</em></b>
-        </div>
-        <div class="big-hp" role="progressbar" aria-valuemin="0" aria-valuemax="${view.maxHp}" aria-valuenow="${view.hp}">
-          <i style="width:${pct}%"></i>
-          <span class="hp-gloss"></span>
-        </div>
-        <div class="armor-line">
-          <span class="armor-pips">${pips}</span>
-          <span class="armor-text">ARMOR ${view.armor}/${view.maxArmor}</span>
-        </div>
+  <aside class="panel combat-panel ${low ? 'critical' : ''}" style="--enemy:${bossColor(bossId)}" aria-label="Combat status">
+    <section class="runner-block">
+      <div class="panel-head">
+        <span class="panel-kicker">THE RUNNER</span>
+        <span class="phase-tag">${phaseLabel}</span>
       </div>
-      ${fx}
-    </div>
-    <div class="battle-mid">
-      <span class="vs">VS</span>
-      <span class="mid-label">${phaseLabel}</span>
-    </div>
-    <div class="combatant enemy ${boss ? 'boss' : ''}" style="--enemy:${bossColor(bossId)}">
-      <div class="portrait enemy-portrait">${enemyArt(bossId)}</div>
-      <div class="combatant-main">
-        <div class="combatant-top">
-          <span class="combatant-name">${boss ? escapeHtml(boss.name) : 'THE LIST'}</span>
+      <div class="combatant player ${low ? 'low' : ''} ${damageFx && damageFx.hpLost > 0 ? 'hit' : ''}">
+        <div class="portrait player-portrait">${playerArt(pct / 100)}</div>
+        <div class="combatant-main">
+          <div class="combatant-top">
+            <span class="combatant-name">HP</span>
+            <b class="hp-numbers">${view.hp}<em>/${view.maxHp}</em></b>
+          </div>
+          <div class="big-hp" role="progressbar" aria-valuemin="0" aria-valuemax="${view.maxHp}" aria-valuenow="${view.hp}">
+            <i style="width:${pct}%"></i>
+            <span class="hp-gloss"></span>
+          </div>
+          <div class="armor-line">
+            <span class="armor-pips">${pips}</span>
+            <span class="armor-text">ARMOR ${view.armor}/${view.maxArmor}</span>
+          </div>
         </div>
-        <p class="enemy-line">${boss ? 'HOSTILE' : 'WATCHING'}</p>
+        ${fx}
       </div>
-    </div>
-  </section>`;
+    </section>
+    <div class="vs-divider"><span>VS</span></div>
+    <section class="enemy-block ${boss ? '' : 'empty'}">
+      <div class="panel-head">
+        <span class="panel-kicker">THE OPPOSITION</span>
+        <span class="count">${boss ? 'HOSTILE' : 'WATCHING'}</span>
+      </div>
+      <div class="boss-art">${enemyArt(bossId)}</div>
+      <h2>${boss ? escapeHtml(boss.name) : `Act ${roman(view.act + 1)}`}</h2>
+      <p class="muted">${boss
+        ? escapeHtml(boss.description)
+        : 'The next word is already waiting. No boss in this node.'}</p>
+      ${stateEntries.length > 0 ? `<div class="boss-state">${stateEntries.map(([key, value]) => `<span>${escapeHtml(key) === 'woke' ? (value ? 'AWAKE' : 'ASLEEP') : `${escapeHtml(key)} ${value}`}</span>`).join('')}</div>` : ''}
+    </section>
+    <div class="seedline">SEED ${escapeHtml(host.current?.seed ?? '')}</div>
+  </aside>`;
 }
 
 function renderPath(view: RunView): string {
@@ -687,33 +695,6 @@ function renderPath(view: RunView): string {
     </span>`;
   }).join('');
   return `<nav class="path" aria-label="Run path"><span class="path-label">PATH</span>${chips}</nav>`;
-}
-
-function renderBossPanel(view: RunView, bossId?: string): string {
-  const board = view.phase.kind === 'round' ? view.phase.board : null;
-  const boss = bossId ? BOSS_BY_ID.get(bossId) : undefined;
-  const stateEntries = board ? Object.entries(board.bossState) : [];
-
-  if (!boss) {
-    return `
-    <aside class="panel boss-panel empty">
-      <p class="panel-kicker">THE OPPOSITION</p>
-      <div class="boss-art">${enemyArt()}</div>
-      <h2>Act ${roman(view.act + 1)}</h2>
-      <p class="muted">The next word is already waiting. No boss in this node.</p>
-      <div class="seedline">SEED ${escapeHtml(host.current?.seed ?? '')}</div>
-    </aside>`;
-  }
-
-  return `
-  <aside class="panel boss-panel" style="--enemy:${bossColor(boss.id)}">
-    <p class="panel-kicker">THE OPPOSITION</p>
-    <div class="boss-art">${enemyArt(boss.id)}</div>
-    <h2>${escapeHtml(boss.name)}</h2>
-    <p class="muted">${escapeHtml(boss.description)}</p>
-    ${stateEntries.length > 0 ? `<div class="boss-state">${stateEntries.map(([key, value]) => `<span>${escapeHtml(key) === 'woke' ? (value ? 'AWAKE' : 'ASLEEP') : `${escapeHtml(key)} ${value}`}</span>`).join('')}</div>` : ''}
-    <div class="seedline">SEED ${escapeHtml(host.current?.seed ?? '')}</div>
-  </aside>`;
 }
 
 function renderSidePanel(view: RunView): string {
@@ -1188,11 +1169,8 @@ function renderRun(view: RunView): string {
     ${over
       ? `<main class="over-layout">${phasePanel(view)}</main>`
       : `<main class="layout">
-          ${renderBossPanel(view, bossId)}
-          <section class="center-column">
-            ${renderBattleBar(view)}
-            ${phasePanel(view)}
-          </section>
+          ${renderCombatPanel(view, bossId)}
+          <section class="center-column">${phasePanel(view)}</section>
           ${renderSidePanel(view)}
         </main>`}
     ${renderPurgeModal(view)}

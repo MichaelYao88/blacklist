@@ -420,47 +420,7 @@ button {
   min-width: 0;
 }
 
-/* ── boss panel ──────────────────────────────────────────────────────────── */
-
-.boss-panel {
-  text-align: center;
-  min-height: 260px;
-}
-
-.boss-sigil {
-  display: grid;
-  place-items: center;
-  width: 92px;
-  height: 92px;
-  margin: 22px auto 16px;
-  border: 1px solid rgba(231, 184, 90, 0.32);
-  border-radius: 50%;
-  color: var(--gold);
-  font-family: var(--serif);
-  font-size: 2.4rem;
-  background:
-    radial-gradient(circle at 50% 40%, rgba(231, 184, 90, 0.15), transparent 65%),
-    rgba(231, 184, 90, 0.03);
-  box-shadow: inset 0 0 28px rgba(231, 184, 90, 0.07), 0 0 34px -16px rgba(231, 184, 90, 0.65);
-}
-
-.boss-panel h2 {
-  margin: 8px 0;
-  font-family: var(--serif);
-  font-size: 1.4rem;
-  line-height: 1.1;
-}
-
-.boss-panel .muted {
-  font-size: 0.8rem;
-  line-height: 1.55;
-}
-
-.boss-panel.empty .boss-sigil {
-  border-color: var(--line-2);
-  color: var(--muted);
-  box-shadow: none;
-}
+/* ── combat panel ────────────────────────────────────────────────────────── */
 
 .boss-state {
   display: flex;
@@ -1705,23 +1665,13 @@ button {
 
 /* ── combat HUD ──────────────────────────────────────────────────────────── */
 
-.battle-bar {
+.combat-panel {
   position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: center;
-  gap: 12px;
-  padding: 11px 14px;
-  margin-bottom: 12px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 55%),
-    linear-gradient(180deg, var(--panel), var(--bg-2));
-  box-shadow: 0 22px 60px -44px #000, inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  padding: 12px;
+  overflow: visible;
 }
 
-.battle-bar.critical {
+.combat-panel.critical {
   border-color: rgba(223, 97, 90, 0.45);
   animation: critical-pulse 1.5s ease-in-out infinite;
 }
@@ -1731,28 +1681,38 @@ button {
   50% { box-shadow: 0 0 0 1px rgba(223, 97, 90, 0.25), 0 0 34px -10px rgba(223, 97, 90, 0.5); }
 }
 
+.runner-block {
+  position: relative;
+}
+
+.phase-tag {
+  padding: 2px 6px;
+  border: 1px solid rgba(231, 184, 90, 0.3);
+  border-radius: 999px;
+  color: var(--gold);
+  font-size: 0.47rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+
 .combatant {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
   min-width: 0;
-}
-
-.combatant.enemy {
-  flex-direction: row-reverse;
-  text-align: right;
 }
 
 .portrait {
   position: relative;
   display: grid;
   place-items: center;
-  width: 74px;
-  height: 74px;
+  width: 64px;
+  height: 64px;
   flex: 0 0 auto;
   border: 1px solid var(--line-2);
-  border-radius: 12px;
+  border-radius: 10px;
   background:
     radial-gradient(circle at 50% 35%, rgba(139, 107, 217, 0.16), transparent 70%),
     rgba(0, 0, 0, 0.18);
@@ -1762,14 +1722,6 @@ button {
 .portrait svg {
   width: 100%;
   height: 100%;
-}
-
-.enemy-portrait {
-  border-color: color-mix(in srgb, var(--enemy) 55%, transparent);
-  background:
-    radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--enemy) 20%, transparent), transparent 70%),
-    rgba(0, 0, 0, 0.24);
-  box-shadow: inset 0 0 22px color-mix(in srgb, var(--enemy) 12%, transparent);
 }
 
 .combatant-main {
@@ -1801,7 +1753,7 @@ button {
 .hp-numbers {
   color: var(--ink);
   font-family: var(--serif);
-  font-size: 1.3rem;
+  font-size: 1.45rem;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   line-height: 1;
@@ -1816,8 +1768,8 @@ button {
 
 .big-hp {
   position: relative;
-  height: 14px;
-  margin-top: 5px;
+  height: 12px;
+  margin-top: 4px;
   overflow: hidden;
   border: 1px solid #2d253b;
   border-radius: 999px;
@@ -1886,37 +1838,49 @@ button {
   white-space: nowrap;
 }
 
-.battle-mid {
+.vs-divider {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 2px;
-  min-width: 48px;
-}
-
-.vs {
+  gap: 8px;
+  margin: 13px 0 10px;
   color: var(--faint);
   font-family: var(--serif);
-  font-size: 0.86rem;
-  letter-spacing: 0.1em;
-}
-
-.mid-label {
-  color: var(--faint);
-  font-size: 0.48rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  text-align: center;
-  white-space: nowrap;
-}
-
-.enemy-line {
-  margin: 5px 0 0;
-  color: var(--enemy);
-  font-size: 0.52rem;
-  font-weight: 800;
+  font-size: 0.72rem;
   letter-spacing: 0.18em;
-  opacity: 0.9;
+}
+
+.vs-divider::before,
+.vs-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.enemy-block {
+  text-align: center;
+}
+
+.enemy-block .panel-head {
+  text-align: left;
+  margin-bottom: 2px;
+}
+
+.enemy-block h2 {
+  margin: 4px 0 5px;
+  font-family: var(--serif);
+  font-size: 1.22rem;
+  line-height: 1.1;
+}
+
+.enemy-block .muted {
+  margin: 0 auto;
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+
+.enemy-block .boss-state {
+  margin-top: 8px;
 }
 
 /* player / enemy portraits */
@@ -1975,6 +1939,21 @@ button {
   animation: fx-float 1.2s ease-out both;
 }
 
+.combat-panel .damage-fx {
+  top: 26px;
+  right: auto;
+  left: 4px;
+  align-items: flex-start;
+  animation: fx-portrait 1.2s ease-out both;
+}
+
+@keyframes fx-portrait {
+  0% { opacity: 0; transform: translateY(8px) scale(0.82); }
+  16% { opacity: 1; transform: translateY(0) scale(1.06); }
+  70% { opacity: 1; transform: translateY(-6px) scale(1); }
+  100% { opacity: 0; transform: translateY(-24px) scale(1); }
+}
+
 .fx-hp {
   color: #ff6b63;
   font-size: 1.08rem;
@@ -2016,9 +1995,9 @@ button {
 .boss-art {
   display: grid;
   place-items: center;
-  width: 152px;
-  height: 152px;
-  margin: 10px auto 6px;
+  width: 116px;
+  height: 116px;
+  margin: 8px auto 4px;
   border: 1px solid color-mix(in srgb, var(--enemy) 32%, transparent);
   border-radius: 50%;
   background:
@@ -2032,7 +2011,7 @@ button {
   height: 100%;
 }
 
-.boss-panel.empty .boss-art {
+.enemy-block.empty .boss-art {
   border-color: var(--line-2);
   opacity: 0.34;
   filter: grayscale(1);
@@ -2422,16 +2401,8 @@ button {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .battle-bar {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  }
-
-  .battle-mid {
-    display: none;
-  }
-
-  .boss-panel {
-    order: 2;
+  .combat-panel {
+    order: 0;
   }
 
   .center-column {
@@ -2439,9 +2410,24 @@ button {
   }
 
   .side-panel {
-    order: 3;
+    order: 2;
     grid-column: auto;
     grid-template-columns: 1fr;
+  }
+
+  /* Keep the compact runner HUD on top, drop the tall enemy art. */
+  .enemy-block .boss-art,
+  .enemy-block .muted,
+  .combat-panel .vs-divider {
+    display: none;
+  }
+
+  .enemy-block {
+    text-align: left;
+  }
+
+  .enemy-block h2 {
+    margin: 2px 0 0;
   }
 
   .side-panel section + section {
@@ -2478,18 +2464,17 @@ button {
     justify-content: flex-end;
   }
 
-  .battle-bar {
-    gap: 8px;
+  .combat-panel {
     padding: 9px 10px;
   }
 
   .portrait {
-    width: 58px;
-    height: 58px;
+    width: 54px;
+    height: 54px;
   }
 
   .hp-numbers {
-    font-size: 1.12rem;
+    font-size: 1.2rem;
   }
 
   .combatant {
@@ -2498,10 +2483,6 @@ button {
 
   .armor-pips i {
     width: 12px;
-  }
-
-  .hp-stat {
-    min-width: 150px;
   }
 
   .path {
