@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CoreHost, MemoryStore, game } from '../src/game';
 import type { Command, GameEvent, RoundState, RunState, StepResult } from '../src/game';
-import { FOOD_BY_ID, ITEM_BY_ID, UPGRADES } from '../src/content';
+import { FOOD_BY_ID, HAPPENING_BY_ID, ITEM_BY_ID, SPELL_BY_ID, UPGRADES } from '../src/content';
 
 function start(seed = 'test-seed'): StepResult {
   return game.newRun({ seed });
@@ -115,8 +115,8 @@ describe('timer and damage', () => {
     expect(result.state.phase).toBe('summary');
     expect(result.state.summary?.outcome).toBe('timeout');
     expect(result.state.summary?.rewardPending).toBe(false);
-    expect(result.state.summary?.gold).toBe(3);
-    expect(result.state.gold).toBe(13);
+    expect(result.state.summary?.gold).toBe(2);
+    expect(result.state.gold).toBe(12);
     expect(result.state.stats.timeouts).toBe(1);
     expect(eventTypes(result.events)).toContain('timeExpired');
     expect(eventTypes(result.events)).toContain('roundEnded');
@@ -238,7 +238,7 @@ describe('round rewards', () => {
     const solved = act(state, { type: 'guess', word: 'crane' });
     expect(solved.state.phase).toBe('summary');
     expect(solved.state.summary?.rewardPending).toBe(true);
-    expect(solved.state.summary?.gold).toBe(6);
+    expect(solved.state.summary?.gold).toBe(4);
 
     const reward = act(solved.state, { type: 'continue' });
     expect(reward.state.phase).toBe('reward');
@@ -249,7 +249,7 @@ describe('round rewards', () => {
 
     const chosen = act(reward.state, { type: 'chooseReward', optionId: 'gold' });
     expect(chosen.state.nodeIndex).toBe(1);
-    expect(chosen.state.gold).toBe(24);
+    expect(chosen.state.gold).toBe(19);
     expect(eventTypes(chosen.events)).toContain('rewardChosen');
   });
 
@@ -287,7 +287,9 @@ describe('full run', () => {
     while (result.state.phase !== 'over' && steps < 400) {
       steps++;
       const state = result.state;
-      if (state.phase === 'round' && state.round) {
+      if (state.pendingPurge > 0) {
+        result = act(state, { type: 'purgeLetter', letter: 'q' });
+      } else if (state.phase === 'round' && state.round) {
         result = act(state, { type: 'guess', word: state.round.answer });
       } else if (state.phase === 'summary') {
         result = act(state, { type: 'continue' });
@@ -478,6 +480,57 @@ describe('solving and dying', () => {
   });
 });
 
+describe('rare relics and spell engines', () => {
+  it('gives Echo Chamber a single payout on the first all-absent guess', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.items.push({ instance: 'i-echo', id: 'echo-chamber', data: { used: 0 }, equipped: true });
+
+    const first = act(state, { type: 'guess', word: 'pious' });
+    expect(first.state.spells).toHaveLength(1);
+    expect(eventTypes(first.events)).toContain('spellGained');
+
+    const second = act(first.state, { type: 'guess', word: 'bumpy' });
+    expect(second.state.spells).toHaveLength(1);
+  });
+
+  it('gives Oracle Skull Omen on the first heal of each round only', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.hp = 20;
+    state.items.push({ instance: 'i-skull', id: 'oracle-skull', data: { used: 0 }, equipped: true });
+    state.spells.push({ instance: 's-heal-a', id: 'heal' });
+    state.spells.push({ instance: 's-heal-b', id: 'heal' });
+
+    const first = act(state, { type: 'castSpell', instance: 's-heal-a' });
+    expect(first.state.spells.filter((spell) => spell.id === 'omen')).toHaveLength(1);
+
+    const second = act(first.state, { type: 'castSpell', instance: 's-heal-b' });
+    expect(second.state.spells.filter((spell) => spell.id === 'omen')).toHaveLength(1);
+  });
+
+  it('grants Heal when Time Freeze is cast with Second Hand', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.items.push({ instance: 'i-hand', id: 'second-hand', data: {}, equipped: true });
+    state.spells.push({ instance: 's-freeze', id: 'time-freeze' });
+
+    const cast = act(state, { type: 'castSpell', instance: 's-freeze' });
+    expect(cast.state.spells.some((spell) => spell.id === 'heal')).toBe(true);
+  });
+
+  it('pays Metronome gold with five seconds left', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.items.push({ instance: 'i-metro', id: 'metronome', data: {}, equipped: true });
+    state.round!.remainingMs = 4_000;
+    const goldBefore = state.gold;
+
+    const guess = act(state, { type: 'guess', word: 'pious' });
+    expect(guess.state.gold).toBe(goldBefore + 6);
+  });
+});
+
 describe('content rules', () => {
   it('sells no blacklist capacity upgrades', () => {
     expect(UPGRADES.some((upgrade) => upgrade.id === 'ledger')).toBe(false);
@@ -489,6 +542,19 @@ describe('content rules', () => {
   it('offers some food that grants random spells', () => {
     expect(FOOD_BY_ID.get('mystery-stew')).toBeDefined();
     expect(FOOD_BY_ID.get('candy')).toBeDefined();
+  });
+
+  it('keeps purge as an event, not a spell', () => {
+    expect(SPELL_BY_ID.get('purge')).toBeUndefined();
+    const redaction = HAPPENING_BY_ID.get('redaction');
+    expect(redaction).toBeDefined();
+    expect(
+      redaction!.options.some((option) =>
+        option.outcomes.some((outcome) =>
+          outcome.effects.some((effect) => effect.type === 'pendingPurge'),
+        ),
+      ),
+    ).toBe(true);
   });
 });
 

@@ -83,9 +83,9 @@ export function createCore(content: Content): Core {
 
   const itemSlots = (def: ItemDef): number => def.slots ?? (def.kind === 'gear' ? 1 : 0);
 
-  /** Slots are only consumed by equipped items. Bagged items are inert. */
+  /** Slots are only consumed by equipped items. Slotless items are always on. */
   const isEquipped = (item: ItemInstance, def?: ItemDef): boolean =>
-    item.equipped !== false && (def ? itemSlots(def) > 0 : true);
+    !def || itemSlots(def) === 0 || item.equipped !== false;
 
   const usedSlots = (state: RunState): number =>
     state.items.reduce((sum, item) => {
@@ -147,7 +147,10 @@ export function createCore(content: Content): Core {
     const before = state.hp;
     state.hp = Math.min(state.maxHp, state.hp + amount);
     const applied = state.hp - before;
-    if (applied > 0) emit(rt, { type: 'healed', amount: applied, hp: state.hp, source });
+    if (applied > 0) {
+      emit(rt, { type: 'healed', amount: applied, hp: state.hp, source });
+      runHook(rt, 'onHeal', { amount: applied, hp: state.hp });
+    }
   }
 
   function changeMaxHp(rt: Runtime, delta: number, source: Source): void {
@@ -878,9 +881,9 @@ export function createCore(content: Content): Core {
     // Every finished encounter pays out. A solve pays the full prize; a
     // timeout still leaves a few coins so a bad round is not a dead run.
     const goldAward = outcome === 'solved'
-      ? 6 + 2 * state.stats.rounds + state.bonusSolveGold
+      ? Math.max(1, Math.floor((6 + 2 * state.stats.rounds) * 0.7)) + state.bonusSolveGold
       : outcome === 'timeout'
-        ? 3 + state.act
+        ? Math.max(1, Math.floor((3 + state.act) * 0.7))
         : 0;
     if (goldAward > 0) changeGold(rt, goldAward, RULES);
 
@@ -1161,7 +1164,7 @@ export function createCore(content: Content): Core {
 
     // Ordinary victories pay coins, sometimes a spell, and only rarely a
     // piece of gear or a meal. Shops and events are the reliable source.
-    const goldAmount = 8 + 3 * state.act;
+    const goldAmount = Math.max(1, Math.floor((8 + 3 * state.act) * 0.7));
     options.push({
       id: 'gold',
       kind: 'gold',
@@ -1183,8 +1186,8 @@ export function createCore(content: Content): Core {
       options.push({
         id: 'gold-extra',
         kind: 'gold',
-        amount: goldAmount + 5,
-        label: `${goldAmount + 5} gold`,
+        amount: goldAmount + 4,
+        label: `${goldAmount + 4} gold`,
         description: 'A heavier purse instead of a spell.',
       });
     }

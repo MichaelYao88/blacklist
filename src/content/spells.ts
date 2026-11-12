@@ -60,14 +60,6 @@ export const SPELLS: SpellDef[] = [
     usable: 'round',
     cast: () => [{ type: 'addTime', ms: 30_000 }],
   }),
-  defineSpell({
-    id: 'purge',
-    name: 'Purge',
-    description: 'Choose a letter to remove from all future puzzles.',
-    price: 9,
-    usable: 'any',
-    cast: () => [{ type: 'pendingPurge', count: 1 }],
-  }),
 ];
 
 export const SPELL_BY_ID = new Map(SPELLS.map((s) => [s.id, s]));

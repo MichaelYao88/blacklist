@@ -561,7 +561,7 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>The clock</h3>
-        <p>Normal rounds start generous and get shorter as you clear rounds. If the clock reaches zero, you take <b>35% of max HP + 5</b> and the round ends. Bosses have no timer. The Gauntlet is the exception: three puzzles, one shared 150-second clock.</p>
+        <p>The timer reads <b>MASSIVE DAMAGE IN</b>. Normal rounds start generous and get shorter as you clear rounds. If the clock reaches zero, you take <b>35% of max HP + 5</b> and the round ends. Bosses have no timer. The Gauntlet is the exception: three puzzles, one shared 150-second clock.</p>
       </article>
       <article class="rule-card">
         <h3>Items & spells</h3>
@@ -577,7 +577,7 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>Controls</h3>
-        <p>Type letters, <b>Backspace</b> to delete, <b>Enter</b> to submit. <b>Space</b> or <b>Esc</b> pauses the clock. You can also click the on-screen keyboard. Spells and usable items are on the right. The purge modal accepts any letter.</p>
+        <p>Type letters, <b>Backspace</b> to delete, <b>Enter</b> to submit. <b>Space</b> or <b>Esc</b> pauses the clock. You can also click the on-screen keyboard. Your character, HP and items are in the left rail; spells and the blacklist are on the right. The purge modal accepts any letter.</p>
       </article>
     </div>
     <div class="help-actions">
@@ -638,9 +638,26 @@ function renderCombatPanel(view: RunView, bossId?: string): string {
           : ''}
       </div>`
     : '';
+  const items = view.items.length
+    ? view.items.map((item) => renderItem(view, item)).join('')
+    : `<p class="empty-note">No items yet. Shops and bosses fix that.</p>`;
+  const bagged = view.items.filter((item) => !item.equipped && item.slots > 0).length;
 
   return `
   <aside class="panel combat-panel ${low ? 'critical' : ''}" style="--enemy:${bossColor(bossId)}" aria-label="Combat status">
+    <section class="enemy-block ${boss ? '' : 'empty'}">
+      <div class="panel-head">
+        <span class="panel-kicker">THE OPPOSITION</span>
+        <span class="count">${boss ? 'HOSTILE' : 'WATCHING'}</span>
+      </div>
+      <div class="boss-art">${enemyArt(bossId)}</div>
+      <h2>${boss ? escapeHtml(boss.name) : `Act ${roman(view.act + 1)}`}</h2>
+      <p class="muted">${boss
+        ? escapeHtml(boss.description)
+        : 'The next word is already waiting. No boss in this node.'}</p>
+      ${stateEntries.length > 0 ? `<div class="boss-state">${stateEntries.map(([key, value]) => `<span>${escapeHtml(key) === 'woke' ? (value ? 'AWAKE' : 'ASLEEP') : `${escapeHtml(key)} ${value}`}</span>`).join('')}</div>` : ''}
+    </section>
+    <div class="vs-divider"><span>VS</span></div>
     <section class="runner-block">
       <div class="panel-head">
         <span class="panel-kicker">THE RUNNER</span>
@@ -665,18 +682,12 @@ function renderCombatPanel(view: RunView, bossId?: string): string {
         ${fx}
       </div>
     </section>
-    <div class="vs-divider"><span>VS</span></div>
-    <section class="enemy-block ${boss ? '' : 'empty'}">
+    <section class="rail-items">
       <div class="panel-head">
-        <span class="panel-kicker">THE OPPOSITION</span>
-        <span class="count">${boss ? 'HOSTILE' : 'WATCHING'}</span>
+        <span class="panel-kicker">ITEMS</span>
+        <span class="count">${view.slots.used}/${view.slots.total}${bagged ? ` · ${bagged} BAG` : ''}</span>
       </div>
-      <div class="boss-art">${enemyArt(bossId)}</div>
-      <h2>${boss ? escapeHtml(boss.name) : `Act ${roman(view.act + 1)}`}</h2>
-      <p class="muted">${boss
-        ? escapeHtml(boss.description)
-        : 'The next word is already waiting. No boss in this node.'}</p>
-      ${stateEntries.length > 0 ? `<div class="boss-state">${stateEntries.map(([key, value]) => `<span>${escapeHtml(key) === 'woke' ? (value ? 'AWAKE' : 'ASLEEP') : `${escapeHtml(key)} ${value}`}</span>`).join('')}</div>` : ''}
+      <div class="item-list">${items}</div>
     </section>
     <div class="seedline">SEED ${escapeHtml(host.current?.seed ?? '')}</div>
   </aside>`;
@@ -698,10 +709,6 @@ function renderPath(view: RunView): string {
 }
 
 function renderSidePanel(view: RunView): string {
-  const items = view.items.length
-    ? view.items.map((item) => renderItem(view, item)).join('')
-    : `<p class="empty-note">No items yet. Shops and bosses fix that.</p>`;
-
   const stacks = new Map<string, { spell: SpellView; count: number }>();
   for (const spell of view.spells) {
     const entry = stacks.get(spell.id);
@@ -712,18 +719,12 @@ function renderSidePanel(view: RunView): string {
     ? [...stacks.values()].map(({ spell, count }) => renderSpell(view, spell, count)).join('')
     : `<p class="empty-note">No spells. Food and item triggers make them.</p>`;
 
-  const bagged = view.items.filter((item) => !item.equipped && item.slots > 0).length;
-
   const blacklist = view.blacklist.length
     ? view.blacklist.map((word, index) => `<li><span>${String(index + 1).padStart(2, '0')}</span>${escapeHtml(word)}</li>`).join('')
     : `<li class="empty"><span>—</span>empty</li>`;
 
   return `
   <aside class="panel side-panel">
-    <section>
-      <div class="panel-head"><span class="panel-kicker">ITEMS</span><span class="count">${view.slots.used}/${view.slots.total}${bagged ? ` · ${bagged} BAG` : ''}</span></div>
-      <div class="item-list">${items}</div>
-    </section>
     <section>
       <div class="panel-head"><span class="panel-kicker">SPELLS</span><span class="count">${view.spells.length}</span></div>
       <div class="spell-list">${spells}</div>
@@ -816,7 +817,12 @@ function renderBoard(view: RunView, board: BoardView): string {
   }
 
   const time = board.remainingMs === null ? '∞' : formatTime(board.remainingMs);
-  const timeLabel = board.remainingMs === null ? 'NO LIMIT' : board.timerFrozen ? 'FROZEN' : 'TIME';
+  const timeLabel = board.remainingMs === null
+    ? 'NO LIMIT'
+    : board.timerFrozen
+      ? 'FROZEN'
+      : 'MASSIVE DAMAGE IN';
+  const timeoutHit = Math.ceil(view.maxHp * 0.35) + 5;
   const pct = board.remainingMs === null || !board.timerStartMs
     ? 100
     : Math.max(0, Math.min(100, (board.remainingMs / board.timerStartMs) * 100));
@@ -830,7 +836,7 @@ function renderBoard(view: RunView, board: BoardView): string {
 
   return `
   <div class="round-head">
-    <div class="timer ${urgent ? 'urgent' : ''} ${board.timerFrozen ? 'frozen' : ''}">
+    <div class="timer ${urgent ? 'urgent' : ''} ${board.timerFrozen ? 'frozen' : ''}" title="${board.remainingMs === null ? 'This round has no clock.' : `When this reaches zero you take ${timeoutHit} damage.`}">
       <span class="timer-label">${timeLabel}</span>
       <b>${time}</b>
       <div class="timer-bar"><i style="width:${pct}%"></i></div>

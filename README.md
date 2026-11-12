@@ -25,7 +25,8 @@ The first word of every round is added to a 16-word blacklist. You can never gue
 - Every finished encounter pays gold; solves offer coins, usually a spell, and only rarely gear or a meal
 - Bosses award one of three rare relics with passive effects; relics take no slots and never appear in shops
 - Defeat reveals the answer you missed (all of them, on The Gauntlet)
-- 54 items (45 shop items + 9 rare boss relics), 8 spells, 5 foods and 13 happenings
+- 55 items (46 shop items + 9 rare boss relics), 7 spells, 5 foods and 14 happenings
+- Purge is an event (The Redaction), not a spell
 - Seven bosses:
   - **The Editor** — hides the last three tiles of each guess
   - **The Sleeper** — wakes after two hits in a guess and hits for 10
@@ -58,9 +59,9 @@ Not in this version: ascension, daily seeds, meta unlocks beyond win/run counter
 | Paid guess damage | `base + paidGuessesThisRound`, only on a wrong guess |
 | Timeout damage | `ceil(maxHp × 0.35) + 5`, bypasses armor, ends the round |
 | Armor | one charge absorbs one whole damage event; refills each round |
-| Solve gold | `6 + 2 × roundsSeen + solveGoldBonus`, plus item effects |
-| Timeout gold | `3 + act`; a death pays nothing |
-| Solve reward | gold always, ~70% a spell, ~30% a food or item |
+| Solve gold | `⌊(6 + 2 × roundsSeen) × 0.7⌋ + solveGoldBonus` |
+| Timeout gold | `⌊(3 + act) × 0.7⌋`; a death pays nothing |
+| Solve reward | gold always (~30% less than before), ~70% a spell, ~30% a food or item |
 | Boss reward | one of three rare relics |
 | Shop reroll | starts at 2 gold, +1 per reroll |
 

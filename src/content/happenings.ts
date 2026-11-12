@@ -242,6 +242,28 @@ export const HAPPENINGS: HappeningDef[] = [
     ],
   }),
   defineHappening({
+    id: 'redaction',
+    name: 'The Redaction',
+    description: 'A clerk with a bottle of correction fluid and no interest in your opinion.',
+    options: [
+      {
+        id: 'one',
+        label: 'Erase one letter',
+        description: 'Pay 6 gold. Choose a letter to remove from all future puzzles.',
+        costGold: 6,
+        outcomes: [{ chancePct: 100, text: 'The letter is gone. So is every word that needed it.', effects: [{ type: 'pendingPurge', count: 1 }] }],
+      },
+      {
+        id: 'two',
+        label: 'Erase two letters',
+        description: 'Pay 14 gold. Choose two letters.',
+        costGold: 14,
+        outcomes: [{ chancePct: 100, text: 'Two letters disappear under the fluid.', effects: [{ type: 'pendingPurge', count: 2 }] }],
+      },
+      { id: 'leave', label: 'Leave the paperwork', description: 'Nothing happens.', outcomes: [{ chancePct: 100, text: 'The clerk stamps something and forgets you.', effects: [] }] },
+    ],
+  }),
+  defineHappening({
     id: 'bone-dice',
     name: 'Bone Dice',
     description: 'Two dice carved from something that used to answer questions.',

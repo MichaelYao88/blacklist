@@ -40,6 +40,7 @@ const ITEM_ICONS: Record<string, string> = {
   'mimic-mouth': '👄',
   'dead-letter': '✉️',
   'vowel-tithe': '🔠',
+  'second-hand': '⏲️',
   'cracked-orb': '🔮',
   'sticky-fingers': '🖐️',
   'nest-egg': '🪺',

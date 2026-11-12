@@ -46,6 +46,7 @@ export type HookName =
   | 'onRoundEnd'
   | 'onSpellCast'
   | 'onEat'
+  | 'onHeal'
   | 'onTimerTick'
   | 'onPurchase'
   | 'onSell'
@@ -235,6 +236,7 @@ export interface HookPayloads {
   onRoundEnd: { outcome: RoundOutcome; boss?: BossId; damageTaken: number };
   onSpellCast: { spell: SpellId };
   onEat: { food: string };
+  onHeal: { amount: number; hp: number };
   onTimerTick: { remainingMs: number; dtMs: number };
   onPurchase: { offer: Offer };
   onSell: { item: ItemView };

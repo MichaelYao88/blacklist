@@ -231,14 +231,12 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'metronome',
     name: 'Metronome',
-    description: 'Gain 6 gold when you guess with under 25% of the timer left.',
+    description: 'Gain 6 gold when you guess with 5 seconds or less on the clock.',
     price: 8,
     kind: 'gear',
     on: {
-      onGuessScored: (ctx, p) => {
-        const round = ctx.state.round;
-        if (!round || p.remainingMs == null || !round.timerStartMs) return [];
-        if (p.remainingMs >= round.timerStartMs * 0.25) return [];
+      onGuessScored: (_ctx, p) => {
+        if (p.remainingMs == null || p.remainingMs > 5_000) return [];
         return [{ type: 'gold', amount: 6 }];
       },
     },
@@ -455,6 +453,19 @@ export const ITEMS: ItemDef[] = [
     },
   }),
   defineItem({
+    id: 'second-hand',
+    name: 'Second Hand',
+    description: 'Casting Time Freeze or Time Warp also grants a Heal spell.',
+    price: 9,
+    kind: 'gear',
+    on: {
+      onSpellCast: (_ctx, p) =>
+        p.spell === 'time-freeze' || p.spell === 'time-warp'
+          ? [{ type: 'giveSpell', spell: 'heal' }]
+          : [],
+    },
+  }),
+  defineItem({
     id: 'cracked-orb',
     name: 'Cracked Orb',
     description: 'Each round has a 25% chance to open with a random spell.',
@@ -524,12 +535,22 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'oracle-skull',
     name: 'Oracle Skull',
-    description: 'At the start of every round, gain Omen.',
+    description: 'The first time you heal each round, gain Omen.',
     price: 20,
     kind: 'gear',
     rarity: 'rare',
     slots: 0,
-    on: { onRoundStart: () => [{ type: 'giveSpell', spell: 'omen' }] },
+    initial: { used: 0 },
+    on: {
+      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
+      onHeal: (ctx, p) => {
+        if (ctx.self.data.used || p.amount <= 0) return [];
+        return [
+          { type: 'giveSpell', spell: 'omen' },
+          { type: 'setItemData', stat: 'used', value: 1 },
+        ];
+      },
+    },
   }),
   defineItem({
     id: 'thorn-crown',
@@ -547,19 +568,19 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'echo-chamber',
     name: 'Echo Chamber',
-    description: 'Every second guess in a round, gain a random spell.',
+    description: 'The first all-absent guess of the run grants a random spell.',
     price: 20,
     kind: 'gear',
     rarity: 'rare',
     slots: 0,
-    initial: { guesses: 0 },
+    initial: { used: 0 },
     on: {
-      onRoundStart: () => [{ type: 'setItemData', stat: 'guesses', value: 0 }],
-      onGuessScored: (ctx) => {
-        const next = ctx.self.data.guesses + 1;
+      onGuessScored: (ctx, p) => {
+        if (ctx.self.data.used) return [];
+        if (!p.guess.truth.every((tile) => tile === 'absent')) return [];
         return [
-          { type: 'grow', stat: 'guesses', by: 1 },
-          ...(next % 2 === 0 ? [{ type: 'giveSpell' as const, spell: 'random' as const }] : []),
+          { type: 'setItemData', stat: 'used', value: 1 },
+          { type: 'giveSpell', spell: 'random' },
         ];
       },
     },
