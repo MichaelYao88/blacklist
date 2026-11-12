@@ -495,7 +495,7 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>Damage</h3>
-        <p>Your first <b>2 guesses</b> each round are free. After that, a guess costs <b>1 + act</b> damage, plus 1 for each paid guess you already made. Solving the word does not make the bill disappear.</p>
+        <p>Your first <b>2 guesses</b> each round are free. After that, a wrong guess costs <b>1 + act</b> damage, plus 1 for each paid guess you already made. A correct guess never hurts you.</p>
       </article>
       <article class="rule-card">
         <h3>Armor</h3>
@@ -507,7 +507,7 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>Items & spells</h3>
-        <p>Items take slots unless they are food or consumables. Spells take no slots and are one-use. Some items grow stronger as you solve, eat, cast, or hold them. Some items hand you spells when a condition is met.</p>
+        <p>Items take slots unless they are food or consumables. Spells take no slots and are one-use. Some items grow stronger as you solve, eat, cast, or hold them. Some items hand you spells when a condition is met. <b>Loose Tongue</b> lets you guess any five letters, dictionary or not.</p>
       </article>
       <article class="rule-card">
         <h3>Bosses</h3>
@@ -515,7 +515,7 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>The run</h3>
-        <p>Three acts. Five nodes per act: two rounds, a shop or happening, another round, then a boss. Every finished encounter pays gold; solves also offer one of three rewards. Defeat wipes the save. Victory keeps your meta record.</p>
+        <p>Three acts. Five nodes per act: two rounds, a shop or happening, another round, then a boss. Every finished encounter pays gold; solves also offer one of three rewards. Defeat wipes the save and shows you the word you missed. Victory keeps your meta record.</p>
       </article>
       <article class="rule-card">
         <h3>Controls</h3>
@@ -769,6 +769,9 @@ function renderBoard(view: RunView, board: BoardView): string {
   const gauntlet = board.gauntletTotal > 1
     ? `<span class="fact gauntlet">PUZZLE ${board.gauntletIndex + 1}/${board.gauntletTotal}</span>`
     : '';
+  const looseTongue = view.items.some((item) => item.id === 'loose-tongue')
+    ? `<span class="fact free-speech" title="Loose Tongue: any five letters are accepted">ANY WORD</span>`
+    : '';
 
   return `
   <div class="round-head">
@@ -782,6 +785,7 @@ function renderBoard(view: RunView, board: BoardView): string {
       <span class="fact ${board.nextGuessDamage > 0 ? 'danger' : ''}">NEXT HIT ${board.nextGuessDamage}</span>
       <span class="fact">RAW HIT ${board.rawNextGuessDamage}</span>
       ${gauntlet}
+      ${looseTongue}
     </div>
   </div>
   <div class="board">${rows.join('')}</div>
@@ -963,13 +967,23 @@ function renderHappening(phase: Extract<PhaseView, { kind: 'happening' }>): stri
 function renderOver(phase: Extract<PhaseView, { kind: 'over' }>): string {
   const victory = phase.result === 'victory';
   const stats = phase.stats;
+  const missed = phase.answers && phase.answers.length > 1
+    ? `<div class="answer-list">${phase.answers.map((answer) => `<span>${escapeHtml(answer.toUpperCase())}</span>`).join('')}</div>`
+    : '';
+  const reveal = !victory && phase.answer
+    ? `<div class="over-answer">
+        <span class="over-answer-label">${missed ? 'THE PUZZLES YOU MISSED' : 'THE WORD YOU MISSED'}</span>
+        ${missed || `<b>${escapeHtml(phase.answer.toUpperCase())}</b>`}
+      </div>`
+    : '';
   return `
   <div class="over-screen ${victory ? 'victory' : 'defeat'}">
     <p class="kicker">RUN OVER</p>
     <h1>${victory ? 'THE LIST IS YOURS' : 'THE LIST CLOSES'}</h1>
     <p class="tagline">${victory
       ? 'Three acts. Every boss. The words you gave up are the ones that carried you.'
-      : 'Somewhere on the list is the word that ended you. It will be there next time.'}</p>
+      : 'The word that ended you is written below. It will not be so kind next time.'}</p>
+    ${reveal}
     <div class="stats-grid">
       <div><b>${stats.rounds}</b><span>rounds</span></div>
       <div><b>${stats.guesses}</b><span>guesses</span></div>

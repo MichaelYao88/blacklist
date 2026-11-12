@@ -256,6 +256,8 @@ export interface ItemDef {
   kind: ItemKind;
   /** Rare relics are boss prizes. They are never sold in shops and take no slot. */
   rarity?: 'common' | 'rare';
+  /** Allows guesses that are not in the dictionary. */
+  allowInvalidGuesses?: boolean;
   slots?: number;
   initial?: Record<string, number>;
   on?: Reactors<ItemCtx>;
@@ -367,7 +369,7 @@ export interface RunState {
   reward?: RewardState;
   shop?: ShopState;
   happening?: HappeningState;
-  over?: { result: 'victory' | 'defeat' };
+  over?: { result: 'victory' | 'defeat'; answer?: string; answers?: string[] };
   stats: RunStats;
 }
 
@@ -419,7 +421,13 @@ export type PhaseView =
       options: HappeningOptionView[];
       resolved?: { option: string; success: boolean; text: string };
     }
-  | { kind: 'over'; result: 'victory' | 'defeat'; stats: RunStats };
+  | {
+      kind: 'over';
+      result: 'victory' | 'defeat';
+      answer?: string;
+      answers?: string[];
+      stats: RunStats;
+    };
 
 export interface RunView {
   phase: PhaseView;

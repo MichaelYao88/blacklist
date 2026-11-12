@@ -91,6 +91,10 @@ export function createCore(content: Content): Core {
   const canAddItem = (state: RunState, def: ItemDef, replaceSlots = 0): boolean =>
     usedSlots(state) - replaceSlots + itemSlots(def) <= state.slots;
 
+  /** Loose Tongue and friends: any five letters become a legal probe. */
+  const allowsInvalidGuesses = (state: RunState): boolean =>
+    state.items.some((item) => itemById.get(item.id)?.allowInvalidGuesses === true);
+
   const itemView = (state: RunState, item: ItemInstance): ItemView => {
     const def = itemById.get(item.id);
     return {
@@ -404,7 +408,13 @@ export function createCore(content: Content): Core {
       }
 
       state.phase = 'over';
-      state.over = { result: 'defeat' };
+      state.over = {
+        result: 'defeat',
+        answer: round?.answer,
+        answers: round && round.gauntletTotal > 1
+          ? [...round.gauntletAnswers, round.answer]
+          : undefined,
+      };
       emit(rt, { type: 'runEnded', result: 'defeat', stats: statsCopy(state) });
     } finally {
       rt.dying = false;
@@ -1041,7 +1051,9 @@ export function createCore(content: Content): Core {
 
     if (isOver(state)) return;
 
-    if (!guess.free && by === 'player') {
+    // A correct guess never hurts you. You still pay for wrong guesses only.
+    const solved = word === round.answer;
+    if (!solved && !guess.free && by === 'player') {
       const boss = round.boss ? bossById.get(round.boss) : undefined;
       if (!boss?.noGuessDamage) {
         const paidIndex = round.paidGuesses;
@@ -1055,7 +1067,7 @@ export function createCore(content: Content): Core {
     }
 
     if (isOver(state)) return;
-    if (word === round.answer) handleSolved(rt);
+    if (solved) handleSolved(rt);
   }
 
   // ── reward / shop / happening ────────────────────────────────────────────
@@ -1597,6 +1609,8 @@ export function createCore(content: Content): Core {
         phase = {
           kind: 'over',
           result: state.over?.result ?? 'defeat',
+          answer: state.over?.answer,
+          answers: state.over?.answers ? state.over.answers.slice() : undefined,
           stats: statsCopy(state),
         };
         break;
@@ -1654,7 +1668,7 @@ export function createCore(content: Content): Core {
           emit(rt, { type: 'guessRejected', word, reason: 'wrongLength' });
           break;
         }
-        if (!content.valid.has(word)) {
+        if (!content.valid.has(word) && !allowsInvalidGuesses(draft)) {
           emit(rt, { type: 'guessRejected', word, reason: 'notAWord' });
           break;
         }

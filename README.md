@@ -15,12 +15,15 @@ The first word of every round is added to a 16-word blacklist. You can never gue
 - Wordle-style scoring with duplicate-letter handling
 - A 16-word blacklist that records the first guess of each round, with oldest-first eviction
 - A shrinking round timer, scaling damage and per-round armor charges
+- Correct guesses never deal damage; wrong paid guesses do
 - Three acts, five nodes per act: `round → round → support → round → boss`
 - Shops with rerolls, food, spells and permanent upgrades
+- **Loose Tongue**, an item that lets you guess five-letter nonsense for free-form letter probes
 - Happenings with visible odds and persistent consequences
 - Every finished encounter pays gold; solves also offer one of three rewards: gold, a spell, or a permanent attribute
 - Bosses award one of three rare relics with passive effects; relics take no slots and never appear in shops
-- 45 items (36 shop items + 9 rare boss relics), 8 spells, 4 foods and 7 happenings
+- Defeat reveals the answer you missed (all of them, on The Gauntlet)
+- 46 items (37 shop items + 9 rare boss relics), 8 spells, 4 foods and 7 happenings
 - Seven bosses:
   - **The Editor** — hides the last three tiles of each guess
   - **The Sleeper** — wakes after two hits in a guess and hits for 10
@@ -50,7 +53,7 @@ Not in this version: ascension, daily seeds, meta unlocks beyond win/run counter
 | Normal timer | `max(45s, 150s − 6s × roundsSeen − 10s × ascension) + timeBonus` |
 | Boss timer | none, except The Gauntlet |
 | Base damage | `1 + act` |
-| Paid guess damage | `base + paidGuessesThisRound` |
+| Paid guess damage | `base + paidGuessesThisRound`, only on a wrong guess |
 | Timeout damage | `ceil(maxHp × 0.35) + 5`, bypasses armor, ends the round |
 | Armor | one charge absorbs one whole damage event; refills each round |
 | Solve gold | `6 + 2 × roundsSeen`, plus item effects |

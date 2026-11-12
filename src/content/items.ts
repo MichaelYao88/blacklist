@@ -402,6 +402,14 @@ export const ITEMS: ItemDef[] = [
     onAcquire: () => [{ type: 'maxHp', delta: -10 }],
     on: { onRoundStart: () => [{ type: 'freeGuesses', count: 1 }] },
   }),
+  defineItem({
+    id: 'loose-tongue',
+    name: 'Loose Tongue',
+    description: 'You may guess any five letters, real word or not. Nonsense still scores.',
+    price: 7,
+    kind: 'gear',
+    allowInvalidGuesses: true,
+  }),
 
   // ── boss relics ─────────────────────────────────────────────────────────
   // Rare passives. They take no slots, never appear in shops, and are only

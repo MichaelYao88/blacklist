@@ -755,6 +755,11 @@ button {
   border-color: rgba(88, 180, 198, 0.32);
 }
 
+.fact.free-speech {
+  color: #d9b6f2;
+  border-color: rgba(139, 107, 217, 0.4);
+}
+
 .board {
   display: flex;
   flex-direction: column;
@@ -1324,6 +1329,42 @@ button {
 .over-screen .tagline {
   margin: 0 auto 24px;
   max-width: 520px;
+}
+
+.over-answer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 0 auto 26px;
+  padding: 16px 22px;
+  width: min(420px, 100%);
+  border: 1px solid rgba(223, 97, 90, 0.35);
+  border-radius: 12px;
+  background:
+    radial-gradient(240px 120px at 50% 0%, rgba(223, 97, 90, 0.16), transparent 70%),
+    rgba(255, 255, 255, 0.02);
+}
+
+.over-answer-label {
+  color: #e79a95;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+}
+
+.over-answer b {
+  font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  font-weight: 800;
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+  color: var(--ink);
+  text-shadow: 0 0 26px rgba(223, 97, 90, 0.35);
+}
+
+.over-answer .answer-list {
+  margin: 0;
 }
 
 .over-actions {

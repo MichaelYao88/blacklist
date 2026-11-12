@@ -313,6 +313,10 @@ describe('full run', () => {
     expect(result.state.stats.bosses).toBe(3);
     expect(result.state.stats.rounds).toBe(12);
     expect(game.view(result.state).phase.kind).toBe('over');
+    const finalView = game.view(result.state);
+    if (finalView.phase.kind === 'over') {
+      expect(finalView.phase.answer).toBeUndefined();
+    }
   });
 });
 
@@ -364,6 +368,71 @@ describe('shop', () => {
     const left = act(rerolled.state, { type: 'continue' });
     expect(left.state.nodeIndex).toBe(nodeBefore + 1);
     expect(left.state.phase).toBe('round');
+  });
+});
+
+describe('nonsense guesses', () => {
+  it('rejects off-dictionary words until Loose Tongue is owned', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+
+    const rejected = act(state, { type: 'guess', word: 'aeiou' });
+    expect(rejected.events).toContainEqual({
+      type: 'guessRejected',
+      word: 'aeiou',
+      reason: 'notAWord',
+    });
+    expect(rejected.state.round?.guesses).toHaveLength(0);
+
+    state.items.push({ instance: 'i-loose', id: 'loose-tongue', data: {} });
+    const accepted = act(state, { type: 'guess', word: 'aeiou' });
+    expect(eventTypes(accepted.events)).toContain('guessScored');
+    expect(accepted.state.round?.guesses).toHaveLength(1);
+    expect(accepted.state.blacklist).toEqual(['aeiou']);
+  });
+});
+
+describe('solving and dying', () => {
+  it('never damages the player on a correct guess', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.round!.freeLeft = 0;
+    state.armor = 0;
+
+    const solved = act(state, { type: 'guess', word: 'crane' });
+    expect(solved.state.phase).toBe('summary');
+    expect(solved.state.hp).toBe(40);
+    expect(eventTypes(solved.events)).not.toContain('damageTaken');
+  });
+
+  it('reveals the missed answer when the run ends in defeat', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.hp = 1;
+    state.armor = 0;
+    state.round!.freeLeft = 0;
+
+    const dead = act(state, { type: 'guess', word: 'pious' });
+    expect(dead.state.phase).toBe('over');
+    expect(dead.state.over).toMatchObject({ result: 'defeat', answer: 'crane' });
+
+    const view = game.view(dead.state);
+    expect(view.phase).toMatchObject({ kind: 'over', result: 'defeat', answer: 'crane' });
+  });
+
+  it('reveals every gauntlet puzzle on death', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.hp = 1;
+    state.armor = 0;
+    state.round!.freeLeft = 0;
+    state.round!.gauntletTotal = 3;
+    state.round!.gauntletIndex = 2;
+    state.round!.gauntletAnswers = ['apple', 'beard'];
+
+    const dead = act(state, { type: 'guess', word: 'pious' });
+    expect(dead.state.over?.answer).toBe('crane');
+    expect(dead.state.over?.answers).toEqual(['apple', 'beard', 'crane']);
   });
 });
 

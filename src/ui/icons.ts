@@ -35,6 +35,7 @@ const ITEM_ICONS: Record<string, string> = {
   ouroboros: '🐍',
   sundial: '☀️',
   'glass-cannon': '💥',
+  'loose-tongue': '👅',
   'oracle-skull': '💀',
   'thorn-crown': '👑',
   'echo-chamber': '🕳️',
