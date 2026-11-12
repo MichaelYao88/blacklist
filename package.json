@@ -4,6 +4,11 @@
   "version": "0.1.0",
   "type": "module",
   "description": "BLACKLIST — a word roguelike about the words you can no longer say.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MichaelYao88/blacklist.git"
+  },
+  "homepage": "https://michaelyao88.github.io/blacklist/",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
@@ -15,6 +20,6 @@
     "happy-dom": "^21.0.4",
     "typescript": "^5.8.3",
     "vite": "^7.1.0",
-    "vitest": "^3.2.0"
+    "vitest": "^5.1.0"
   }
 }
