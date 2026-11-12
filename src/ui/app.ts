@@ -360,7 +360,7 @@ function renderTitle(): string {
     <div class="title-facts">
       <div><b>3</b><span>acts</span></div>
       <div><b>16</b><span>blacklist slots</span></div>
-      <div><b>6</b><span>bosses</span></div>
+      <div><b>7</b><span>bosses</span></div>
       <div><b>2</b><span>free guesses</span></div>
     </div>
     ${metaLine}

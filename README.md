@@ -2,7 +2,7 @@
 
 A word roguelike about the words you can never say again.
 
-Every word you guess is added to a 16-word blacklist. You can never guess it again, and the hidden answer is never chosen from that list. Solve the word before the clock or your health runs out. Three acts. Six bosses. One active save, and defeat wipes it.
+Every word you guess is added to a 16-word blacklist. You can never guess it again, and the hidden answer is never chosen from that list. Solve the word before the clock or your health runs out. Three acts. Seven bosses. One active save, and defeat wipes it.
 
 **Play:** https://michaelayao88.github.io/blacklist/
 
@@ -20,12 +20,13 @@ Every word you guess is added to a 16-word blacklist. You can never guess it aga
 - Happenings with visible odds and persistent consequences
 - Post-solve rewards: gold, a spell, or a permanent attribute
 - 35+ items, 8 spells, 4 foods and 7 happenings
-- Six bosses:
+- Seven bosses:
   - **The Editor** — hides the last three tiles of each guess
   - **The Sleeper** — wakes after two hits in a guess and hits for 10
   - **The Censor** — draws from the hardest 420 answers; hides the first tile
   - **The Auditor** — shows counts only, never positions
   - **Vowel Fog** — vowels are ambiguous green-or-yellow
+  - **Monochrome** — every present letter is ambiguous, never positioned
   - **The Gauntlet** — three puzzles, one shared 150-second clock, no per-guess damage
 - One exact-state autosave slot. Defeat clears it. Victory clears it and updates meta stats.
 - Keyboard, on-screen keyboard die, colorblind symbols, reduced-motion-friendly CSS.
