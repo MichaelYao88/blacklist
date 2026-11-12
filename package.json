@@ -1,0 +1,20 @@
+{
+  "name": "blacklist",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "BLACKLIST — a word roguelike about the words you can no longer say.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "happy-dom": "^21.0.4",
+    "typescript": "^5.8.3",
+    "vite": "^7.1.0",
+    "vitest": "^3.2.0"
+  }
+}
