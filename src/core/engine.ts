@@ -251,7 +251,11 @@ export function createCore(content: Content): Core {
       emit(rt, { type: 'message', text: `${ch.toUpperCase()} is already purged.` });
       return false;
     }
-    if (state.round && state.round.answer.includes(ch)) {
+    // Only a live puzzle can be broken by removing one of its letters. Between
+    // nodes the round object is leftover state: shops, rewards and happenings
+    // still carry the last answer around, so it must not block a valid purge.
+    const liveRound = state.phase === 'round' ? state.round : undefined;
+    if (liveRound && liveRound.answer.includes(ch)) {
       emit(rt, { type: 'message', text: `You cannot purge a letter that is in the current answer.` });
       return false;
     }
@@ -263,6 +267,12 @@ export function createCore(content: Content): Core {
       return false;
     }
     state.purged.push(ch);
+    // If a finished round is still in state and its answer contains the letter,
+    // swap that dead answer for a valid one. The real next answer is chosen when
+    // the next round starts, but this keeps every stale read consistent.
+    if (!liveRound && state.round && state.round.answer.includes(ch)) {
+      state.round.answer = rngPick(state, remaining);
+    }
     emit(rt, { type: 'letterPurged', letter: ch });
     return true;
   }

@@ -228,6 +228,33 @@ describe('spells, items and death', () => {
     expect(result.state.pendingPurge).toBe(0);
     expect(eventTypes(result.events)).toContain('letterPurged');
   });
+
+  it('refuses to purge a letter in the live answer', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.pendingPurge = 1;
+
+    const result = act(state, { type: 'purgeLetter', letter: 'c' });
+    expect(result.state.purged).not.toContain('c');
+    expect(result.state.pendingPurge).toBe(1);
+    expect(result.state.round?.answer).toBe('crane');
+    expect(eventTypes(result.events)).toContain('message');
+  });
+
+  it('allows a purge between nodes and swaps a stale answer that contained it', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.phase = 'shop';
+    state.pendingPurge = 1;
+
+    const result = act(state, { type: 'purgeLetter', letter: 'c' });
+    expect(result.state.purged).toContain('c');
+    expect(result.state.pendingPurge).toBe(0);
+    expect(result.state.summary).toBeUndefined();
+    expect(result.state.round?.answer).not.toContain('c');
+    expect(result.state.round?.answer).toHaveLength(5);
+    expect(eventTypes(result.events)).toContain('letterPurged');
+  });
 });
 
 describe('round rewards', () => {
