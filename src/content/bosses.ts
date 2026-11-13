@@ -14,6 +14,7 @@ export const BOSSES: BossDef[] = [
     description: 'Suffix. The last three tiles of every guess are covered.',
     acts: [0, 3],
     timerMs: null,
+    damage: 5,
     present: (_ctx, g) => ({
       word: g.word,
       tiles: g.truth.map((t, i) => (i < 2 ? t : 'hidden')),
@@ -25,6 +26,7 @@ export const BOSSES: BossDef[] = [
     description: 'Asleep. Wake it with two hits in one guess and it deals 10 damage.',
     acts: [0, 3],
     timerMs: null,
+    damage: 7,
     initialState: { woke: 0 },
     on: {
       onGuessScored: (ctx, p) => {
@@ -46,6 +48,7 @@ export const BOSSES: BossDef[] = [
     description: 'Mastermind. Drawn from the hardest answers. The first tile of every guess is covered.',
     acts: [1, 4],
     timerMs: null,
+    damage: 8,
     answerPool: 'hard',
     present: (_ctx, g) => ({
       word: g.word,
@@ -58,6 +61,7 @@ export const BOSSES: BossDef[] = [
     description: 'Counts only. You see how many greens and yellows, never where they are.',
     acts: [1, 4],
     timerMs: null,
+    damage: 7,
     present: (_ctx, g) => ({
       word: g.word,
       tiles: g.truth.map(() => 'hidden'),
@@ -70,6 +74,7 @@ export const BOSSES: BossDef[] = [
     description: 'Vowels are clear-coloured: you know they are present, not whether they are green or yellow.',
     acts: [1, 4],
     timerMs: null,
+    damage: 6,
     present: (_ctx, g) => ({
       word: g.word,
       tiles: g.truth.map((t, i) =>
@@ -83,6 +88,7 @@ export const BOSSES: BossDef[] = [
     description: 'Every present tile is the same colour. You know the letters, not the positions.',
     acts: [2, 3],
     timerMs: null,
+    damage: 9,
     present: (_ctx, g) => ({
       word: g.word,
       tiles: g.truth.map((t) => (t === 'correct' || t === 'present' ? 'hit' : t)),
@@ -96,6 +102,7 @@ export const BOSSES: BossDef[] = [
     timerMs: 150_000,
     gauntlet: { puzzles: 3, timerMs: 150_000 },
     noGuessDamage: true,
+    damage: 0,
   }),
 ];
 

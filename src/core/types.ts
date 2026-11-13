@@ -53,7 +53,10 @@ export type HookName =
   | 'onDamageTaken'
   | 'onDeath'
   | 'onBlacklistChanged'
-  | 'onPuzzleSolved';
+  | 'onPuzzleSolved'
+  | 'onGoldSpent'
+  | 'onMaxHpChanged'
+  | 'onReveal';
 
 export type RejectReason =
   | 'wrongPhase'
@@ -116,6 +119,8 @@ export interface RoundState {
   gauntletTotal: number;
   gauntletAnswers: string[];
   totalGuesses: number;
+  /** Persistent keyboard information from Omen and reveal items. */
+  hints: Partial<Record<Letter, 'present' | 'absent'>>;
 }
 
 export interface SummaryState {
@@ -192,6 +197,7 @@ export type Effect =
   | { type: 'immunity'; guesses: number }
   | { type: 'revealYellow' }
   | { type: 'revealLetter'; letter: Letter }
+  | { type: 'revealRandom'; count: number }
   | { type: 'purgeLetter'; letter: Letter }
   | { type: 'clearBlacklist' }
   | { type: 'blacklistAddRandom'; count: number }
@@ -231,6 +237,7 @@ export interface HookPayloads {
     elapsedMs: number;
     remainingMs: number | null;
     damageTaken: number;
+    ruledOut: number;
     boss?: BossId;
   };
   onRoundEnd: { outcome: RoundOutcome; boss?: BossId; damageTaken: number };
@@ -240,8 +247,19 @@ export interface HookPayloads {
   onTimerTick: { remainingMs: number; dtMs: number };
   onPurchase: { offer: Offer };
   onSell: { item: ItemView };
-  onDamageTaken: { incoming: number; dealt: number; armorUsed: number; source: Source };
+  onDamageTaken: {
+    incoming: number;
+    dealt: number;
+    /** Damage soaked by armor points. */
+    armorUsed: number;
+    /** Damage stopped by armor or immunity. */
+    blocked: number;
+    source: Source;
+  };
   onDeath: { source: string };
+  onGoldSpent: { amount: number; total: number };
+  onMaxHpChanged: { delta: number; maxHp: number };
+  onReveal: { letter: Letter; status: 'present' | 'absent' };
   onBlacklistChanged: {
     list: string[];
     capacity: number;
@@ -291,6 +309,8 @@ export interface BossDef {
   timerMs: number | null;
   gauntlet?: { puzzles: number; timerMs: number };
   noGuessDamage?: boolean;
+  /** Fixed damage for a boss round. Omit to use the act-based default. */
+  damage?: number;
   answerPool?: 'normal' | 'hard';
   initialState?: Record<string, number>;
   present?: (ctx: Ctx, guess: ScoredGuess) => PresentedGuess;
@@ -408,6 +428,8 @@ export interface BoardView {
   gauntletIndex: number;
   gauntletTotal: number;
   noGuessDamage: boolean;
+  hints: Partial<Record<Letter, 'present' | 'absent'>>;
+  ruledOut: number;
 }
 
 export type PhaseView =
@@ -456,6 +478,7 @@ export interface RunView {
   blacklist: string[];
   blacklistCapacity: number;
   purged: Letter[];
+  revealed: Array<{ letter: Letter; status: 'present' | 'absent' }>;
   pendingPurge: number;
   lastAnswer?: string;
   stats: RunStats;
@@ -521,6 +544,7 @@ export type GameEvent =
       type: 'damageTaken';
       incoming: number;
       armorUsed: number;
+      blocked: number;
       dealt: number;
       hp: number;
       source: Source;

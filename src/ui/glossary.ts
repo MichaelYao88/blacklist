@@ -14,15 +14,11 @@ const ENTRIES: GlossaryEntry[] = [
   },
   {
     pattern: /\bmax armor\b/gi,
-    tip: 'How many armor charges you refill at the start of every round.',
-  },
-  {
-    pattern: /\barmor charges?\b/gi,
-    tip: 'One charge cancels an entire hit, however large. Charges refill each round. Timeout damage ignores armor.',
+    tip: 'Your armor pool ceiling. The pool refills at the start of every round.',
   },
   {
     pattern: /\barmor\b/gi,
-    tip: 'One charge cancels an entire hit, however large. Charges refill each round. Timeout damage ignores armor.',
+    tip: 'Armor soaks damage before HP, point for point. It refills each round. Timeout damage ignores it.',
   },
   {
     pattern: /\bfree guesses?\b/gi,
@@ -169,8 +165,20 @@ const ENTRIES: GlossaryEntry[] = [
     tip: 'A guess where none of the five letters is in the answer.',
   },
   {
+    pattern: /\bruled[- ]out\b/gi,
+    tip: 'A letter proven absent from this answer. Explorer effects count distinct ruled-out letters.',
+  },
+  {
     pattern: /\brevealed letters?\b/gi,
-    tip: 'Any letter marked green or yellow by a guess.',
+    tip: 'Any letter marked by a guess or a reveal. IN WORD means present; RULED OUT means absent.',
+  },
+  {
+    pattern: /\breveal(?:ed|s|ing|ation)?\b/gi,
+    tip: 'A revealed letter is marked on the keyboard and listed in the Revealed panel. IN WORD means present; RULED OUT means absent.',
+  },
+  {
+    pattern: /\bblocked\b/gi,
+    tip: 'Damage stopped by armor or immunity before it reached HP.',
   },
   {
     pattern: /\bhits?\b/gi,

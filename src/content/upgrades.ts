@@ -14,9 +14,9 @@ export const UPGRADES: UpgradeDef[] = [
   defineUpgrade({
     id: 'plating',
     name: 'Plating',
-    description: '+1 armor.',
+    description: '+3 max armor.',
     price: 10,
-    effects: [{ type: 'maxArmor', delta: 1 }],
+    effects: [{ type: 'maxArmor', delta: 3 }],
   }),
   defineUpgrade({
     id: 'chronos',

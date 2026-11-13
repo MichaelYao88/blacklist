@@ -14,19 +14,20 @@ The first word of every round is added to a 16-word blacklist. You can never gue
 
 - Wordle-style scoring with duplicate-letter handling
 - A fixed 16-word blacklist that records the first guess of each round, with oldest-first eviction (no capacity upgrades)
-- A shrinking round timer, scaling damage and per-round armor charges
-- Correct guesses never deal damage; wrong paid guesses do
+- A shrinking round timer, fixed encounter damage and a per-round armor pool
+- Correct guesses never deal damage; wrong paid guesses take the monster's fixed hit
 - Five acts, six nodes per act: `round → support → round → support → round → boss` (30 encounters)
-- Shops with rerolls, food and permanent upgrades — never spells
+- Shops with rerolls, three items, food and permanent upgrades — never spells
 - Item slots with equip/unequip: only equipped gear is active, and each shop has a drag-and-drop loadout
 - **Loose Tongue**, an item that lets you guess five-letter nonsense for free-form letter probes
 - Spells stack by type and come from food and item triggers, not shelves
 - Happenings with visible odds and persistent consequences
-- Short item, spell and offer text with hover tooltips for keywords like armor, free guesses, blacklist, relic and timeout
+- Short item, spell and offer text with hover tooltips for keywords like armor, reveal, ruled out, free guesses, blacklist, relic and timeout
+- Revealed letters stay marked on the keyboard and in a Revealed panel for the puzzle; random reveals lean toward letters that are not in the answer
 - Every finished encounter pays gold; solves offer coins, usually a spell, and only rarely gear or a meal
 - Bosses award one of three rare relics with passive effects; relics take no slots and never appear in shops
 - Defeat reveals the answer you missed (all of them, on The Gauntlet)
-- 55 items (46 shop items + 9 rare boss relics), 7 spells, 5 foods and 14 happenings
+- 73 items (64 shop items + 9 rare boss relics), 7 spells, 10 foods and 14 happenings
 - Purge is an event (The Redaction), not a spell
 - Seven bosses:
   - **The Editor** — hides the last three tiles of each guess
@@ -49,20 +50,21 @@ Not in this version: ascension, daily seeds, meta unlocks beyond win/run counter
 | Thing | Value |
 |---|---|
 | Starting HP | 40 |
-| Starting armor | 1 charge |
+| Starting armor | 5 points |
 | Starting item slots | 4 (only equipped gear counts) |
 | Free guesses per round | 2 |
 | Starting gold | 10 |
 | Blacklist capacity | 16, fixed |
 | Normal timer | `max(45s, 150s − 6s × roundsSeen − 10s × ascension) + timeBonus` |
 | Boss timer | none, except The Gauntlet |
-| Base damage | `1 + act + ⌊roundsSeen / 3⌋` |
-| Paid guess damage | `base + paidGuessesThisRound`, only on a wrong guess |
+| Base damage | `2 + 2 × act + roundSlot` (roundSlot is 0, 1 or 2 within the act) |
+| Paid guess damage | the encounter's fixed hit, only on a wrong guess; it does not climb per guess |
+| Boss damage | fixed per boss (`5–9`), independent of wrong-guess count |
 | Timeout damage | `ceil(maxHp × 0.35) + 5`, bypasses armor, ends the round |
-| Armor | one charge absorbs one whole damage event; refills each round |
+| Armor | a pool that soaks damage point-for-point before HP; refills each round |
 | Solve gold | `⌊(6 + 2 × roundsSeen) × 0.7⌋ + solveGoldBonus` |
 | Timeout gold | `⌊(3 + act) × 0.7⌋`; a death pays nothing |
-| Solve reward | gold always (~30% less than before), ~70% a spell, ~30% a food or item |
+| Solve reward | gold always plus a spell (65%) or food (35%); gear is an 8% find |
 | Boss reward | one of three rare relics |
 | Shop reroll | starts at 2 gold, +1 per reroll |
 

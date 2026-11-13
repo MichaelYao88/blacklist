@@ -213,10 +213,21 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'necronomicon',
     name: 'Necronomicon',
-    description: 'Gain Omen on every solve.',
+    description: 'Round start: reveal 2 letters. Every 5 reveals: Omen.',
     price: 10,
     kind: 'gear',
-    on: { onSolve: () => [{ type: 'giveSpell', spell: 'omen' }] },
+    initial: { reveals: 0 },
+    on: {
+      onRoundStart: () => [{ type: 'revealRandom', count: 2 }],
+      onReveal: (ctx) => {
+        const total = ctx.self.data.reveals + 1;
+        const spells = Math.floor(total / 5);
+        return [
+          { type: 'setItemData', stat: 'reveals', value: total % 5 },
+          ...Array.from({ length: spells }, () => ({ type: 'giveSpell' as const, spell: 'omen' as const })),
+        ];
+      },
+    },
   }),
   defineItem({
     id: 'piggy-bank',
@@ -354,15 +365,15 @@ export const ITEMS: ItemDef[] = [
   }),
   defineItem({
     id: 'blacklist-scholar',
-    name: 'Blacklist Scholar',
-    description: 'Blacklist fills: Omen. Once per round.',
+    name: 'Null Scholar',
+    description: 'Once per round, a reveal that rules out a letter grants Omen.',
     price: 8,
     kind: 'gear',
     initial: { used: 0 },
     on: {
-      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
-      onBlacklistChanged: (ctx, p) => {
-        if (ctx.self.data.used || p.list.length < p.capacity) return [];
+      onRoundEnd: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
+      onReveal: (ctx, p) => {
+        if (ctx.self.data.used || p.status !== 'absent') return [];
         return [
           { type: 'giveSpell', spell: 'omen' },
           { type: 'setItemData', stat: 'used', value: 1 },
@@ -528,6 +539,287 @@ export const ITEMS: ItemDef[] = [
     on: { onSell: () => [{ type: 'gold', amount: 1 }, { type: 'giveSpell', spell: 'random', chancePct: 25 }] },
   }),
 
+  // ── engines ─────────────────────────────────────────────────────────────
+  // Event-driven passives. Most wait on something another item, a spell or a
+  // meal provides, so they do not pay out on a schedule every round.
+
+  defineItem({
+    id: 'field-kit',
+    name: 'Field Kit',
+    description: 'Round start: reveal 5 random letters, mostly not in the answer.',
+    price: 10,
+    kind: 'gear',
+    on: { onRoundStart: () => [{ type: 'revealRandom', count: 5 }] },
+  }),
+  defineItem({
+    id: 'field-dressing',
+    name: 'Field Dressing',
+    description: 'Whenever a letter is revealed for you, heal 1 HP.',
+    price: 8,
+    kind: 'gear',
+    on: { onReveal: () => [{ type: 'heal', amount: 1 }] },
+  }),
+  defineItem({
+    id: 'null-lens',
+    name: 'Null Lens',
+    description: 'Once per round, a reveal that rules a letter out grants a random spell.',
+    price: 10,
+    kind: 'gear',
+    initial: { used: 0 },
+    on: {
+      onRoundEnd: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
+      onReveal: (ctx, p) => {
+        if (ctx.self.data.used || p.status !== 'absent') return [];
+        return [
+          { type: 'giveSpell', spell: 'random' },
+          { type: 'setItemData', stat: 'used', value: 1 },
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'trailblazer',
+    name: 'Trailblazer',
+    description: 'On solve with 20+ ruled-out letters: random spell.',
+    price: 9,
+    kind: 'gear',
+    on: {
+      onSolve: (_ctx, p) =>
+        p.ruledOut >= 20 ? [{ type: 'giveSpell', spell: 'random' }] : [],
+    },
+  }),
+  defineItem({
+    id: 'bulwark',
+    name: 'Bulwark',
+    description: 'Every 5 damage blocked by armor or immunity: gain a random spell.',
+    price: 10,
+    kind: 'gear',
+    initial: { blocked: 0 },
+    on: {
+      onDamageTaken: (ctx, p) => {
+        if (p.blocked <= 0) return [];
+        const total = ctx.self.data.blocked + p.blocked;
+        const spells = Math.floor(total / 5);
+        return [
+          { type: 'setItemData', stat: 'blocked', value: total % 5 },
+          ...Array.from({ length: spells }, () => ({ type: 'giveSpell' as const, spell: 'random' as const })),
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'scrap-collector',
+    name: 'Scrap Collector',
+    description: 'Every 5 armor lost: +1 gold.',
+    price: 8,
+    kind: 'gear',
+    initial: { lost: 0 },
+    on: {
+      onDamageTaken: (ctx, p) => {
+        if (p.armorUsed <= 0) return [];
+        const total = ctx.self.data.lost + p.armorUsed;
+        const gold = Math.floor(total / 5);
+        return [
+          { type: 'setItemData', stat: 'lost', value: total % 5 },
+          ...Array.from({ length: gold }, () => ({ type: 'gold' as const, amount: 1 })),
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'boss-aegis',
+    name: 'Boss Aegis',
+    description: 'Defeat a boss: +4 max armor.',
+    price: 10,
+    kind: 'gear',
+    on: {
+      onRoundEnd: (_ctx, p) =>
+        p.boss && p.outcome === 'solved' ? [{ type: 'maxArmor', delta: 4 }] : [],
+    },
+  }),
+  defineItem({
+    id: 'spellplate',
+    name: 'Spellplate',
+    description: 'Cast a spell: +1 max armor. Cumulative.',
+    price: 9,
+    kind: 'gear',
+    on: { onSpellCast: () => [{ type: 'maxArmor', delta: 1 }] },
+  }),
+  defineItem({
+    id: 'mending-plate',
+    name: 'Mending Plate',
+    description: 'A single heal of 20+ HP: +1 max armor.',
+    price: 8,
+    kind: 'gear',
+    on: {
+      onHeal: (_ctx, p) => (p.amount >= 20 ? [{ type: 'maxArmor', delta: 1 }] : []),
+    },
+  }),
+  defineItem({
+    id: 'tithe-box',
+    name: 'Tithe Box',
+    description: 'Every 10 gold spent: gain a Heal spell.',
+    price: 9,
+    kind: 'gear',
+    initial: { spent: 0 },
+    on: {
+      onGoldSpent: (ctx, p) => {
+        const total = ctx.self.data.spent + p.amount;
+        const heals = Math.floor(total / 10);
+        return [
+          { type: 'setItemData', stat: 'spent', value: total % 10 },
+          ...Array.from({ length: heals }, () => ({ type: 'giveSpell' as const, spell: 'heal' as const })),
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'growth-chart',
+    name: 'Growth Chart',
+    description: 'Every 5 max HP gained: gain Time Warp.',
+    price: 9,
+    kind: 'gear',
+    initial: { grown: 0 },
+    on: {
+      onMaxHpChanged: (ctx, p) => {
+        if (p.delta <= 0) return [];
+        const total = ctx.self.data.grown + p.delta;
+        const warps = Math.floor(total / 5);
+        return [
+          { type: 'setItemData', stat: 'grown', value: total % 5 },
+          ...Array.from({ length: warps }, () => ({ type: 'giveSpell' as const, spell: 'time-warp' as const })),
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'stopped-clock',
+    name: 'Stopped Clock',
+    description: 'Cast Time Freeze: +5 max HP. Once per round.',
+    price: 9,
+    kind: 'gear',
+    initial: { used: 0 },
+    on: {
+      onRoundEnd: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
+      onSpellCast: (ctx, p) => {
+        if (ctx.self.data.used || p.spell !== 'time-freeze') return [];
+        return [
+          { type: 'maxHp', delta: 5 },
+          { type: 'setItemData', stat: 'used', value: 1 },
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'second-stomach',
+    name: 'Second Stomach',
+    description: 'Eat food: +2 max HP and heal 2. Once per round.',
+    price: 9,
+    kind: 'gear',
+    initial: { used: 0 },
+    on: {
+      onRoundEnd: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
+      onEat: (ctx) => {
+        if (ctx.self.data.used) return [];
+        return [
+          { type: 'maxHp', delta: 2 },
+          { type: 'heal', amount: 2 },
+          { type: 'setItemData', stat: 'used', value: 1 },
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'preserves',
+    name: 'Preserves',
+    description: 'Eat food: gain a random spell. Once per round.',
+    price: 8,
+    kind: 'gear',
+    initial: { used: 0 },
+    on: {
+      onRoundEnd: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
+      onEat: (ctx) =>
+        ctx.self.data.used
+          ? []
+          : [
+              { type: 'giveSpell', spell: 'random' },
+              { type: 'setItemData', stat: 'used', value: 1 },
+            ],
+    },
+  }),
+  defineItem({
+    id: 'time-lattice',
+    name: 'Time Lattice',
+    description: 'Cast Time Warp: gain Restore. Once per round.',
+    price: 8,
+    kind: 'gear',
+    initial: { used: 0 },
+    on: {
+      onRoundEnd: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
+      onSpellCast: (ctx, p) => {
+        if (ctx.self.data.used || p.spell !== 'time-warp') return [];
+        return [
+          { type: 'giveSpell', spell: 'restore' },
+          { type: 'setItemData', stat: 'used', value: 1 },
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'omen-loom',
+    name: 'Omen Loom',
+    description: 'Cast Omen: gain a random spell. Once per round.',
+    price: 9,
+    kind: 'gear',
+    initial: { used: 0 },
+    on: {
+      onRoundEnd: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
+      onSpellCast: (ctx, p) => {
+        if (ctx.self.data.used || p.spell !== 'omen') return [];
+        return [
+          { type: 'giveSpell', spell: 'random' },
+          { type: 'setItemData', stat: 'used', value: 1 },
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'mercy-ledger',
+    name: 'Mercy Ledger',
+    description: 'Cast Heal: +4 gold. Once per round.',
+    price: 8,
+    kind: 'gear',
+    initial: { used: 0 },
+    on: {
+      onRoundEnd: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
+      onSpellCast: (ctx, p) => {
+        if (ctx.self.data.used || p.spell !== 'heal') return [];
+        return [
+          { type: 'gold', amount: 4 },
+          { type: 'setItemData', stat: 'used', value: 1 },
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'ward-engine',
+    name: 'Ward Engine',
+    description: 'Cast Immunity: +2 armor. Once per round.',
+    price: 8,
+    kind: 'gear',
+    initial: { used: 0 },
+    on: {
+      onRoundEnd: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
+      onSpellCast: (ctx, p) => {
+        if (ctx.self.data.used || p.spell !== 'immunity') return [];
+        return [
+          { type: 'armor', delta: 2 },
+          { type: 'setItemData', stat: 'used', value: 1 },
+        ];
+      },
+    },
+  }),
+
   // ── boss relics ─────────────────────────────────────────────────────────
   // Rare passives. They take no slots, never appear in shops, and are only
   // offered as boss prizes. Several of them feed the spell engine.
@@ -642,17 +934,17 @@ export const ITEMS: ItemDef[] = [
   }),
   defineItem({
     id: 'blacklist-idol',
-    name: 'Blacklist Idol',
-    description: 'Blacklist fills: random spell. Once per round.',
+    name: 'Warding Idol',
+    description: 'The first time you block damage each round, gain a random spell.',
     price: 20,
     kind: 'gear',
     rarity: 'rare',
     slots: 0,
     initial: { used: 0 },
     on: {
-      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
-      onBlacklistChanged: (ctx, p) => {
-        if (ctx.self.data.used || p.list.length < p.capacity) return [];
+      onRoundEnd: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
+      onDamageTaken: (ctx, p) => {
+        if (ctx.self.data.used || p.blocked <= 0) return [];
         return [
           { type: 'giveSpell', spell: 'random' },
           { type: 'setItemData', stat: 'used', value: 1 },

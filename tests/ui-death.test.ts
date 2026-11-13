@@ -22,24 +22,22 @@ describe('run-over screen', () => {
 
     root.querySelector<HTMLElement>('[data-action="new-run"]')!.click();
 
-    const words = [
-      'pious', 'tiger', 'mango', 'bumpy', 'fuzzy', 'waltz',
-      'joker', 'vexed', 'quick', 'nymph', 'azure', 'glyph',
-    ];
-
-    for (const word of words) {
-      const raw = localStorage.getItem(RUN_KEY);
-      if (!raw) break;
-      const state = JSON.parse(raw) as { phase: string; round?: { answer: string } };
-      if (state.phase !== 'round' || !state.round) break;
-      if (state.round.answer === word) continue;
-
-      type(word);
-      const save = localStorage.getItem(RUN_KEY);
-      if (!save) {
-        missed = state.round.answer;
-        break;
+    const raw = localStorage.getItem(RUN_KEY);
+    if (raw) {
+      const state = JSON.parse(raw) as { round?: { answer: string } };
+      const answer = state.round?.answer ?? '';
+      const words = [
+        'pious', 'tiger', 'mango', 'bumpy', 'fuzzy', 'waltz',
+        'joker', 'vexed', 'quick', 'nymph', 'azure', 'glyph',
+      ];
+      const wrong = words.filter((word) => word !== answer);
+      // The first guess is blacklisted, so use a second wrong word for the
+      // rest. Fixed encounter damage means the run can take a while to die.
+      type(wrong[0]);
+      for (let i = 0; i < 40 && localStorage.getItem(RUN_KEY); i++) {
+        type(wrong[1]);
       }
+      if (!localStorage.getItem(RUN_KEY)) missed = answer;
     }
   });
 

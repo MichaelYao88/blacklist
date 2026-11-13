@@ -609,7 +609,7 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>Armor</h3>
-        <p>Armor is a charge, not a percentage. One charge absorbs an entire damage event — even a boss hit. Charges refill at the start of every round. Timeout damage ignores armor.</p>
+        <p>Armor is a pool of damage reduction. Each point soaks one point of an incoming hit before HP is touched, and the remainder still gets through. The pool refills at the start of every round. Timeout damage ignores armor entirely.</p>
       </article>
       <article class="rule-card">
         <h3>The clock</h3>
@@ -617,7 +617,7 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>Items & spells</h3>
-        <p>Items only work while they are <b>equipped</b> in a slot. Extra gear goes to your bag, and shops are where you drag pieces between the bag and your slots. Spells stack: duplicates sit in one pile. They come from food and from item triggers, never from the shop shelf. <b>Loose Tongue</b> lets you guess any five letters, dictionary or not.</p>
+        <p>Items only work while they are <b>equipped</b> in a slot. Extra gear goes to your bag, and shops are where you drag pieces between the bag and your slots. Spells stack: duplicates sit in one pile. They come from food and from item triggers, never from the shop shelf. Reveals stay marked on the keyboard and in the Revealed panel for the puzzle. <b>Loose Tongue</b> lets you guess any five letters, dictionary or not.</p>
       </article>
       <article class="rule-card">
         <h3>Bosses</h3>
@@ -625,7 +625,7 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>The run</h3>
-        <p>Five acts. Six nodes per act: three rounds, two shops or happenings, then a boss. Every finished encounter pays gold; solves offer coins, sometimes a spell, and rarely a piece of gear or a meal. Shops are where you buy what you want. Defeat wipes the save and shows you the word you missed. Victory keeps your meta record.</p>
+        <p>Five acts. Six nodes per act: three rounds, two shops or happenings, then a boss. Every finished encounter pays gold. A solve also offers a spell or a meal, and only rarely a piece of gear. Shops carry three items, a meal and an upgrade. Defeat wipes the save and shows you the word you missed. Victory keeps your meta record.</p>
       </article>
       <article class="rule-card">
         <h3>Controls</h3>
@@ -662,10 +662,8 @@ function renderCombatPanel(view: RunView, bossId?: string): string {
   const board = phase.kind === 'round' ? phase.board : null;
   const stateEntries = board ? Object.entries(board.bossState) : [];
   const pct = Math.max(0, Math.min(100, (view.hp / Math.max(1, view.maxHp)) * 100));
+  const armorPct = Math.max(0, Math.min(100, (view.armor / Math.max(1, view.maxArmor)) * 100));
   const low = view.hp <= view.maxHp * 0.3;
-  const pips = Array.from({ length: Math.max(0, view.maxArmor) }, (_, index) =>
-    `<i class="${index < view.armor ? 'on' : ''}"></i>`,
-  ).join('');
   const phaseLabel =
     phase.kind === 'round'
       ? `ROUND ${view.nodeIndex + 1}`
@@ -726,8 +724,10 @@ function renderCombatPanel(view: RunView, bossId?: string): string {
             <i style="width:${pct}%"></i>
             <span class="hp-gloss"></span>
           </div>
-          <div class="armor-line">
-            <span class="armor-pips">${pips}</span>
+          <div class="armor-line" title="Armor soaks damage point-for-point before HP. It refills each round. Timeout damage ignores armor.">
+            <span class="armor-bar" role="progressbar" aria-label="Armor" aria-valuemin="0" aria-valuemax="${view.maxArmor}" aria-valuenow="${view.armor}">
+              <i style="width:${armorPct}%"></i>
+            </span>
             <span class="armor-text">ARMOR ${view.armor}/${view.maxArmor}</span>
           </div>
         </div>
@@ -784,6 +784,10 @@ function renderSidePanel(view: RunView): string {
     <section>
       <div class="panel-head"><span class="panel-kicker">BLACKLIST</span><span class="count">${view.blacklist.length}/${view.blacklistCapacity}</span></div>
       <ol class="blacklist">${blacklist}</ol>
+      ${view.revealed.length ? `<div class="revealed">
+        <span class="panel-kicker">REVEALED THIS PUZZLE</span>
+        <div>${view.revealed.map(({ letter, status }) => `<span class="reveal-chip ${status}"><b>${escapeHtml(letter.toUpperCase())}</b><em>${status === 'present' ? 'IN WORD' : 'RULED OUT'}</em></span>`).join('')}</div>
+      </div>` : ''}
       ${view.purged.length ? `<div class="purged"><span class="panel-kicker">PURGED</span><div>${view.purged.map((letter) => `<span class="letter-chip">${escapeHtml(letter.toUpperCase())}</span>`).join('')}</div></div>` : ''}
     </section>
   </aside>`;
@@ -885,6 +889,9 @@ function renderBoard(view: RunView, board: BoardView): string {
   const looseTongue = view.items.some((item) => item.id === 'loose-tongue')
     ? `<span class="fact free-speech" title="Loose Tongue: any five letters are accepted">ANY WORD</span>`
     : '';
+  const ruledOut = board.ruledOut > 0
+    ? `<span class="fact ruled" title="Distinct letters ruled out for this puzzle. Explorer effects count these.">RULED OUT ${board.ruledOut}</span>`
+    : '';
 
   return `
   <div class="round-head">
@@ -899,6 +906,7 @@ function renderBoard(view: RunView, board: BoardView): string {
       <span class="fact">RAW HIT ${board.rawNextGuessDamage}</span>
       ${gauntlet}
       ${looseTongue}
+      ${ruledOut}
     </div>
   </div>
   <div class="board">${rows.join('')}</div>
@@ -911,7 +919,14 @@ function renderKeyboard(board: BoardView): string {
   return `<div class="keyboard">${rows.map((row, rowIndex) => {
     const keys = row.split('').map((letter) => {
       const status = board.keyboard[letter] ?? '';
-      return `<button class="key ${status}" data-action="key" data-letter="${letter}" title="${letter.toUpperCase()}" ${status === 'purged' ? 'disabled' : ''}>${letter}</button>`;
+      const hint = board.hints[letter];
+      const hinted = hint ? 'hinted' : '';
+      const title = hint === 'present'
+        ? `${letter.toUpperCase()} · revealed in the answer`
+        : hint === 'absent'
+          ? `${letter.toUpperCase()} · revealed not in the answer`
+          : letter.toUpperCase();
+      return `<button class="key ${status} ${hinted}" data-action="key" data-letter="${letter}" title="${title}" ${status === 'purged' ? 'disabled' : ''}>${letter}</button>`;
     }).join('');
     const tail = rowIndex === 2
       ? `<button class="key wide" data-action="del">DEL</button><button class="key wide enter" data-action="submit">ENTER</button>`
@@ -962,7 +977,7 @@ function renderReward(phase: Extract<PhaseView, { kind: 'reward' }>): string {
     <h2>${boss ? 'Claim a relic' : 'Take one'}</h2>
     <p class="muted">${boss
       ? 'Rare passives. They take no slots and last for the rest of the run.'
-      : 'Mostly coins. Sometimes a spell. Rarely, a find.'}</p>
+      : 'Coins plus a spell or a meal. Rarely, a find.'}</p>
     <div class="reward-grid">
       ${phase.options.map((option) => {
         const icon = option.kind === 'item'

@@ -32,10 +32,11 @@ import type {
 import { hashSeed, rngChance, rngInt, rngPick, rngNext, rngShuffle } from './rng';
 import { scoreGuess } from './score';
 
-const VERSION = 2;
+const VERSION = 3;
 const WORD_LENGTH = 5;
 const ACTS = 5;
 const NODES_PER_ACT = 6;
+const ALPHABET = 'abcdefghijklmnopqrstuvwxyz'.split('');
 
 const RULES: Source = { kind: 'rules' };
 
@@ -138,6 +139,7 @@ export function createCore(content: Content): Core {
     if (amount <= 0) return true;
     if (rt.state.gold < amount) return false;
     changeGold(rt, -amount, source);
+    runHook(rt, 'onGoldSpent', { amount, total: rt.state.gold });
     return true;
   }
 
@@ -156,9 +158,11 @@ export function createCore(content: Content): Core {
   function changeMaxHp(rt: Runtime, delta: number, source: Source): void {
     const state = rt.state;
     if (!delta) return;
+    const before = state.maxHp;
     state.maxHp = Math.max(1, state.maxHp + delta);
     if (state.hp > state.maxHp) state.hp = state.maxHp;
     emit(rt, { type: 'maxHpChanged', maxHp: state.maxHp, hp: state.hp, source });
+    runHook(rt, 'onMaxHpChanged', { delta: state.maxHp - before, maxHp: state.maxHp });
   }
 
   function changeArmor(rt: Runtime, delta: number): void {
@@ -173,6 +177,77 @@ export function createCore(content: Content): Core {
     if (delta > 0) state.armor = Math.min(state.maxArmor, state.armor + delta);
     else state.armor = Math.min(state.armor, state.maxArmor);
     emit(rt, { type: 'armorChanged', armor: state.armor, max: state.maxArmor });
+  }
+
+  // ── revealed letters ─────────────────────────────────────────────────────
+
+  function hintLetter(
+    rt: Runtime,
+    letter: Letter,
+    status: 'present' | 'absent',
+  ): void {
+    const round = rt.state.round;
+    if (!round) return;
+    if (!round.hints) round.hints = {};
+    const current = round.hints[letter];
+    // A green/present reveal is information you can never lose. Repeating an
+    // absent reveal is noise, so both are ignored.
+    if (current === 'present') return;
+    if (current === 'absent' && status === 'absent') return;
+    round.hints[letter] = status;
+    emit(rt, { type: 'keyboardHint', letter, status });
+    runHook(rt, 'onReveal', { letter, status });
+  }
+
+  function ruledOutLetters(state: RunState, round: RoundState): Set<string> {
+    const present = new Set<string>();
+    const absent = new Set<string>();
+
+    for (const guess of round.guesses) {
+      guess.truth.forEach((tile, index) => {
+        if (tile === 'correct' || tile === 'present') present.add(guess.word[index]);
+        else if (tile === 'absent') absent.add(guess.word[index]);
+      });
+    }
+    for (const [letter, status] of Object.entries(round.hints ?? {})) {
+      if (status === 'present') present.add(letter);
+      else absent.add(letter);
+    }
+    for (const letter of state.purged) absent.add(letter);
+
+    for (const letter of present) absent.delete(letter);
+    return absent;
+  }
+
+  /** Reveal random unknown letters, leaning toward letters not in the answer. */
+  function revealRandomLetters(rt: Runtime, count: number): void {
+    const state = rt.state;
+    const round = state.round;
+    if (!round || count <= 0) return;
+
+    const known = new Set<string>([
+      ...Object.keys(round.hints ?? {}),
+      ...state.purged,
+    ]);
+    for (const guess of round.guesses) {
+      for (const letter of guess.word.split('')) known.add(letter);
+    }
+
+    const candidates = ALPHABET.filter((letter) => !known.has(letter));
+    const absent = candidates.filter((letter) => !round.answer.includes(letter));
+    const present = candidates.filter((letter) => round.answer.includes(letter));
+
+    for (let index = 0; index < count; index++) {
+      if (absent.length === 0 && present.length === 0) return;
+      // 70% of reveals name a letter that is not in the answer, so the
+      // information is usually a clean elimination rather than a position hint.
+      const pickAbsent = absent.length > 0
+        && (present.length === 0 || rngChance(state, 70));
+      const pool = pickAbsent ? absent : present.length > 0 ? present : absent;
+      const letter = rngPick(state, pool);
+      pool.splice(pool.indexOf(letter), 1);
+      hintLetter(rt, letter, round.answer.includes(letter) ? 'present' : 'absent');
+    }
   }
 
   // ── blacklist ────────────────────────────────────────────────────────────
@@ -382,6 +457,7 @@ export function createCore(content: Content): Core {
         type: 'damageTaken',
         incoming: 0,
         armorUsed: 0,
+        blocked: 0,
         dealt: 0,
         hp: state.hp,
         source,
@@ -396,21 +472,32 @@ export function createCore(content: Content): Core {
         type: 'damageTaken',
         incoming: modified,
         armorUsed: 0,
+        blocked: modified,
         dealt: 0,
         hp: state.hp,
+        source,
+      });
+      runHook(rt, 'onDamageTaken', {
+        incoming: modified,
+        dealt: 0,
+        armorUsed: 0,
+        blocked: modified,
         source,
       });
       return;
     }
 
-    let armorUsed = 0;
-    if (round && !options.ignoreArmor && state.armor > 0) {
-      armorUsed = 1;
-      state.armor--;
+    // Armor is a pool of damage reduction, not an all-or-nothing charge:
+    // each point soaks one point of the hit before HP is touched.
+    const armorUsed = round && !options.ignoreArmor
+      ? Math.min(state.armor, modified)
+      : 0;
+    if (armorUsed > 0) {
+      state.armor -= armorUsed;
       emit(rt, { type: 'armorChanged', armor: state.armor, max: state.maxArmor });
     }
 
-    const dealt = armorUsed ? 0 : modified;
+    const dealt = modified - armorUsed;
     if (dealt > 0) {
       state.hp = Math.max(0, state.hp - dealt);
       state.stats.damageTaken += dealt;
@@ -421,12 +508,19 @@ export function createCore(content: Content): Core {
       type: 'damageTaken',
       incoming: modified,
       armorUsed,
+      blocked: armorUsed,
       dealt,
       hp: state.hp,
       source,
     });
 
-    runHook(rt, 'onDamageTaken', { incoming: modified, dealt, armorUsed, source });
+    runHook(rt, 'onDamageTaken', {
+      incoming: modified,
+      dealt,
+      armorUsed,
+      blocked: armorUsed,
+      source,
+    });
     if (isOver(state)) return;
 
     if (state.hp <= 0) finishDeath(rt, options.timeout ? 'the clock' : 'damage');
@@ -593,11 +687,12 @@ export function createCore(content: Content): Core {
             if (tile === 'correct' || tile === 'present') known.add(guess.word[i]);
           });
         }
+        for (const [letter, status] of Object.entries(round.hints ?? {})) {
+          if (status === 'present') known.add(letter);
+        }
         const letters = round.answer.split('').filter((ch) => !known.has(ch));
-        const pool = letters.length > 0 ? letters : round.answer.split('');
-        if (pool.length > 0) {
-          const letter = rngPick(state, pool);
-          emit(rt, { type: 'keyboardHint', letter, status: 'present' });
+        if (letters.length > 0) {
+          hintLetter(rt, rngPick(state, letters), 'present');
         }
         break;
       }
@@ -605,13 +700,12 @@ export function createCore(content: Content): Core {
         const round = state.round;
         if (!round) break;
         const letter = effect.letter.toLowerCase();
-        emit(rt, {
-          type: 'keyboardHint',
-          letter,
-          status: round.answer.includes(letter) ? 'present' : 'absent',
-        });
+        hintLetter(rt, letter, round.answer.includes(letter) ? 'present' : 'absent');
         break;
       }
+      case 'revealRandom':
+        revealRandomLetters(rt, effect.count);
+        break;
       case 'purgeLetter':
         purgeLetterNow(rt, effect.letter);
         break;
@@ -811,13 +905,20 @@ export function createCore(content: Content): Core {
     }
     timerStart = remaining;
 
+    // Damage is fixed for the encounter. It grows with the act and with how
+    // deep into the act the monster sits, but never climbs per wrong guess.
+    const roundSlot = Math.floor((state.nodeIndex % NODES_PER_ACT) / 2);
+    const baseDamage = boss
+      ? (boss.damage ?? 3 + state.act * 2)
+      : 2 + state.act * 2 + roundSlot + state.bonusBaseDamage;
+
     const round: RoundState = {
       answer,
       boss: boss?.id,
       guesses: [],
       freeLeft: 2,
       paidGuesses: 0,
-      baseDamage: 1 + state.act + Math.floor(state.stats.rounds / 3) + state.bonusBaseDamage,
+      baseDamage,
       elapsedMs: 0,
       remainingMs: remaining,
       timerStartMs: timerStart,
@@ -830,6 +931,7 @@ export function createCore(content: Content): Core {
       gauntletTotal: boss?.gauntlet ? boss.gauntlet.puzzles : 1,
       gauntletAnswers: [],
       totalGuesses: 0,
+      hints: {},
     };
 
     state.round = round;
@@ -903,6 +1005,7 @@ export function createCore(content: Content): Core {
         elapsedMs: round.elapsedMs,
         remainingMs: round.remainingMs,
         damageTaken: round.damageTaken,
+        ruledOut: ruledOutLetters(state, round).size,
         boss: round.boss,
       });
       if (isOver(state)) return;
@@ -1107,16 +1210,16 @@ export function createCore(content: Content): Core {
 
     if (isOver(state)) return;
 
-    // A correct guess never hurts you. You still pay for wrong guesses only.
+    // A correct guess never hurts you. A wrong paid guess takes the monster's
+    // fixed hit; repeated mistakes do not make the next hit bigger.
     const solved = word === round.answer;
     if (!solved && !guess.free && by === 'player') {
       const boss = round.boss ? bossById.get(round.boss) : undefined;
       if (!boss?.noGuessDamage) {
-        const paidIndex = round.paidGuesses;
         round.paidGuesses++;
         dealDamage(
           rt,
-          round.baseDamage + paidIndex,
+          round.baseDamage,
           round.boss ? { kind: 'boss', boss: round.boss } : RULES,
         );
       }
@@ -1172,8 +1275,9 @@ export function createCore(content: Content): Core {
       return options;
     }
 
-    // Ordinary victories pay coins, sometimes a spell, and only rarely a
-    // piece of gear or a meal. Shops and events are the reliable source.
+    // A basic monster always offers coins plus a real choice: a spell or a
+    // meal. A second coin pile is never a reward. Gear is a rare find; shops
+    // remain the reliable place to buy it.
     const goldAmount = Math.max(1, Math.floor((8 + 3 * state.act) * 0.7));
     options.push({
       id: 'gold',
@@ -1183,7 +1287,9 @@ export function createCore(content: Content): Core {
       description: 'A handful of coins. Always useful.',
     });
 
-    if (content.spells.length > 0 && rngChance(state, 70)) {
+    const wantSpell = content.spells.length > 0
+      && (content.foods.length === 0 || rngChance(state, 65));
+    if (wantSpell) {
       const spell = rngPick(state, content.spells);
       options.push({
         id: `spell:${spell.id}`,
@@ -1192,22 +1298,22 @@ export function createCore(content: Content): Core {
         label: spell.name,
         description: spell.description,
       });
-    } else {
+    } else if (content.foods.length > 0) {
+      const food = rngPick(state, content.foods);
       options.push({
-        id: 'gold-extra',
-        kind: 'gold',
-        amount: goldAmount + 4,
-        label: `${goldAmount + 4} gold`,
-        description: 'A heavier purse instead of a spell.',
+        id: `eat:${food.id}`,
+        kind: 'eat',
+        def: food.id,
+        label: food.name,
+        description: food.description,
       });
     }
 
-    if (rngChance(state, 30)) {
+    if (rngChance(state, 8)) {
       const itemPool = content.items.filter(
         (i) => i.rarity !== 'rare' && (i.kind !== 'gear' || !state.items.some((owned) => owned.id === i.id)),
       );
-      const roll = rngNext(state);
-      if (roll < 0.6 && itemPool.length > 0) {
+      if (itemPool.length > 0) {
         const item = rngPick(state, itemPool);
         options.push({
           id: `item:${item.id}`,
@@ -1215,15 +1321,6 @@ export function createCore(content: Content): Core {
           def: item.id,
           label: item.name,
           description: item.description,
-        });
-      } else if (content.foods.length > 0) {
-        const food = rngPick(state, content.foods);
-        options.push({
-          id: `eat:${food.id}`,
-          kind: 'eat',
-          def: food.id,
-          label: food.name,
-          description: food.description,
         });
       }
     }
@@ -1283,8 +1380,9 @@ export function createCore(content: Content): Core {
     const picked: Array<{ kind: Offer['kind']; def: string; price: number }> = [];
 
     // Shops sell gear, food and permanent upgrades. Spells are never on the
-    // shelf: they come from food and from item triggers.
-    const picks = rngShuffle(state, itemPool).slice(0, 2);
+    // shelf: they come from food and from item triggers. Gear is mostly a
+    // shop purchase, so the shelf carries three pieces.
+    const picks = rngShuffle(state, itemPool).slice(0, 3);
     for (const item of picks) {
       picked.push({ kind: 'item', def: item.id, price: item.price });
     }
@@ -1594,7 +1692,7 @@ export function createCore(content: Content): Core {
   function boardView(state: RunState): BoardView {
     const round = state.round as RoundState;
     const boss = round.boss ? bossById.get(round.boss) : undefined;
-    const rawNext = round.baseDamage + round.paidGuesses;
+    const rawNext = round.baseDamage;
     const noGuessDamage = Boolean(boss?.noGuessDamage);
 
     const keyboard: Partial<Record<Letter, KeyboardStatus>> = {};
@@ -1613,6 +1711,15 @@ export function createCore(content: Content): Core {
         }
       });
     }
+    for (const [letter, status] of Object.entries(round.hints ?? {})) {
+      const current = keyboard[letter];
+      if (current === 'correct') continue;
+      if (status === 'present') {
+        if (current !== 'present') keyboard[letter] = 'present';
+      } else if (!current || current === 'absent') {
+        keyboard[letter] = 'absent';
+      }
+    }
     for (const letter of state.purged) {
       if (!keyboard[letter] || keyboard[letter] === 'absent') keyboard[letter] = 'purged';
     }
@@ -1630,6 +1737,8 @@ export function createCore(content: Content): Core {
       gauntletIndex: round.gauntletIndex,
       gauntletTotal: round.gauntletTotal,
       noGuessDamage,
+      hints: { ...round.hints },
+      ruledOut: ruledOutLetters(state, round).size,
     };
   }
 
@@ -1708,6 +1817,11 @@ export function createCore(content: Content): Core {
       blacklist: state.blacklist.slice(),
       blacklistCapacity: state.blacklistCapacity,
       purged: state.purged.slice(),
+      revealed: state.phase === 'round' || state.phase === 'summary'
+        ? Object.entries(state.round?.hints ?? {})
+            .filter((entry): entry is [string, 'present' | 'absent'] => Boolean(entry[1]))
+            .map(([letter, status]) => ({ letter, status }))
+        : [],
       pendingPurge: state.pendingPurge,
       lastAnswer: state.lastAnswer,
       stats: statsCopy(state),
@@ -1832,7 +1946,7 @@ export function createCore(content: Content): Core {
     const seed = String(opts.seed || 'blacklist');
     const ascension = Math.max(0, Math.floor(opts.ascension ?? 0));
     const maxHp = Math.max(10, 40 - 3 * ascension);
-    const startArmor = ascension >= 4 ? 0 : 1;
+    const startArmor = Math.max(0, 5 - ascension);
     const state: RunState = {
       version: VERSION,
       seed,
@@ -1896,7 +2010,7 @@ export function createCore(content: Content): Core {
     try {
       const parsed = JSON.parse(json) as Partial<RunState> | null;
       if (!parsed || typeof parsed !== 'object') return null;
-      if (parsed.version !== VERSION && parsed.version !== 1) return null;
+      if (parsed.version !== VERSION && parsed.version !== 2 && parsed.version !== 1) return null;
       if (!Array.isArray(parsed.nodes) || !Array.isArray(parsed.items)) return null;
       if (typeof parsed.hp !== 'number' || typeof parsed.maxHp !== 'number') return null;
       if (typeof parsed.rng !== 'number') return null;
@@ -1906,6 +2020,9 @@ export function createCore(content: Content): Core {
       state.bonusSolveGold = typeof state.bonusSolveGold === 'number' ? state.bonusSolveGold : 0;
       for (const item of state.items) {
         if (typeof item.equipped !== 'boolean') item.equipped = true;
+      }
+      if (state.round && (!state.round.hints || typeof state.round.hints !== 'object')) {
+        state.round.hints = {};
       }
       return state;
     } catch {

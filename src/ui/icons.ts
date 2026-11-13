@@ -54,6 +54,24 @@ const ITEM_ICONS: Record<string, string> = {
   'vowel-sigil': '🔮',
   'blacklist-idol': '🗿',
   'loaded-dice': '🎲',
+  'field-kit': '🧭',
+  'field-dressing': '🩹',
+  'null-lens': '🔍',
+  trailblazer: '🗺️',
+  bulwark: '🧱',
+  'scrap-collector': '♻️',
+  'boss-aegis': '🏰',
+  spellplate: '🔷',
+  'mending-plate': '💠',
+  'tithe-box': '🪙',
+  'growth-chart': '📊',
+  'stopped-clock': '⏱️',
+  'second-stomach': '🍽️',
+  preserves: '🫙',
+  'time-lattice': '🧩',
+  'omen-loom': '🔮',
+  'mercy-ledger': '📗',
+  'ward-engine': '🔰',
 };
 
 const SPELL_ICONS: Record<string, string> = {
@@ -73,6 +91,11 @@ const FOOD_ICONS: Record<string, string> = {
   candy: '🍬',
   coffee: '☕',
   'mystery-stew': '🍲',
+  'hearty-meal': '🍖',
+  'bone-broth': '🥣',
+  'iron-ration': '🥫',
+  'honey-cake': '🍰',
+  'overtime-tea': '🍵',
 };
 
 const UPGRADE_ICONS: Record<string, string> = {

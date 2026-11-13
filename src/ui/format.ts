@@ -88,14 +88,15 @@ export function describeEvent(event: GameEvent): string | null {
     }
     case 'keyboardHint':
       return event.status === 'present'
-        ? `OMEN · “${event.letter.toUpperCase()}” is in the answer`
-        : `OMEN · “${event.letter.toUpperCase()}” is not in the answer`;
+        ? `REVEAL · “${event.letter.toUpperCase()}” is in the answer`
+        : `REVEAL · “${event.letter.toUpperCase()}” is not in the answer`;
     case 'letterPurged':
       return `PURGED · the letter ${event.letter.toUpperCase()} is gone forever`;
     case 'freeGuessesChanged':
       return `${event.remaining} free guess${event.remaining === 1 ? '' : 'es'} left`;
     case 'damageTaken':
-      if (event.dealt === 0 && event.armorUsed > 0) return `Armor absorbed ${event.incoming} damage`;
+      if (event.dealt === 0 && event.armorUsed > 0) return `Armor absorbed ${event.armorUsed} damage`;
+      if (event.dealt === 0 && event.blocked > 0) return `Blocked ${event.blocked} damage`;
       if (event.dealt === 0) return 'No damage';
       return `−${event.dealt} HP`;
     case 'healed':

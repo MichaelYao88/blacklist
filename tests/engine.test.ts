@@ -27,8 +27,8 @@ describe('new run', () => {
     expect(state.phase).toBe('round');
     expect(state.hp).toBe(40);
     expect(state.maxHp).toBe(40);
-    expect(state.armor).toBe(1);
-    expect(state.maxArmor).toBe(1);
+    expect(state.armor).toBe(5);
+    expect(state.maxArmor).toBe(5);
     expect(state.gold).toBe(10);
     expect(state.slots).toBe(4);
     expect(state.blacklistCapacity).toBe(16);
@@ -72,19 +72,24 @@ describe('guessing and the blacklist', () => {
     });
   });
 
-  it('lets armor eat the first real hit, then scales paid-guess damage', () => {
+  it('soaks damage point for point without climbing per wrong guess', () => {
     const { state } = start();
     setAnswer(state, 'crane');
     state.round!.freeLeft = 0;
-    state.armor = 1;
+    state.armor = 5;
+    state.round!.baseDamage = 4;
 
-    const third = act(state, { type: 'guess', word: 'tiger' });
-    expect(third.state.hp).toBe(40);
-    expect(third.state.armor).toBe(0);
+    const first = act(state, { type: 'guess', word: 'tiger' });
+    expect(first.state.hp).toBe(40);
+    expect(first.state.armor).toBe(1);
 
-    const fourth = act(third.state, { type: 'guess', word: 'mango' });
-    expect(fourth.state.hp).toBe(38);
-    expect(fourth.state.round?.paidGuesses).toBe(2);
+    const second = act(first.state, { type: 'guess', word: 'mango' });
+    expect(second.state.hp).toBe(37);
+    expect(second.state.armor).toBe(0);
+
+    const third = act(second.state, { type: 'guess', word: 'bumpy' });
+    expect(third.state.hp).toBe(33);
+    expect(third.state.round?.paidGuesses).toBe(3);
   });
 
   it('evicts the oldest blacklist entry when full', () => {
@@ -189,16 +194,43 @@ describe('spells, items and death', () => {
     expect(eventTypes(result.events)).toContain('spellCast');
   });
 
-  it('grants a spell from an item on solve', () => {
+  it('reveals at round start and turns five reveals into Omen', () => {
     const { state } = start();
     setAnswer(state, 'crane');
-    state.items.push({ instance: 'i999', id: 'necronomicon', data: {} });
+    state.nodes[1] = { kind: 'shop' };
+    state.items.push({ instance: 'i-necro', id: 'necronomicon', data: { reveals: 0 }, equipped: true });
+    state.items.push({ instance: 'i-kit', id: 'field-kit', data: {}, equipped: true });
 
-    const result = act(state, { type: 'guess', word: 'crane' });
-    expect(result.state.phase).toBe('summary');
-    expect(result.state.spells.some((s) => s.id === 'omen')).toBe(true);
+    let result = act(state, { type: 'guess', word: 'crane' });
+    result = act(result.state, { type: 'continue' });
+    result = act(result.state, {
+      type: 'chooseReward',
+      optionId: result.state.reward?.options[0]?.id ?? 'gold',
+    });
+    result = act(result.state, { type: 'continue' });
+
+    expect(result.state.phase).toBe('round');
+    expect(result.state.round?.hints).toBeDefined();
+    expect(Object.keys(result.state.round?.hints ?? {})).toHaveLength(7);
+    expect(result.state.spells.filter((s) => s.id === 'omen')).toHaveLength(1);
     expect(eventTypes(result.events)).toContain('itemTriggered');
     expect(eventTypes(result.events)).toContain('spellGained');
+  });
+
+  it('keeps Omen reveals on the keyboard instead of only in the log', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.spells.push({ instance: 's-omen', id: 'omen' });
+
+    const cast = act(state, { type: 'castSpell', instance: 's-omen' });
+    expect(cast.state.phase).toBe('round');
+    const view = game.view(cast.state);
+    expect(view.phase.kind).toBe('round');
+    if (view.phase.kind !== 'round') return;
+    const hinted = Object.entries(view.phase.board.hints);
+    expect(hinted).toHaveLength(1);
+    expect(hinted[0][1]).toBe('present');
+    expect(view.phase.board.keyboard[hinted[0][0]]).toBe('present');
   });
 
   it('revives with Second Wind instead of ending the run', () => {
@@ -270,8 +302,8 @@ describe('round rewards', () => {
     const reward = act(solved.state, { type: 'continue' });
     expect(reward.state.phase).toBe('reward');
     const options = reward.state.reward?.options ?? [];
-    expect(options.length).toBeGreaterThanOrEqual(2);
-    expect(options.some((option) => option.kind === 'gold')).toBe(true);
+    expect(options.filter((option) => option.kind === 'gold')).toHaveLength(1);
+    expect(options.some((option) => option.kind === 'spell' || option.kind === 'eat')).toBe(true);
     expect(options.some((option) => option.kind === 'upgrade')).toBe(false);
 
     const chosen = act(reward.state, { type: 'chooseReward', optionId: 'gold' });
@@ -379,7 +411,7 @@ describe('shop', () => {
   it('sells gear, food and upgrades but never spells', () => {
     const result = reachShop();
     const offers = result.state.shop?.offers ?? [];
-    expect(offers.filter((offer) => offer.kind === 'item')).toHaveLength(2);
+    expect(offers.filter((offer) => offer.kind === 'item')).toHaveLength(3);
     expect(offers.filter((offer) => offer.kind === 'spell')).toHaveLength(0);
     expect(offers.filter((offer) => offer.kind === 'eat').length).toBeGreaterThanOrEqual(1);
     expect(offers.filter((offer) => offer.kind === 'upgrade')).toHaveLength(1);
@@ -388,7 +420,7 @@ describe('shop', () => {
   it('buys, rerolls and leaves without breaking the node flow', () => {
     const result = reachShop();
     const shop = result.state.shop!;
-    expect(shop.offers.length).toBe(4);
+    expect(shop.offers.length).toBe(5);
 
     const goldBefore = result.state.gold;
     const offer = shop.offers[0];
@@ -397,7 +429,7 @@ describe('shop', () => {
     expect(bought.state.shop?.offers.some((o) => o.id === offer.id)).toBe(false);
 
     const rerolled = act(bought.state, { type: 'reroll' });
-    expect(rerolled.state.shop?.offers).toHaveLength(4);
+    expect(rerolled.state.shop?.offers).toHaveLength(5);
     expect(rerolled.state.shop?.rerollCost).toBe(shop.rerollCost + 1);
 
     const nodeBefore = rerolled.state.nodeIndex;
@@ -428,11 +460,9 @@ describe('shop', () => {
     expect(game.view(unequipped.state).slots.used).toBe(0);
   });
 
-  it('scales base damage with rounds cleared', () => {
+  it('assigns a fixed encounter hit instead of scaling by paid guesses', () => {
     const result = reachShop();
-    const reaching = result.state;
-    reaching.stats.rounds = 6;
-    const next = act(reaching, { type: 'continue' });
+    const next = act(result.state, { type: 'continue' });
     expect(next.state.phase).toBe('round');
     expect(next.state.round?.baseDamage).toBe(3);
   });
@@ -555,6 +585,65 @@ describe('rare relics and spell engines', () => {
 
     const guess = act(state, { type: 'guess', word: 'pious' });
     expect(guess.state.gold).toBe(goldBefore + 6);
+  });
+});
+
+describe('event-driven engines', () => {
+  it('pays Bulwark for every 5 damage blocked', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.round!.freeLeft = 0;
+    state.armor = 5;
+    state.round!.baseDamage = 6;
+    state.items.push({ instance: 'i-bulwark', id: 'bulwark', data: { blocked: 0 }, equipped: true });
+
+    const guess = act(state, { type: 'guess', word: 'tiger' });
+    expect(guess.state.spells).toHaveLength(1);
+    expect(guess.state.items.find((item) => item.instance === 'i-bulwark')?.data.blocked).toBe(0);
+  });
+
+  it('pays Scrap Collector for every 5 armor lost', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.round!.freeLeft = 0;
+    state.armor = 5;
+    state.round!.baseDamage = 6;
+    state.items.push({ instance: 'i-scrap', id: 'scrap-collector', data: { lost: 0 }, equipped: true });
+    const goldBefore = state.gold;
+
+    const guess = act(state, { type: 'guess', word: 'tiger' });
+    expect(guess.state.gold).toBe(goldBefore + 1);
+  });
+
+  it('pays Tithe Box after 10 gold spent', () => {
+    const { state } = start();
+    state.phase = 'shop';
+    state.shop = { offers: [], rerollCost: 2, rerolls: 0 };
+    state.gold = 20;
+    state.items.push({ instance: 'i-tithe', id: 'tithe-box', data: { spent: 8 }, equipped: true });
+
+    const rerolled = act(state, { type: 'reroll' });
+    expect(rerolled.state.spells.filter((spell) => spell.id === 'heal')).toHaveLength(1);
+  });
+
+  it('lets Field Dressing heal from Field Kit reveals', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.nodes[1] = { kind: 'shop' };
+    state.hp = 20;
+    state.items.push({ instance: 'i-kit', id: 'field-kit', data: {}, equipped: true });
+    state.items.push({ instance: 'i-dress', id: 'field-dressing', data: {}, equipped: true });
+
+    let result = act(state, { type: 'guess', word: 'crane' });
+    result = act(result.state, { type: 'continue' });
+    result = act(result.state, {
+      type: 'chooseReward',
+      optionId: result.state.reward?.options[0]?.id ?? 'gold',
+    });
+    result = act(result.state, { type: 'continue' });
+
+    expect(result.state.phase).toBe('round');
+    expect(result.state.hp).toBe(25);
   });
 });
 
