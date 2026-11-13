@@ -99,6 +99,46 @@ button {
   color: var(--gold);
 }
 
+.kw {
+  color: inherit;
+  border-bottom: 1px dotted rgba(231, 184, 90, 0.45);
+  cursor: help;
+}
+
+.kw:hover {
+  color: var(--gold-soft);
+  border-bottom-color: var(--gold);
+}
+
+.kw-tooltip {
+  position: fixed;
+  z-index: 120;
+  max-width: 264px;
+  padding: 9px 11px;
+  border: 1px solid var(--line-2);
+  border-left: 3px solid var(--gold);
+  border-radius: 8px;
+  background: rgba(18, 14, 26, 0.98);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0;
+  text-align: left;
+  text-transform: none;
+  box-shadow: 0 24px 60px -24px #000;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.kw-tooltip.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .warn {
   color: var(--red);
   font-size: 0.72rem;

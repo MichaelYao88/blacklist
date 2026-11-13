@@ -4,7 +4,7 @@ export const SPELLS: SpellDef[] = [
   defineSpell({
     id: 'time-freeze',
     name: 'Time Freeze',
-    description: 'The timer stops until your next guess.',
+    description: 'The clock stops until your next guess.',
     price: 7,
     usable: 'round',
     cast: () => [{ type: 'freezeUntilGuess' }],
@@ -36,7 +36,7 @@ export const SPELLS: SpellDef[] = [
   defineSpell({
     id: 'immunity',
     name: 'Immunity',
-    description: 'The next guess that would hurt you deals no damage.',
+    description: 'The next hurting guess deals no damage.',
     price: 7,
     usable: 'round',
     cast: () => [{ type: 'immunity', guesses: 1 }],
@@ -44,7 +44,7 @@ export const SPELLS: SpellDef[] = [
   defineSpell({
     id: 'phone-friend',
     name: 'Phone a Friend',
-    description: 'Two free guesses from a friend with terrible taste. Timer freezes for 20s.',
+    description: 'Two free guesses. The clock freezes for 20s.',
     price: 8,
     usable: 'round',
     cast: () => [
@@ -55,7 +55,7 @@ export const SPELLS: SpellDef[] = [
   defineSpell({
     id: 'time-warp',
     name: 'Time Warp',
-    description: 'Add 30 seconds to the current round.',
+    description: '+30s this round.',
     price: 5,
     usable: 'round',
     cast: () => [{ type: 'addTime', ms: 30_000 }],

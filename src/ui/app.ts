@@ -19,6 +19,7 @@ import {
 } from '../content';
 import { LocalStore, hasSave, readMeta, recordOutcome, recordStart } from './store';
 import { describeEvent, escapeHtml, formatTime, reasonText, roman } from './format';
+import { glossaryText } from './glossary';
 import {
   bossColor,
   enemyArt,
@@ -503,6 +504,57 @@ function noticeHtml(): string {
   return `<div class="toast ${notice.kind}">${escapeHtml(notice.text)}</div>`;
 }
 
+// ── keyword tooltips ───────────────────────────────────────────────────────
+
+let tipEl: HTMLDivElement | null = null;
+let tipTarget: HTMLElement | null = null;
+
+function ensureTip(): HTMLDivElement {
+  if (!tipEl) {
+    tipEl = document.createElement('div');
+    tipEl.className = 'kw-tooltip';
+    tipEl.setAttribute('role', 'tooltip');
+    document.body.appendChild(tipEl);
+  }
+  return tipEl;
+}
+
+function showTip(target: HTMLElement): void {
+  const text = target.dataset.tip;
+  if (!text) return;
+  const el = ensureTip();
+  tipTarget = target;
+  el.textContent = text;
+  el.classList.add('visible');
+
+  const rect = target.getBoundingClientRect();
+  const size = el.getBoundingClientRect();
+  const gap = 10;
+  let left = rect.left + rect.width / 2 - size.width / 2;
+  left = Math.max(8, Math.min(left, window.innerWidth - size.width - 8));
+  let top = rect.top - size.height - gap;
+  if (top < 8) top = rect.bottom + gap;
+  el.style.left = `${Math.round(left)}px`;
+  el.style.top = `${Math.round(top)}px`;
+}
+
+function hideTip(): void {
+  tipEl?.classList.remove('visible');
+  tipTarget = null;
+}
+
+document.addEventListener('pointermove', (event) => {
+  const target = (event.target as Element | null)?.closest<HTMLElement>('[data-tip]');
+  if (!target) {
+    if (tipTarget) hideTip();
+    return;
+  }
+  if (target !== tipTarget) showTip(target);
+});
+
+window.addEventListener('scroll', hideTip, true);
+window.addEventListener('resize', hideTip);
+
 function renderTitle(): string {
   const meta = readMeta();
   const saved = hasSave();
@@ -760,7 +812,7 @@ function renderItem(view: RunView, item: ItemView): string {
       <b>${escapeHtml(name)}</b>
       <span class="tag">${rarity}</span>
     </div>
-    <p>${escapeHtml(description)}</p>
+    <p>${glossaryText(description)}</p>
     ${data ? `<div class="data-row">${data}</div>` : ''}
     ${!item.equipped && item.slots > 0 ? `<p class="bag-note">In the bag. Equip it in a shop.</p>` : ''}
     ${usable ? `<button class="btn tiny" data-action="use" data-id="${escapeHtml(item.instance)}">USE</button>` : ''}
@@ -780,7 +832,7 @@ function renderSpell(view: RunView, spell: SpellView, count: number): string {
       ${count > 1 ? `<span class="stack-badge">×${count}</span>` : ''}
       <span class="tag">SPELL</span>
     </div>
-    <p>${escapeHtml(description)}</p>
+    <p>${glossaryText(description)}</p>
     <button class="btn tiny" data-action="cast" data-id="${escapeHtml(spell.instance)}" ${canCast ? '' : 'disabled'}>CAST</button>
   </article>`;
 }
@@ -928,7 +980,7 @@ function renderReward(phase: Extract<PhaseView, { kind: 'reward' }>): string {
           <span class="reward-icon" aria-hidden="true">${icon}</span>
           <span class="tag">${tag}</span>
           <b>${escapeHtml(option.label)}</b>
-          <span>${escapeHtml(option.description)}</span>
+          <span>${glossaryText(option.description)}</span>
         </button>`;
       }).join('')}
     </div>
@@ -969,7 +1021,7 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
           <span class="tag">${KIND_LABELS[offer.kind]}</span>
         </div>
         <h3>${escapeHtml(info.name)}</h3>
-        <p>${escapeHtml(info.description)}</p>
+        <p>${glossaryText(info.description)}</p>
         <button class="btn primary" data-action="buy" data-id="${escapeHtml(offer.id)}" ${cannotAfford ? 'disabled' : ''}>${offer.price} G</button>
       </article>`;
     }).join('')
@@ -1044,13 +1096,13 @@ function renderHappening(phase: Extract<PhaseView, { kind: 'happening' }>): stri
   <div class="phase-card happening">
     <p class="panel-kicker">AN INTERRUPTION</p>
     <h2>${escapeHtml(def?.name ?? phase.happening)}</h2>
-    <p class="happening-desc">${escapeHtml(def?.description ?? '')}</p>
+    <p class="happening-desc">${glossaryText(def?.description ?? '')}</p>
     <div class="option-list">
       ${phase.options.map((option) => `
         <article class="happening-option ${resolved ? 'resolved' : ''}">
           <div>
             <b>${escapeHtml(option.label)}</b>
-            <p>${escapeHtml(option.description)}</p>
+            <p>${glossaryText(option.description)}</p>
             ${option.costGold ? `<span class="warn">Costs ${option.costGold} gold</span>` : ''}
           </div>
           <div class="odds">

@@ -22,6 +22,7 @@ The first word of every round is added to a 16-word blacklist. You can never gue
 - **Loose Tongue**, an item that lets you guess five-letter nonsense for free-form letter probes
 - Spells stack by type and come from food and item triggers, not shelves
 - Happenings with visible odds and persistent consequences
+- Short item, spell and offer text with hover tooltips for keywords like armor, free guesses, blacklist, relic and timeout
 - Every finished encounter pays gold; solves offer coins, usually a spell, and only rarely gear or a meal
 - Bosses award one of three rare relics with passive effects; relics take no slots and never appear in shops
 - Defeat reveals the answer you missed (all of them, on The Gauntlet)

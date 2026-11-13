@@ -5,7 +5,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'hourglass',
     name: 'Hourglass',
-    description: '+15 seconds at the start of every round.',
+    description: '+15s per round.',
     price: 6,
     kind: 'gear',
     on: { onRoundStart: () => [{ type: 'addTime', ms: 15_000 }] },
@@ -13,7 +13,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'early-bird',
     name: 'Early Bird',
-    description: 'Solve in under 30s for 2 gold. Grows by 1 each time it pays.',
+    description: 'Solve under 30s: 2 gold. +1 each payout.',
     price: 6,
     kind: 'gear',
     initial: { gold: 2 },
@@ -30,7 +30,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'hard-hat',
     name: 'Hard Hat',
-    description: 'Damage from a single hit is capped at 3.',
+    description: 'Each hit is capped at 3.',
     price: 8,
     kind: 'gear',
     modifyDamage: (_ctx, amount) => Math.min(amount, 3),
@@ -38,7 +38,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'iron-hide',
     name: 'Iron Hide',
-    description: 'Reduce every damage instance by 1.',
+    description: 'Every hit deals 1 less.',
     price: 8,
     kind: 'gear',
     modifyDamage: (_ctx, amount) => Math.max(0, amount - 1),
@@ -46,7 +46,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'rabbit-foot',
     name: "Rabbit's Foot",
-    description: '+1 free guess every round.',
+    description: '+1 free guess per round.',
     price: 7,
     kind: 'gear',
     on: { onRoundStart: () => [{ type: 'freeGuesses', count: 1 }] },
@@ -54,7 +54,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'scattershot',
     name: 'Scattershot',
-    description: 'Once per round, a guess sharing no letters with the previous guess is free.',
+    description: 'Once per round: no shared letters means a free guess.',
     price: 8,
     kind: 'gear',
     initial: { used: 0 },
@@ -73,7 +73,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'grey-matter',
     name: 'Grey Matter',
-    description: 'Once per round, a guess with no coloured tiles is free.',
+    description: 'Once per round: an all-grey guess is a free guess.',
     price: 8,
     kind: 'gear',
     initial: { used: 0 },
@@ -91,7 +91,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'deja-vu',
     name: 'Déjà Vu',
-    description: 'Once per round, typing the previous round’s answer is free.',
+    description: 'Once per round: last round’s answer is a free guess.',
     price: 9,
     kind: 'gear',
     initial: { used: 0 },
@@ -110,7 +110,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'b-file',
     name: 'B-File',
-    description: 'At round start, learn whether the answer contains B.',
+    description: 'Round start: reveal if the answer has B.',
     price: 7,
     kind: 'gear',
     on: { onRoundStart: () => [{ type: 'revealLetter', letter: 'b' }] },
@@ -118,7 +118,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'x-ray',
     name: 'X-Ray',
-    description: 'At round start, learn whether the answer contains X.',
+    description: 'Round start: reveal if the answer has X.',
     price: 7,
     kind: 'gear',
     on: { onRoundStart: () => [{ type: 'revealLetter', letter: 'x' }] },
@@ -126,7 +126,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'q-tip',
     name: 'Q-Tip',
-    description: 'At round start, learn whether the answer contains Q.',
+    description: 'Round start: reveal if the answer has Q.',
     price: 7,
     kind: 'gear',
     on: { onRoundStart: () => [{ type: 'revealLetter', letter: 'q' }] },
@@ -134,7 +134,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'compound-interest',
     name: 'Compound Interest',
-    description: 'On solve, gain 10% of your current gold (max 10).',
+    description: 'On solve: +10% gold (max 10).',
     price: 10,
     kind: 'gear',
     on: {
@@ -146,7 +146,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'photosynthesis',
     name: 'Photosynthesis',
-    description: 'On solve, heal 10% of max HP.',
+    description: 'On solve: heal 10% max HP.',
     price: 8,
     kind: 'gear',
     on: {
@@ -156,7 +156,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'vampire-teeth',
     name: 'Vampire Teeth',
-    description: 'Heal 2 HP at the end of every round.',
+    description: 'End of round: heal 2 HP.',
     price: 7,
     kind: 'gear',
     on: { onRoundEnd: () => [{ type: 'heal', amount: 2 }] },
@@ -164,7 +164,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'siphon',
     name: 'Siphon',
-    description: 'Heal 1 HP whenever you cast a spell.',
+    description: 'Casting a spell heals 1 HP.',
     price: 8,
     kind: 'gear',
     on: { onSpellCast: () => [{ type: 'heal', amount: 1 }] },
@@ -172,7 +172,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'gourmand',
     name: 'Gourmand',
-    description: 'Gain +1 max HP whenever you eat.',
+    description: 'Eating: +1 max HP.',
     price: 8,
     kind: 'gear',
     on: { onEat: () => [{ type: 'maxHp', delta: 1 }] },
@@ -180,7 +180,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'spellbook',
     name: 'Spellbook',
-    description: 'Gain 1 gold per spell cast. Grows by 1 each time.',
+    description: 'Spell cast: 1 gold. +1 each payout.',
     price: 8,
     kind: 'gear',
     initial: { gold: 1 },
@@ -194,7 +194,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'trophy-hunter',
     name: 'Trophy Hunter',
-    description: 'Gain +1 max armor whenever you defeat a boss.',
+    description: 'Beat a boss: +1 max armor.',
     price: 9,
     kind: 'gear',
     on: {
@@ -205,7 +205,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'lucky-charm',
     name: 'Lucky Charm',
-    description: '25% chance to gain a random spell on solve.',
+    description: 'On solve: 25% chance of a random spell.',
     price: 8,
     kind: 'gear',
     on: { onSolve: () => [{ type: 'giveSpell', spell: 'random', chancePct: 25 }] },
@@ -221,7 +221,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'piggy-bank',
     name: 'Piggy Bank',
-    description: 'Sells for more the longer you hold it.',
+    description: 'Sells for more each round you hold it.',
     price: 7,
     kind: 'gear',
     initial: { held: 0 },
@@ -231,7 +231,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'metronome',
     name: 'Metronome',
-    description: 'Gain 6 gold when you guess with 5 seconds or less on the clock.',
+    description: 'Guess with ≤5s on the clock: +6 gold.',
     price: 8,
     kind: 'gear',
     on: {
@@ -244,7 +244,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'overachiever',
     name: 'Overachiever',
-    description: 'On solve, gain 1 gold per guess you made this round.',
+    description: 'On solve: +1 gold per guess this round.',
     price: 7,
     kind: 'gear',
     on: { onSolve: (_ctx, p) => [{ type: 'gold', amount: p.guesses }] },
@@ -252,7 +252,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'time-dilation',
     name: 'Time Dilation',
-    description: 'No damage in the first 10s. Every round starts 5s shorter.',
+    description: 'First 10s: no damage. Rounds start 5s shorter.',
     price: 8,
     kind: 'gear',
     on: {
@@ -264,7 +264,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'second-wind',
     name: 'Second Wind',
-    description: 'The first time you die, revive at 50% HP. Consumed.',
+    description: 'First death: revive at 50% HP. Consumed.',
     price: 12,
     kind: 'gear',
     on: {
@@ -277,7 +277,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'black-market-ledger',
     name: 'Black Market Ledger',
-    description: 'Every shop purchase has a 40% chance to grant a random spell.',
+    description: 'Shop purchase: 40% chance of a random spell.',
     price: 8,
     kind: 'gear',
     on: {
@@ -288,7 +288,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'purge-token',
     name: 'Purge Token',
-    description: 'Consumable. Choose a letter to remove from all future puzzles.',
+    description: 'Consumable. Purge one letter from all future answers.',
     price: 8,
     kind: 'consumable',
     slots: 0,
@@ -297,7 +297,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'boss-trophy',
     name: 'Boss Trophy',
-    description: 'Gain a random spell whenever you defeat a boss.',
+    description: 'Beat a boss: random spell.',
     price: 10,
     kind: 'gear',
     on: {
@@ -308,7 +308,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'fast-learner',
     name: 'Fast Learner',
-    description: 'Solve in under 30s to gain Time Warp.',
+    description: 'Solve under 30s: Time Warp.',
     price: 8,
     kind: 'gear',
     on: {
@@ -319,7 +319,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'untouchable',
     name: 'Untouchable',
-    description: 'Solve a round without taking damage to gain Restore.',
+    description: 'Solve without damage: Restore.',
     price: 9,
     kind: 'gear',
     on: {
@@ -330,7 +330,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'feast-of-ideas',
     name: 'Feast of Ideas',
-    description: 'Gain a random spell whenever you eat.',
+    description: 'Eating: random spell.',
     price: 8,
     kind: 'gear',
     on: { onEat: () => [{ type: 'giveSpell', spell: 'random' }] },
@@ -338,7 +338,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'spellhoarder',
     name: 'Spellhoarder',
-    description: 'Every 3rd spell cast, gain a random spell.',
+    description: 'Every 3rd spell cast: random spell.',
     price: 9,
     kind: 'gear',
     initial: { casts: 0 },
@@ -355,7 +355,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'blacklist-scholar',
     name: 'Blacklist Scholar',
-    description: 'When the blacklist fills up, gain Omen. Once per round.',
+    description: 'Blacklist fills: Omen. Once per round.',
     price: 8,
     kind: 'gear',
     initial: { used: 0 },
@@ -373,7 +373,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'ouroboros',
     name: 'Ouroboros',
-    description: 'Gain 2 gold whenever a word is evicted from the blacklist.',
+    description: 'A word is evicted: +2 gold.',
     price: 8,
     kind: 'gear',
     on: {
@@ -384,7 +384,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'sundial',
     name: 'Sundial',
-    description: '+30s per round, but −1 free guess every round.',
+    description: '+30s per round. −1 free guess per round.',
     price: 8,
     kind: 'gear',
     on: {
@@ -397,7 +397,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'glass-cannon',
     name: 'Glass Cannon',
-    description: '+1 free guess every round, but −10 max HP when acquired.',
+    description: '+1 free guess per round. −10 max HP when acquired.',
     price: 9,
     kind: 'gear',
     onAcquire: () => [{ type: 'maxHp', delta: -10 }],
@@ -406,7 +406,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'loose-tongue',
     name: 'Loose Tongue',
-    description: 'You may guess any five letters, real word or not. Nonsense still scores.',
+    description: 'Any five letters are a valid guess. Nonsense still scores.',
     price: 7,
     kind: 'gear',
     allowInvalidGuesses: true,
@@ -419,7 +419,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'mimic-mouth',
     name: 'Mimic Mouth',
-    description: 'A guess with four or more revealed letters grants a random spell.',
+    description: 'A guess with 4+ revealed letters: random spell.',
     price: 9,
     kind: 'gear',
     on: {
@@ -432,7 +432,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'dead-letter',
     name: 'Dead Letter',
-    description: 'When the clock runs out, gain two random spells.',
+    description: 'Timeout: two random spells.',
     price: 8,
     kind: 'gear',
     on: {
@@ -445,7 +445,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'vowel-tithe',
     name: 'Vowel Tithe',
-    description: 'Casting a spell has a 30% chance to grant another random spell.',
+    description: 'Spell cast: 30% chance of another random spell.',
     price: 9,
     kind: 'gear',
     on: {
@@ -468,7 +468,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'cracked-orb',
     name: 'Cracked Orb',
-    description: 'Each round has a 25% chance to open with a random spell.',
+    description: 'Each round: 25% chance to start with a random spell.',
     price: 9,
     kind: 'gear',
     on: {
@@ -478,7 +478,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'sticky-fingers',
     name: 'Sticky Fingers',
-    description: 'Every third shop purchase grants a random spell.',
+    description: 'Every 3rd shop purchase: random spell.',
     price: 9,
     kind: 'gear',
     initial: { buys: 0 },
@@ -495,7 +495,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'nest-egg',
     name: 'Nest Egg',
-    description: 'Gain 3 gold every time you solve a round.',
+    description: 'On solve: +3 gold.',
     price: 8,
     kind: 'gear',
     on: { onSolve: () => [{ type: 'gold', amount: 3 }] },
@@ -503,7 +503,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'last-word',
     name: 'Last Word',
-    description: 'The first time you drop below 25% HP, gain two random spells.',
+    description: 'First time below 25% HP: two random spells.',
     price: 12,
     kind: 'gear',
     rarity: 'common',
@@ -522,7 +522,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'waste-basket',
     name: 'Waste Basket',
-    description: 'Selling an item always returns one extra gold and a 25% chance of a spell.',
+    description: 'Selling an item: +1 gold, 25% chance of a spell.',
     price: 7,
     kind: 'gear',
     on: { onSell: () => [{ type: 'gold', amount: 1 }, { type: 'giveSpell', spell: 'random', chancePct: 25 }] },
@@ -535,7 +535,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'oracle-skull',
     name: 'Oracle Skull',
-    description: 'The first time you heal each round, gain Omen.',
+    description: 'First heal each round: Omen.',
     price: 20,
     kind: 'gear',
     rarity: 'rare',
@@ -555,7 +555,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'thorn-crown',
     name: 'Thorn Crown',
-    description: 'When a hit gets through, 40% chance to gain a random spell.',
+    description: 'A hit gets through: 40% chance of a random spell.',
     price: 20,
     kind: 'gear',
     rarity: 'rare',
@@ -568,7 +568,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'echo-chamber',
     name: 'Echo Chamber',
-    description: 'The first all-absent guess of the run grants a random spell.',
+    description: 'First all-absent guess of the run: random spell.',
     price: 20,
     kind: 'gear',
     rarity: 'rare',
@@ -588,7 +588,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'phoenix-egg',
     name: 'Phoenix Egg',
-    description: 'The first time you die, revive at 50% HP and gain Restore. Consumed.',
+    description: 'First death: revive at 50% HP, gain Restore. Consumed.',
     price: 24,
     kind: 'gear',
     rarity: 'rare',
@@ -604,7 +604,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'chrono-anchor',
     name: 'Chrono Anchor',
-    description: 'Every round starts with +20 seconds. Gain Time Warp on solve.',
+    description: '+20s per round. On solve: Time Warp.',
     price: 22,
     kind: 'gear',
     rarity: 'rare',
@@ -617,7 +617,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'midas-relic',
     name: 'Midas Relic',
-    description: 'Gain 6 gold on solve. Gain a random spell whenever you eat.',
+    description: 'On solve: +6 gold. Eating: random spell.',
     price: 20,
     kind: 'gear',
     rarity: 'rare',
@@ -630,7 +630,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'vowel-sigil',
     name: 'Vowel Sigil',
-    description: 'Solve a round in under 60 seconds to gain Omen.',
+    description: 'Solve under 60s: Omen.',
     price: 18,
     kind: 'gear',
     rarity: 'rare',
@@ -643,7 +643,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'blacklist-idol',
     name: 'Blacklist Idol',
-    description: 'When the blacklist fills, gain a random spell. Once per round.',
+    description: 'Blacklist fills: random spell. Once per round.',
     price: 20,
     kind: 'gear',
     rarity: 'rare',
@@ -663,7 +663,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'loaded-dice',
     name: 'Loaded Dice',
-    description: 'The first paid guess of every round is free.',
+    description: 'First paid guess each round is free.',
     price: 20,
     kind: 'gear',
     rarity: 'rare',

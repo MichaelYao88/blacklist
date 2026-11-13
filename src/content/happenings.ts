@@ -9,7 +9,7 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'feed',
         label: 'Feed it two words',
-        description: 'It may cough up two names from your blacklist — or add two new ones.',
+        description: '60%: remove 2 blacklist words. 40%: add 2.',
         outcomes: [
           { chancePct: 60, text: 'It spits two blacklisted words back at you.', effects: [{ type: 'blacklistRemoveRandom', count: 2 }] },
           { chancePct: 40, text: 'It eats two words and burps them onto your list.', effects: [{ type: 'blacklistAddRandom', count: 2 }] },
@@ -31,7 +31,7 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'reach',
         label: 'Reach into the bag',
-        description: '50%: +1 item slot. 50%: take 6 damage.',
+        description: '50%: +1 slot. 50%: −6 HP.',
         outcomes: [
           { chancePct: 50, text: 'You find a sturdy strap. +1 item slot.', effects: [{ type: 'slots', delta: 1 }] },
           { chancePct: 50, text: 'Something bites you. −6 HP.', effects: [{ type: 'damage', amount: 6 }] },
@@ -48,7 +48,7 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'tune',
         label: 'Tune the clock',
-        description: '70%: +15s per future round. 30%: −10s per future round.',
+        description: '70%: +15s per round. 30%: −10s per round.',
         outcomes: [
           { chancePct: 70, text: 'The clock sings. +15s per round.', effects: [{ type: 'timeBonus', ms: 15_000 }] },
           { chancePct: 30, text: 'The clock laughs. −10s per round.', effects: [{ type: 'timeBonus', ms: -10_000 }] },
@@ -65,7 +65,7 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'sign',
         label: 'Sign in blood',
-        description: 'Gain a random spell. Lose 8 HP.',
+        description: 'Random spell. −8 HP.',
         outcomes: [
           { chancePct: 100, text: 'The ink drinks. A new spell appears.', effects: [{ type: 'damage', amount: 8 }, { type: 'giveSpell', spell: 'random' }] },
         ],
@@ -99,7 +99,7 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'eat',
         label: 'Sit down and eat',
-        description: 'Heal and trigger any on-eat effects.',
+        description: 'Eat: heal and trigger on-eat items.',
         outcomes: [{ chancePct: 100, text: 'You eat until the room stops spinning.', effects: [{ type: 'eat', food: 'feast' }] }],
       },
       { id: 'leave', label: 'Keep walking', description: 'Nothing happens.', outcomes: [{ chancePct: 100, text: 'You keep walking.', effects: [] }] },
@@ -120,7 +120,7 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'armor',
         label: 'Buy a dented plate',
-        description: '+1 max armor charge.',
+        description: '+1 max armor.',
         costGold: 7,
         outcomes: [{ chancePct: 100, text: 'The plate is ugly, but it will hold. +1 armor.', effects: [{ type: 'maxArmor', delta: 1 }] }],
       },
@@ -135,7 +135,7 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'read',
         label: 'Read the sentence',
-        description: '60%: gain a random spell. 40%: a random word joins your blacklist.',
+        description: '60%: random spell. 40%: add a blacklist word.',
         outcomes: [
           { chancePct: 60, text: 'The ink spells out something useful. A new spell.', effects: [{ type: 'giveSpell', spell: 'random' }] },
           { chancePct: 40, text: 'The sentence is your name. The list grows.', effects: [{ type: 'blacklistAddRandom', count: 1 }] },
@@ -144,7 +144,7 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'smear',
         label: 'Smear it across the page',
-        description: 'Erase one blacklisted word.',
+        description: 'Remove one blacklist word.',
         outcomes: [{ chancePct: 100, text: 'The ink runs. One word is gone from the list.', effects: [{ type: 'blacklistRemoveRandom', count: 1 }] }],
       },
     ],
@@ -157,7 +157,7 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'pull',
         label: 'Pull a root',
-        description: '50%: +1 item slot. 50%: take 4 damage.',
+        description: '50%: +1 slot. 50%: −4 HP.',
         outcomes: [
           { chancePct: 50, text: 'A leather strap comes up with the root. +1 item slot.', effects: [{ type: 'slots', delta: 1 }] },
           { chancePct: 50, text: 'The root pulls back. −4 HP.', effects: [{ type: 'damage', amount: 4 }] },
@@ -166,7 +166,7 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'eat',
         label: 'Eat a letter',
-        description: 'Heal 6 HP and trigger any on-eat effects.',
+        description: 'Recover 6 HP and trigger on-eat items.',
         outcomes: [{ chancePct: 100, text: 'It tastes like copper and rain.', effects: [{ type: 'heal', amount: 6 }, { type: 'eatRandom' }] }],
       },
     ],
@@ -179,14 +179,14 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'gear',
         label: 'Buy a random item',
-        description: 'Pay 8 gold for a random item.',
+        description: '8 gold: random item.',
         costGold: 8,
         outcomes: [{ chancePct: 100, text: 'You dig something out of the pile.', effects: [{ type: 'addRandomItem' }] }],
       },
       {
         id: 'meal',
         label: 'Buy a random meal',
-        description: 'Pay 4 gold to eat something random.',
+        description: '4 gold: eat a random food.',
         costGold: 4,
         outcomes: [{ chancePct: 100, text: 'You eat whatever is in the bowl.', effects: [{ type: 'eatRandom' }] }],
       },
@@ -201,7 +201,7 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'listen',
         label: 'Lower the bucket',
-        description: '70%: erase a blacklisted word. 30%: add one.',
+        description: '70%: remove a blacklist word. 30%: add one.',
         outcomes: [
           { chancePct: 70, text: 'The echo comes back cleaner than it went in.', effects: [{ type: 'blacklistRemoveRandom', count: 1 }] },
           { chancePct: 30, text: 'Something else answers. A word joins the list.', effects: [{ type: 'blacklistAddRandom', count: 1 }] },
@@ -210,7 +210,7 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'coins',
         label: 'Throw in coins',
-        description: 'Pay 3 gold. 60%: gain 9 gold. 40%: nothing.',
+        description: '3 gold. 60%: gain 9 gold. 40%: nothing.',
         costGold: 3,
         outcomes: [
           { chancePct: 60, text: 'The well returns your coins with interest.', effects: [{ type: 'gold', amount: 9 }] },
@@ -227,7 +227,7 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'accept',
         label: 'Accept the edits',
-        description: '55%: gain a random spell. 45%: take 5 damage.',
+        description: '55%: random spell. 45%: −5 HP.',
         outcomes: [
           { chancePct: 55, text: 'The red ink rewrites something in your favour. A spell.', effects: [{ type: 'giveSpell', spell: 'random' }] },
           { chancePct: 45, text: 'The red ink finds a flaw. −5 HP.', effects: [{ type: 'damage', amount: 5 }] },
@@ -236,7 +236,7 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'refuse',
         label: 'Refuse the edits',
-        description: 'Gain 3 gold and move on.',
+        description: '+3 gold and move on.',
         outcomes: [{ chancePct: 100, text: 'You keep the original draft. It is worth something.', effects: [{ type: 'gold', amount: 3 }] }],
       },
     ],
@@ -249,14 +249,14 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'one',
         label: 'Erase one letter',
-        description: 'Pay 6 gold. Choose a letter to remove from all future puzzles.',
+        description: '6 gold: purge one letter.',
         costGold: 6,
         outcomes: [{ chancePct: 100, text: 'The letter is gone. So is every word that needed it.', effects: [{ type: 'pendingPurge', count: 1 }] }],
       },
       {
         id: 'two',
         label: 'Erase two letters',
-        description: 'Pay 14 gold. Choose two letters.',
+        description: '14 gold: purge two letters.',
         costGold: 14,
         outcomes: [{ chancePct: 100, text: 'Two letters disappear under the fluid.', effects: [{ type: 'pendingPurge', count: 2 }] }],
       },
@@ -271,7 +271,7 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'roll',
         label: 'Roll for a spell',
-        description: '50%: gain a random spell. 50%: lose 4 HP.',
+        description: '50%: random spell. 50%: −4 HP.',
         outcomes: [
           { chancePct: 50, text: 'Double six. A spell falls out of the cup.', effects: [{ type: 'giveSpell', spell: 'random' }] },
           { chancePct: 50, text: 'Snake eyes. Something bites your hand. −4 HP.', effects: [{ type: 'damage', amount: 4 }] },
