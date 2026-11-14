@@ -15,7 +15,6 @@ import {
   HAPPENING_BY_ID,
   ITEM_BY_ID,
   SPELL_BY_ID,
-  UPGRADE_BY_ID,
 } from '../content';
 import { LocalStore, hasSave, readMeta, recordOutcome, recordStart } from './store';
 import { describeEvent, escapeHtml, formatTime, reasonText, roman } from './format';
@@ -27,7 +26,6 @@ import {
   itemIcon,
   playerArt,
   spellIcon,
-  upgradeIcon,
 } from './icons';
 import { sfx } from './audio';
 
@@ -74,7 +72,6 @@ const KIND_LABELS: Record<Offer['kind'], string> = {
   item: 'ITEM',
   spell: 'SPELL',
   eat: 'FOOD',
-  upgrade: 'UPGRADE',
 };
 
 // ── state / event plumbing ─────────────────────────────────────────────────
@@ -621,11 +618,11 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>Bosses</h3>
-        <p>Each act ends with a boss that changes how much of the board you are allowed to see. Beating one offers three rare relics with passive effects. Relics take no slots.</p>
+        <p>Each act ends with a boss intro that spells out the changed rules before you commit. Beat it and choose one of three rare relics with passive effects. Relics take no slots.</p>
       </article>
       <article class="rule-card">
         <h3>The run</h3>
-        <p>Five acts. Six nodes per act: three rounds, two shops or happenings, then a boss. Every finished encounter pays gold. A solve also offers a spell or a meal, and only rarely a piece of gear. Shops carry three items, a meal and an upgrade. Defeat wipes the save and shows you the word you missed. Victory keeps your meta record.</p>
+        <p>Five acts. Six nodes per act: three rounds, two shops or happenings, then a boss. Every finished encounter pays gold. A solve also offers a spell or a meal, and only rarely a piece of gear. Shops carry three items and three foods, with one item always half price. Defeat wipes the save and shows you the word you missed. Victory keeps your meta record.</p>
       </article>
       <article class="rule-card">
         <h3>Controls</h3>
@@ -671,11 +668,13 @@ function renderCombatPanel(view: RunView, bossId?: string): string {
         ? 'ROUND OVER'
         : phase.kind === 'reward'
           ? 'REWARD'
-          : phase.kind === 'shop'
-            ? 'SHOP'
-            : phase.kind === 'happening'
-              ? 'INTERRUPTION'
-              : 'THE LIST';
+          : phase.kind === 'bossIntro'
+            ? 'BOSS'
+            : phase.kind === 'shop'
+              ? 'SHOP'
+              : phase.kind === 'happening'
+                ? 'INTERRUPTION'
+                : 'THE LIST';
   const fx = damageFx
     ? `<div class="damage-fx" data-seq="${damageFx.id}">
         ${damageFx.armorSpent > 0 ? `<span class="fx-armor">−${damageFx.armorSpent} ARMOR</span>` : ''}
@@ -892,6 +891,9 @@ function renderBoard(view: RunView, board: BoardView): string {
   const ruledOut = board.ruledOut > 0
     ? `<span class="fact ruled" title="Distinct letters ruled out for this puzzle. Explorer effects count these.">RULED OUT ${board.ruledOut}</span>`
     : '';
+  const shield = board.shielded
+    ? `<span class="fact shield" title="Timed immunity: damage is ignored until this expires.">SHIELD ${formatTime(board.shieldMsLeft)}</span>`
+    : '';
 
   return `
   <div class="round-head">
@@ -907,6 +909,7 @@ function renderBoard(view: RunView, board: BoardView): string {
       ${gauntlet}
       ${looseTongue}
       ${ruledOut}
+      ${shield}
     </div>
   </div>
   <div class="board">${rows.join('')}</div>
@@ -984,11 +987,9 @@ function renderReward(phase: Extract<PhaseView, { kind: 'reward' }>): string {
           ? itemIcon(option.def ?? '')
           : option.kind === 'spell'
             ? spellIcon(option.def ?? '')
-            : option.kind === 'upgrade'
-              ? upgradeIcon(option.def ?? '')
-              : option.kind === 'eat'
-                ? foodIcon(option.def ?? '')
-                : '¤';
+            : option.kind === 'eat'
+              ? foodIcon(option.def ?? '')
+              : '¤';
         const tag = option.rarity === 'rare' ? 'RELIC' : option.kind.toUpperCase();
         return `
         <button class="reward-card ${option.kind} ${option.rarity === 'rare' ? 'rare' : ''}" data-action="reward" data-id="${escapeHtml(option.id)}">
@@ -1016,12 +1017,8 @@ function offerInfo(offer: Offer): { name: string; description: string; slots: nu
     const def = SPELL_BY_ID.get(offer.def);
     return { name: def?.name ?? offer.def, description: def?.description ?? '', slots: 0, icon: spellIcon(offer.def) };
   }
-  if (offer.kind === 'eat') {
-    const def = FOOD_BY_ID.get(offer.def);
-    return { name: def?.name ?? offer.def, description: def?.description ?? '', slots: 0, icon: foodIcon(offer.def) };
-  }
-  const def = UPGRADE_BY_ID.get(offer.def);
-  return { name: def?.name ?? offer.def, description: def?.description ?? '', slots: 0, icon: upgradeIcon(offer.def) };
+  const def = FOOD_BY_ID.get(offer.def);
+  return { name: def?.name ?? offer.def, description: def?.description ?? '', slots: 0, icon: foodIcon(offer.def) };
 }
 
 function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>): string {
@@ -1029,15 +1026,19 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
     ? phase.offers.map((offer) => {
       const info = offerInfo(offer);
       const cannotAfford = view.gold < offer.price;
+      const tag = offer.sale ? 'SALE · 50% OFF' : KIND_LABELS[offer.kind];
+      const price = offer.sale && offer.originalPrice
+        ? `<s>${offer.originalPrice} G</s> ${offer.price} G`
+        : `${offer.price} G`;
       return `
-      <article class="offer-card ${cannotAfford ? 'unavailable' : ''}">
+      <article class="offer-card ${cannotAfford ? 'unavailable' : ''} ${offer.sale ? 'sale' : ''}">
         <div class="offer-top">
           <span class="item-emoji" aria-hidden="true">${info.icon}</span>
-          <span class="tag">${KIND_LABELS[offer.kind]}</span>
+          <span class="tag">${tag}</span>
         </div>
         <h3>${escapeHtml(info.name)}</h3>
         <p>${glossaryText(info.description)}</p>
-        <button class="btn primary" data-action="buy" data-id="${escapeHtml(offer.id)}" ${cannotAfford ? 'disabled' : ''}>${offer.price} G</button>
+        <button class="btn primary" data-action="buy" data-id="${escapeHtml(offer.id)}" ${cannotAfford ? 'disabled' : ''}>${price}</button>
       </article>`;
     }).join('')
     : `<p class="empty-note">The shelves are bare. Reroll or leave.</p>`;
@@ -1100,7 +1101,7 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
     </div>
     ${loadout}
     ${sellable ? `<details class="sell-box"><summary>Sell items</summary>${sellable}</details>` : ''}
-    <p class="hint">Food is eaten on purchase and takes no slot. Spells are not sold here — food and item triggers make them. Relics never appear in shops.</p>
+    <p class="hint">Food is eaten on purchase and takes no slot. One item is always half price. Spells are not sold here — food and item triggers make them. Relics never appear in shops.</p>
   </div>`;
 }
 
@@ -1183,6 +1184,30 @@ function renderPurgeModal(view: RunView): string {
   </div>`;
 }
 
+function renderBossIntro(view: RunView, phase: Extract<PhaseView, { kind: 'bossIntro' }>): string {
+  const boss = BOSS_BY_ID.get(phase.boss);
+  if (!boss) return '';
+  const timer = boss.timerMs === null ? 'NO TIMER' : formatTime(boss.timerMs);
+  const damage = boss.noGuessDamage ? 'NO GUESS DAMAGE' : `HIT ${boss.damage ?? 3}`;
+  return `
+  <div class="phase-card boss-intro" style="--enemy:${bossColor(boss.id)}">
+    <p class="panel-kicker">BOSS ENCOUNTER · ACT ${roman(view.act + 1)}</p>
+    <div class="boss-intro-art" aria-hidden="true">${enemyArt(boss.id)}</div>
+    <h1>${escapeHtml(boss.name)}</h1>
+    <p class="boss-intro-desc">${escapeHtml(boss.description)}</p>
+    <div class="boss-intro-facts">
+      <span>${damage}</span>
+      <span>${timer}</span>
+      <span>${boss.gauntlet ? `${boss.gauntlet.puzzles} PUZZLES` : 'ONE WORD'}</span>
+    </div>
+    <section class="boss-rulebox">
+      <h3>WHAT CHANGES</h3>
+      <ul>${boss.rules.map((rule) => `<li>${glossaryText(rule)}</li>`).join('')}</ul>
+    </section>
+    <button class="btn primary big" data-action="continue">FACE IT →</button>
+  </div>`;
+}
+
 function phasePanel(view: RunView): string {
   const phase = view.phase;
   switch (phase.kind) {
@@ -1192,6 +1217,8 @@ function phasePanel(view: RunView): string {
       return renderSummary(view, phase);
     case 'reward':
       return renderReward(phase);
+    case 'bossIntro':
+      return renderBossIntro(view, phase);
     case 'shop':
       return renderShop(view, phase);
     case 'happening':
@@ -1222,7 +1249,9 @@ function renderPauseOverlay(): string {
 
 function renderRun(view: RunView): string {
   const phase = view.phase;
-  const bossId = phase.kind === 'round' || phase.kind === 'summary' ? phase.boss : undefined;
+  const bossId = phase.kind === 'round' || phase.kind === 'summary' || phase.kind === 'bossIntro'
+    ? phase.boss
+    : undefined;
   const over = phase.kind === 'over';
   const tense =
     phase.kind === 'round' &&

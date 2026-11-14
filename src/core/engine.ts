@@ -32,7 +32,7 @@ import type {
 import { hashSeed, rngChance, rngInt, rngPick, rngNext, rngShuffle } from './rng';
 import { scoreGuess } from './score';
 
-const VERSION = 3;
+const VERSION = 4;
 const WORD_LENGTH = 5;
 const ACTS = 5;
 const NODES_PER_ACT = 6;
@@ -61,7 +61,6 @@ export function createCore(content: Content): Core {
   const itemById = new Map<string, ItemDef>(content.items.map((i) => [i.id, i]));
   const spellById = new Map<string, SpellDef>(content.spells.map((s) => [s.id, s]));
   const bossById = new Map<string, BossDef>(content.bosses.map((b) => [b.id, b]));
-  const upgradeById = new Map(content.upgrades.map((u) => [u.id, u]));
   const foodById = new Map(content.foods.map((f) => [f.id, f]));
   const happeningById = new Map<string, HappeningDef>(content.happenings.map((h) => [h.id, h]));
 
@@ -465,6 +464,26 @@ export function createCore(content: Content): Core {
       return;
     }
 
+    if (round && !options.ignoreImmunity && round.elapsedMs < round.immuneUntilMs) {
+      emit(rt, {
+        type: 'damageTaken',
+        incoming: modified,
+        armorUsed: 0,
+        blocked: modified,
+        dealt: 0,
+        hp: state.hp,
+        source,
+      });
+      runHook(rt, 'onDamageTaken', {
+        incoming: modified,
+        dealt: 0,
+        armorUsed: 0,
+        blocked: modified,
+        source,
+      });
+      return;
+    }
+
     if (round && !options.ignoreImmunity && round.immuneGuesses > 0) {
       round.immuneGuesses--;
       emit(rt, { type: 'immunityChanged', guessesLeft: round.immuneGuesses });
@@ -675,6 +694,13 @@ export function createCore(content: Content): Core {
         const round = state.round;
         if (!round) break;
         round.immuneGuesses += effect.guesses;
+        emit(rt, { type: 'immunityChanged', guessesLeft: round.immuneGuesses });
+        break;
+      }
+      case 'timedImmunity': {
+        const round = state.round;
+        if (!round) break;
+        round.immuneUntilMs = Math.max(round.immuneUntilMs, round.elapsedMs + effect.ms);
         emit(rt, { type: 'immunityChanged', guessesLeft: round.immuneGuesses });
         break;
       }
@@ -925,6 +951,7 @@ export function createCore(content: Content): Core {
       frozenMs: 0,
       frozenUntilGuess: false,
       immuneGuesses: 0,
+      immuneUntilMs: 0,
       damageTaken: 0,
       bossState: { ...(boss?.initialState ?? {}) },
       gauntletIndex: 0,
@@ -939,6 +966,7 @@ export function createCore(content: Content): Core {
     state.reward = undefined;
     state.shop = undefined;
     state.happening = undefined;
+    state.bossIntro = undefined;
     state.phase = 'round';
     state.armor = state.maxArmor;
     emit(rt, { type: 'armorChanged', armor: state.armor, max: state.maxArmor });
@@ -1352,9 +1380,6 @@ export function createCore(content: Content): Core {
       changeGold(rt, option.amount ?? 0, RULES);
     } else if (option.kind === 'spell' && option.def) {
       addSpell(rt, option.def);
-    } else if (option.kind === 'upgrade' && option.def) {
-      const upgrade = upgradeById.get(option.def);
-      if (upgrade) applyEffects(rt, upgrade.effects, { kind: 'rules' });
     } else if (option.kind === 'item' && option.def) {
       if (!addItem(rt, option.def)) return;
     } else if (option.kind === 'eat' && option.def) {
@@ -1377,26 +1402,43 @@ export function createCore(content: Content): Core {
       (i) => i.rarity !== 'rare' && (i.kind !== 'gear' || !ownedGear.has(i.id)),
     );
     const offers: Offer[] = [];
-    const picked: Array<{ kind: Offer['kind']; def: string; price: number }> = [];
+    const picked: Array<{
+      kind: Offer['kind'];
+      def: string;
+      price: number;
+      sale?: boolean;
+      originalPrice?: number;
+    }> = [];
 
-    // Shops sell gear, food and permanent upgrades. Spells are never on the
-    // shelf: they come from food and from item triggers. Gear is mostly a
-    // shop purchase, so the shelf carries three pieces.
+    // Three items and three foods. Spells are never on the shelf: they come
+    // from food and from item triggers.
     const picks = rngShuffle(state, itemPool).slice(0, 3);
-    for (const item of picks) {
-      picked.push({ kind: 'item', def: item.id, price: item.price });
-    }
-    if (content.foods.length > 0) {
-      const food = rngPick(state, content.foods);
+    const saleIndex = picks.length > 0 ? rngInt(state, picks.length) : -1;
+    picks.forEach((item, index) => {
+      const sale = index === saleIndex;
+      picked.push({
+        kind: 'item',
+        def: item.id,
+        price: sale ? Math.max(1, Math.floor(item.price / 2)) : item.price,
+        sale,
+        originalPrice: sale ? item.price : undefined,
+      });
+    });
+
+    const foods = rngShuffle(state, content.foods).slice(0, 3);
+    for (const food of foods) {
       picked.push({ kind: 'eat', def: food.id, price: food.price });
-    }
-    if (content.upgrades.length > 0) {
-      const upgrade = rngPick(state, content.upgrades);
-      picked.push({ kind: 'upgrade', def: upgrade.id, price: upgrade.price });
     }
 
     picked.forEach((pick, index) => {
-      offers.push({ id: `o${index}`, kind: pick.kind, def: pick.def, price: pick.price });
+      offers.push({
+        id: `o${index}`,
+        kind: pick.kind,
+        def: pick.def,
+        price: pick.price,
+        sale: pick.sale,
+        originalPrice: pick.originalPrice,
+      });
     });
     return offers;
   }
@@ -1438,9 +1480,6 @@ export function createCore(content: Content): Core {
       addSpell(rt, offer.def);
     } else if (offer.kind === 'eat') {
       eatFood(rt, offer.def);
-    } else if (offer.kind === 'upgrade') {
-      const upgrade = upgradeById.get(offer.def);
-      if (upgrade) applyEffects(rt, upgrade.effects, RULES);
     }
 
     if (isOver(state)) return;
@@ -1575,6 +1614,13 @@ export function createCore(content: Content): Core {
       act: state.act,
     });
 
+    if (node.kind === 'boss' && node.boss) {
+      state.phase = 'bossIntro';
+      state.bossIntro = { boss: node.boss };
+      state.round = undefined;
+      emit(rt, { type: 'bossIntro', boss: node.boss });
+      return;
+    }
     if (node.kind === 'round' || node.kind === 'boss') {
       startRound(rt);
     } else if (node.kind === 'shop') {
@@ -1588,6 +1634,10 @@ export function createCore(content: Content): Core {
     const state = rt.state;
     if (state.pendingPurge > 0) {
       emit(rt, { type: 'message', text: 'Choose a letter to purge first.' });
+      return;
+    }
+    if (state.phase === 'bossIntro') {
+      startRound(rt);
       return;
     }
     if (state.phase === 'summary') {
@@ -1739,6 +1789,8 @@ export function createCore(content: Content): Core {
       noGuessDamage,
       hints: { ...round.hints },
       ruledOut: ruledOutLetters(state, round).size,
+      shielded: round.elapsedMs < round.immuneUntilMs,
+      shieldMsLeft: Math.max(0, round.immuneUntilMs - round.elapsedMs),
     };
   }
 
@@ -1771,6 +1823,12 @@ export function createCore(content: Content): Core {
           options: clone(state.reward?.options ?? []),
           boss: state.reward?.boss ?? false,
           chosen: state.reward?.chosen,
+        };
+        break;
+      case 'bossIntro':
+        phase = {
+          kind: 'bossIntro',
+          boss: state.bossIntro?.boss ?? state.nodes[state.nodeIndex]?.boss ?? '',
         };
         break;
       case 'shop':
@@ -2010,7 +2068,14 @@ export function createCore(content: Content): Core {
     try {
       const parsed = JSON.parse(json) as Partial<RunState> | null;
       if (!parsed || typeof parsed !== 'object') return null;
-      if (parsed.version !== VERSION && parsed.version !== 2 && parsed.version !== 1) return null;
+      if (
+        parsed.version !== VERSION &&
+        parsed.version !== 3 &&
+        parsed.version !== 2 &&
+        parsed.version !== 1
+      ) {
+        return null;
+      }
       if (!Array.isArray(parsed.nodes) || !Array.isArray(parsed.items)) return null;
       if (typeof parsed.hp !== 'number' || typeof parsed.maxHp !== 'number') return null;
       if (typeof parsed.rng !== 'number') return null;
@@ -2021,8 +2086,29 @@ export function createCore(content: Content): Core {
       for (const item of state.items) {
         if (typeof item.equipped !== 'boolean') item.equipped = true;
       }
-      if (state.round && (!state.round.hints || typeof state.round.hints !== 'object')) {
-        state.round.hints = {};
+      if (state.round) {
+        if (!state.round.hints || typeof state.round.hints !== 'object') {
+          state.round.hints = {};
+        }
+        if (typeof state.round.immuneUntilMs !== 'number') {
+          state.round.immuneUntilMs = 0;
+        }
+      }
+      // Older saves can still have the retired upgrade offer kind. Drop those
+      // entries rather than rendering a shelf the new client cannot price.
+      if (state.shop) {
+        state.shop.offers = state.shop.offers.filter(
+          (offer) => (offer.kind as string) !== 'upgrade',
+        );
+      }
+      if (state.reward) {
+        state.reward.options = state.reward.options.filter(
+          (option) => (option.kind as string) !== 'upgrade',
+        );
+      }
+      if (state.phase === 'bossIntro' && !state.bossIntro) {
+        const boss = state.nodes[state.nodeIndex]?.boss;
+        if (boss) state.bossIntro = { boss };
       }
       return state;
     } catch {

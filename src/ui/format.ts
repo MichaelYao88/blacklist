@@ -75,6 +75,8 @@ export function describeEvent(event: GameEvent): string | null {
       }[event.kind];
       return `Act ${event.act + 1} · ${label}`;
     }
+    case 'bossIntro':
+      return `BOSS · ${event.boss.replace(/-/g, ' ')}`;
     case 'guessRejected':
       return reasonText(event.reason);
     case 'guessMadeFree':

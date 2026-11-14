@@ -89,6 +89,47 @@ export const FOODS: FoodDef[] = [
       { type: 'heal', amount: 4 },
     ],
   }),
+
+  // Permanent boosts are eaten like food now. There is no separate upgrade
+  // shelf: the shop simply offers three items and three foods.
+  defineFood({
+    id: 'vitality',
+    name: 'Vitality',
+    description: '+8 max HP, heal 8. No slot.',
+    price: 6,
+    effects: [
+      { type: 'maxHp', delta: 8 },
+      { type: 'heal', amount: 8 },
+    ],
+  }),
+  defineFood({
+    id: 'plating',
+    name: 'Plating',
+    description: '+5 max armor. No slot.',
+    price: 9,
+    effects: [{ type: 'maxArmor', delta: 5 }],
+  }),
+  defineFood({
+    id: 'chronos',
+    name: 'Chronos',
+    description: '+10s per round. No slot.',
+    price: 8,
+    effects: [{ type: 'timeBonus', ms: 10_000 }],
+  }),
+  defineFood({
+    id: 'satchel',
+    name: 'Satchel',
+    description: '+1 slot. No slot.',
+    price: 10,
+    effects: [{ type: 'slots', delta: 1 }],
+  }),
+  defineFood({
+    id: 'bounty',
+    name: 'Bounty',
+    description: '+2 gold per solve. No slot.',
+    price: 8,
+    effects: [{ type: 'solveGold', amount: 2 }],
+  }),
 ];
 
 export const FOOD_BY_ID = new Map(FOODS.map((f) => [f.id, f]));

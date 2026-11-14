@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CoreHost, MemoryStore, game } from '../src/game';
 import type { Command, GameEvent, RoundState, RunState, StepResult } from '../src/game';
-import { FOOD_BY_ID, HAPPENING_BY_ID, ITEM_BY_ID, SPELL_BY_ID, UPGRADES } from '../src/content';
+import { FOOD_BY_ID, HAPPENING_BY_ID, ITEM_BY_ID, SPELL_BY_ID } from '../src/content';
 
 function start(seed = 'test-seed'): StepResult {
   return game.newRun({ seed });
@@ -304,7 +304,6 @@ describe('round rewards', () => {
     const options = reward.state.reward?.options ?? [];
     expect(options.filter((option) => option.kind === 'gold')).toHaveLength(1);
     expect(options.some((option) => option.kind === 'spell' || option.kind === 'eat')).toBe(true);
-    expect(options.some((option) => option.kind === 'upgrade')).toBe(false);
 
     const chosen = act(reward.state, { type: 'chooseReward', optionId: 'gold' });
     expect(chosen.state.nodeIndex).toBe(1);
@@ -343,26 +342,33 @@ describe('full run', () => {
     let result = start('perfect-run');
     let steps = 0;
 
-    while (result.state.phase !== 'over' && steps < 400) {
+    while (result.state.phase !== 'over' && steps < 500) {
       steps++;
       const state = result.state;
       if (state.pendingPurge > 0) {
-        result = act(state, { type: 'purgeLetter', letter: 'q' });
+        const letter = 'abcdefghijklmnopqrstuvwxyz'
+          .split('')
+          .find((ch) => !state.purged.includes(ch)) ?? 'q';
+        result = act(state, { type: 'purgeLetter', letter });
       } else if (state.phase === 'round' && state.round) {
         result = act(state, { type: 'guess', word: state.round.answer });
       } else if (state.phase === 'summary') {
         result = act(state, { type: 'continue' });
       } else if (state.phase === 'reward') {
         result = act(state, { type: 'chooseReward', optionId: state.reward?.options[0]?.id ?? 'gold' });
-      } else if (state.phase === 'shop') {
+      } else if (state.phase === 'shop' || state.phase === 'bossIntro') {
         result = act(state, { type: 'continue' });
       } else if (state.phase === 'happening') {
         if (state.happening?.resolved) {
           result = act(state, { type: 'continue' });
         } else {
+          const options = state.happening?.options ?? [];
+          const affordable = options.find(
+            (option) => !option.costGold || option.costGold <= state.gold,
+          ) ?? options[options.length - 1];
           result = act(state, {
             type: 'choose',
-            optionId: state.happening?.options[0]?.id ?? '',
+            optionId: affordable?.id ?? '',
           });
         }
       } else {
@@ -370,7 +376,7 @@ describe('full run', () => {
       }
     }
 
-    expect(steps).toBeLessThan(400);
+    expect(steps).toBeLessThan(500);
     expect(result.state.phase).toBe('over');
     expect(result.state.over?.result).toBe('victory');
     expect(result.state.nodeIndex).toBe(30);
@@ -408,19 +414,23 @@ describe('shop', () => {
     throw new Error('no shop seed found');
   }
 
-  it('sells gear, food and upgrades but never spells', () => {
+  it('sells three items and three foods, with one item half off', () => {
     const result = reachShop();
     const offers = result.state.shop?.offers ?? [];
+    expect(offers).toHaveLength(6);
     expect(offers.filter((offer) => offer.kind === 'item')).toHaveLength(3);
     expect(offers.filter((offer) => offer.kind === 'spell')).toHaveLength(0);
-    expect(offers.filter((offer) => offer.kind === 'eat').length).toBeGreaterThanOrEqual(1);
-    expect(offers.filter((offer) => offer.kind === 'upgrade')).toHaveLength(1);
+    expect(offers.filter((offer) => offer.kind === 'eat')).toHaveLength(3);
+    const sale = offers.filter((offer) => offer.sale);
+    expect(sale).toHaveLength(1);
+    expect(sale[0].originalPrice).toBeDefined();
+    expect(sale[0].price).toBe(Math.max(1, Math.floor((sale[0].originalPrice ?? 0) / 2)));
   });
 
   it('buys, rerolls and leaves without breaking the node flow', () => {
     const result = reachShop();
     const shop = result.state.shop!;
-    expect(shop.offers.length).toBe(5);
+    expect(shop.offers.length).toBe(6);
 
     const goldBefore = result.state.gold;
     const offer = shop.offers[0];
@@ -429,7 +439,7 @@ describe('shop', () => {
     expect(bought.state.shop?.offers.some((o) => o.id === offer.id)).toBe(false);
 
     const rerolled = act(bought.state, { type: 'reroll' });
-    expect(rerolled.state.shop?.offers).toHaveLength(5);
+    expect(rerolled.state.shop?.offers).toHaveLength(6);
     expect(rerolled.state.shop?.rerollCost).toBe(shop.rerollCost + 1);
 
     const nodeBefore = rerolled.state.nodeIndex;
@@ -465,6 +475,28 @@ describe('shop', () => {
     const next = act(result.state, { type: 'continue' });
     expect(next.state.phase).toBe('round');
     expect(next.state.round?.baseDamage).toBe(3);
+  });
+});
+
+describe('boss encounters', () => {
+  it('shows a boss intro with rules before the fight starts', () => {
+    const { state } = start();
+    state.nodeIndex = 4;
+    state.phase = 'shop';
+
+    const intro = act(state, { type: 'continue' });
+    expect(intro.state.phase).toBe('bossIntro');
+    expect(intro.state.nodeIndex).toBe(5);
+    expect(eventTypes(intro.events)).toContain('bossIntro');
+    expect(intro.state.bossIntro?.boss).toBe(intro.state.nodes[5].boss);
+    expect(intro.state.round).toBeUndefined();
+
+    const view = game.view(intro.state);
+    expect(view.phase.kind).toBe('bossIntro');
+
+    const started = act(intro.state, { type: 'continue' });
+    expect(started.state.phase).toBe('round');
+    expect(started.state.round?.boss).toBe(intro.state.nodes[5].boss);
   });
 });
 
@@ -647,12 +679,77 @@ describe('event-driven engines', () => {
   });
 });
 
+describe('opening and guess engines', () => {
+  it('blocks damage in the opening seconds with Head Start', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.nodeIndex = 1;
+    state.nodes[2] = { kind: 'round' };
+    state.phase = 'shop';
+    state.items.push({ instance: 'i-head', id: 'head-start', data: {}, equipped: true });
+
+    const next = act(state, { type: 'continue' });
+    expect(next.state.phase).toBe('round');
+    expect(next.state.round?.immuneUntilMs).toBe(12_000);
+
+    next.state.round!.freeLeft = 0;
+    next.state.round!.baseDamage = 9;
+    const hpBefore = next.state.hp;
+    const guess = act(next.state, { type: 'guess', word: 'tiger' });
+    expect(guess.state.hp).toBe(hpBefore);
+    expect(guess.state.round?.immuneUntilMs).toBe(12_000);
+  });
+
+  it('pays Quickdraw for a guess in the opening window', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.nodeIndex = 1;
+    state.nodes[2] = { kind: 'round' };
+    state.phase = 'shop';
+    state.items.push({ instance: 'i-quick', id: 'quickdraw', data: {}, equipped: true });
+
+    const next = act(state, { type: 'continue' });
+    next.state.round!.freeLeft = 0;
+    next.state.round!.elapsedMs = 5_000;
+    const goldBefore = next.state.gold;
+    const hpBefore = next.state.hp;
+
+    const guess = act(next.state, { type: 'guess', word: 'tiger' });
+    expect(guess.state.gold).toBe(goldBefore + 1);
+    expect(guess.state.hp).toBe(hpBefore);
+  });
+
+  it('lets Encore make the last solved answer free', () => {
+    const { state } = start();
+    setAnswer(state, 'blimp');
+    state.lastAnswer = 'crane';
+    state.round!.freeLeft = 0;
+    state.armor = 0;
+    state.items.push({ instance: 'i-encore', id: 'encore', data: {}, equipped: true });
+
+    const guess = act(state, { type: 'guess', word: 'crane' });
+    expect(guess.state.hp).toBe(40);
+    expect(guess.state.round?.guesses.at(-1)?.free).toBe(true);
+  });
+
+  it('pays Tally every fourth guess', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.items.push({ instance: 'i-tally', id: 'tally', data: { guesses: 3 }, equipped: true });
+    state.round!.freeLeft = 2;
+    const goldBefore = state.gold;
+
+    const guess = act(state, { type: 'guess', word: 'tiger' });
+    expect(guess.state.gold).toBe(goldBefore + 1);
+    expect(guess.state.items.find((item) => item.instance === 'i-tally')?.data.guesses).toBe(4);
+  });
+});
+
 describe('content rules', () => {
-  it('sells no blacklist capacity upgrades', () => {
-    expect(UPGRADES.some((upgrade) => upgrade.id === 'ledger')).toBe(false);
-    expect(
-      UPGRADES.some((upgrade) => upgrade.description.toLowerCase().includes('blacklist capacity')),
-    ).toBe(false);
+  it('offers permanent HP boosts as food, not upgrades', () => {
+    expect(FOOD_BY_ID.get('vitality')).toBeDefined();
+    expect(FOOD_BY_ID.get('vitality')?.price).toBeLessThan(8);
+    expect(FOOD_BY_ID.get('plating')).toBeDefined();
   });
 
   it('offers some food that grants random spells', () => {

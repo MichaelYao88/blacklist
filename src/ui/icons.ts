@@ -1,6 +1,10 @@
 const ITEM_ICONS: Record<string, string> = {
   hourglass: '⏳',
   'early-bird': '🐦',
+  'head-start': '🏃',
+  quickdraw: '🤠',
+  encore: '🔁',
+  tally: '🧮',
   'hard-hat': '⛑️',
   'iron-hide': '🛡️',
   'rabbit-foot': '🐇',
@@ -96,9 +100,6 @@ const FOOD_ICONS: Record<string, string> = {
   'iron-ration': '🥫',
   'honey-cake': '🍰',
   'overtime-tea': '🍵',
-};
-
-const UPGRADE_ICONS: Record<string, string> = {
   vitality: '❤️',
   plating: '🛡️',
   chronos: '⏳',
@@ -136,10 +137,6 @@ export function spellIcon(id: string): string {
 
 export function foodIcon(id: string): string {
   return FOOD_ICONS[id] ?? '🍽️';
-}
-
-export function upgradeIcon(id: string): string {
-  return UPGRADE_ICONS[id] ?? '⬆️';
 }
 
 export function bossSigil(id?: string): string {

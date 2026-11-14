@@ -15,6 +15,11 @@ export const BOSSES: BossDef[] = [
     acts: [0, 3],
     timerMs: null,
     damage: 5,
+    rules: [
+      'The last three tiles of every guess are covered.',
+      'You still see the first two tiles.',
+      'There is no clock. Every wrong guess deals 5 damage.',
+    ],
     present: (_ctx, g) => ({
       word: g.word,
       tiles: g.truth.map((t, i) => (i < 2 ? t : 'hidden')),
@@ -27,6 +32,11 @@ export const BOSSES: BossDef[] = [
     acts: [0, 3],
     timerMs: null,
     damage: 7,
+    rules: [
+      'The Sleeper starts asleep and does not attack.',
+      'Two or more hits in one guess wake it and deal 10 damage immediately.',
+      'Once awake, every wrong guess deals 7 damage.',
+    ],
     initialState: { woke: 0 },
     on: {
       onGuessScored: (ctx, p) => {
@@ -49,6 +59,11 @@ export const BOSSES: BossDef[] = [
     acts: [1, 4],
     timerMs: null,
     damage: 8,
+    rules: [
+      'Answers are drawn from the hardest pool.',
+      'The first tile of every guess is covered.',
+      'There is no clock. Every wrong guess deals 8 damage.',
+    ],
     answerPool: 'hard',
     present: (_ctx, g) => ({
       word: g.word,
@@ -62,6 +77,11 @@ export const BOSSES: BossDef[] = [
     acts: [1, 4],
     timerMs: null,
     damage: 7,
+    rules: [
+      'No tile is ever shown in place.',
+      'You only see how many letters are green and how many are yellow.',
+      'There is no clock. Every wrong guess deals 7 damage.',
+    ],
     present: (_ctx, g) => ({
       word: g.word,
       tiles: g.truth.map(() => 'hidden'),
@@ -75,6 +95,11 @@ export const BOSSES: BossDef[] = [
     acts: [1, 4],
     timerMs: null,
     damage: 6,
+    rules: [
+      'A present vowel is shown as a clear hit, never green or yellow.',
+      'You know the vowel is in the answer, not where.',
+      'Consonants score normally. Every wrong guess deals 6 damage.',
+    ],
     present: (_ctx, g) => ({
       word: g.word,
       tiles: g.truth.map((t, i) =>
@@ -89,6 +114,11 @@ export const BOSSES: BossDef[] = [
     acts: [2, 3],
     timerMs: null,
     damage: 9,
+    rules: [
+      'Every present tile is shown as the same colour.',
+      'You know the letter is in the answer, not whether it is in place.',
+      'There is no clock. Every wrong guess deals 9 damage.',
+    ],
     present: (_ctx, g) => ({
       word: g.word,
       tiles: g.truth.map((t) => (t === 'correct' || t === 'present' ? 'hit' : t)),
@@ -103,6 +133,12 @@ export const BOSSES: BossDef[] = [
     gauntlet: { puzzles: 3, timerMs: 150_000 },
     noGuessDamage: true,
     damage: 0,
+    rules: [
+      'Three puzzles, solved one after another.',
+      'One shared 150-second clock keeps running between puzzles.',
+      'Wrong guesses do not deal damage, but the clock does.',
+      'If you die, all three answers are revealed.',
+    ],
   }),
 ];
 

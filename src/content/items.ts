@@ -13,7 +13,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'early-bird',
     name: 'Early Bird',
-    description: 'Solve under 30s: 2 gold. +1 each payout.',
+    description: 'Solve under 30s: gain 2 gold. The reward grows by 1 gold each time this activates.',
     price: 6,
     kind: 'gear',
     initial: { gold: 2 },
@@ -25,6 +25,28 @@ export const ITEMS: ItemDef[] = [
               { type: 'grow', stat: 'gold', by: 1 },
             ]
           : [],
+    },
+  }),
+  defineItem({
+    id: 'head-start',
+    name: 'Head Start',
+    description: 'The first 12s of each round: no damage.',
+    price: 8,
+    kind: 'gear',
+    on: {
+      onRoundStart: () => [{ type: 'timedImmunity', ms: 12_000 }],
+    },
+  }),
+  defineItem({
+    id: 'quickdraw',
+    name: 'Quickdraw',
+    description: 'First 10s of each round: no damage. Guesses in that window: +1 gold.',
+    price: 9,
+    kind: 'gear',
+    on: {
+      onRoundStart: () => [{ type: 'timedImmunity', ms: 10_000 }],
+      onGuessScored: (_ctx, p) =>
+        p.elapsedMs < 10_000 ? [{ type: 'gold', amount: 1 }] : [],
     },
   }),
   defineItem({
@@ -105,6 +127,21 @@ export const ITEMS: ItemDef[] = [
           { type: 'setItemData', stat: 'used', value: 1 },
         ];
       },
+    },
+  }),
+  defineItem({
+    id: 'encore',
+    name: 'Encore',
+    description: 'The last solved answer is always a free guess.',
+    price: 11,
+    kind: 'gear',
+    on: {
+      onGuessScored: (ctx, p) =>
+        ctx.state.lastAnswer &&
+        p.guess.word === ctx.state.lastAnswer &&
+        !p.guess.free
+          ? [{ type: 'makeGuessFree' }]
+          : [],
     },
   }),
   defineItem({
@@ -249,6 +286,23 @@ export const ITEMS: ItemDef[] = [
       onGuessScored: (_ctx, p) => {
         if (p.remainingMs == null || p.remainingMs > 5_000) return [];
         return [{ type: 'gold', amount: 6 }];
+      },
+    },
+  }),
+  defineItem({
+    id: 'tally',
+    name: 'Tally',
+    description: 'Every 4 guesses: +1 gold. Cumulative.',
+    price: 7,
+    kind: 'gear',
+    initial: { guesses: 0 },
+    on: {
+      onGuessScored: (ctx) => {
+        const next = ctx.self.data.guesses + 1;
+        return [
+          { type: 'grow', stat: 'guesses', by: 1 },
+          ...(next % 4 === 0 ? [{ type: 'gold' as const, amount: 1 }] : []),
+        ];
       },
     },
   }),

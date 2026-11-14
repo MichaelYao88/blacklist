@@ -129,10 +129,6 @@ const ENTRIES: GlossaryEntry[] = [
     tip: 'A one-use item. It takes no slot.',
   },
   {
-    pattern: /\bupgrades?\b/gi,
-    tip: 'A permanent boost bought in shops. It cannot be sold.',
-  },
-  {
     pattern: /\bboss(?:es)?\b/gi,
     tip: 'The last node of each act. Bosses hide part of the board and have no clock.',
   },
@@ -182,7 +178,7 @@ const ENTRIES: GlossaryEntry[] = [
   },
   {
     pattern: /\bhits?\b/gi,
-    tip: 'One damage event. Armor cancels an entire hit.',
+    tip: 'One damage event. Armor reduces it point for point.',
   },
 ];
 

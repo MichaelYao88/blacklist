@@ -36,9 +36,9 @@ export type Source =
   | { kind: 'happening'; happening: HappeningId };
 
 export type NodeKind = 'round' | 'boss' | 'shop' | 'happening';
-export type PhaseKind = 'round' | 'summary' | 'reward' | 'shop' | 'happening' | 'over';
+export type PhaseKind = 'round' | 'summary' | 'reward' | 'shop' | 'happening' | 'bossIntro' | 'over';
 export type ItemKind = 'gear' | 'consumable';
-export type OfferKind = 'item' | 'spell' | 'eat' | 'upgrade';
+export type OfferKind = 'item' | 'spell' | 'eat';
 export type HookName =
   | 'onRoundStart'
   | 'onGuessScored'
@@ -113,6 +113,8 @@ export interface RoundState {
   frozenMs: number;
   frozenUntilGuess: boolean;
   immuneGuesses: number;
+  /** Damage is ignored while elapsedMs is below this value. */
+  immuneUntilMs: number;
   damageTaken: number;
   bossState: Record<string, number>;
   gauntletIndex: number;
@@ -136,7 +138,7 @@ export interface SummaryState {
 
 export interface RewardOption {
   id: string;
-  kind: 'gold' | 'spell' | 'upgrade' | 'item' | 'eat';
+  kind: 'gold' | 'spell' | 'item' | 'eat';
   def?: string;
   amount?: number;
   rarity?: 'common' | 'rare';
@@ -154,6 +156,9 @@ export interface Offer {
   kind: OfferKind;
   def: string;
   price: number;
+  /** A shop sale marks one item down by half. */
+  sale?: boolean;
+  originalPrice?: number;
 }
 export interface ShopState {
   offers: Offer[];
@@ -195,6 +200,7 @@ export type Effect =
   | { type: 'freeGuesses'; count: number }
   | { type: 'makeGuessFree' }
   | { type: 'immunity'; guesses: number }
+  | { type: 'timedImmunity'; ms: number }
   | { type: 'revealYellow' }
   | { type: 'revealLetter'; letter: Letter }
   | { type: 'revealRandom'; count: number }
@@ -311,18 +317,12 @@ export interface BossDef {
   noGuessDamage?: boolean;
   /** Fixed damage for a boss round. Omit to use the act-based default. */
   damage?: number;
+  /** Plain-language mechanics shown on the boss intro screen. */
+  rules: string[];
   answerPool?: 'normal' | 'hard';
   initialState?: Record<string, number>;
   present?: (ctx: Ctx, guess: ScoredGuess) => PresentedGuess;
   on?: Reactors<Ctx>;
-}
-
-export interface UpgradeDef {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  effects: Effect[];
 }
 
 export interface FoodDef {
@@ -356,7 +356,6 @@ export interface Content {
   items: ItemDef[];
   spells: SpellDef[];
   bosses: BossDef[];
-  upgrades: UpgradeDef[];
   foods: FoodDef[];
   happenings: HappeningDef[];
   answers: readonly string[];
@@ -392,6 +391,7 @@ export interface RunState {
   lastAnswer?: string;
   pendingPurge: number;
   phase: PhaseKind;
+  bossIntro?: { boss: BossId };
   round?: RoundState;
   summary?: SummaryState;
   reward?: RewardState;
@@ -430,6 +430,9 @@ export interface BoardView {
   noGuessDamage: boolean;
   hints: Partial<Record<Letter, 'present' | 'absent'>>;
   ruledOut: number;
+  /** True while a timed immunity item is protecting the opening seconds. */
+  shielded: boolean;
+  shieldMsLeft: number;
 }
 
 export type PhaseView =
@@ -446,6 +449,7 @@ export type PhaseView =
       gold: number;
     }
   | { kind: 'reward'; options: RewardOption[]; boss: boolean; chosen?: string }
+  | { kind: 'bossIntro'; boss: BossId }
   | { kind: 'shop'; offers: Offer[]; rerollCost: number }
   | {
       kind: 'happening';
@@ -502,6 +506,7 @@ export type Command =
 export type GameEvent =
   | { type: 'runStarted'; seed: string; ascension: number; nodes: RunNode[] }
   | { type: 'nodeEntered'; index: number; kind: NodeKind; act: number }
+  | { type: 'bossIntro'; boss: BossId }
   | {
       type: 'roundStarted';
       boss?: BossId;
@@ -605,6 +610,5 @@ export interface Core {
 export const defineItem = (d: ItemDef): ItemDef => d;
 export const defineSpell = (d: SpellDef): SpellDef => d;
 export const defineBoss = (d: BossDef): BossDef => d;
-export const defineUpgrade = (d: UpgradeDef): UpgradeDef => d;
 export const defineFood = (d: FoodDef): FoodDef => d;
 export const defineHappening = (d: HappeningDef): HappeningDef => d;

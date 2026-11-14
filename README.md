@@ -17,7 +17,7 @@ The first word of every round is added to a 16-word blacklist. You can never gue
 - A shrinking round timer, fixed encounter damage and a per-round armor pool
 - Correct guesses never deal damage; wrong paid guesses take the monster's fixed hit
 - Five acts, six nodes per act: `round → support → round → support → round → boss` (30 encounters)
-- Shops with rerolls, three items, food and permanent upgrades — never spells
+- Shops with rerolls, three items and three foods - one item is always 50% off, and spells are never sold
 - Item slots with equip/unequip: only equipped gear is active, and each shop has a drag-and-drop loadout
 - **Loose Tongue**, an item that lets you guess five-letter nonsense for free-form letter probes
 - Spells stack by type and come from food and item triggers, not shelves
@@ -25,9 +25,10 @@ The first word of every round is added to a 16-word blacklist. You can never gue
 - Short item, spell and offer text with hover tooltips for keywords like armor, reveal, ruled out, free guesses, blacklist, relic and timeout
 - Revealed letters stay marked on the keyboard and in a Revealed panel for the puzzle; random reveals lean toward letters that are not in the answer
 - Every finished encounter pays gold; solves offer coins, usually a spell, and only rarely gear or a meal
+- Boss encounters open with a full-screen intro, a plain-language rules list and a continue gate
 - Bosses award one of three rare relics with passive effects; relics take no slots and never appear in shops
 - Defeat reveals the answer you missed (all of them, on The Gauntlet)
-- 73 items (64 shop items + 9 rare boss relics), 7 spells, 10 foods and 14 happenings
+- 77 items (68 shop items + 9 rare boss relics), 7 spells, 15 foods and 14 happenings
 - Purge is an event (The Redaction), not a spell
 - Seven bosses:
   - **The Editor** — hides the last three tiles of each guess
@@ -105,7 +106,7 @@ view(state) → RunView
 ```
 src/
   core/        portable engine, types, RNG, scoring, host adapter
-  content/     items, spells, bosses, upgrades, foods, happenings
+  content/     items, spells, bosses, foods, happenings
   data/        generated word lists
   ui/          vanilla DOM client
   game.ts      core instance wired to content
