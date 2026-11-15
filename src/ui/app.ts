@@ -22,9 +22,10 @@ import { glossaryText } from './glossary';
 import {
   bossColor,
   enemyArt,
+  enemySprite,
   foodIcon,
   itemIcon,
-  playerArt,
+  playerSprite,
   spellIcon,
 } from './icons';
 import { sfx } from './audio';
@@ -60,6 +61,7 @@ interface DamageFx {
   hpLost: number;
   armorSpent: number;
   incoming: number;
+  at: number;
 }
 let damageFx: DamageFx | null = null;
 let damageTimer: number | undefined;
@@ -87,7 +89,7 @@ function notify(text: string, kind: Notice['kind'] = 'info'): void {
 
 function flashDamage(hpLost: number, armorSpent: number, incoming: number): void {
   damageSeq += 1;
-  damageFx = { id: damageSeq, hpLost, armorSpent, incoming };
+  damageFx = { id: damageSeq, hpLost, armorSpent, incoming, at: performance.now() };
   shake = hpLost > 0;
   if (shakeTimer) window.clearTimeout(shakeTimer);
   shakeTimer = window.setTimeout(() => {
@@ -653,86 +655,132 @@ function renderTopbar(view: RunView): string {
   </header>`;
 }
 
-function renderCombatPanel(view: RunView, bossId?: string): string {
-  const phase = view.phase;
+const ACT_ENEMIES = [
+  { name: 'The Gate Warden', line: 'It keeps the names that got this far.' },
+  { name: 'The Hollow Choir', line: 'Every voice wants a different word.' },
+  { name: 'The Ash Revenant', line: 'It remembers everything you already tried.' },
+  { name: 'The Pale Auditor', line: 'It is counting what you have left.' },
+  { name: 'The Last Word', line: 'It has been waiting at the end of the list.' },
+];
+
+const ACT_COLORS = ['#e7b85a', '#8b6bd9', '#df615a', '#58b4c6', '#4fbf87'];
+
+function arenaEnemy(view: RunView, bossId?: string) {
   const boss = bossId ? BOSS_BY_ID.get(bossId) : undefined;
+  if (boss) {
+    return { boss, name: boss.name, line: boss.description, color: bossColor(boss.id) };
+  }
+  const index = Math.max(0, Math.min(ACT_ENEMIES.length - 1, view.act));
+  return { boss: undefined, ...ACT_ENEMIES[index], color: ACT_COLORS[index] };
+}
+
+function phaseLabel(view: RunView): string {
+  const phase = view.phase;
+  return phase.kind === 'round'
+    ? `ROUND ${view.nodeIndex + 1}`
+    : phase.kind === 'summary'
+      ? 'ROUND OVER'
+      : phase.kind === 'reward'
+        ? 'REWARD'
+        : phase.kind === 'bossIntro'
+          ? 'BOSS'
+          : phase.kind === 'shop'
+            ? 'SHOP'
+            : phase.kind === 'happening'
+              ? 'INTERRUPTION'
+              : 'THE LIST';
+}
+
+function damageFxHtml(): string {
+  if (!damageFx) return '';
+  return `<div class="damage-fx" data-seq="${damageFx.id}">
+    ${damageFx.armorSpent > 0 ? `<span class="fx-armor">−${damageFx.armorSpent} ARMOR</span>` : ''}
+    ${damageFx.hpLost > 0 ? `<span class="fx-hp">−${damageFx.hpLost} HP</span>` : ''}
+    ${damageFx.armorSpent === 0 && damageFx.hpLost === 0
+      ? `<span class="fx-block">BLOCKED ${damageFx.incoming}</span>`
+      : ''}
+    ${damageFx.hpLost > 0 && damageFx.incoming > damageFx.hpLost
+      ? `<span class="fx-raw">HIT ${damageFx.incoming}</span>`
+      : ''}
+  </div>`;
+}
+
+function renderArena(view: RunView, bossId?: string): string {
+  const phase = view.phase;
+  const enemy = arenaEnemy(view, bossId);
   const board = phase.kind === 'round' ? phase.board : null;
   const stateEntries = board ? Object.entries(board.bossState) : [];
   const pct = Math.max(0, Math.min(100, (view.hp / Math.max(1, view.maxHp)) * 100));
   const armorPct = Math.max(0, Math.min(100, (view.armor / Math.max(1, view.maxArmor)) * 100));
   const low = view.hp <= view.maxHp * 0.3;
-  const phaseLabel =
-    phase.kind === 'round'
-      ? `ROUND ${view.nodeIndex + 1}`
-      : phase.kind === 'summary'
-        ? 'ROUND OVER'
-        : phase.kind === 'reward'
-          ? 'REWARD'
-          : phase.kind === 'bossIntro'
-            ? 'BOSS'
-            : phase.kind === 'shop'
-              ? 'SHOP'
-              : phase.kind === 'happening'
-                ? 'INTERRUPTION'
-                : 'THE LIST';
-  const fx = damageFx
-    ? `<div class="damage-fx" data-seq="${damageFx.id}">
-        ${damageFx.armorSpent > 0 ? `<span class="fx-armor">−${damageFx.armorSpent} ARMOR</span>` : ''}
-        ${damageFx.hpLost > 0 ? `<span class="fx-hp">−${damageFx.hpLost} HP</span>` : ''}
-        ${damageFx.armorSpent === 0 && damageFx.hpLost === 0
-          ? `<span class="fx-block">BLOCKED ${damageFx.incoming}</span>`
-          : ''}
-        ${damageFx.hpLost > 0 && damageFx.incoming > damageFx.hpLost
-          ? `<span class="fx-raw">HIT ${damageFx.incoming}</span>`
-          : ''}
-      </div>`
-    : '';
+  const hit = Boolean(damageFx && damageFx.hpLost > 0 && performance.now() - damageFx.at < 600);
+
+  const intent = phase.kind === 'summary'
+    ? phase.outcome === 'solved'
+      ? 'FELLED'
+      : phase.outcome === 'timeout'
+        ? 'THE CLOCK TOOK ITS CUT'
+        : 'YOU FELL'
+    : phase.kind === 'bossIntro'
+      ? 'UNREAD'
+      : board
+        ? board.noGuessDamage
+          ? 'NO GUESS DAMAGE'
+          : `HITS FOR ${board.rawNextGuessDamage}`
+        : 'WATCHING';
+
+  return `
+  <section class="arena ${low ? 'critical' : ''} ${phase.kind === 'summary' ? 'settled' : ''}" style="--enemy:${enemy.color}" aria-label="Battlefield">
+    <div class="arena-sky" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="arena-floor" aria-hidden="true"></div>
+    <div class="arena-side player-side ${hit ? 'hit' : ''}">
+      <div class="sprite player-sprite">${playerSprite(pct / 100, hit)}</div>
+      <div class="fighter-plate">
+        <div class="fighter-head">
+          <span class="fighter-name">THE RUNNER</span>
+          <b class="hp-numbers">${view.hp}<em>/${view.maxHp}</em></b>
+        </div>
+        <div class="big-hp" role="progressbar" aria-label="HP" aria-valuemin="0" aria-valuemax="${view.maxHp}" aria-valuenow="${view.hp}">
+          <i style="width:${pct}%"></i>
+          <span class="hp-gloss"></span>
+        </div>
+        <div class="armor-line" title="Armor soaks damage point-for-point before HP. It refills each round. Timeout damage ignores armor.">
+          <span class="armor-bar" role="progressbar" aria-label="Armor" aria-valuemin="0" aria-valuemax="${view.maxArmor}" aria-valuenow="${view.armor}">
+            <i style="width:${armorPct}%"></i>
+          </span>
+          <span class="armor-text">ARMOR ${view.armor}/${view.maxArmor}</span>
+        </div>
+      </div>
+      ${damageFxHtml()}
+    </div>
+    <div class="arena-center">
+      <span class="arena-phase">${phaseLabel(view)}</span>
+      <div class="vs-mark"><span>VS</span></div>
+      <span class="arena-intent">${intent}</span>
+    </div>
+    <div class="arena-side enemy-side ${hit ? 'attacking' : ''}">
+      <div class="sprite enemy-sprite">${enemySprite(bossId)}</div>
+      <div class="fighter-plate">
+        <div class="fighter-head">
+          <span class="fighter-name">${escapeHtml(enemy.name)}</span>
+          <span class="threat-tag">${enemy.boss ? 'BOSS' : 'HOSTILE'}</span>
+        </div>
+        ${stateEntries.length > 0
+          ? `<div class="boss-state">${stateEntries.map(([key, value]) => `<span>${escapeHtml(key) === 'woke' ? (value ? 'AWAKE' : 'ASLEEP') : `${escapeHtml(key)} ${value}`}</span>`).join('')}</div>`
+          : `<p class="enemy-line">${glossaryText(enemy.line)}</p>`}
+      </div>
+    </div>
+  </section>`;
+}
+
+function renderGearPanel(view: RunView): string {
   const items = view.items.length
     ? view.items.map((item) => renderItem(view, item)).join('')
     : `<p class="empty-note">No items yet. Shops and bosses fix that.</p>`;
   const bagged = view.items.filter((item) => !item.equipped && item.slots > 0).length;
 
   return `
-  <aside class="panel combat-panel ${low ? 'critical' : ''}" style="--enemy:${bossColor(bossId)}" aria-label="Combat status">
-    <section class="enemy-block ${boss ? '' : 'empty'}">
-      <div class="panel-head">
-        <span class="panel-kicker">THE OPPOSITION</span>
-        <span class="count">${boss ? 'HOSTILE' : 'WATCHING'}</span>
-      </div>
-      <div class="boss-art">${enemyArt(bossId)}</div>
-      <h2>${boss ? escapeHtml(boss.name) : `Act ${roman(view.act + 1)}`}</h2>
-      <p class="muted">${boss
-        ? escapeHtml(boss.description)
-        : 'The next word is already waiting. No boss in this node.'}</p>
-      ${stateEntries.length > 0 ? `<div class="boss-state">${stateEntries.map(([key, value]) => `<span>${escapeHtml(key) === 'woke' ? (value ? 'AWAKE' : 'ASLEEP') : `${escapeHtml(key)} ${value}`}</span>`).join('')}</div>` : ''}
-    </section>
-    <div class="vs-divider"><span>VS</span></div>
-    <section class="runner-block">
-      <div class="panel-head">
-        <span class="panel-kicker">THE RUNNER</span>
-        <span class="phase-tag">${phaseLabel}</span>
-      </div>
-      <div class="combatant player ${low ? 'low' : ''} ${damageFx && damageFx.hpLost > 0 ? 'hit' : ''}">
-        <div class="portrait player-portrait">${playerArt(pct / 100)}</div>
-        <div class="combatant-main">
-          <div class="combatant-top">
-            <span class="combatant-name">HP</span>
-            <b class="hp-numbers">${view.hp}<em>/${view.maxHp}</em></b>
-          </div>
-          <div class="big-hp" role="progressbar" aria-valuemin="0" aria-valuemax="${view.maxHp}" aria-valuenow="${view.hp}">
-            <i style="width:${pct}%"></i>
-            <span class="hp-gloss"></span>
-          </div>
-          <div class="armor-line" title="Armor soaks damage point-for-point before HP. It refills each round. Timeout damage ignores armor.">
-            <span class="armor-bar" role="progressbar" aria-label="Armor" aria-valuemin="0" aria-valuemax="${view.maxArmor}" aria-valuenow="${view.armor}">
-              <i style="width:${armorPct}%"></i>
-            </span>
-            <span class="armor-text">ARMOR ${view.armor}/${view.maxArmor}</span>
-          </div>
-        </div>
-        ${fx}
-      </div>
-    </section>
+  <aside class="panel combat-panel gear-panel" aria-label="Gear">
     <section class="rail-items">
       <div class="panel-head">
         <span class="panel-kicker">ITEMS</span>
@@ -1252,6 +1300,7 @@ function renderRun(view: RunView): string {
   const bossId = phase.kind === 'round' || phase.kind === 'summary' || phase.kind === 'bossIntro'
     ? phase.boss
     : undefined;
+  const inBattle = phase.kind === 'round' || phase.kind === 'summary';
   const over = phase.kind === 'over';
   const tense =
     phase.kind === 'round' &&
@@ -1268,10 +1317,11 @@ function renderRun(view: RunView): string {
     ${tense ? `<div class="danger-vignette" aria-hidden="true"></div>` : ''}
     ${renderTopbar(view)}
     ${renderPath(view)}
+    ${inBattle && !over ? renderArena(view, bossId) : ''}
     ${over
       ? `<main class="over-layout">${phasePanel(view)}</main>`
       : `<main class="layout">
-          ${renderCombatPanel(view, bossId)}
+          ${renderGearPanel(view)}
           <section class="center-column">${phasePanel(view)}</section>
           ${renderSidePanel(view)}
         </main>`}

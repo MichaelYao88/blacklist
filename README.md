@@ -39,7 +39,8 @@ The first word of every round is added to a 16-word blacklist. You can never gue
   - **Monochrome** — every present letter is ambiguous, never positioned
   - **The Gauntlet** — three puzzles, one shared 150-second clock, no per-guess damage
 - One exact-state autosave slot. Defeat clears it. Victory clears it and updates meta stats.
-- Combat HUD in the left rail: character portrait, HP, armor and the enemy in one column, with damage popups and a low-time warning
+- Side-view battle arena: the runner on the left and the act's monster (or boss) on the right, each with a sprite, nameplate, HP and armor, plus damage popups, an attack lunge and a low-HP warning
+- Items live in the left rail; spells and the blacklist sit on the right
 - Pause (Space or Esc), mute, synthesized SFX, keyboard and on-screen keyboard, colorblind symbols, reduced-motion-friendly CSS
 
 Not in this version: ascension, daily seeds, meta unlocks beyond win/run counters, dordle grids, Antiwordle, liar clues, Green Warden. The state and seed plumbing is already there for those.

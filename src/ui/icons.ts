@@ -169,6 +169,55 @@ export function playerArt(hpPct: number): string {
   </svg>`;
 }
 
+/** Large side-view runner used in the battle arena. Faces right. */
+export function playerSprite(hpPct: number, hit = false): string {
+  const hurt = hpPct <= 0.3;
+  return `
+  <svg class="sprite-svg player-svg ${hit ? 'is-hit' : ''}" viewBox="0 0 180 180" role="img" aria-label="The runner">
+    <ellipse class="art-shadow" cx="90" cy="164" rx="48" ry="8" />
+    <path class="art-scarf" d="M66 78C46 72 24 78 8 98c19-6 36-4 50 4Z" />
+    <path class="art-cloak" d="M100 34c-23 2-40 21-44 46-2 13-2 27-1 41 1 10 7 16 17 16h46c10 0 17-6 17-17l-2-39c-3-25-13-40-33-47Z" />
+    <path class="art-cloak-dark" d="M78 104c6 19 19 31 40 37l-3 14H59l-2-23c2-17 9-25 21-28Z" />
+    <path class="art-hood" d="M100 32c-17 2-29 15-29 33 0 14 8 25 23 27 13 2 23-7 25-19 2-17-4-31-19-41Z" />
+    <path class="art-face" d="M94 52c10 0 18 8 18 18 0 9-6 16-15 17-8 1-14-6-14-15 0-11 3-19 11-20Z" />
+    <g class="art-eyes">
+      ${hurt
+        ? `<path d="M97 61l9 8M106 61l-9 8" />`
+        : `<circle class="art-eye" cx="104" cy="66" r="2.6" />`}
+    </g>
+    <path class="art-belt" d="M60 108l53 4 1 7-53-4Z" />
+    <circle class="art-buckle" cx="90" cy="112" r="4" />
+    <path class="art-arm" d="M110 94c10 2 17 8 21 16l-9 7c-4-7-9-11-16-13Z" />
+    <path class="art-blade" d="M128 108 172 72l6 7-43 39Z" />
+    <path class="art-hilt" d="M122 116l18-16" />
+  </svg>`;
+}
+
+/** Large side-view monster used in the battle arena. Faces left. */
+export function enemySprite(bossId?: string): string {
+  const color = bossColor(bossId);
+  const eyes = bossId === 'sleeper'
+    ? `<path class="enemy-eye-line" d="M64 60q8-7 16 0M88 60q8-7 16 0" />`
+    : bossId === 'auditor'
+      ? `<circle class="enemy-eye-main" cx="72" cy="58" r="6" /><circle class="enemy-eye" cx="96" cy="56" r="4" />`
+      : `<ellipse class="enemy-eye-main" cx="72" cy="58" rx="8" ry="7" /><ellipse class="enemy-eye" cx="98" cy="56" rx="4" ry="4" />`;
+  return `
+  <svg class="sprite-svg enemy-svg" viewBox="0 0 180 180" role="img" aria-label="The opposition" style="--enemy:${color}">
+    <ellipse class="art-shadow" cx="98" cy="164" rx="54" ry="9" />
+    <path class="enemy-aura" d="M102 12c35 4 53 34 51 69-2 33-21 56-47 61-25 5-47-9-53-33-2-8-1-16 2-24-8-6-12-15-12-25 6 4 12 4 18 0-8-7-12-16-11-27 7 7 15 9 24 6-3-10 1-20 10-25 5-3 12-4 18-2Z" />
+    <path class="enemy-body" d="M104 26c23 2 37 23 36 49-1 21-10 36-25 45-10 7-22 8-33 3-9-4-15-12-16-22-1-6 0-11 3-15-7-3-11-9-12-16 6 2 11 1 15-3-4-5-6-11-4-17 5 4 10 5 15 2-2-8 2-15 9-19 4-2 8-3 12-3Z" />
+    <path class="enemy-horn" d="M94 26C82 12 66 6 48 6c14 8 22 16 26 28" />
+    <path class="enemy-horn" d="M120 24c0-12 6-20 18-24-6 12-6 20-4 28" />
+    <path class="enemy-brow" d="M56 46q14-10 30-4M90 46q8-5 16-2" />
+    <g class="enemy-eyes">${eyes}</g>
+    <path class="enemy-mouth" d="M50 92c10 8 24 12 40 10l4 12c-18 6-36 0-48-10Z" />
+    <path class="enemy-teeth" d="M56 94l4 10 6-9 4 10 6-9 5 10 6-9 4 9" />
+    <path class="enemy-spike" d="M126 88l20-14-8 20 18-6-24 18" />
+    <path class="enemy-claw" d="M58 136c-8 6-12 12-14 20M68 142c-4 8-6 14-6 18" />
+    <text class="enemy-sigil" x="126" y="150" text-anchor="middle">${bossSigil(bossId)}</text>
+  </svg>`;
+}
+
 /** A generic enemy silhouette, tinted per boss. */
 export function enemyArt(bossId?: string): string {
   const color = bossColor(bossId);
