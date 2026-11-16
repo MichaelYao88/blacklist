@@ -32,15 +32,15 @@ The first word of every round is added to a 16-word blacklist. You can never gue
 - Purge is an event (The Redaction), not a spell
 - Seven bosses:
   - **The Editor** — hides the last three tiles of each guess
-  - **The Sleeper** — wakes after two hits in a guess and hits for 10
+  - **The Sleeper** — asleep until three hits land, then every wrong guess deals 10
   - **The Censor** — draws from the hardest 420 answers; hides the first tile
   - **The Auditor** — shows counts only, never positions
   - **Vowel Fog** — vowels are ambiguous green-or-yellow
   - **Monochrome** — every present letter is ambiguous, never positioned
   - **The Gauntlet** — three puzzles, one shared 150-second clock, no per-guess damage
 - One exact-state autosave slot. Defeat clears it. Victory clears it and updates meta stats.
-- Side-view battle arena: the runner on the left and the act's monster (or boss) on the right, each with a sprite, nameplate, HP and armor, plus damage popups, an attack lunge and a low-HP warning
-- Items live in the left rail; spells and the blacklist sit on the right
+- Compact battle rail on the left: round timer, a side-view mini arena with the runner facing the act's monster (or boss), player HP and armor, plus damage popups and an attack lunge
+- Spells and the blacklist sit on the right, with items below them
 - Pause (Space or Esc), mute, synthesized SFX, keyboard and on-screen keyboard, colorblind symbols, reduced-motion-friendly CSS
 
 Not in this version: ascension, daily seeds, meta unlocks beyond win/run counters, dordle grids, Antiwordle, liar clues, Green Warden. The state and seed plumbing is already there for those.

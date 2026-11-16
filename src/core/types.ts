@@ -317,6 +317,10 @@ export interface BossDef {
   noGuessDamage?: boolean;
   /** Fixed damage for a boss round. Omit to use the act-based default. */
   damage?: number;
+  /** Per-guess damage override. Omit to use the round's base damage. */
+  damageFor?: (state: RunState, round: RoundState) => number;
+  /** Optional override for the damage chip on the boss intro screen. */
+  damageLabel?: string;
   /** Plain-language mechanics shown on the boss intro screen. */
   rules: string[];
   answerPool?: 'normal' | 'hard';

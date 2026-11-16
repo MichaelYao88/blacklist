@@ -182,6 +182,60 @@ describe('gauntlet', () => {
   });
 });
 
+describe('the sleeper', () => {
+  it('wakes after three cumulative hits and only then hits for 10', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    const round = state.round as RoundState;
+    state.round = {
+      ...round,
+      boss: 'sleeper',
+      freeLeft: 0,
+      paidGuesses: 0,
+      bossState: { woke: 0, hits: 0, wokeGuess: 0 },
+      baseDamage: 10,
+      remainingMs: null,
+      timerStartMs: null,
+    };
+    state.armor = 0;
+
+    const boardOf = (s: RunState) => {
+      const phase = game.view(s).phase;
+      if (phase.kind !== 'round') throw new Error('not in a round');
+      return phase.board;
+    };
+
+    // Two hits, but the Sleeper sleeps through them.
+    const one = act(state, { type: 'guess', word: 'slate' });
+    expect(one.state.hp).toBe(40);
+    expect(one.state.round?.bossState.hits).toBe(2);
+    expect(one.state.round?.bossState.woke).toBe(0);
+    expect(boardOf(one.state).nextGuessDamage).toBe(0);
+
+    // No new hits: still asleep and still harmless.
+    const two = act(one.state, { type: 'guess', word: 'pious' });
+    expect(two.state.hp).toBe(40);
+    expect(two.state.round?.bossState.hits).toBe(2);
+    expect(boardOf(two.state).nextGuessDamage).toBe(0);
+
+    // Three more hits push it over the edge. The waking guess deals nothing.
+    const three = act(two.state, { type: 'guess', word: 'arise' });
+    expect(three.state.hp).toBe(40);
+    expect(three.state.round?.bossState.woke).toBe(1);
+    expect(three.state.round?.bossState.wokeGuess).toBe(3);
+    expect(boardOf(three.state).nextGuessDamage).toBe(10);
+    expect(eventTypes(three.events)).toContain('bossStateChanged');
+
+    // Every wrong guess after waking deals 10 and keeps the hit tally.
+    const four = act(three.state, { type: 'guess', word: 'bulky' });
+    expect(four.state.hp).toBe(30);
+    expect(four.state.round?.bossState.hits).toBe(5);
+
+    const five = act(four.state, { type: 'guess', word: 'wharf' });
+    expect(five.state.hp).toBe(20);
+  });
+});
+
 describe('spells, items and death', () => {
   it('casts heal and removes the spell', () => {
     const { state } = start();

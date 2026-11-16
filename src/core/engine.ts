@@ -1245,11 +1245,14 @@ export function createCore(content: Content): Core {
       const boss = round.boss ? bossById.get(round.boss) : undefined;
       if (!boss?.noGuessDamage) {
         round.paidGuesses++;
-        dealDamage(
-          rt,
-          round.baseDamage,
-          round.boss ? { kind: 'boss', boss: round.boss } : RULES,
-        );
+        const amount = boss?.damageFor ? boss.damageFor(state, round) : round.baseDamage;
+        if (amount > 0) {
+          dealDamage(
+            rt,
+            amount,
+            round.boss ? { kind: 'boss', boss: round.boss } : RULES,
+          );
+        }
       }
     }
 
@@ -1742,7 +1745,11 @@ export function createCore(content: Content): Core {
   function boardView(state: RunState): BoardView {
     const round = state.round as RoundState;
     const boss = round.boss ? bossById.get(round.boss) : undefined;
-    const rawNext = round.baseDamage;
+    // damageFor describes the hit a wrong guess takes at the round's current
+    // progress, so preview the next guess by stepping the counter forward.
+    const rawNext = boss?.damageFor
+      ? boss.damageFor(state, { ...round, totalGuesses: round.totalGuesses + 1 })
+      : round.baseDamage;
     const noGuessDamage = Boolean(boss?.noGuessDamage);
 
     const keyboard: Partial<Record<Letter, KeyboardStatus>> = {};

@@ -28,26 +28,36 @@ export const BOSSES: BossDef[] = [
   defineBoss({
     id: 'sleeper',
     name: 'The Sleeper',
-    description: 'Asleep. Wake it with two hits in one guess and it deals 10 damage.',
+    description: 'Asleep. Three hits wake it, and every wrong guess after that deals 10.',
     acts: [0, 3],
     timerMs: null,
-    damage: 7,
+    damage: 10,
+    damageLabel: 'HIT 10 WHEN AWAKE',
     rules: [
-      'The Sleeper starts asleep and does not attack.',
-      'Two or more hits in one guess wake it and deal 10 damage immediately.',
-      'Once awake, every wrong guess deals 7 damage.',
+      'The Sleeper stays asleep and deals no damage while you chip at it.',
+      'Every correct or misplaced letter counts as a hit, across any number of guesses.',
+      'The third hit wakes it. The waking guess hurts nobody.',
+      'Every wrong guess after it wakes deals 10 damage. There is no clock.',
     ],
-    initialState: { woke: 0 },
+    initialState: { woke: 0, hits: 0, wokeGuess: 0 },
+    damageFor: (_state, round) => {
+      const woke = round.bossState.woke ?? 0;
+      const wokeGuess = round.bossState.wokeGuess ?? 0;
+      return woke && round.totalGuesses > wokeGuess ? 10 : 0;
+    },
     on: {
       onGuessScored: (ctx, p) => {
         const round = ctx.state.round;
         if (!round || round.bossState.woke) return [];
         const { correct, present } = truthCounts(p.guess.truth);
-        if (correct + present < 2) return [];
+        const hits = (round.bossState.hits ?? 0) + correct + present;
+        const progress = { type: 'bossData' as const, key: 'hits', value: hits };
+        if (hits < 3) return [progress];
         return [
+          progress,
           { type: 'bossData', key: 'woke', value: 1 },
-          { type: 'damage', amount: 10 },
-          { type: 'message', text: 'The Sleeper opens one eye. The floor drops out.' },
+          { type: 'bossData', key: 'wokeGuess', value: round.totalGuesses },
+          { type: 'message', text: 'The Sleeper opens one eye. It is awake now.' },
         ];
       },
     },

@@ -451,7 +451,7 @@ button {
 
 .layout {
   display: grid;
-  grid-template-columns: 252px minmax(0, 1fr) 312px;
+  grid-template-columns: 296px minmax(0, 1fr) 320px;
   gap: 14px;
   align-items: start;
 }
@@ -1905,64 +1905,88 @@ button {
   to { opacity: 1; transform: translate(-50%, 0); }
 }
 
-/* ── battle arena ────────────────────────────────────────────────────────── */
+/* ── battle rail ─────────────────────────────────────────────────────────── */
 
-.arena {
+.battle-rail {
   position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: end;
+  display: flex;
+  flex-direction: column;
   gap: 10px;
-  min-height: 248px;
-  margin: 14px 0;
-  padding: 22px 24px 14px;
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background:
-    radial-gradient(90% 125% at 50% 118%, rgba(139, 107, 217, 0.18), transparent 62%),
-    linear-gradient(180deg, #15101f 0%, #0d0a13 74%);
-  box-shadow: inset 0 0 70px rgba(0, 0, 0, 0.42);
+  padding: 12px;
+  overflow: visible;
 }
 
-.arena.critical {
-  border-color: rgba(223, 97, 90, 0.42);
+.battle-rail.critical {
+  border-color: rgba(223, 97, 90, 0.45);
   animation: critical-pulse 1.5s ease-in-out infinite;
 }
 
-.arena-sky,
-.arena-floor {
+.battle-rail .timer {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  min-width: 0;
+  padding: 9px 11px 13px;
+}
+
+.battle-rail .timer b {
+  font-size: 1.62rem;
+}
+
+.battle-rail .timer-label {
+  font-size: 0.5rem;
+  letter-spacing: 0.15em;
+}
+
+.mini-arena {
+  position: relative;
+  padding: 9px 9px 10px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background:
+    radial-gradient(90% 120% at 50% 118%, rgba(139, 107, 217, 0.16), transparent 62%),
+    linear-gradient(180deg, #15101f 0%, #0d0a13 78%);
+}
+
+.mini-sky {
   position: absolute;
   inset: 0;
   pointer-events: none;
-}
-
-.arena-sky i {
-  position: absolute;
-  width: 130px;
-  height: 130px;
-  border-radius: 50%;
-  background: var(--enemy);
-  filter: blur(34px);
-  opacity: 0.13;
-}
-
-.arena-sky i:nth-child(1) { left: -30px; top: -36px; }
-.arena-sky i:nth-child(2) { right: -30px; top: -36px; }
-.arena-sky i:nth-child(3) { right: 34%; bottom: -80px; background: var(--violet); opacity: 0.2; }
-
-.arena-floor {
-  inset: auto -10% 0;
-  height: 52px;
   background:
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 56px),
-    linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.6));
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+    radial-gradient(circle at 84% 18%, var(--enemy), transparent 46%),
+    radial-gradient(circle at 12% 22%, rgba(139, 107, 217, 0.55), transparent 42%);
+  opacity: 0.12;
 }
 
-.arena-side {
+.mini-head {
   position: relative;
   z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding-bottom: 2px;
+}
+
+.mini-head .fighter-name {
+  color: var(--enemy);
+  font-size: 0.78rem;
+}
+
+.mini-stage {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: end;
+  gap: 2px;
+  padding: 4px 0 2px;
+}
+
+.mini-side {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1973,19 +1997,62 @@ button {
 .sprite {
   display: grid;
   place-items: center;
-  width: clamp(124px, 14vw, 190px);
+  width: 86px;
   line-height: 0;
 }
 
-.enemy-side .sprite {
-  width: clamp(138px, 15.5vw, 210px);
+.mini-side.enemy-side .sprite {
+  width: 96px;
 }
 
 .sprite-svg {
   width: 100%;
   height: auto;
   overflow: visible;
-  filter: drop-shadow(0 14px 18px rgba(0, 0, 0, 0.52));
+  filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.55));
+}
+
+.mini-label {
+  color: var(--faint);
+  font-size: 0.44rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.mini-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding-bottom: 12px;
+}
+
+.mini-phase {
+  color: var(--gold);
+  font-size: 0.45rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+
+.mini-vs {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  transform: rotate(45deg);
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  background: linear-gradient(180deg, #241d31, #15101f);
+  box-shadow: 0 5px 16px -8px rgba(0, 0, 0, 0.8);
+}
+
+.mini-vs span {
+  transform: rotate(-45deg);
+  color: var(--muted);
+  font-family: var(--serif);
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
 }
 
 .enemy-side.attacking .sprite-svg {
@@ -1994,32 +2061,24 @@ button {
 
 @keyframes enemy-lunge {
   0%, 100% { transform: translateX(0) rotate(0); }
-  32% { transform: translateX(-16px) rotate(-2deg); }
-  58% { transform: translateX(7px) rotate(1deg); }
+  32% { transform: translateX(-12px) rotate(-2deg); }
+  58% { transform: translateX(5px) rotate(1deg); }
 }
 
-.player-side.hit .sprite-svg {
+.battle-rail.hit .player-side .sprite-svg {
   animation: player-hit 400ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
-.player-side.hit .fighter-plate {
-  border-color: rgba(223, 97, 90, 0.65);
-  box-shadow: 0 0 26px -10px rgba(223, 97, 90, 0.8);
+.battle-rail.hit .mini-player {
+  border-top-color: rgba(223, 97, 90, 0.55);
 }
 
-.fighter-plate {
-  width: min(100%, 244px);
-  min-width: 0;
-  margin-top: -4px;
-  padding: 7px 10px 8px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: linear-gradient(180deg, rgba(20, 16, 30, 0.92), rgba(13, 10, 19, 0.94));
-}
-
-.enemy-side .fighter-plate {
-  border-color: rgba(255, 255, 255, 0.09);
-  box-shadow: inset 0 0 24px -12px var(--enemy);
+.mini-player {
+  position: relative;
+  z-index: 1;
+  margin-top: 5px;
+  padding-top: 7px;
+  border-top: 1px solid var(--line);
 }
 
 .fighter-head {
@@ -2038,8 +2097,35 @@ button {
   white-space: nowrap;
 }
 
-.enemy-side .fighter-name {
-  color: var(--enemy);
+.mini-player .hp-numbers {
+  font-size: 1.12rem;
+}
+
+.mini-player .big-hp {
+  margin-top: 4px;
+  height: 10px;
+}
+
+.mini-player .armor-line {
+  margin-top: 5px;
+}
+
+.mini-player .armor-text {
+  font-size: 0.47rem;
+  letter-spacing: 0.08em;
+}
+
+.mini-arena .boss-state {
+  position: relative;
+  z-index: 1;
+  justify-content: flex-start;
+  margin-top: 3px;
+}
+
+.mini-arena .boss-state span {
+  padding: 2px 5px;
+  font-size: 0.46rem;
+  letter-spacing: 0.08em;
 }
 
 .threat-tag {
@@ -2047,89 +2133,41 @@ button {
   border: 1px solid var(--line-2);
   border-radius: 999px;
   color: var(--muted);
-  font-size: 0.47rem;
+  font-size: 0.44rem;
   font-weight: 800;
   letter-spacing: 0.13em;
+  white-space: nowrap;
 }
 
-.fighter-plate .big-hp {
-  margin-top: 5px;
-}
-
-.enemy-line {
-  margin: 5px 0 0;
-  overflow: hidden;
-  color: var(--muted);
-  font-size: 0.66rem;
-  line-height: 1.4;
-  text-align: left;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-.enemy-side .enemy-line {
-  text-align: right;
-}
-
-.enemy-side .boss-state {
-  justify-content: flex-end;
-  margin-top: 5px;
-}
-
-.arena-center {
-  z-index: 1;
+.mini-facts {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  align-self: center;
-  padding-bottom: 26px;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
-.arena-phase {
-  color: var(--gold);
-  font-size: 0.54rem;
-  font-weight: 800;
-  letter-spacing: 0.2em;
-  white-space: nowrap;
+.mini-facts .fact {
+  padding: 3px 6px;
+  font-size: 0.5rem;
+  letter-spacing: 0.07em;
 }
 
-.vs-mark {
-  display: grid;
-  place-items: center;
-  width: 52px;
-  height: 52px;
-  transform: rotate(45deg);
-  border: 1px solid var(--line-2);
-  border-radius: 6px;
-  background: linear-gradient(180deg, #241d31, #15101f);
-  box-shadow: 0 6px 20px -8px rgba(0, 0, 0, 0.8);
-}
-
-.vs-mark span {
-  transform: rotate(-45deg);
-  color: var(--muted);
-  font-family: var(--serif);
-  font-size: 0.82rem;
-  letter-spacing: 0.08em;
-}
-
-.arena-intent {
-  padding: 3px 8px;
-  border: 1px solid rgba(223, 97, 90, 0.28);
-  border-radius: 999px;
-  color: #e79a95;
-  font-size: 0.49rem;
-  font-weight: 800;
-  letter-spacing: 0.13em;
-  white-space: nowrap;
-}
-
-.arena .damage-fx {
-  top: 8px;
+.mini-side .damage-fx {
+  top: 0;
   left: 50%;
   animation: fx-float 1.2s ease-out both;
+}
+
+.mini-arena .fx-hp {
+  font-size: 0.82rem;
+}
+
+.mini-arena .fx-armor {
+  font-size: 0.68rem;
+}
+
+.mini-arena .fx-block,
+.mini-arena .fx-raw {
+  font-size: 0.6rem;
 }
 
 /* ── combat HUD ──────────────────────────────────────────────────────────── */
@@ -2155,9 +2193,7 @@ button {
 }
 
 .rail-items {
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid var(--line);
+  min-width: 0;
 }
 
 .phase-tag {
@@ -2839,7 +2875,7 @@ button {
 
 @media (max-width: 1180px) {
   .layout {
-    grid-template-columns: 230px minmax(0, 1fr);
+    grid-template-columns: 264px minmax(0, 1fr);
   }
 
   .side-panel {
@@ -2882,8 +2918,11 @@ button {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .combat-panel {
+  .battle-rail {
     order: 0;
+    width: 100%;
+    max-width: 430px;
+    margin: 0 auto;
   }
 
   .center-column {
@@ -2896,60 +2935,13 @@ button {
     grid-template-columns: 1fr;
   }
 
-  /* The arena replaces the old tall combat rail on small screens. */
-  .arena {
-    min-height: 176px;
-    gap: 6px;
-    padding: 14px 10px 10px;
-  }
-
-  .arena .sprite {
-    width: clamp(80px, 20vw, 110px);
-  }
-
-  .arena .enemy-side .sprite {
-    width: clamp(88px, 22vw, 122px);
-  }
-
-  .fighter-plate {
-    width: 100%;
-    padding: 5px 7px 6px;
+  .mini-stage {
+    max-width: 300px;
+    margin: 0 auto;
   }
 
   .fighter-head {
     gap: 4px;
-  }
-
-  .fighter-name {
-    font-size: 0.68rem;
-  }
-
-  .hp-numbers {
-    font-size: 1.02rem;
-  }
-
-  .armor-text {
-    font-size: 0.44rem;
-    letter-spacing: 0.06em;
-  }
-
-  .threat-tag {
-    display: none;
-  }
-
-  .arena-phase {
-    font-size: 0.45rem;
-    letter-spacing: 0.14em;
-  }
-
-  .arena-intent,
-  .enemy-line {
-    display: none;
-  }
-
-  .vs-mark {
-    width: 32px;
-    height: 32px;
   }
 
   .side-panel section + section {
@@ -2986,25 +2978,12 @@ button {
     justify-content: flex-end;
   }
 
-  .combat-panel {
-    padding: 9px 10px;
-  }
-
-  .portrait {
-    width: 54px;
-    height: 54px;
+  .battle-rail {
+    padding: 10px;
   }
 
   .hp-numbers {
     font-size: 1.2rem;
-  }
-
-  .combatant {
-    gap: 7px;
-  }
-
-  .armor-pips i {
-    width: 12px;
   }
 
   .path {

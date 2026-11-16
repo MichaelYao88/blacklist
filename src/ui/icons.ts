@@ -147,28 +147,6 @@ export function bossColor(id?: string): string {
   return (id && BOSS_COLORS[id]) || '#e7b85a';
 }
 
-/** One hooded runner. The UI changes the face when HP gets low. */
-export function playerArt(hpPct: number): string {
-  const hurt = hpPct <= 0.3;
-  return `
-  <svg class="player-svg" viewBox="0 0 120 120" role="img" aria-label="The runner">
-    <ellipse class="art-shadow" cx="60" cy="108" rx="34" ry="7" />
-    <path class="art-cloak" d="M60 20c-19 0-31 18-31 47v28c0 5 4 8 9 8h44c5 0 9-3 9-8V67c0-29-12-47-31-47Z" />
-    <path class="art-cloak-dark" d="M42 66c0 18 6 28 18 35 12-7 18-17 18-35-6 6-11 9-18 9s-12-3-18-9Z" />
-    <path class="art-hood" d="M60 22c-13 0-22 11-22 25 0 12 7 22 22 22s22-10 22-22c0-14-9-25-22-25Z" />
-    <path class="art-face" d="M48 47c0-8 5-14 12-14s12 6 12 14c0 9-5 15-12 15s-12-6-12-15Z" />
-    <g class="art-eyes">
-      ${hurt
-        ? `<path d="M52 46l6 6M58 46l-6 6M64 46l6 6M70 46l-6 6" />`
-        : `<circle cx="56" cy="47" r="1.8" /><circle cx="64" cy="47" r="1.8" />`}
-    </g>
-    <path class="art-belt" d="M42 84h36v6H42Z" />
-    <circle class="art-buckle" cx="60" cy="87" r="3.4" />
-    <path class="art-blade" d="M86 58l4 2-16 35-4-2Z" />
-    <path class="art-hilt" d="M70 88l13 6" />
-  </svg>`;
-}
-
 /** Large side-view runner used in the battle arena. Faces right. */
 export function playerSprite(hpPct: number, hit = false): string {
   const hurt = hpPct <= 0.3;

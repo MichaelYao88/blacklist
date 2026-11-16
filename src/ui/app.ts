@@ -705,7 +705,37 @@ function damageFxHtml(): string {
   </div>`;
 }
 
-function renderArena(view: RunView, bossId?: string): string {
+function bossStateChips(entries: Array<[string, number]>): string {
+  const chips = entries
+    .filter(([key]) => key !== 'wokeGuess')
+    .map(([key, value]) => {
+      if (key === 'woke') return `<span>${value ? 'AWAKE' : 'ASLEEP'}</span>`;
+      if (key === 'hits') return `<span>HITS ${value}</span>`;
+      return `<span>${escapeHtml(key)} ${value}</span>`;
+    });
+  return chips.length > 0 ? `<div class="boss-state">${chips.join('')}</div>` : '';
+}
+
+function renderTimer(view: RunView, board: BoardView): string {
+  const time = board.remainingMs === null ? '∞' : formatTime(board.remainingMs);
+  const label = board.remainingMs === null
+    ? 'NO LIMIT'
+    : board.timerFrozen
+      ? 'FROZEN'
+      : 'MASSIVE DAMAGE IN';
+  const timeoutHit = Math.ceil(view.maxHp * 0.35) + 5;
+  const pct = board.remainingMs === null || !board.timerStartMs
+    ? 100
+    : Math.max(0, Math.min(100, (board.remainingMs / board.timerStartMs) * 100));
+  const urgent = board.remainingMs !== null && board.remainingMs <= 15_000;
+  return `<div class="timer ${urgent ? 'urgent' : ''} ${board.timerFrozen ? 'frozen' : ''}" title="${board.remainingMs === null ? 'This round has no clock.' : `When this reaches zero you take ${timeoutHit} damage.`}">
+    <span class="timer-label">${label}</span>
+    <b>${time}</b>
+    <div class="timer-bar"><i style="width:${pct}%"></i></div>
+  </div>`;
+}
+
+function renderBattleRail(view: RunView, bossId?: string): string {
   const phase = view.phase;
   const enemy = arenaEnemy(view, bossId);
   const board = phase.kind === 'round' ? phase.board : null;
@@ -714,28 +744,41 @@ function renderArena(view: RunView, bossId?: string): string {
   const armorPct = Math.max(0, Math.min(100, (view.armor / Math.max(1, view.maxArmor)) * 100));
   const low = view.hp <= view.maxHp * 0.3;
   const hit = Boolean(damageFx && damageFx.hpLost > 0 && performance.now() - damageFx.at < 600);
-
-  const intent = phase.kind === 'summary'
-    ? phase.outcome === 'solved'
-      ? 'FELLED'
-      : phase.outcome === 'timeout'
-        ? 'THE CLOCK TOOK ITS CUT'
-        : 'YOU FELL'
-    : phase.kind === 'bossIntro'
-      ? 'UNREAD'
-      : board
-        ? board.noGuessDamage
-          ? 'NO GUESS DAMAGE'
-          : `HITS FOR ${board.rawNextGuessDamage}`
-        : 'WATCHING';
+  const facts = board
+    ? [
+        `<span class="fact">FREE ${board.freeGuessesLeft}</span>`,
+        board.shielded ? `<span class="fact shield">SHIELD ${formatTime(board.shieldMsLeft)}</span>` : '',
+        board.gauntletTotal > 1 ? `<span class="fact gauntlet">PUZZLE ${board.gauntletIndex + 1}/${board.gauntletTotal}</span>` : '',
+        view.items.some((item) => item.id === 'loose-tongue') ? `<span class="fact free-speech">ANY WORD</span>` : '',
+      ].filter(Boolean).join('')
+    : '';
 
   return `
-  <section class="arena ${low ? 'critical' : ''} ${phase.kind === 'summary' ? 'settled' : ''}" style="--enemy:${enemy.color}" aria-label="Battlefield">
-    <div class="arena-sky" aria-hidden="true"><i></i><i></i><i></i></div>
-    <div class="arena-floor" aria-hidden="true"></div>
-    <div class="arena-side player-side ${hit ? 'hit' : ''}">
-      <div class="sprite player-sprite">${playerSprite(pct / 100, hit)}</div>
-      <div class="fighter-plate">
+  <aside class="panel battle-rail ${low ? 'critical' : ''} ${hit ? 'hit' : ''}" style="--enemy:${enemy.color}" aria-label="Battle status">
+    ${board ? renderTimer(view, board) : ''}
+    <section class="mini-arena ${phase.kind === 'summary' ? 'settled' : ''}">
+      <div class="mini-sky" aria-hidden="true"></div>
+      <div class="mini-head">
+        <span class="fighter-name">${escapeHtml(enemy.name)}</span>
+        <span class="threat-tag">${enemy.boss ? 'BOSS' : 'HOSTILE'}</span>
+      </div>
+      ${bossStateChips(stateEntries)}
+      <div class="mini-stage">
+        <div class="mini-side player-side">
+          <div class="sprite player-sprite">${playerSprite(pct / 100, hit)}</div>
+          <span class="mini-label">YOU</span>
+          ${damageFxHtml()}
+        </div>
+        <div class="mini-center">
+          <span class="mini-phase">${phaseLabel(view)}</span>
+          <div class="mini-vs"><span>VS</span></div>
+        </div>
+        <div class="mini-side enemy-side ${hit ? 'attacking' : ''}">
+          <div class="sprite enemy-sprite">${enemySprite(bossId)}</div>
+          <span class="mini-label">${enemy.boss ? 'BOSS' : 'FOE'}</span>
+        </div>
+      </div>
+      <div class="mini-player">
         <div class="fighter-head">
           <span class="fighter-name">THE RUNNER</span>
           <b class="hp-numbers">${view.hp}<em>/${view.maxHp}</em></b>
@@ -751,44 +794,8 @@ function renderArena(view: RunView, bossId?: string): string {
           <span class="armor-text">ARMOR ${view.armor}/${view.maxArmor}</span>
         </div>
       </div>
-      ${damageFxHtml()}
-    </div>
-    <div class="arena-center">
-      <span class="arena-phase">${phaseLabel(view)}</span>
-      <div class="vs-mark"><span>VS</span></div>
-      <span class="arena-intent">${intent}</span>
-    </div>
-    <div class="arena-side enemy-side ${hit ? 'attacking' : ''}">
-      <div class="sprite enemy-sprite">${enemySprite(bossId)}</div>
-      <div class="fighter-plate">
-        <div class="fighter-head">
-          <span class="fighter-name">${escapeHtml(enemy.name)}</span>
-          <span class="threat-tag">${enemy.boss ? 'BOSS' : 'HOSTILE'}</span>
-        </div>
-        ${stateEntries.length > 0
-          ? `<div class="boss-state">${stateEntries.map(([key, value]) => `<span>${escapeHtml(key) === 'woke' ? (value ? 'AWAKE' : 'ASLEEP') : `${escapeHtml(key)} ${value}`}</span>`).join('')}</div>`
-          : `<p class="enemy-line">${glossaryText(enemy.line)}</p>`}
-      </div>
-    </div>
-  </section>`;
-}
-
-function renderGearPanel(view: RunView): string {
-  const items = view.items.length
-    ? view.items.map((item) => renderItem(view, item)).join('')
-    : `<p class="empty-note">No items yet. Shops and bosses fix that.</p>`;
-  const bagged = view.items.filter((item) => !item.equipped && item.slots > 0).length;
-
-  return `
-  <aside class="panel combat-panel gear-panel" aria-label="Gear">
-    <section class="rail-items">
-      <div class="panel-head">
-        <span class="panel-kicker">ITEMS</span>
-        <span class="count">${view.slots.used}/${view.slots.total}${bagged ? ` · ${bagged} BAG` : ''}</span>
-      </div>
-      <div class="item-list">${items}</div>
     </section>
-    <div class="seedline">SEED ${escapeHtml(host.current?.seed ?? '')}</div>
+    ${facts ? `<div class="mini-facts">${facts}</div>` : ''}
   </aside>`;
 }
 
@@ -822,6 +829,11 @@ function renderSidePanel(view: RunView): string {
     ? view.blacklist.map((word, index) => `<li><span>${String(index + 1).padStart(2, '0')}</span>${escapeHtml(word)}</li>`).join('')
     : `<li class="empty"><span>—</span>empty</li>`;
 
+  const items = view.items.length
+    ? view.items.map((item) => renderItem(view, item)).join('')
+    : `<p class="empty-note">No items yet. Shops and bosses fix that.</p>`;
+  const bagged = view.items.filter((item) => !item.equipped && item.slots > 0).length;
+
   return `
   <aside class="panel side-panel">
     <section>
@@ -837,6 +849,14 @@ function renderSidePanel(view: RunView): string {
       </div>` : ''}
       ${view.purged.length ? `<div class="purged"><span class="panel-kicker">PURGED</span><div>${view.purged.map((letter) => `<span class="letter-chip">${escapeHtml(letter.toUpperCase())}</span>`).join('')}</div></div>` : ''}
     </section>
+    <section class="rail-items">
+      <div class="panel-head">
+        <span class="panel-kicker">ITEMS</span>
+        <span class="count">${view.slots.used}/${view.slots.total}${bagged ? ` · ${bagged} BAG` : ''}</span>
+      </div>
+      <div class="item-list">${items}</div>
+    </section>
+    <div class="seedline">SEED ${escapeHtml(host.current?.seed ?? '')}</div>
   </aside>`;
 }
 
@@ -901,7 +921,7 @@ function tileRow(letters: string[], tiles?: string[], extraClass = ''): string {
   return `<div class="board-row">${cells}</div>`;
 }
 
-function renderBoard(view: RunView, board: BoardView): string {
+function renderBoard(board: BoardView): string {
   const rows: string[] = [];
   const guesses = board.guesses;
   const totalRows = Math.max(6, guesses.length + 1);
@@ -919,47 +939,7 @@ function renderBoard(view: RunView, board: BoardView): string {
     }
   }
 
-  const time = board.remainingMs === null ? '∞' : formatTime(board.remainingMs);
-  const timeLabel = board.remainingMs === null
-    ? 'NO LIMIT'
-    : board.timerFrozen
-      ? 'FROZEN'
-      : 'MASSIVE DAMAGE IN';
-  const timeoutHit = Math.ceil(view.maxHp * 0.35) + 5;
-  const pct = board.remainingMs === null || !board.timerStartMs
-    ? 100
-    : Math.max(0, Math.min(100, (board.remainingMs / board.timerStartMs) * 100));
-  const urgent = board.remainingMs !== null && board.remainingMs <= 15_000;
-  const gauntlet = board.gauntletTotal > 1
-    ? `<span class="fact gauntlet">PUZZLE ${board.gauntletIndex + 1}/${board.gauntletTotal}</span>`
-    : '';
-  const looseTongue = view.items.some((item) => item.id === 'loose-tongue')
-    ? `<span class="fact free-speech" title="Loose Tongue: any five letters are accepted">ANY WORD</span>`
-    : '';
-  const ruledOut = board.ruledOut > 0
-    ? `<span class="fact ruled" title="Distinct letters ruled out for this puzzle. Explorer effects count these.">RULED OUT ${board.ruledOut}</span>`
-    : '';
-  const shield = board.shielded
-    ? `<span class="fact shield" title="Timed immunity: damage is ignored until this expires.">SHIELD ${formatTime(board.shieldMsLeft)}</span>`
-    : '';
-
   return `
-  <div class="round-head">
-    <div class="timer ${urgent ? 'urgent' : ''} ${board.timerFrozen ? 'frozen' : ''}" title="${board.remainingMs === null ? 'This round has no clock.' : `When this reaches zero you take ${timeoutHit} damage.`}">
-      <span class="timer-label">${timeLabel}</span>
-      <b>${time}</b>
-      <div class="timer-bar"><i style="width:${pct}%"></i></div>
-    </div>
-    <div class="round-facts">
-      <span class="fact">FREE ${board.freeGuessesLeft}</span>
-      <span class="fact ${board.nextGuessDamage > 0 ? 'danger' : ''}">NEXT HIT ${board.nextGuessDamage}</span>
-      <span class="fact">RAW HIT ${board.rawNextGuessDamage}</span>
-      ${gauntlet}
-      ${looseTongue}
-      ${ruledOut}
-      ${shield}
-    </div>
-  </div>
   <div class="board">${rows.join('')}</div>
   ${renderKeyboard(board)}
   ${renderChronicle()}`;
@@ -1236,7 +1216,9 @@ function renderBossIntro(view: RunView, phase: Extract<PhaseView, { kind: 'bossI
   const boss = BOSS_BY_ID.get(phase.boss);
   if (!boss) return '';
   const timer = boss.timerMs === null ? 'NO TIMER' : formatTime(boss.timerMs);
-  const damage = boss.noGuessDamage ? 'NO GUESS DAMAGE' : `HIT ${boss.damage ?? 3}`;
+  const damage = boss.noGuessDamage
+    ? 'NO GUESS DAMAGE'
+    : boss.damageLabel ?? `HIT ${boss.damage ?? 3}`;
   return `
   <div class="phase-card boss-intro" style="--enemy:${bossColor(boss.id)}">
     <p class="panel-kicker">BOSS ENCOUNTER · ACT ${roman(view.act + 1)}</p>
@@ -1260,7 +1242,7 @@ function phasePanel(view: RunView): string {
   const phase = view.phase;
   switch (phase.kind) {
     case 'round':
-      return `<section class="board-panel">${renderBoard(view, phase.board)}</section>`;
+      return `<section class="board-panel">${renderBoard(phase.board)}</section>`;
     case 'summary':
       return renderSummary(view, phase);
     case 'reward':
@@ -1300,7 +1282,6 @@ function renderRun(view: RunView): string {
   const bossId = phase.kind === 'round' || phase.kind === 'summary' || phase.kind === 'bossIntro'
     ? phase.boss
     : undefined;
-  const inBattle = phase.kind === 'round' || phase.kind === 'summary';
   const over = phase.kind === 'over';
   const tense =
     phase.kind === 'round' &&
@@ -1317,11 +1298,10 @@ function renderRun(view: RunView): string {
     ${tense ? `<div class="danger-vignette" aria-hidden="true"></div>` : ''}
     ${renderTopbar(view)}
     ${renderPath(view)}
-    ${inBattle && !over ? renderArena(view, bossId) : ''}
     ${over
       ? `<main class="over-layout">${phasePanel(view)}</main>`
       : `<main class="layout">
-          ${renderGearPanel(view)}
+          ${renderBattleRail(view, bossId)}
           <section class="center-column">${phasePanel(view)}</section>
           ${renderSidePanel(view)}
         </main>`}
