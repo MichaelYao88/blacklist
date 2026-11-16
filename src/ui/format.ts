@@ -81,13 +81,12 @@ export function describeEvent(event: GameEvent): string | null {
       return reasonText(event.reason);
     case 'guessMadeFree':
       return `FREE GUESS · ${event.index + 1}`;
-    case 'blacklistChanged': {
-      const parts: string[] = [];
-      if (event.added) parts.push(`“${event.added}” is blacklisted`);
-      if (event.evicted.length) parts.push(`evicted ${event.evicted.map((w) => `“${w}”`).join(', ')}`);
-      if (event.removed.length) parts.push(`restored ${event.removed.map((w) => `“${w}”`).join(', ')}`);
-      return parts.length ? parts.join(' · ') : null;
-    }
+    case 'blacklistChanged':
+      return event.added
+        ? `“${event.added}” is blacklisted`
+        : event.list.length === 0
+          ? 'The blacklist is wiped'
+          : null;
     case 'keyboardHint':
       return event.status === 'present'
         ? `REVEAL · “${event.letter.toUpperCase()}” is in the answer`

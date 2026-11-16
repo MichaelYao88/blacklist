@@ -52,7 +52,6 @@ export type HookName =
   | 'onSell'
   | 'onDamageTaken'
   | 'onDeath'
-  | 'onBlacklistChanged'
   | 'onPuzzleSolved'
   | 'onGoldSpent'
   | 'onMaxHpChanged'
@@ -187,6 +186,7 @@ export interface HappeningState {
 export type Effect =
   | { type: 'damage'; amount: number }
   | { type: 'heal'; amount: number }
+  | { type: 'healPercent'; percent: number }
   | { type: 'maxHp'; delta: number }
   | { type: 'armor'; delta: number }
   | { type: 'maxArmor'; delta: number }
@@ -198,7 +198,7 @@ export type Effect =
   | { type: 'freezeTime'; ms: number }
   | { type: 'freezeUntilGuess' }
   | { type: 'freeGuesses'; count: number }
-  | { type: 'makeGuessFree' }
+  | { type: 'makeGuessFree'; chancePct?: number }
   | { type: 'immunity'; guesses: number }
   | { type: 'timedImmunity'; ms: number }
   | { type: 'revealYellow' }
@@ -206,8 +206,7 @@ export type Effect =
   | { type: 'revealRandom'; count: number }
   | { type: 'purgeLetter'; letter: Letter }
   | { type: 'clearBlacklist' }
-  | { type: 'blacklistAddRandom'; count: number }
-  | { type: 'blacklistRemoveRandom'; count: number }
+  | { type: 'randomChoice'; options: Effect[][] }
   | { type: 'giveSpell'; spell: SpellId | 'random'; chancePct?: number }
   | { type: 'friendGuesses'; count: number }
   | { type: 'grow'; stat: string; by: number }
@@ -266,13 +265,6 @@ export interface HookPayloads {
   onGoldSpent: { amount: number; total: number };
   onMaxHpChanged: { delta: number; maxHp: number };
   onReveal: { letter: Letter; status: 'present' | 'absent' };
-  onBlacklistChanged: {
-    list: string[];
-    capacity: number;
-    added?: string;
-    evicted: string[];
-    removed: string[];
-  };
   onPuzzleSolved: { index: number; total: number; elapsedMs: number };
 }
 export type Reactors<C extends Ctx> = Partial<{
@@ -366,6 +358,8 @@ export interface Content {
   valid: ReadonlySet<string>;
   hardAnswers: readonly string[];
   friendWords: readonly string[];
+  /** Curated two-word catchphrases the Phone a Friend guy can deliver. */
+  friendPhrases: readonly (readonly [string, string])[];
 }
 
 export interface RunState {
@@ -389,11 +383,12 @@ export interface RunState {
   items: ItemInstance[];
   spells: SpellInstance[];
   blacklist: string[];
-  blacklistCapacity: number;
   purged: Letter[];
   usedAnswers: string[];
   lastAnswer?: string;
   pendingPurge: number;
+  /** Letter reveals queued outside a round, applied when the next round starts. */
+  pendingReveals: Letter[];
   phase: PhaseKind;
   bossIntro?: { boss: BossId };
   round?: RoundState;
@@ -424,6 +419,8 @@ export interface BoardView {
   freeGuessesLeft: number;
   nextGuessDamage: number;
   rawNextGuessDamage: number;
+  /** Damage taken if the clock runs out: 2x the guess hit + 30% max HP. */
+  timeoutDamage: number;
   remainingMs: number | null;
   timerStartMs: number | null;
   timerFrozen: boolean;
@@ -484,7 +481,6 @@ export interface RunView {
   items: ItemView[];
   spells: SpellView[];
   blacklist: string[];
-  blacklistCapacity: number;
   purged: Letter[];
   revealed: Array<{ letter: Letter; status: 'present' | 'absent' }>;
   pendingPurge: number;
@@ -538,14 +534,7 @@ export type GameEvent =
       word: string;
     }
   | { type: 'guessMadeFree'; index: number; source: Source }
-  | {
-      type: 'blacklistChanged';
-      list: string[];
-      capacity: number;
-      added?: string;
-      evicted: string[];
-      removed: string[];
-    }
+  | { type: 'blacklistChanged'; list: string[]; added?: string }
   | { type: 'keyboardHint'; letter: Letter; status: 'present' | 'absent' }
   | { type: 'letterPurged'; letter: Letter }
   | { type: 'freeGuessesChanged'; remaining: number; source: Source }

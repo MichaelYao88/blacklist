@@ -2,7 +2,7 @@ import type { Content } from '../core/types';
 import answers from '../data/answers.json';
 import validWords from '../data/valid.json';
 import hardAnswers from '../data/hard.json';
-import { FRIEND_WORDS } from '../data/friends';
+import { FRIEND_PHRASES, FRIEND_WORDS } from '../data/friends';
 import { ITEMS, ITEM_BY_ID } from './items';
 import { SPELLS, SPELL_BY_ID } from './spells';
 import { BOSSES, BOSS_BY_ID } from './bosses';
@@ -19,6 +19,7 @@ export const CONTENT: Content = {
   valid: new Set(validWords as string[]),
   hardAnswers,
   friendWords: FRIEND_WORDS,
+  friendPhrases: FRIEND_PHRASES,
 };
 
 export {

@@ -41,8 +41,10 @@ export const ITEMS: ItemDef[] = [
     id: 'quickdraw',
     name: 'Quickdraw',
     description: 'First 10s of each round: no damage. Guesses in that window: +1 gold.',
-    price: 9,
+    price: 18,
     kind: 'gear',
+    rarity: 'rare',
+    slots: 0,
     on: {
       onRoundStart: () => [{ type: 'timedImmunity', ms: 10_000 }],
       onGuessScored: (_ctx, p) =>
@@ -143,30 +145,6 @@ export const ITEMS: ItemDef[] = [
           ? [{ type: 'makeGuessFree' }]
           : [],
     },
-  }),
-  defineItem({
-    id: 'b-file',
-    name: 'B-File',
-    description: 'Round start: reveal if the answer has B.',
-    price: 7,
-    kind: 'gear',
-    on: { onRoundStart: () => [{ type: 'revealLetter', letter: 'b' }] },
-  }),
-  defineItem({
-    id: 'x-ray',
-    name: 'X-Ray',
-    description: 'Round start: reveal if the answer has X.',
-    price: 7,
-    kind: 'gear',
-    on: { onRoundStart: () => [{ type: 'revealLetter', letter: 'x' }] },
-  }),
-  defineItem({
-    id: 'q-tip',
-    name: 'Q-Tip',
-    description: 'Round start: reveal if the answer has Q.',
-    price: 7,
-    kind: 'gear',
-    on: { onRoundStart: () => [{ type: 'revealLetter', letter: 'q' }] },
   }),
   defineItem({
     id: 'compound-interest',
@@ -436,25 +414,14 @@ export const ITEMS: ItemDef[] = [
     },
   }),
   defineItem({
-    id: 'ouroboros',
-    name: 'Ouroboros',
-    description: 'A word is evicted: +2 gold.',
-    price: 8,
-    kind: 'gear',
-    on: {
-      onBlacklistChanged: (_ctx, p) =>
-        p.evicted.length > 0 ? [{ type: 'gold', amount: p.evicted.length * 2 }] : [],
-    },
-  }),
-  defineItem({
     id: 'sundial',
     name: 'Sundial',
-    description: '+30s per round. −1 free guess per round.',
-    price: 8,
+    description: '+2 minutes per round. −1 free guess per round.',
+    price: 9,
     kind: 'gear',
     on: {
       onRoundStart: () => [
-        { type: 'addTime', ms: 30_000 },
+        { type: 'addTime', ms: 120_000 },
         { type: 'freeGuesses', count: -1 },
       ],
     },
@@ -472,8 +439,10 @@ export const ITEMS: ItemDef[] = [
     id: 'loose-tongue',
     name: 'Loose Tongue',
     description: 'Any five letters are a valid guess. Nonsense still scores.',
-    price: 7,
+    price: 18,
     kind: 'gear',
+    rarity: 'rare',
+    slots: 0,
     allowInvalidGuesses: true,
   }),
 
@@ -614,21 +583,14 @@ export const ITEMS: ItemDef[] = [
     on: { onReveal: () => [{ type: 'heal', amount: 1 }] },
   }),
   defineItem({
-    id: 'null-lens',
-    name: 'Null Lens',
-    description: 'Once per round, a reveal that rules a letter out grants a random spell.',
-    price: 10,
+    id: 'pen-club',
+    name: 'Pen Club',
+    description: 'Guess a word that starts with PEN: +4 gold.',
+    price: 8,
     kind: 'gear',
-    initial: { used: 0 },
     on: {
-      onRoundEnd: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
-      onReveal: (ctx, p) => {
-        if (ctx.self.data.used || p.status !== 'absent') return [];
-        return [
-          { type: 'giveSpell', spell: 'random' },
-          { type: 'setItemData', stat: 'used', value: 1 },
-        ];
-      },
+      onGuessScored: (_ctx, p) =>
+        p.guess.word.startsWith('pen') ? [{ type: 'gold', amount: 4 }] : [],
     },
   }),
   defineItem({
@@ -695,18 +657,39 @@ export const ITEMS: ItemDef[] = [
     id: 'spellplate',
     name: 'Spellplate',
     description: 'Cast a spell: +1 max armor. Cumulative.',
-    price: 9,
+    price: 18,
     kind: 'gear',
+    rarity: 'rare',
+    slots: 0,
     on: { onSpellCast: () => [{ type: 'maxArmor', delta: 1 }] },
   }),
   defineItem({
     id: 'mending-plate',
     name: 'Mending Plate',
-    description: 'A single heal of 20+ HP: +1 max armor.',
+    description: 'Whenever you are healed: +1 max armor.',
     price: 8,
     kind: 'gear',
     on: {
-      onHeal: (_ctx, p) => (p.amount >= 20 ? [{ type: 'maxArmor', delta: 1 }] : []),
+      onHeal: () => [{ type: 'maxArmor', delta: 1 }],
+    },
+  }),
+  defineItem({
+    id: 'harvest-charm',
+    name: 'Harvest Charm',
+    description: 'Round start, equal odds: +5 max HP, heal 5% max HP, or gain Restore.',
+    price: 9,
+    kind: 'gear',
+    on: {
+      onRoundStart: () => [
+        {
+          type: 'randomChoice',
+          options: [
+            [{ type: 'maxHp', delta: 5 }],
+            [{ type: 'healPercent', percent: 5 }],
+            [{ type: 'giveSpell', spell: 'restore' }],
+          ],
+        },
+      ],
     },
   }),
   defineItem({
@@ -961,16 +944,15 @@ export const ITEMS: ItemDef[] = [
     },
   }),
   defineItem({
-    id: 'midas-relic',
-    name: 'Midas Relic',
-    description: 'On solve: +6 gold. Eating: random spell.',
+    id: 'gilded-fork',
+    name: 'Gilded Fork',
+    description: 'Eating: 20% chance of a random spell.',
     price: 20,
     kind: 'gear',
     rarity: 'rare',
     slots: 0,
     on: {
-      onSolve: () => [{ type: 'gold', amount: 6 }],
-      onEat: () => [{ type: 'giveSpell', spell: 'random' }],
+      onEat: () => [{ type: 'giveSpell', spell: 'random', chancePct: 20 }],
     },
   }),
   defineItem({
@@ -987,21 +969,22 @@ export const ITEMS: ItemDef[] = [
     },
   }),
   defineItem({
-    id: 'blacklist-idol',
+    id: 'warding-idol',
     name: 'Warding Idol',
-    description: 'The first time you block damage each round, gain a random spell.',
+    description: 'Every 10 armor spent blocking damage: gain a random spell.',
     price: 20,
     kind: 'gear',
     rarity: 'rare',
     slots: 0,
-    initial: { used: 0 },
+    initial: { blocked: 0 },
     on: {
-      onRoundEnd: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
       onDamageTaken: (ctx, p) => {
-        if (ctx.self.data.used || p.blocked <= 0) return [];
+        if (p.armorUsed <= 0) return [];
+        const total = ctx.self.data.blocked + p.armorUsed;
+        const spells = Math.floor(total / 10);
         return [
-          { type: 'giveSpell', spell: 'random' },
-          { type: 'setItemData', stat: 'used', value: 1 },
+          { type: 'setItemData', stat: 'blocked', value: total % 10 },
+          ...Array.from({ length: spells }, () => ({ type: 'giveSpell' as const, spell: 'random' as const })),
         ];
       },
     },
@@ -1009,21 +992,14 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'loaded-dice',
     name: 'Loaded Dice',
-    description: 'First paid guess each round is free.',
+    description: 'Every guess has a 25% chance to be free.',
     price: 20,
     kind: 'gear',
     rarity: 'rare',
     slots: 0,
-    initial: { used: 0 },
     on: {
-      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
-      onGuessScored: (ctx, p) => {
-        if (ctx.self.data.used || p.guess.free || p.paidIndex > 0) return [];
-        return [
-          { type: 'makeGuessFree' },
-          { type: 'setItemData', stat: 'used', value: 1 },
-        ];
-      },
+      onGuessScored: (_ctx, p) =>
+        p.guess.free ? [] : [{ type: 'makeGuessFree', chancePct: 25 }],
     },
   }),
 ];

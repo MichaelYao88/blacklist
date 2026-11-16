@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CoreHost, MemoryStore, game } from '../src/game';
 import type { Command, GameEvent, RoundState, RunState, StepResult } from '../src/game';
 import { FOOD_BY_ID, HAPPENING_BY_ID, ITEM_BY_ID, SPELL_BY_ID } from '../src/content';
+import { FRIEND_PHRASES } from '../src/data/friends';
 
 function start(seed = 'test-seed'): StepResult {
   return game.newRun({ seed });
@@ -31,7 +32,8 @@ describe('new run', () => {
     expect(state.maxArmor).toBe(5);
     expect(state.gold).toBe(10);
     expect(state.slots).toBe(4);
-    expect(state.blacklistCapacity).toBe(16);
+    expect(state.blacklist).toEqual([]);
+    expect(state.pendingReveals).toEqual([]);
     expect(state.nodes).toHaveLength(30);
     expect(state.nodes.filter((n) => n.kind === 'boss')).toHaveLength(5);
     expect(state.nodes.filter((n) => n.kind === 'shop' || n.kind === 'happening')).toHaveLength(10);
@@ -92,18 +94,18 @@ describe('guessing and the blacklist', () => {
     expect(third.state.round?.paidGuesses).toBe(3);
   });
 
-  it('evicts the oldest blacklist entry when full', () => {
+  it('never evicts entries: the blacklist has no upper limit', () => {
     const { state } = start();
     setAnswer(state, 'crane');
-    state.blacklistCapacity = 2;
     state.blacklist = ['crane', 'pious'];
     state.round!.freeLeft = 20;
 
     const current = act(state, { type: 'guess', word: 'tiger' });
 
-    expect(current.state.blacklist).toEqual(['pious', 'tiger']);
+    expect(current.state.blacklist).toEqual(['crane', 'pious', 'tiger']);
     const changes = current.events.filter((e) => e.type === 'blacklistChanged');
-    expect(changes.at(-1)).toMatchObject({ added: 'tiger', evicted: ['crane'] });
+    expect(changes.at(-1)).toMatchObject({ added: 'tiger' });
+    expect(changes.at(-1)).not.toHaveProperty('evicted');
   });
 });
 
@@ -115,13 +117,14 @@ describe('timer and damage', () => {
     state.armor = 1;
 
     const result = act(state, { type: 'tick', dtMs: 1_000 });
-    expect(result.state.hp).toBe(21);
+    // Timeout = 2x the guess hit (base 2) + 30% of 40 max HP = 16, armor ignored.
+    expect(result.state.hp).toBe(24);
     expect(result.state.armor).toBe(1);
     expect(result.state.phase).toBe('summary');
     expect(result.state.summary?.outcome).toBe('timeout');
     expect(result.state.summary?.rewardPending).toBe(false);
-    expect(result.state.summary?.gold).toBe(2);
-    expect(result.state.gold).toBe(12);
+    expect(result.state.summary?.gold).toBe(1);
+    expect(result.state.gold).toBe(11);
     expect(result.state.stats.timeouts).toBe(1);
     expect(eventTypes(result.events)).toContain('timeExpired');
     expect(eventTypes(result.events)).toContain('roundEnded');
@@ -351,7 +354,7 @@ describe('round rewards', () => {
     const solved = act(state, { type: 'guess', word: 'crane' });
     expect(solved.state.phase).toBe('summary');
     expect(solved.state.summary?.rewardPending).toBe(true);
-    expect(solved.state.summary?.gold).toBe(4);
+    expect(solved.state.summary?.gold).toBe(5);
 
     const reward = act(solved.state, { type: 'continue' });
     expect(reward.state.phase).toBe('reward');
@@ -361,7 +364,7 @@ describe('round rewards', () => {
 
     const chosen = act(reward.state, { type: 'chooseReward', optionId: 'gold' });
     expect(chosen.state.nodeIndex).toBe(1);
-    expect(chosen.state.gold).toBe(19);
+    expect(chosen.state.gold).toBe(20);
     expect(eventTypes(chosen.events)).toContain('rewardChosen');
   });
 
@@ -468,13 +471,18 @@ describe('shop', () => {
     throw new Error('no shop seed found');
   }
 
-  it('sells three items and three foods, with one item half off', () => {
+  it('sells three items, two foods and one wildcard, with one item half off', () => {
     const result = reachShop();
     const offers = result.state.shop?.offers ?? [];
     expect(offers).toHaveLength(6);
-    expect(offers.filter((offer) => offer.kind === 'item')).toHaveLength(3);
-    expect(offers.filter((offer) => offer.kind === 'spell')).toHaveLength(0);
-    expect(offers.filter((offer) => offer.kind === 'eat')).toHaveLength(3);
+    const items = offers.filter((offer) => offer.kind === 'item');
+    const foods = offers.filter((offer) => offer.kind === 'eat');
+    const spells = offers.filter((offer) => offer.kind === 'spell');
+    expect(items.length).toBeGreaterThanOrEqual(3);
+    expect(foods.length).toBeGreaterThanOrEqual(2);
+    expect(spells.length).toBeLessThanOrEqual(1);
+    expect(items.length + foods.length + spells.length).toBe(6);
+    expect(new Set(offers.map((offer) => `${offer.kind}:${offer.def}`)).size).toBe(6);
     const sale = offers.filter((offer) => offer.sale);
     expect(sale).toHaveLength(1);
     expect(sale[0].originalPrice).toBeDefined();
@@ -494,7 +502,7 @@ describe('shop', () => {
 
     const rerolled = act(bought.state, { type: 'reroll' });
     expect(rerolled.state.shop?.offers).toHaveLength(6);
-    expect(rerolled.state.shop?.rerollCost).toBe(shop.rerollCost + 1);
+    expect(rerolled.state.shop?.rerollCost).toBe(shop.rerollCost * 2);
 
     const nodeBefore = rerolled.state.nodeIndex;
     const left = act(rerolled.state, { type: 'continue' });
@@ -555,7 +563,7 @@ describe('boss encounters', () => {
 });
 
 describe('nonsense guesses', () => {
-  it('rejects off-dictionary words until Loose Tongue is equipped', () => {
+  it('rejects off-dictionary words until the Loose Tongue relic is owned', () => {
     const { state } = start();
     setAnswer(state, 'crane');
 
@@ -567,12 +575,9 @@ describe('nonsense guesses', () => {
     });
     expect(rejected.state.round?.guesses).toHaveLength(0);
 
+    // Relics take no slot, so merely owning Loose Tongue turns it on.
     state.items.push({ instance: 'i-loose', id: 'loose-tongue', data: {}, equipped: false });
-    const bagged = act(state, { type: 'guess', word: 'aeiou' });
-    expect(eventTypes(bagged.events)).toContain('guessRejected');
-
-    const equipped = act(state, { type: 'equipItem', instance: 'i-loose' });
-    const accepted = act(equipped.state, { type: 'guess', word: 'aeiou' });
+    const accepted = act(state, { type: 'guess', word: 'aeiou' });
     expect(eventTypes(accepted.events)).toContain('guessScored');
     expect(accepted.state.round?.guesses).toHaveLength(1);
     expect(accepted.state.blacklist).toEqual(['aeiou']);
@@ -799,6 +804,68 @@ describe('opening and guess engines', () => {
   });
 });
 
+describe('rebalanced relics', () => {
+  it('pays Pen Club for a guess that starts with PEN', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.items.push({ instance: 'i-pen', id: 'pen-club', data: {}, equipped: true });
+    const goldBefore = state.gold;
+
+    const guess = act(state, { type: 'guess', word: 'penny' });
+    expect(guess.state.gold).toBe(goldBefore + 4);
+  });
+
+  it('pays Warding Idol for every 10 armor spent', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.round!.freeLeft = 0;
+    state.armor = 10;
+    state.maxArmor = 20;
+    state.round!.baseDamage = 10;
+    state.items.push({ instance: 'i-idol', id: 'warding-idol', data: { blocked: 0 }, equipped: true });
+
+    const guess = act(state, { type: 'guess', word: 'tiger' });
+    expect(guess.state.hp).toBe(40);
+    expect(guess.state.armor).toBe(0);
+    expect(guess.state.spells).toHaveLength(1);
+    expect(guess.state.items.find((item) => item.instance === 'i-idol')?.data.blocked).toBe(0);
+  });
+
+  it('gives Harvest Charm exactly one of its three round-start boons', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.nodes[1] = { kind: 'round' };
+    state.hp = 20;
+    state.items.push({ instance: 'i-harvest', id: 'harvest-charm', data: {}, equipped: true });
+
+    let result = act(state, { type: 'guess', word: 'crane' });
+    result = act(result.state, { type: 'continue' });
+    result = act(result.state, { type: 'chooseReward', optionId: 'gold' });
+
+    expect(result.state.phase).toBe('round');
+    const boons = [
+      result.state.maxHp === 45,
+      result.state.hp === 22,
+      result.state.spells.some((spell) => spell.id === 'restore'),
+    ];
+    expect(boons.filter(Boolean)).toHaveLength(1);
+  });
+
+  it('only lets Phone a Friend use curated two-word phrases', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.spells.push({ instance: 's-phone', id: 'phone-friend' });
+
+    const cast = act(state, { type: 'castSpell', instance: 's-phone' });
+    const words = cast.state.round?.guesses.map((guess) => guess.word) ?? [];
+    expect(words).toHaveLength(2);
+    const matched = FRIEND_PHRASES.some(
+      ([first, second]) => words[0] === first && words[1] === second,
+    );
+    expect(matched).toBe(true);
+  });
+});
+
 describe('content rules', () => {
   it('offers permanent HP boosts as food, not upgrades', () => {
     expect(FOOD_BY_ID.get('vitality')).toBeDefined();
@@ -908,5 +975,21 @@ describe('serialization', () => {
   it('rejects malformed saves', () => {
     expect(game.deserialize('not json')).toBeNull();
     expect(game.deserialize(JSON.stringify({ version: 99 }))).toBeNull();
+  });
+
+  it('migrates retired item ids and drops unknown ones', () => {
+    const { state } = start();
+    state.items.push({ instance: 'i-lens', id: 'null-lens', data: {}, equipped: true });
+    state.items.push({ instance: 'i-midas', id: 'midas-relic', data: {}, equipped: true });
+    state.items.push({ instance: 'i-gone', id: 'removed-thing', data: {}, equipped: true });
+
+    const restored = game.deserialize(game.serialize(state));
+    expect(restored).not.toBeNull();
+    const ids = restored!.items.map((item) => item.id);
+    expect(ids).toContain('pen-club');
+    expect(ids).toContain('gilded-fork');
+    expect(ids).not.toContain('null-lens');
+    expect(ids).not.toContain('midas-relic');
+    expect(ids).not.toContain('removed-thing');
   });
 });

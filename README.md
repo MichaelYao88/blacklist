@@ -2,7 +2,7 @@
 
 A word roguelike about the words you can never say again.
 
-The first word of every round is added to a 16-word blacklist. You can never guess it again, and the hidden answer is never chosen from that list. Solve the word before the clock or your health runs out. Five acts. Seven bosses. One active save, and defeat wipes it.
+The first word of every round is added to the blacklist. It has no limit, nothing is ever evicted, and you can never guess those words again. The hidden answer is never chosen from that list. Solve the word before the clock or your health runs out. Five acts. Seven bosses. One active save, and defeat wipes it.
 
 **Play:** https://michaelayao88.github.io/blacklist/
 
@@ -13,14 +13,14 @@ The first word of every round is added to a 16-word blacklist. You can never gue
 ## What is in the vertical slice
 
 - Wordle-style scoring with duplicate-letter handling
-- A fixed 16-word blacklist that records the first guess of each round, with oldest-first eviction (no capacity upgrades)
+- An unlimited blacklist that records the first guess of each round; no word is ever evicted
 - A shrinking round timer, fixed encounter damage and a per-round armor pool
 - Correct guesses never deal damage; wrong paid guesses take the monster's fixed hit
 - Five acts, six nodes per act: `round → support → round → support → round → boss` (30 encounters)
-- Shops with rerolls, three items and three foods - one item is always 50% off, and spells are never sold
+- Shops with rerolls that double in price: three items, two foods and one wildcard (spell/food/item); one item is always 50% off
 - Item slots with equip/unequip: only equipped gear is active, and each shop has a drag-and-drop loadout
-- **Loose Tongue**, an item that lets you guess five-letter nonsense for free-form letter probes
-- Spells stack by type and come from food and item triggers, not shelves
+- **Loose Tongue**, a rare relic that lets you guess five-letter nonsense for free-form probes
+- Spells stack by type and come from food, item triggers and the shop wildcard slot
 - Happenings with visible odds and persistent consequences
 - Short item, spell and offer text with hover tooltips for keywords like armor, reveal, ruled out, free guesses, blacklist, relic and timeout
 - Revealed letters stay marked on the keyboard and in a Revealed panel for the puzzle; random reveals lean toward letters that are not in the answer
@@ -28,18 +28,18 @@ The first word of every round is added to a 16-word blacklist. You can never gue
 - Boss encounters open with a full-screen intro, a plain-language rules list and a continue gate
 - Bosses award one of three rare relics with passive effects; relics take no slots and never appear in shops
 - Defeat reveals the answer you missed (all of them, on The Gauntlet)
-- 77 items (68 shop items + 9 rare boss relics), 7 spells, 15 foods and 14 happenings
+- 74 items (62 shop items + 12 rare boss relics), 7 spells, 18 foods and 12 happenings
 - Purge is an event (The Redaction), not a spell
 - Seven bosses:
   - **The Editor** — hides the last three tiles of each guess
   - **The Sleeper** — asleep until three hits land, then every wrong guess deals 10
   - **The Censor** — draws from the hardest 420 answers; hides the first tile
   - **The Auditor** — shows counts only, never positions
-  - **Vowel Fog** — vowels are ambiguous green-or-yellow
-  - **Monochrome** — every present letter is ambiguous, never positioned
+  - **Vowel Fog** — vowels are ambiguous silver tiles, never green or yellow
+  - **Monochrome** — every present letter is an ambiguous silver tile, never positioned
   - **The Gauntlet** — three puzzles, one shared 150-second clock, no per-guess damage
 - One exact-state autosave slot. Defeat clears it. Victory clears it and updates meta stats.
-- Compact battle rail on the left: round timer, a side-view mini arena with the runner facing the act's monster (or boss), player HP and armor, plus damage popups and an attack lunge
+- Compact battle rail on the left: round timer with its timeout damage, a wrong-guess damage chip, a side-view mini arena with the runner facing the act's monster (or boss), player HP and armor, plus big outlined red HP / silver-blue armor damage popups and an attack lunge
 - Spells and the blacklist sit on the right, with items below them
 - Pause (Space or Esc), mute, synthesized SFX, keyboard and on-screen keyboard, colorblind symbols, reduced-motion-friendly CSS
 
@@ -56,19 +56,19 @@ Not in this version: ascension, daily seeds, meta unlocks beyond win/run counter
 | Starting item slots | 4 (only equipped gear counts) |
 | Free guesses per round | 2 |
 | Starting gold | 10 |
-| Blacklist capacity | 16, fixed |
+| Blacklist capacity | unlimited; entries are never removed |
 | Normal timer | `max(45s, 150s − 6s × roundsSeen − 10s × ascension) + timeBonus` |
 | Boss timer | none, except The Gauntlet |
-| Base damage | `2 + 2 × act + roundSlot` (roundSlot is 0, 1 or 2 within the act) |
+| Base damage | `2 + 2 × act + roundSlot + ⌊roundsSeen / 3⌋` (roundSlot is 0, 1 or 2 within the act) |
 | Paid guess damage | the encounter's fixed hit, only on a wrong guess; it does not climb per guess |
-| Boss damage | fixed per boss (`5–9`), independent of wrong-guess count |
-| Timeout damage | `ceil(maxHp × 0.35) + 5`, bypasses armor, ends the round |
+| Boss damage | fixed per boss (`5–10`), independent of wrong-guess count |
+| Timeout damage | `2 × guess hit + ceil(maxHp × 0.3)`, bypasses armor, ends the round |
 | Armor | a pool that soaks damage point-for-point before HP; refills each round |
-| Solve gold | `⌊(6 + 2 × roundsSeen) × 0.7⌋ + solveGoldBonus` |
-| Timeout gold | `⌊(3 + act) × 0.7⌋`; a death pays nothing |
-| Solve reward | gold always plus a spell (65%) or food (35%); gear is an 8% find |
+| Solve gold | `5 + solveGoldBonus` |
+| Timeout gold | `1`; a death pays nothing |
+| Solve reward | a flat 5 gold plus a spell (65%) or food (35%); gear is an 8% find |
 | Boss reward | one of three rare relics |
-| Shop reroll | starts at 2 gold, +1 per reroll |
+| Shop reroll | starts at 2 gold, doubles after each use |
 
 The answer pool excludes the blacklist, already-used answers and purged letters.
 

@@ -147,12 +147,9 @@ function processEvents(events: GameEvent[]): void {
     if (event.type === 'message') notify(event.text, 'info');
     if (event.type === 'happeningResolved') notify(event.text, event.success ? 'good' : 'bad');
     if (event.type === 'damageTaken') {
-      if (event.dealt > 0) {
-        flashDamage(event.dealt, 0, event.incoming);
-        sfx.play('hit');
-      } else if (event.armorUsed > 0) {
-        flashDamage(0, event.armorUsed, event.incoming);
-        sfx.play('armor');
+      if (event.dealt > 0 || event.armorUsed > 0) {
+        flashDamage(event.dealt, event.armorUsed, event.incoming);
+        sfx.play(event.dealt > 0 ? 'hit' : 'armor');
       } else if (event.incoming > 0) {
         flashDamage(0, 0, event.incoming);
         sfx.play('block');
@@ -578,8 +575,8 @@ function renderTitle(): string {
       <button class="btn ghost big" data-action="help">HOW TO PLAY</button>
     </div>
     <div class="title-facts">
-      <div><b>3</b><span>acts</span></div>
-      <div><b>16</b><span>blacklist slots</span></div>
+      <div><b>5</b><span>acts</span></div>
+      <div><b>∞</b><span>blacklist</span></div>
       <div><b>7</b><span>bosses</span></div>
       <div><b>2</b><span>free guesses</span></div>
     </div>
@@ -600,11 +597,11 @@ function renderHelp(): string {
     <div class="rules-grid">
       <article class="rule-card">
         <h3>The blacklist</h3>
-        <p>The <b>first word</b> of every round is added to a 16-word blacklist. You can never guess those words again. When the list is full, the oldest word is evicted. The answer is always picked from words that are not on the list.</p>
+        <p>The <b>first word</b> of every round is added to the blacklist. There is no limit and nothing is ever evicted: every word you spend is gone forever. The answer is always picked from words that are not on the list.</p>
       </article>
       <article class="rule-card">
         <h3>Damage</h3>
-        <p>Your first <b>2 guesses</b> each round are free. After that, a wrong guess costs <b>1 + act + 1 per 3 rounds cleared</b> damage, plus 1 for each paid guess you already made. A correct guess never hurts you.</p>
+        <p>Your first <b>2 guesses</b> each round are free. After that, a wrong guess takes the monster's fixed hit. It starts around <b>3</b> and grows with the act, with how deep into the act you are, and with <b>every 3 rounds cleared</b>. A correct guess never hurts you.</p>
       </article>
       <article class="rule-card">
         <h3>Armor</h3>
@@ -612,11 +609,11 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>The clock</h3>
-        <p>The timer reads <b>MASSIVE DAMAGE IN</b>. Normal rounds start generous and get shorter as you clear rounds. If the clock reaches zero, you take <b>35% of max HP + 5</b> and the round ends. Bosses have no timer. The Gauntlet is the exception: three puzzles, one shared 150-second clock.</p>
+        <p>The timer reads <b>MASSIVE DAMAGE IN</b>. Normal rounds start generous and get shorter as you clear rounds. If the clock reaches zero, you take <b>2× the guess hit + 30% of max HP</b>, ignoring armor, and the round ends. The timer box always shows the exact timeout hit. Bosses have no timer. The Gauntlet is the exception: three puzzles, one shared 150-second clock.</p>
       </article>
       <article class="rule-card">
         <h3>Items & spells</h3>
-        <p>Items only work while they are <b>equipped</b> in a slot. Extra gear goes to your bag, and shops are where you drag pieces between the bag and your slots. Spells stack: duplicates sit in one pile. They come from food and from item triggers, never from the shop shelf. Reveals stay marked on the keyboard and in the Revealed panel for the puzzle. <b>Loose Tongue</b> lets you guess any five letters, dictionary or not.</p>
+        <p>Items only work while they are <b>equipped</b> in a slot. Extra gear goes to your bag, and shops are where you drag pieces between the bag and your slots. Spells stack: duplicates sit in one pile. Loose Tongue, Quickdraw, Spellplate and every other <b>relic</b> takes no slot and is always on. Reveals stay marked on the keyboard and in the Revealed panel for the puzzle. Letter-reveal foods queue their hint for the next round.</p>
       </article>
       <article class="rule-card">
         <h3>Bosses</h3>
@@ -624,7 +621,7 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>The run</h3>
-        <p>Five acts. Six nodes per act: three rounds, two shops or happenings, then a boss. Every finished encounter pays gold. A solve also offers a spell or a meal, and only rarely a piece of gear. Shops carry three items and three foods, with one item always half price. Defeat wipes the save and shows you the word you missed. Victory keeps your meta record.</p>
+        <p>Five acts. Six nodes per act: three rounds, two shops or happenings, then a boss. Every finished encounter pays a flat amount of gold. A solve also offers a spell or a meal, and only rarely a piece of gear. Shops carry <b>three items, two foods, and one wildcard</b> that can be a spell, food, or item. One item is always half price, and each reroll costs double the last. Defeat wipes the save and shows you the word you missed. Victory keeps your meta record.</p>
       </article>
       <article class="rule-card">
         <h3>Controls</h3>
@@ -691,17 +688,28 @@ function phaseLabel(view: RunView): string {
               : 'THE LIST';
 }
 
-function damageFxHtml(): string {
+function damageFxHtml(part: 'hp' | 'armor'): string {
   if (!damageFx) return '';
-  return `<div class="damage-fx" data-seq="${damageFx.id}">
-    ${damageFx.armorSpent > 0 ? `<span class="fx-armor">−${damageFx.armorSpent} ARMOR</span>` : ''}
-    ${damageFx.hpLost > 0 ? `<span class="fx-hp">−${damageFx.hpLost} HP</span>` : ''}
-    ${damageFx.armorSpent === 0 && damageFx.hpLost === 0
-      ? `<span class="fx-block">BLOCKED ${damageFx.incoming}</span>`
-      : ''}
-    ${damageFx.hpLost > 0 && damageFx.incoming > damageFx.hpLost
-      ? `<span class="fx-raw">HIT ${damageFx.incoming}</span>`
-      : ''}
+  if (part === 'hp') {
+    if (damageFx.hpLost > 0) {
+      return `<span class="dmg-number hp" data-seq="${damageFx.id}">−${damageFx.hpLost}<em>HP</em></span>`;
+    }
+    if (damageFx.armorSpent === 0 && damageFx.incoming > 0) {
+      return `<span class="dmg-number blocked" data-seq="${damageFx.id}">BLOCKED</span>`;
+    }
+    return '';
+  }
+  return damageFx.armorSpent > 0
+    ? `<span class="dmg-number armor" data-seq="${damageFx.id}">−${damageFx.armorSpent}<em>ARMOR</em></span>`
+    : '';
+}
+
+function guessDamageHtml(board: BoardView): string {
+  const safe = board.freeGuessesLeft > 0 || board.noGuessDamage;
+  const value = safe ? 0 : board.rawNextGuessDamage;
+  return `<div class="guess-damage ${safe ? 'safe' : ''}" title="Damage a wrong guess deals once your free guesses are gone.">
+    <span>WRONG GUESS</span>
+    <b>${safe ? 'FREE' : `−${value}`}</b>
   </div>`;
 }
 
@@ -723,14 +731,15 @@ function renderTimer(view: RunView, board: BoardView): string {
     : board.timerFrozen
       ? 'FROZEN'
       : 'MASSIVE DAMAGE IN';
-  const timeoutHit = Math.ceil(view.maxHp * 0.35) + 5;
+  const timeoutHit = board.timeoutDamage;
   const pct = board.remainingMs === null || !board.timerStartMs
     ? 100
     : Math.max(0, Math.min(100, (board.remainingMs / board.timerStartMs) * 100));
   const urgent = board.remainingMs !== null && board.remainingMs <= 15_000;
-  return `<div class="timer ${urgent ? 'urgent' : ''} ${board.timerFrozen ? 'frozen' : ''}" title="${board.remainingMs === null ? 'This round has no clock.' : `When this reaches zero you take ${timeoutHit} damage.`}">
+  return `<div class="timer ${urgent ? 'urgent' : ''} ${board.timerFrozen ? 'frozen' : ''}" title="${board.remainingMs === null ? 'This round has no clock.' : `When this reaches zero you take ${timeoutHit} damage: twice the guess hit plus 30% of max HP.`}">
     <span class="timer-label">${label}</span>
     <b>${time}</b>
+    <span class="timer-timeout">TIMEOUT −${timeoutHit}</span>
     <div class="timer-bar"><i style="width:${pct}%"></i></div>
   </div>`;
 }
@@ -756,6 +765,7 @@ function renderBattleRail(view: RunView, bossId?: string): string {
   return `
   <aside class="panel battle-rail ${low ? 'critical' : ''} ${hit ? 'hit' : ''}" style="--enemy:${enemy.color}" aria-label="Battle status">
     ${board ? renderTimer(view, board) : ''}
+    ${board ? guessDamageHtml(board) : ''}
     <section class="mini-arena ${phase.kind === 'summary' ? 'settled' : ''}">
       <div class="mini-sky" aria-hidden="true"></div>
       <div class="mini-head">
@@ -766,8 +776,8 @@ function renderBattleRail(view: RunView, bossId?: string): string {
       <div class="mini-stage">
         <div class="mini-side player-side">
           <div class="sprite player-sprite">${playerSprite(pct / 100, hit)}</div>
+          ${damageFxHtml('hp')}
           <span class="mini-label">YOU</span>
-          ${damageFxHtml()}
         </div>
         <div class="mini-center">
           <span class="mini-phase">${phaseLabel(view)}</span>
@@ -788,6 +798,7 @@ function renderBattleRail(view: RunView, bossId?: string): string {
           <span class="hp-gloss"></span>
         </div>
         <div class="armor-line" title="Armor soaks damage point-for-point before HP. It refills each round. Timeout damage ignores armor.">
+          ${damageFxHtml('armor')}
           <span class="armor-bar" role="progressbar" aria-label="Armor" aria-valuemin="0" aria-valuemax="${view.maxArmor}" aria-valuenow="${view.armor}">
             <i style="width:${armorPct}%"></i>
           </span>
@@ -841,7 +852,7 @@ function renderSidePanel(view: RunView): string {
       <div class="spell-list">${spells}</div>
     </section>
     <section>
-      <div class="panel-head"><span class="panel-kicker">BLACKLIST</span><span class="count">${view.blacklist.length}/${view.blacklistCapacity}</span></div>
+      <div class="panel-head"><span class="panel-kicker">BLACKLIST</span><span class="count" title="No limit. Every spent word stays here.">${view.blacklist.length}</span></div>
       <ol class="blacklist">${blacklist}</ol>
       ${view.revealed.length ? `<div class="revealed">
         <span class="panel-kicker">REVEALED THIS PUZZLE</span>
@@ -877,7 +888,7 @@ function renderItem(view: RunView, item: ItemView): string {
         ? 'USE'
         : 'GEAR';
   return `
-  <article class="item-card ${def?.rarity === 'rare' ? 'rare' : ''} ${!item.equipped && item.slots > 0 ? 'in-bag' : ''}">
+  <article class="item-card ${def?.rarity === 'rare' ? 'rare' : ''} ${!item.equipped && item.slots > 0 ? 'in-bag' : ''}" data-tip="${escapeHtml(description)}">
     <div class="item-top">
       <span class="item-emoji" aria-hidden="true">${itemIcon(item.id)}</span>
       <b>${escapeHtml(name)}</b>
@@ -1086,6 +1097,7 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
     return `<div class="loadout-chip ${inSlot ? 'equipped' : 'bagged'}" draggable="true"
       data-item="${escapeHtml(item.instance)}"
       data-action="${inSlot ? 'unequip' : 'equip'}" data-id="${escapeHtml(item.instance)}"
+      data-tip="${escapeHtml(def?.description ?? '')}"
       title="${inSlot ? 'Drag to the bag or click to unequip' : 'Drag to a slot or click to equip'}">
       <span class="item-emoji" aria-hidden="true">${itemIcon(item.id)}</span>
       <b>${escapeHtml(def?.name ?? item.id)}</b>
@@ -1129,7 +1141,7 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
     </div>
     ${loadout}
     ${sellable ? `<details class="sell-box"><summary>Sell items</summary>${sellable}</details>` : ''}
-    <p class="hint">Food is eaten on purchase and takes no slot. One item is always half price. Spells are not sold here — food and item triggers make them. Relics never appear in shops.</p>
+    <p class="hint">Three items, two foods, and one wildcard slot that can be a spell, food, or item. Food is eaten on purchase and takes no slot. One item is always half price, and each reroll costs double the last. Relics never appear in shops.</p>
   </div>`;
 }
 

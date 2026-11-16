@@ -28,9 +28,9 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'coffee',
     name: 'Coffee',
-    description: '+10s this round. No slot.',
-    price: 3,
-    effects: [{ type: 'addTime', ms: 10_000 }],
+    description: '+3s per round, permanently. No slot.',
+    price: 6,
+    effects: [{ type: 'timeBonus', ms: 3_000 }],
   }),
   defineFood({
     id: 'mystery-stew',
@@ -91,7 +91,7 @@ export const FOODS: FoodDef[] = [
   }),
 
   // Permanent boosts are eaten like food now. There is no separate upgrade
-  // shelf: the shop simply offers three items and three foods.
+  // shelf: the shop offers three items, two foods and one wildcard.
   defineFood({
     id: 'vitality',
     name: 'Vitality',
@@ -105,9 +105,9 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'plating',
     name: 'Plating',
-    description: '+5 max armor. No slot.',
-    price: 9,
-    effects: [{ type: 'maxArmor', delta: 5 }],
+    description: '+2 max armor. No slot.',
+    price: 6,
+    effects: [{ type: 'maxArmor', delta: 2 }],
   }),
   defineFood({
     id: 'chronos',
@@ -129,6 +129,30 @@ export const FOODS: FoodDef[] = [
     description: '+2 gold per solve. No slot.',
     price: 8,
     effects: [{ type: 'solveGold', amount: 2 }],
+  }),
+
+  // Letter reveals are too narrow for a gear slot, so they are sold as
+  // expensive one-shot meals. Their reveal lands when the next round starts.
+  defineFood({
+    id: 'b-file',
+    name: 'B-File',
+    description: 'Next round: reveal whether the answer has B. No slot.',
+    price: 10,
+    effects: [{ type: 'revealLetter', letter: 'b' }],
+  }),
+  defineFood({
+    id: 'x-ray',
+    name: 'X-Ray',
+    description: 'Next round: reveal whether the answer has X. No slot.',
+    price: 12,
+    effects: [{ type: 'revealLetter', letter: 'x' }],
+  }),
+  defineFood({
+    id: 'q-tip',
+    name: 'Q-Tip',
+    description: 'Next round: reveal whether the answer has Q. No slot.',
+    price: 12,
+    effects: [{ type: 'revealLetter', letter: 'q' }],
   }),
 ];
 

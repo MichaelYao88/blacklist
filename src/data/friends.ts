@@ -22,6 +22,7 @@ export const FRIEND_WORDS: readonly string[] = [
   'youre',
   'ratio',
   'skill',
+  'issue',
   'grass',
   'touch',
   'yikes',
@@ -44,4 +45,14 @@ export const FRIEND_WORDS: readonly string[] = [
   'slaps',
   'vibes',
   'poggy',
+];
+
+/**
+ * The only two-word calls the friend is allowed to make. He never pairs
+ * random bucket words together, no matter how funny the result would be.
+ */
+export const FRIEND_PHRASES: readonly (readonly [string, string])[] = [
+  ['sicks', 'seven'],
+  ['skill', 'issue'],
+  ['touch', 'grass'],
 ];

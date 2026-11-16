@@ -22,11 +22,11 @@ const ENTRIES: GlossaryEntry[] = [
   },
   {
     pattern: /\bfree guesses?\b/gi,
-    tip: 'A guess that costs no HP. The first guess of every round is always free.',
+    tip: 'A guess that costs no HP. The first two guesses of every round are free.',
   },
   {
     pattern: /\bpaid guesses?\b/gi,
-    tip: 'A guess that costs HP. Each paid guess in a round hits 1 harder than the last.',
+    tip: 'A guess that costs HP. The monster hit is fixed for the whole encounter.',
   },
   {
     pattern: /\brandom spells?\b/gi,
@@ -54,11 +54,7 @@ const ENTRIES: GlossaryEntry[] = [
   },
   {
     pattern: /\bblacklist(?:ed)?\b/gi,
-    tip: 'Up to 16 words you can never guess again. The first guess of each round joins the list.',
-  },
-  {
-    pattern: /\bevict(?:ed|ion)\b/gi,
-    tip: 'When the blacklist is full, its oldest word is pushed out to make room.',
+    tip: 'Words you can never guess again. It has no limit, and the first guess of each round joins it forever.',
   },
   {
     pattern: /\bpurge(?:d)?\b/gi,
@@ -70,15 +66,15 @@ const ENTRIES: GlossaryEntry[] = [
   },
   {
     pattern: /\btimeouts?\b/gi,
-    tip: 'The clock reached zero. You take 35% max HP + 5 damage and the round ends.',
+    tip: 'The clock reached zero. You take 2× the guess hit + 30% of max HP, ignoring armor, and the round ends.',
   },
   {
     pattern: /\bclock\b/gi,
-    tip: 'The MASSIVE DAMAGE IN countdown. At zero you take 35% max HP + 5 damage.',
+    tip: 'The MASSIVE DAMAGE IN countdown. At zero you take 2× the guess hit + 30% of max HP.',
   },
   {
     pattern: /\btimer\b/gi,
-    tip: 'The MASSIVE DAMAGE IN countdown. At zero you take 35% max HP + 5 damage.',
+    tip: 'The MASSIVE DAMAGE IN countdown. At zero you take 2× the guess hit + 30% of max HP.',
   },
   {
     pattern: /\bHP\b/gi,
@@ -106,7 +102,7 @@ const ENTRIES: GlossaryEntry[] = [
   },
   {
     pattern: /\bPhone a Friend\b/g,
-    tip: 'Spell: two free guesses and a 20-second clock freeze.',
+    tip: 'Spell: a two-word catchphrase if he has one ready, otherwise one wild guess. The clock freezes for 20s.',
   },
   {
     pattern: /\bImmunity\b/g,

@@ -251,67 +251,18 @@ export function createCore(content: Content): Core {
 
   // ── blacklist ────────────────────────────────────────────────────────────
 
-  function blacklistPayload(rt: Runtime, added?: string, evicted: string[] = [], removed: string[] = []) {
-    const state = rt.state;
-    return {
-      list: state.blacklist.slice(),
-      capacity: state.blacklistCapacity,
-      added,
-      evicted,
-      removed,
-    };
-  }
-
   function addBlacklist(rt: Runtime, word: string): void {
     const state = rt.state;
     if (!word || state.blacklist.includes(word)) return;
     state.blacklist.push(word);
-    const evicted: string[] = [];
-    while (state.blacklist.length > Math.max(1, state.blacklistCapacity)) {
-      evicted.push(state.blacklist.shift() as string);
-    }
-    const payload = blacklistPayload(rt, word, evicted);
-    emit(rt, { type: 'blacklistChanged', ...payload });
-    runHook(rt, 'onBlacklistChanged', payload);
+    emit(rt, { type: 'blacklistChanged', list: state.blacklist.slice(), added: word });
   }
 
   function clearBlacklist(rt: Runtime): void {
     const state = rt.state;
     if (state.blacklist.length === 0) return;
-    const removed = state.blacklist.slice();
     state.blacklist = [];
-    const payload = blacklistPayload(rt, undefined, [], removed);
-    emit(rt, { type: 'blacklistChanged', ...payload });
-    runHook(rt, 'onBlacklistChanged', payload);
-  }
-
-  function addRandomBlacklist(rt: Runtime, count: number): void {
-    const state = rt.state;
-    const candidates = content.answers.filter(
-      (word) =>
-        !state.blacklist.includes(word) &&
-        !state.usedAnswers.includes(word) &&
-        !word.split('').some((ch) => state.purged.includes(ch)),
-    );
-    if (candidates.length === 0) return;
-    for (let i = 0; i < count && candidates.length > 0; i++) {
-      const index = rngInt(state, candidates.length);
-      const [word] = candidates.splice(index, 1);
-      addBlacklist(rt, word);
-    }
-  }
-
-  function removeRandomBlacklist(rt: Runtime, count: number): void {
-    const state = rt.state;
-    const removed: string[] = [];
-    for (let i = 0; i < count && state.blacklist.length > 0; i++) {
-      const index = rngInt(state, state.blacklist.length);
-      removed.push(state.blacklist.splice(index, 1)[0]);
-    }
-    if (removed.length === 0) return;
-    const payload = blacklistPayload(rt, undefined, [], removed);
-    emit(rt, { type: 'blacklistChanged', ...payload });
-    runHook(rt, 'onBlacklistChanged', payload);
+    emit(rt, { type: 'blacklistChanged', list: [] });
   }
 
   function purgeLetterNow(rt: Runtime, letter: Letter): boolean {
@@ -617,6 +568,9 @@ export function createCore(content: Content): Core {
       case 'heal':
         heal(rt, effect.amount, source);
         break;
+      case 'healPercent':
+        heal(rt, Math.max(1, Math.ceil(state.maxHp * (effect.percent / 100))), source);
+        break;
       case 'maxHp':
         changeMaxHp(rt, effect.delta, source);
         break;
@@ -686,10 +640,12 @@ export function createCore(content: Content): Core {
         emit(rt, { type: 'freeGuessesChanged', remaining: round.freeLeft, source });
         break;
       }
-      case 'makeGuessFree':
+      case 'makeGuessFree': {
+        if (effect.chancePct !== undefined && !rngChance(state, effect.chancePct)) break;
         rt.pendingFree = true;
         rt.pendingFreeSource = rt.self ? { kind: 'item', instance: rt.self } : source;
         break;
+      }
       case 'immunity': {
         const round = state.round;
         if (!round) break;
@@ -723,10 +679,18 @@ export function createCore(content: Content): Core {
         break;
       }
       case 'revealLetter': {
-        const round = state.round;
-        if (!round) break;
         const letter = effect.letter.toLowerCase();
-        hintLetter(rt, letter, round.answer.includes(letter) ? 'present' : 'absent');
+        const round = state.round;
+        if (state.phase === 'round' && round) {
+          hintLetter(rt, letter, round.answer.includes(letter) ? 'present' : 'absent');
+        } else {
+          if (!state.pendingReveals) state.pendingReveals = [];
+          if (!state.pendingReveals.includes(letter)) state.pendingReveals.push(letter);
+          emit(rt, {
+            type: 'message',
+            text: `${letter.toUpperCase()} will be revealed when the next round starts.`,
+          });
+        }
         break;
       }
       case 'revealRandom':
@@ -738,12 +702,15 @@ export function createCore(content: Content): Core {
       case 'clearBlacklist':
         clearBlacklist(rt);
         break;
-      case 'blacklistAddRandom':
-        addRandomBlacklist(rt, effect.count);
+      case 'randomChoice': {
+        if (effect.options.length === 0) break;
+        const choice = effect.options[rngInt(state, effect.options.length)];
+        for (const nested of choice) {
+          if (isOver(state)) break;
+          applyEffect(rt, nested);
+        }
         break;
-      case 'blacklistRemoveRandom':
-        removeRandomBlacklist(rt, effect.count);
-        break;
+      }
       case 'giveSpell': {
         if (effect.chancePct !== undefined && !rngChance(state, effect.chancePct)) break;
         const id = effect.spell === 'random'
@@ -931,12 +898,13 @@ export function createCore(content: Content): Core {
     }
     timerStart = remaining;
 
-    // Damage is fixed for the encounter. It grows with the act and with how
-    // deep into the act the monster sits, but never climbs per wrong guess.
+    // Damage is fixed for the encounter. It grows with the act, with how deep
+    // into the act the monster sits, and with the run's overall progress.
     const roundSlot = Math.floor((state.nodeIndex % NODES_PER_ACT) / 2);
+    const roundTier = Math.floor(state.stats.rounds / 3);
     const baseDamage = boss
-      ? (boss.damage ?? 3 + state.act * 2)
-      : 2 + state.act * 2 + roundSlot + state.bonusBaseDamage;
+      ? (boss.damage ?? 3 + state.act * 2 + roundTier)
+      : 2 + state.act * 2 + roundSlot + roundTier + state.bonusBaseDamage;
 
     const round: RoundState = {
       answer,
@@ -980,6 +948,16 @@ export function createCore(content: Content): Core {
       gauntletTotal: round.gauntletTotal,
     });
 
+    // Reveal foods bought between rounds pay out here, once there is a live
+    // answer to inspect.
+    if (state.pendingReveals?.length) {
+      const queued = state.pendingReveals.slice();
+      state.pendingReveals = [];
+      for (const letter of queued) {
+        hintLetter(rt, letter, round.answer.includes(letter) ? 'present' : 'absent');
+      }
+    }
+
     runHook(rt, 'onRoundStart', {
       boss: boss?.id,
       timerMs: remaining,
@@ -1018,12 +996,12 @@ export function createCore(content: Content): Core {
       if (round.boss) state.stats.bosses++;
     }
 
-    // Every finished encounter pays out. A solve pays the full prize; a
-    // timeout still leaves a few coins so a bad round is not a dead run.
+    // Every finished encounter pays a flat prize. Gold never inflates with the
+    // act or the round number; only Bounty and similar items add to it.
     const goldAward = outcome === 'solved'
-      ? Math.max(1, Math.floor((6 + 2 * state.stats.rounds) * 0.7)) + state.bonusSolveGold
+      ? 5 + state.bonusSolveGold
       : outcome === 'timeout'
-        ? Math.max(1, Math.floor((3 + state.act) * 0.7))
+        ? 1
         : 0;
     if (goldAward > 0) changeGold(rt, goldAward, RULES);
 
@@ -1071,13 +1049,25 @@ export function createCore(content: Content): Core {
     });
   }
 
+  function guessDamageFor(state: RunState, round: RoundState, next = false): number {
+    const boss = round.boss ? bossById.get(round.boss) : undefined;
+    if (boss?.noGuessDamage) return 0;
+    if (!boss?.damageFor) return round.baseDamage;
+    const probe = next ? { ...round, totalGuesses: round.totalGuesses + 1 } : round;
+    return boss.damageFor(state, probe);
+  }
+
+  function timeoutDamageFor(state: RunState, round: RoundState): number {
+    return 2 * guessDamageFor(state, round, true) + Math.ceil(state.maxHp * 0.3);
+  }
+
   function expireRound(rt: Runtime): void {
     const state = rt.state;
     const round = state.round;
     if (!round || state.phase !== 'round') return;
     round.remainingMs = 0;
     emit(rt, { type: 'timeExpired' });
-    dealDamage(rt, Math.ceil(state.maxHp * 0.35) + 5, RULES, {
+    dealDamage(rt, timeoutDamageFor(state, round), RULES, {
       ignoreArmor: true,
       ignoreImmunity: true,
       timeout: true,
@@ -1131,25 +1121,40 @@ export function createCore(content: Content): Core {
     const state = rt.state;
     const round = state.round;
     if (!round) return;
+
+    const used = (): Set<string> => new Set(round.guesses.map((g) => g.word));
+    const available = (word: string, taken: Set<string>): boolean => {
+      const w = word.toLowerCase();
+      return (
+        w.length === WORD_LENGTH &&
+        !taken.has(w) &&
+        !state.blacklist.includes(w) &&
+        !w.split('').some((ch) => state.purged.includes(ch))
+      );
+    };
+
+    // A two-word call only ever delivers one of the friend's curated
+    // catchphrases. He never improvises a pair from the random word bucket.
+    if (count >= 2) {
+      const taken = used();
+      const phrases = content.friendPhrases.filter(
+        ([first, second]) => available(first, taken) && available(second, taken),
+      );
+      if (phrases.length > 0) {
+        const [first, second] = rngPick(state, phrases);
+        if (state.phase === 'round') scorePlayerGuess(rt, first, 'friend');
+        if (state.phase === 'round') scorePlayerGuess(rt, second, 'friend');
+        return;
+      }
+      count = 1;
+    }
+
     for (let i = 0; i < count; i++) {
       if (state.phase !== 'round') break;
-      const used = new Set(round.guesses.map((g) => g.word));
-      let pool = content.friendWords.filter((word) => {
-        const w = word.toLowerCase();
-        return (
-          w.length === WORD_LENGTH &&
-          !used.has(w) &&
-          !state.blacklist.includes(w) &&
-          !w.split('').some((ch) => state.purged.includes(ch))
-        );
-      });
+      const taken = used();
+      let pool = content.friendWords.filter((word) => available(word, taken));
       if (pool.length === 0) {
-        pool = content.answers.filter(
-          (word) =>
-            !used.has(word) &&
-            !state.blacklist.includes(word) &&
-            !word.split('').some((ch) => state.purged.includes(ch)),
-        );
+        pool = content.answers.filter((word) => available(word, taken));
       }
       if (pool.length === 0) break;
       const word = rngPick(state, pool);
@@ -1309,7 +1314,7 @@ export function createCore(content: Content): Core {
     // A basic monster always offers coins plus a real choice: a spell or a
     // meal. A second coin pile is never a reward. Gear is a rare find; shops
     // remain the reliable place to buy it.
-    const goldAmount = Math.max(1, Math.floor((8 + 3 * state.act) * 0.7));
+    const goldAmount = 5;
     options.push({
       id: 'gold',
       kind: 'gold',
@@ -1404,7 +1409,6 @@ export function createCore(content: Content): Core {
     const itemPool = content.items.filter(
       (i) => i.rarity !== 'rare' && (i.kind !== 'gear' || !ownedGear.has(i.id)),
     );
-    const offers: Offer[] = [];
     const picked: Array<{
       kind: Offer['kind'];
       def: string;
@@ -1412,13 +1416,10 @@ export function createCore(content: Content): Core {
       sale?: boolean;
       originalPrice?: number;
     }> = [];
+    const usedDefs = new Set<string>();
 
-    // Three items and three foods. Spells are never on the shelf: they come
-    // from food and from item triggers.
-    const picks = rngShuffle(state, itemPool).slice(0, 3);
-    const saleIndex = picks.length > 0 ? rngInt(state, picks.length) : -1;
-    picks.forEach((item, index) => {
-      const sale = index === saleIndex;
+    const pickItem = (item: ItemDef, sale = false): void => {
+      usedDefs.add(`item:${item.id}`);
       picked.push({
         kind: 'item',
         def: item.id,
@@ -1426,24 +1427,53 @@ export function createCore(content: Content): Core {
         sale,
         originalPrice: sale ? item.price : undefined,
       });
-    });
-
-    const foods = rngShuffle(state, content.foods).slice(0, 3);
-    for (const food of foods) {
+    };
+    const pickFood = (food: (typeof content.foods)[number]): void => {
+      usedDefs.add(`eat:${food.id}`);
       picked.push({ kind: 'eat', def: food.id, price: food.price });
+    };
+    const pickSpell = (spell: (typeof content.spells)[number]): void => {
+      usedDefs.add(`spell:${spell.id}`);
+      picked.push({ kind: 'spell', def: spell.id, price: spell.price });
+    };
+
+    // The shelf always carries three items and two foods.
+    const itemPicks = rngShuffle(state, itemPool).slice(0, 3);
+    const saleIndex = itemPicks.length > 0 ? rngInt(state, itemPicks.length) : -1;
+    itemPicks.forEach((item, index) => pickItem(item, index === saleIndex));
+
+    for (const food of rngShuffle(state, content.foods).slice(0, 2)) {
+      pickFood(food);
     }
 
-    picked.forEach((pick, index) => {
-      offers.push({
-        id: `o${index}`,
-        kind: pick.kind,
-        def: pick.def,
-        price: pick.price,
-        sale: pick.sale,
-        originalPrice: pick.originalPrice,
-      });
-    });
-    return offers;
+    // The sixth slot rolls one of the three categories.
+    const categories = ['spell', 'eat', 'item'] as const;
+    const wildcard = categories[rngInt(state, categories.length)];
+    if (wildcard === 'spell') {
+      const pool = content.spells.filter((spell) => !usedDefs.has(`spell:${spell.id}`));
+      if (pool.length > 0) pickSpell(rngPick(state, pool));
+    } else if (wildcard === 'eat') {
+      const pool = content.foods.filter((food) => !usedDefs.has(`eat:${food.id}`));
+      if (pool.length > 0) pickFood(rngPick(state, pool));
+    } else {
+      const pool = itemPool.filter((item) => !usedDefs.has(`item:${item.id}`));
+      if (pool.length > 0) pickItem(rngPick(state, pool));
+    }
+
+    // Guarantee a sixth offer even when the rolled pool was exhausted.
+    if (picked.length < 6 && content.spells.length > 0) {
+      const pool = content.spells.filter((spell) => !usedDefs.has(`spell:${spell.id}`));
+      if (pool.length > 0) pickSpell(rngPick(state, pool));
+    }
+
+    return picked.slice(0, 6).map((pick, index) => ({
+      id: `o${index}`,
+      kind: pick.kind,
+      def: pick.def,
+      price: pick.price,
+      sale: pick.sale,
+      originalPrice: pick.originalPrice,
+    }));
   }
 
   function openShop(rt: Runtime): void {
@@ -1502,7 +1532,7 @@ export function createCore(content: Content): Core {
     }
     spendGold(rt, shop.rerollCost, RULES);
     shop.rerolls++;
-    shop.rerollCost += 1;
+    shop.rerollCost *= 2;
     shop.offers = generateOffers(rt);
     emit(rt, {
       type: 'shopRerolled',
@@ -1747,9 +1777,8 @@ export function createCore(content: Content): Core {
     const boss = round.boss ? bossById.get(round.boss) : undefined;
     // damageFor describes the hit a wrong guess takes at the round's current
     // progress, so preview the next guess by stepping the counter forward.
-    const rawNext = boss?.damageFor
-      ? boss.damageFor(state, { ...round, totalGuesses: round.totalGuesses + 1 })
-      : round.baseDamage;
+    const rawNext = guessDamageFor(state, round, true);
+    const timeoutDamage = timeoutDamageFor(state, round);
     const noGuessDamage = Boolean(boss?.noGuessDamage);
 
     const keyboard: Partial<Record<Letter, KeyboardStatus>> = {};
@@ -1786,6 +1815,7 @@ export function createCore(content: Content): Core {
       freeGuessesLeft: round.freeLeft,
       nextGuessDamage: round.freeLeft > 0 || noGuessDamage ? 0 : rawNext,
       rawNextGuessDamage: rawNext,
+      timeoutDamage,
       remainingMs: round.remainingMs,
       timerStartMs: round.timerStartMs,
       timerFrozen: round.frozenUntilGuess || round.frozenMs > 0,
@@ -1880,7 +1910,6 @@ export function createCore(content: Content): Core {
       items: state.items.map((item) => itemView(state, item)),
       spells: state.spells.map((s) => spellView(s)),
       blacklist: state.blacklist.slice(),
-      blacklistCapacity: state.blacklistCapacity,
       purged: state.purged.slice(),
       revealed: state.phase === 'round' || state.phase === 'summary'
         ? Object.entries(state.round?.hints ?? {})
@@ -2033,10 +2062,10 @@ export function createCore(content: Content): Core {
       items: [],
       spells: [],
       blacklist: [],
-      blacklistCapacity: 16,
       purged: [],
       usedAnswers: [],
       pendingPurge: 0,
+      pendingReveals: [],
       phase: 'round',
       stats: {
         rounds: 0,
@@ -2090,6 +2119,20 @@ export function createCore(content: Content): Core {
       const state = parsed as RunState;
       state.version = VERSION;
       state.bonusSolveGold = typeof state.bonusSolveGold === 'number' ? state.bonusSolveGold : 0;
+      if (!Array.isArray(state.pendingReveals)) state.pendingReveals = [];
+      delete (state as RunState & { blacklistCapacity?: number }).blacklistCapacity;
+      // Retired item ids are remapped or dropped so an old save can never
+      // reference a definition the current content set no longer ships.
+      const itemMigrations: Record<string, string> = {
+        'null-lens': 'pen-club',
+        'midas-relic': 'gilded-fork',
+      };
+      state.items = state.items
+        .map((item) => {
+          const mapped = itemMigrations[item.id];
+          return mapped ? { ...item, id: mapped } : item;
+        })
+        .filter((item) => itemById.has(item.id));
       for (const item of state.items) {
         if (typeof item.equipped !== 'boolean') item.equipped = true;
       }

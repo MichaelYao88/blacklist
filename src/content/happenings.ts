@@ -2,28 +2,6 @@ import { defineHappening, type HappeningDef } from '../core/types';
 
 export const HAPPENINGS: HappeningDef[] = [
   defineHappening({
-    id: 'word-eater',
-    name: 'The Word Eater',
-    description: 'A squat little thing with too many teeth. It is hungry for words.',
-    options: [
-      {
-        id: 'feed',
-        label: 'Feed it two words',
-        description: '60%: remove 2 blacklist words. 40%: add 2.',
-        outcomes: [
-          { chancePct: 60, text: 'It spits two blacklisted words back at you.', effects: [{ type: 'blacklistRemoveRandom', count: 2 }] },
-          { chancePct: 40, text: 'It eats two words and burps them onto your list.', effects: [{ type: 'blacklistAddRandom', count: 2 }] },
-        ],
-      },
-      {
-        id: 'leave',
-        label: 'Back away',
-        description: 'Nothing happens.',
-        outcomes: [{ chancePct: 100, text: 'You leave the Word Eater to its meal.', effects: [] }],
-      },
-    ],
-  }),
-  defineHappening({
     id: 'scavenger',
     name: 'The Scavenger',
     description: 'A hooded figure offers you a deal from a bag of dented parts.',
@@ -128,28 +106,6 @@ export const HAPPENINGS: HappeningDef[] = [
     ],
   }),
   defineHappening({
-    id: 'ink-stain',
-    name: 'The Ink Stain',
-    description: 'A spilled pot of ink is writing a sentence without a hand.',
-    options: [
-      {
-        id: 'read',
-        label: 'Read the sentence',
-        description: '60%: random spell. 40%: add a blacklist word.',
-        outcomes: [
-          { chancePct: 60, text: 'The ink spells out something useful. A new spell.', effects: [{ type: 'giveSpell', spell: 'random' }] },
-          { chancePct: 40, text: 'The sentence is your name. The list grows.', effects: [{ type: 'blacklistAddRandom', count: 1 }] },
-        ],
-      },
-      {
-        id: 'smear',
-        label: 'Smear it across the page',
-        description: 'Remove one blacklist word.',
-        outcomes: [{ chancePct: 100, text: 'The ink runs. One word is gone from the list.', effects: [{ type: 'blacklistRemoveRandom', count: 1 }] }],
-      },
-    ],
-  }),
-  defineHappening({
     id: 'letter-garden',
     name: 'The Letter Garden',
     description: 'Rows of letters grow out of dark soil. Something is buried under them.',
@@ -201,10 +157,10 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'listen',
         label: 'Lower the bucket',
-        description: '70%: remove a blacklist word. 30%: add one.',
+        description: '60%: random spell. 40%: −3 HP.',
         outcomes: [
-          { chancePct: 70, text: 'The echo comes back cleaner than it went in.', effects: [{ type: 'blacklistRemoveRandom', count: 1 }] },
-          { chancePct: 30, text: 'Something else answers. A word joins the list.', effects: [{ type: 'blacklistAddRandom', count: 1 }] },
+          { chancePct: 60, text: 'The echo comes back shaped like a spell.', effects: [{ type: 'giveSpell', spell: 'random' }] },
+          { chancePct: 40, text: 'Something else answers. It bites. −3 HP.', effects: [{ type: 'damage', amount: 3 }] },
         ],
       },
       {
