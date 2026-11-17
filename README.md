@@ -42,7 +42,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Pause (Space or Esc), independent music/SFX mutes, synthesized SFX, keyboard and on-screen keyboard, colorblind symbols, reduced-motion-friendly CSS
 - Soundtrack defaults to Dark Synthwave and cycles when you click the **MUSIC** control. More Power is reserved for the final boss and is not in the carousel. Music sits below the SFX mix.
 
-Not in this version: daily seeds, meta unlocks beyond win/run counters and ascension, dordle grids, Antiwordle, liar clues, Green Warden. The state and seed plumbing is already there for those.
+Not in this version: daily seeds, Ascension above A2, dordle grids, Antiwordle, liar clues, Green Warden. The state and seed plumbing is already there for those.
 
 ---
 
