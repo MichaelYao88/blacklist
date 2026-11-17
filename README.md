@@ -19,7 +19,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - The first curse draft of a base run always offers a vision or blacklist curse on one side, with The Clock 3× as likely on the other; Ascension runs use the normal pool
 - Hover or focus a curse in the HUD to read its rules
 - 50 is the final boss: three rounds back-to-back with no intermission
-- Base encounter damage is fixed at 3; only curses change damage
+- Base encounter damage starts at 3 and rises by 1 every 7 levels; curses add more
 - The blacklist is disabled and hidden until **The List** curse is taken; The List is a single curse, never stacks, and arrives stocked with the first guess from every earlier round
 - The clock is disabled until **The Clock** curse is taken; the first stack gives 5:00
 - The Clockmaker event only appears once The Clock exists
@@ -38,13 +38,15 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Opening shields such as **Head Start** and **Quickdraw** make guesses in their window count as free guesses
 - Relics are very rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 111 items (92 shop items + 19 rare relics), 6 spells, 26 foods and 15 happenings
+- 112 items (93 shop items + 19 rare relics), 6 spells, 26 foods and 15 happenings
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
 - **Field Kit** reveals exactly 4 letters that are not in the word; **Doggy Bag** reveals 2 and queues another after every food
 - Letter foods cover B, G, X, Q, I, D, and Y+N; the X and Q foods are cheaper
 - New solve rewards: **Brace** (+2 max armor), **Bloom** (+5 max HP, +1 per trigger), **Patch Kit** (heal 30% of max HP +1)
 - **Four-Leaf Clover** has a 20% chance of a random spell when you eat or cast
 - **Bottomless** starts at +5 max armor and gains +1 every 4 foods
+- **Big Belt** gains +1 item slot every 5 eats or solves
+- **Pen Club** pays a random 1-5 gold for guesses starting with PEN; **Gourmand** gains +1 max HP on eat or spell cast
 - **Old McDonald** is an expensive relic: EIEIO is guessed for free at round start
 - Shops can show up to 2 copies of the same entry; sell rows are hoverable
 - Solve gold is 8 for 3 guesses or fewer, otherwise a random 5-8
@@ -59,7 +61,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Damage numbers slam into the centre of the screen as `N damage`, with a block message when armor or immunity eats the hit
 - Spells and the blacklist sit on the right, with items below them
 - Pause (Space or Esc), independent music/SFX mutes, synthesized SFX, keyboard and on-screen keyboard, colorblind symbols, reduced-motion-friendly CSS
-- Soundtrack opens every run on Dark Synthwave and rerolls to a random regular track every 5 levels (repeats allowed). Click the **MUSIC** control to cycle manually. More Power is reserved for the final boss and is not in the carousel. Music sits below the SFX mix.
+- Soundtrack opens every run on Dark Synthwave and rerolls to a random regular track every 7 levels (repeats allowed). Click the **MUSIC** control to cycle manually. More Power is reserved for the final boss and is not in the carousel. Music sits below the SFX mix.
 
 Not in this version: daily seeds, Ascension above A2, dordle grids, Antiwordle, liar clues, Green Warden. The state and seed plumbing is already there for those.
 
@@ -97,8 +99,8 @@ Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title s
 | Normal timer | none until The Clock curse |
 | Clock curse | first stack 5:00, each later stack −20%, floor 0:30 |
 | Final boss | 3 rounds, shared clock if active |
-| Base damage | 3 for every encounter; curses are the only growth |
-| Paid guess damage | 3 base, modified only by curses |
+| Base damage | `3 + floor((level - 1) / 7)`, then curses modify it |
+| Paid guess damage | level-scaled base, modified only by curses |
 | Final boss damage | 3 base plus curses |
 | Timeout damage | `2 × guess hit + ceil(maxHp × 0.3)`, bypasses armor, ends the round |
 | Armor | a pool that soaks damage point-for-point before HP; refills each round |

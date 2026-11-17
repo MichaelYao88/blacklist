@@ -10,19 +10,19 @@ describe('run music', () => {
     expect(music.currentName).toContain('Dark Synthwave');
   });
 
-  it('only rerolls on five-level milestones and never picks the boss track', () => {
+  it('only rerolls on seven-level milestones and never picks the boss track', () => {
     music.beginRun();
-    music.setLevel(4);
+    music.setLevel(6);
     expect(music.currentName).toContain('Dark Synthwave');
 
-    music.setLevel(5);
-    const atFive = music.currentName;
-    expect(atFive).not.toContain('More Power');
+    music.setLevel(7);
+    const atSeven = music.currentName;
+    expect(atSeven).not.toContain('More Power');
 
-    music.setLevel(6);
-    expect(music.currentName).toBe(atFive);
+    music.setLevel(8);
+    expect(music.currentName).toBe(atSeven);
 
-    for (const level of [10, 15, 20, 25, 30, 35, 40, 45, 50]) {
+    for (const level of [14, 21, 28, 35, 42, 49]) {
       music.setLevel(level);
       expect(music.currentName).not.toContain('More Power');
     }

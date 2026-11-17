@@ -88,9 +88,9 @@ class Music {
     this.sync();
   }
 
-  /** Swap to a random regular track at levels 5, 10, 15 and so on. */
+  /** Swap to a random regular track at levels 7, 14, 21 and so on. */
   setLevel(level: number): void {
-    const milestone = Math.floor(level / 5) * 5;
+    const milestone = Math.floor(level / 7) * 7;
     if (milestone <= 0 || milestone === this.lastMilestone) return;
     this.lastMilestone = milestone;
     this.selected = CAROUSEL[Math.floor(Math.random() * CAROUSEL.length)].id;

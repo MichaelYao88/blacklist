@@ -1148,10 +1148,12 @@ export function createCore(content: Content): Core {
     const remaining = clock === null ? null : Math.max(30_000, clock + state.bonusTimeMs);
     const timerStart = remaining;
 
-    // Encounter damage is fixed at 3. Curses are the only growth.
+    // Encounter damage is 3, rising by 1 every 7 levels. Curses are the other
+    // source of growth.
+    const levelDamage = 3 + Math.floor((state.level - 1) / 7);
     const baseDamage = Math.max(
       0,
-      Math.round(3 * damageMultiplier(state) + state.bonusBaseDamage),
+      Math.round(levelDamage * damageMultiplier(state) + state.bonusBaseDamage),
     );
 
     const round: RoundState = {

@@ -272,12 +272,42 @@ describe('blacklist curse', () => {
 });
 
 describe('damage and curses', () => {
-  it('uses fixed base damage 3 and Heavy Hand doubles per stack', () => {
+  it('uses level-scaled base damage and Heavy Hand doubles per stack', () => {
     const { state } = start();
     expect(state.round?.baseDamage).toBe(3);
     state.curses.push({ id: 'heavy-hand', stacks: 2 });
     const next = nextRound(state);
     expect(next.state.round?.baseDamage).toBe(12);
+  });
+
+  it('raises base damage by 1 every 7 levels', () => {
+    const seven = start('level-7');
+    seven.state.level = 6;
+    expect(nextRound(seven.state).state.round?.baseDamage).toBe(3);
+
+    const eight = start('level-8');
+    eight.state.level = 7;
+    expect(nextRound(eight.state).state.round?.baseDamage).toBe(4);
+
+    const fifteen = start('level-15');
+    fifteen.state.level = 14;
+    expect(nextRound(fifteen.state).state.round?.baseDamage).toBe(5);
+  });
+
+  it('Porcupine counts greens in the latest guess', () => {
+    const { state } = start('porcupine');
+    setAnswer(state, 'crane');
+    state.curses.push({ id: 'porcupine', stacks: 1 });
+    state.round!.freeLeft = 0;
+    state.armor = 0;
+    const guess = act(state, { type: 'guess', word: 'slate' });
+    expect(guess.state.hp).toBe(33);
+  });
+
+  it('Clumsy does not stack', () => {
+    expect(CURSE_BY_ID.get('clumsy')?.maxStacks).toBe(1);
+    expect(CURSE_BY_ID.get('clumsy')?.description).not.toContain('stack');
+    expect(CURSE_BY_ID.get('clumsy')?.rules.join(' ')).not.toContain('stack');
   });
 
   it('sleeper tiers add green and yellow damage', () => {
@@ -701,6 +731,63 @@ describe('new item and event batch', () => {
     expect(eaten.state.spells).toHaveLength(7);
   });
 
+  it('Pen Club pays a random 1-5 gold', () => {
+    const { state } = start('pen-club');
+    state.items.push({ instance: 'i-pen', id: 'pen-club', data: {}, equipped: true });
+    setAnswer(state, 'crane');
+    const guess = act(state, { type: 'guess', word: 'penal' });
+    expect(guess.state.gold).toBeGreaterThanOrEqual(11);
+    expect(guess.state.gold).toBeLessThanOrEqual(15);
+  });
+
+  it('Gourmand gains 1 max HP on eat or spell cast', () => {
+    const eater = start('gourmand-eat');
+    eater.state.items.push({ instance: 'i-gour', id: 'gourmand', data: {}, equipped: true });
+    eater.state.phase = 'shop';
+    eater.state.gold = 50;
+    eater.state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'snack', price: 3 }]);
+    const eaten = act(eater.state, { type: 'buy', offerId: 'o0' });
+    expect(eaten.state.maxHp).toBe(41);
+
+    const caster = start('gourmand-cast');
+    caster.state.items.push({ instance: 'i-gour', id: 'gourmand', data: {}, equipped: true });
+    caster.state.spells.push({ instance: 's-omen', id: 'omen' });
+    const cast = act(caster.state, { type: 'castSpell', instance: 's-omen' });
+    expect(cast.state.maxHp).toBe(41);
+  });
+
+  it('Big Belt gains a slot every 5 eats or solves', () => {
+    const { state } = start('big-belt');
+    state.items.push({ instance: 'i-belt', id: 'big-belt', data: { progress: 0 }, equipped: true });
+    state.phase = 'shop';
+    state.gold = 100;
+    state.shop = shopState([
+      { id: 'f0', kind: 'eat', def: 'snack', price: 3 },
+      { id: 'f1', kind: 'eat', def: 'snack', price: 3 },
+      { id: 'f2', kind: 'eat', def: 'snack', price: 3 },
+      { id: 'f3', kind: 'eat', def: 'snack', price: 3 },
+      { id: 'f4', kind: 'eat', def: 'snack', price: 3 },
+    ]);
+    let current = state;
+    for (const id of ['f0', 'f1', 'f2', 'f3']) {
+      current = act(current, { type: 'buy', offerId: id }).state;
+      expect(current.slots).toBe(5);
+    }
+    current = act(current, { type: 'buy', offerId: 'f4' }).state;
+    expect(current.slots).toBe(6);
+
+    const solver = start('big-belt-solve');
+    solver.state.items.push({
+      instance: 'i-belt-solve',
+      id: 'big-belt',
+      data: { progress: 4 },
+      equipped: true,
+    });
+    setAnswer(solver.state, 'crane');
+    const solved = act(solver.state, { type: 'guess', word: 'crane' });
+    expect(solved.state.slots).toBe(6);
+  });
+
   it('applies the tuned content text and values', () => {
     expect(FOOD_BY_ID.get('gg-gum')?.effects)
       .toContainEqual({ type: 'revealLetter', letter: 'g' });
@@ -710,7 +797,9 @@ describe('new item and event batch', () => {
     expect(SPELL_BY_ID.get('restore')?.description)
       .toBe('Refill armor and clear the blacklist.');
     expect(ITEM_BY_ID.get('siphon')?.description).toContain('4 HP');
-    expect(ITEM_BY_ID.get('gourmand')?.description).toContain('+2 max HP');
+    expect(ITEM_BY_ID.get('gourmand')?.description).toContain('Eating or casting');
+    expect(ITEM_BY_ID.get('pen-club')?.description).toContain('1-5 gold');
+    expect(ITEM_BY_ID.get('big-belt')?.description).toContain('Every 5 eats or solves');
     expect(ITEM_BY_ID.get('miser')?.description).not.toContain('max');
     expect(ITEM_BY_ID.get('plate-timer')?.requiresClock).toBe(true);
     expect(ITEM_BY_ID.get('solo-note')?.description)
@@ -737,10 +826,10 @@ describe('spells and foods', () => {
       .toBe('The next guess is free. Freeze any timers until you make the guess.');
   });
 
-  it('prices Pen Club at 15 gold for a +3 payout', () => {
+  it('prices Pen Club at 15 gold for a 1-5 gold payout', () => {
     const pen = ITEM_BY_ID.get('pen-club');
     expect(pen?.price).toBe(15);
-    expect(pen?.description).toContain('+3 gold');
+    expect(pen?.description).toContain('1-5 gold');
   });
 
   it('has rare purge foods', () => {

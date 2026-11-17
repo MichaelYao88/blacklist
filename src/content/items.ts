@@ -13,6 +13,16 @@ const SPELL_BITS: Record<string, number> = {
 
 const FOOD_BITS = new Map(FOODS.map((food, index) => [food.id, 1 << index]));
 
+/** Every fifth eat/solve pays one item slot. */
+function everyFiveEatsOrSolves(self: { data: Record<string, number> }): Effect[] {
+  const total = self.data.progress + 1;
+  const slots = Math.floor(total / 5);
+  return [
+    { type: 'setItemData', stat: 'progress', value: total % 5 },
+    ...Array.from({ length: slots }, () => ({ type: 'slots' as const, delta: 1 })),
+  ];
+}
+
 function popcount(value: number): number {
   let count = 0;
   while (value) {
@@ -311,10 +321,25 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'gourmand',
     name: 'Gourmand',
-    description: 'Eating: +2 max HP.',
+    description: 'Eating or casting a spell: +1 max HP.',
     price: 8,
     kind: 'gear',
-    on: { onEat: () => [{ type: 'maxHp', delta: 2 }] },
+    on: {
+      onEat: () => [{ type: 'maxHp', delta: 1 }],
+      onSpellCast: () => [{ type: 'maxHp', delta: 1 }],
+    },
+  }),
+  defineItem({
+    id: 'big-belt',
+    name: 'Big Belt',
+    description: 'Every 5 eats or solves: +1 item slot.',
+    price: 12,
+    kind: 'gear',
+    initial: { progress: 0 },
+    on: {
+      onEat: (ctx) => everyFiveEatsOrSolves(ctx.self),
+      onSolve: (ctx) => everyFiveEatsOrSolves(ctx.self),
+    },
   }),
   defineItem({
     id: 'bottomless',
@@ -720,12 +745,23 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'pen-club',
     name: 'Pen Club',
-    description: 'Guess a word that starts with PEN: +3 gold.',
+    description: 'Guess a word that starts with PEN: gain 1-5 gold.',
     price: 15,
     kind: 'gear',
     on: {
       onGuessScored: (_ctx, p) =>
-        p.guess.word.startsWith('pen') ? [{ type: 'gold', amount: 3 }] : [],
+        p.guess.word.startsWith('pen')
+          ? [{
+              type: 'randomChoice',
+              options: [
+                [{ type: 'gold', amount: 1 }],
+                [{ type: 'gold', amount: 2 }],
+                [{ type: 'gold', amount: 3 }],
+                [{ type: 'gold', amount: 4 }],
+                [{ type: 'gold', amount: 5 }],
+              ],
+            }]
+          : [],
     },
   }),
   defineItem({
