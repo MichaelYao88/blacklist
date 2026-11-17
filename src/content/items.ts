@@ -30,7 +30,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'head-start',
     name: 'Head Start',
-    description: 'The first 12s of each round: no damage.',
+    description: 'The first 12s of each round: guesses are free.',
     price: 8,
     kind: 'gear',
     on: {
@@ -40,7 +40,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'quickdraw',
     name: 'Quickdraw',
-    description: 'First 10s of each round: no damage. Guesses in that window: +1 gold.',
+    description: 'First 10s of each round: guesses are free. Guesses in that window: +1 gold.',
     price: 18,
     kind: 'gear',
     rarity: 'rare',
@@ -321,7 +321,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'time-dilation',
     name: 'Time Dilation',
-    description: 'First 10s: no damage. Rounds start 5s shorter.',
+    description: 'First 10s: guesses are free. Rounds start 5s shorter.',
     price: 8,
     kind: 'gear',
     on: {
@@ -957,6 +957,17 @@ export const ITEMS: ItemDef[] = [
         { type: 'giveSpell', spell: 'restore' },
         { type: 'consumeSelf' },
       ],
+    },
+  }),
+  defineItem({
+    id: 'speed-dial',
+    name: 'Speed Dial',
+    description: 'Round start: cast Phone a Friend.',
+    price: 22,
+    kind: 'gear',
+    rarity: 'rare',
+    on: {
+      onRoundStart: () => [{ type: 'castSpell', spell: 'phone-friend' }],
     },
   }),
   defineItem({

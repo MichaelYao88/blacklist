@@ -25,11 +25,12 @@ The first word of every round is added to the blacklist. It has no limit, nothin
 - Short item, spell and offer text with hover tooltips for keywords like armor, reveal, ruled out, free guesses, blacklist, relic and timeout
 - Revealed letters stay marked on the keyboard and in a Revealed panel for the puzzle; random reveals lean toward letters that are not in the answer; letter-reveal foods are permanent for the run
 - Every finished encounter pays gold; solves offer coins, usually a spell, and only rarely gear or a meal
-- **Compound Interest** pays 10% of current gold on every solve; **Midas Touch** has a 20% chance to double any gold gain
+- **Compound Interest** pays 10% of current gold on every solve; **Midas Touch** has a 20% chance to double any gold gain; **Speed Dial** casts Phone a Friend at the start of every round
+- Opening shields such as **Head Start** and **Quickdraw** make guesses in their window count as free guesses, so they deal no damage and do not advance the Ascension damage ramp
 - Boss encounters open with a full-screen intro, a plain-language rules list and a continue gate
 - Bosses award one of three rare relics with passive effects; relics consume an item slot and never appear in shops
 - Defeat reveals the answer you missed (all of them, on The Gauntlet)
-- 77 items (64 shop items + 13 rare relics), 7 spells, 18 foods and 12 happenings
+- 78 items (64 shop items + 14 rare relics), 7 spells, 18 foods and 12 happenings
 - Purge is an event (The Redaction), not a spell
 - Eight bosses:
   - **The Editor** — hides the last three tiles of each guess
@@ -58,7 +59,7 @@ Not in this version: daily seeds, meta unlocks beyond win/run counters and ascen
 | Starting HP | 40 |
 | Starting armor | 5 points |
 | Starting item slots | 5 (only equipped gear counts; relics use one slot each) |
-| Free guesses per round | 1 |
+| Free guesses per round | 1, plus every guess made inside a timed shield |
 | Starting gold | 10 |
 | Blacklist capacity | unlimited; entries are never removed |
 | Normal timer | `max(45s, 150s − 6s × roundsSeen) + timeBonus` |

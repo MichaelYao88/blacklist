@@ -657,7 +657,7 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>Items & spells</h3>
-        <p>Items only work while they are <b>equipped</b> in a slot. Extra gear goes to your bag, and shops are where you drag pieces between the bag and your slots. Spells stack: duplicates sit in one pile. <b>Relics</b> are boss prizes, but they use an item slot like any other gear and only work while equipped. Reveals stay marked on the keyboard and in the Revealed panel for the puzzle. Letter-reveal foods are permanent: once eaten, that letter is checked every round for the rest of the run.</p>
+        <p>Items only work while they are <b>equipped</b> in a slot. Extra gear goes to your bag, and shops are where you drag pieces between the bag and your slots. Spells stack: duplicates sit in one pile. <b>Relics</b> are boss prizes, but they use an item slot like any other gear and only work while equipped. Reveals stay marked on the keyboard and in the Revealed panel for the puzzle. Letter-reveal foods are permanent: once eaten, that letter is checked every round for the rest of the run. Timed shields such as Head Start and Quickdraw make guesses in that window count as free guesses.</p>
       </article>
       <article class="rule-card">
         <h3>Bosses</h3>
@@ -758,9 +758,9 @@ function damageOverlayHtml(): string {
 }
 
 function guessDamageHtml(board: BoardView): string {
-  const safe = board.freeGuessesLeft > 0 || board.noGuessDamage;
+  const safe = board.freeGuessesLeft > 0 || board.noGuessDamage || board.shielded;
   const value = safe ? 0 : board.rawNextGuessDamage;
-  return `<div class="guess-damage ${safe ? 'safe' : ''}" title="Damage a wrong guess deals once your free guess is gone.">
+  return `<div class="guess-damage ${safe ? 'safe' : ''}" title="Damage a wrong guess deals once your free guesses and shield are gone.">
     <span>WRONG GUESS</span>
     <b>${safe ? 'FREE' : `${value} damage`}</b>
   </div>`;

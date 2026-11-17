@@ -915,7 +915,7 @@ describe('opening and guess engines', () => {
     expect(guess.state.round?.immuneUntilMs).toBe(12_000);
   });
 
-  it('still ramps damage when Head Start blocks the opening hit', () => {
+  it('counts Head Start guesses as free and keeps the Ascension ramp at zero', () => {
     const { state } = game.newRun({ seed: 'ramp-immunity', ascension: 1 });
     setAnswer(state, 'crane');
     state.nodeIndex = 0;
@@ -933,15 +933,19 @@ describe('opening and guess engines', () => {
 
     const first = act(next.state, { type: 'guess', word: 'slate' });
     expect(first.state.hp).toBe(40);
-    expect(first.state.round?.damageRamp).toBe(1);
+    expect(first.state.round?.guesses.at(-1)?.free).toBe(true);
+    expect(first.state.round?.damageRamp).toBe(0);
 
     const second = act(first.state, { type: 'guess', word: 'pious' });
-    expect(second.state.hp).toBe(39);
-    expect(second.state.round?.damageRamp).toBe(2);
+    expect(second.state.hp).toBe(40);
+    expect(second.state.round?.guesses.at(-1)?.free).toBe(true);
+    expect(second.state.round?.damageRamp).toBe(0);
 
     second.state.round!.elapsedMs = 20_000;
     const third = act(second.state, { type: 'guess', word: 'tiger' });
-    expect(third.state.hp).toBe(32);
+    expect(third.state.hp).toBe(35);
+    expect(third.state.round?.guesses.at(-1)?.free).toBe(false);
+    expect(third.state.round?.damageRamp).toBe(1);
   });
 
   it('pays Quickdraw for a guess in the opening window', () => {
@@ -961,6 +965,7 @@ describe('opening and guess engines', () => {
     const guess = act(next.state, { type: 'guess', word: 'tiger' });
     expect(guess.state.gold).toBe(goldBefore + 1);
     expect(guess.state.hp).toBe(hpBefore);
+    expect(guess.state.round?.guesses.at(-1)?.free).toBe(true);
   });
 
   it('lets Encore make the last solved answer free', () => {
@@ -1079,11 +1084,12 @@ describe('rebalanced relics', () => {
 describe('gold engines and relic slots', () => {
   it('turns every rare relic into a one-slot item', () => {
     const rares = [...ITEM_BY_ID.values()].filter((item) => item.rarity === 'rare');
-    expect(rares.length).toBe(13);
+    expect(rares.length).toBe(14);
     for (const item of rares) {
       expect(item.slots ?? 1).toBe(1);
     }
     expect(ITEM_BY_ID.get('mending-plate')?.rarity).toBe('rare');
+    expect(ITEM_BY_ID.get('speed-dial')?.rarity).toBe('rare');
     expect(ITEM_BY_ID.get('midas-touch')?.goldDoubleChance).toBe(20);
   });
 
@@ -1215,6 +1221,26 @@ describe('new item batch', () => {
     const healed = act(bought.state, { type: 'castSpell', instance: 's-heal' });
     expect(healed.state.maxArmor).toBe(7);
     expect(healed.state.armor).toBe(7);
+  });
+
+  it('casts Phone a Friend at the start of each round with Speed Dial', () => {
+    const { state } = start('speed-dial-seed');
+    state.nodeIndex = 0;
+    state.nodes[1] = { kind: 'round' };
+    state.phase = 'shop';
+    state.items.push({
+      instance: 'i-dial',
+      id: 'speed-dial',
+      data: {},
+      equipped: true,
+    });
+
+    const next = act(state, { type: 'continue' });
+    expect(next.events.some(
+      (event) => event.type === 'spellCast' && event.spell.id === 'phone-friend',
+    )).toBe(true);
+    expect(next.state.round?.frozenMs).toBe(20_000);
+    expect(next.state.round?.guesses.length ?? 0).toBeGreaterThanOrEqual(1);
   });
 
   it('keeps letter-reveal foods permanent for every later round', () => {

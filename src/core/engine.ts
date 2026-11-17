@@ -23,6 +23,7 @@ import type {
   ScoredGuess,
   Source,
   SpellDef,
+  SpellId,
   SpellView,
   StepResult,
   Command,
@@ -418,8 +419,6 @@ export function createCore(content: Content): Core {
   interface DamageOptions {
     ignoreArmor?: boolean;
     ignoreImmunity?: boolean;
-    /** Lets Ascension ramp damage through a timed shield without disarming it. */
-    ignoreTimedImmunity?: boolean;
     timeout?: boolean;
   }
 
@@ -448,12 +447,7 @@ export function createCore(content: Content): Core {
       return;
     }
 
-    if (
-      round &&
-      !options.ignoreImmunity &&
-      !options.ignoreTimedImmunity &&
-      round.elapsedMs < round.immuneUntilMs
-    ) {
+    if (round && !options.ignoreImmunity && round.elapsedMs < round.immuneUntilMs) {
       emit(rt, {
         type: 'damageTaken',
         incoming: modified,
@@ -760,6 +754,9 @@ export function createCore(content: Content): Core {
         if (id) addSpell(rt, id);
         break;
       }
+      case 'castSpell':
+        castSpellById(rt, effect.spell);
+        break;
       case 'friendGuesses':
         playFriendGuesses(rt, effect.count);
         break;
@@ -1240,15 +1237,16 @@ export function createCore(content: Content): Core {
       });
     }
 
+    const shieldedFree = by === 'player' && round.elapsedMs < round.immuneUntilMs;
     const naturalFree = by === 'friend' || round.freeLeft > 0;
-    if (by === 'player' && naturalFree) round.freeLeft--;
+    if (by === 'player' && naturalFree && !shieldedFree) round.freeLeft--;
 
     const truth = scoreGuess(round.answer, word);
     const guess: ScoredGuess = {
       word,
       truth,
       index: round.totalGuesses,
-      free: naturalFree,
+      free: naturalFree || shieldedFree,
       by,
     };
 
@@ -1308,22 +1306,16 @@ export function createCore(content: Content): Core {
       const boss = round.boss ? bossById.get(round.boss) : undefined;
       if (!boss?.noGuessDamage) {
         round.paidGuesses++;
-        const source = round.boss ? { kind: 'boss' as const, boss: round.boss } : RULES;
-        const base = guessDamageFor(state, round);
-        const ramp = round.damageRamp;
-        if (round.elapsedMs < round.immuneUntilMs) {
-          // A timed shield still eats the encounter's normal hit, but the
-          // Ascension ramp is not free: it lands through the shield.
-          if (base > 0) dealDamage(rt, base, source);
-          if (ramp > 0) {
-            dealDamage(rt, ramp, source, { ignoreTimedImmunity: true });
-          }
-        } else if (base + ramp > 0) {
-          dealDamage(rt, base + ramp, source);
+        const amount = guessDamageFor(state, round) + round.damageRamp;
+        if (amount > 0) {
+          dealDamage(
+            rt,
+            amount,
+            round.boss ? { kind: 'boss', boss: round.boss } : RULES,
+          );
         }
-        // The ramp advances even when armor or a timed shield eats the hit.
-        // That is what stops an opening immunity from making the Ascension
-        // penalty free.
+        // Guesses made under a timed shield are marked free before this point,
+        // so they never reach the ramp.
         round.damageRamp += ascensionRampPerWrong(state.ascension);
       }
     }
@@ -1760,6 +1752,17 @@ export function createCore(content: Content): Core {
   }
 
   // ── spell / item commands ────────────────────────────────────────────────
+
+  function castSpellById(rt: Runtime, id: SpellId): void {
+    const state = rt.state;
+    const def = spellById.get(id);
+    if (!def) return;
+    if (def.usable === 'round' && (state.phase !== 'round' || !state.round)) return;
+    emit(rt, { type: 'spellCast', spell: { instance: uid(state, 's'), id: def.id } });
+    applyEffects(rt, def.cast({ state }), { kind: 'spell', spell: def.id });
+    if (isOver(state)) return;
+    runHook(rt, 'onSpellCast', { spell: def.id });
+  }
 
   function castSpell(rt: Runtime, instance: InstanceId): void {
     const state = rt.state;

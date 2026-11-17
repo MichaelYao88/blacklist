@@ -52,6 +52,7 @@ const ITEM_ICONS: Record<string, string> = {
   'echo-chamber': '🕳️',
   'phoenix-egg': '🥚',
   'chrono-anchor': '⚓',
+  'speed-dial': '📞',
   'gilded-fork': '🍴',
   'vowel-sigil': '🔮',
   'warding-idol': '🗿',

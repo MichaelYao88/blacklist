@@ -210,6 +210,7 @@ export type Effect =
   | { type: 'clearBlacklist' }
   | { type: 'randomChoice'; options: Effect[][] }
   | { type: 'giveSpell'; spell: SpellId | 'random'; chancePct?: number }
+  | { type: 'castSpell'; spell: SpellId }
   | { type: 'friendGuesses'; count: number }
   | { type: 'autoGuess'; word: string }
   | { type: 'grow'; stat: string; by: number }
