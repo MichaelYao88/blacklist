@@ -189,7 +189,7 @@ export const FOODS: FoodDef[] = [
     id: 'yin-yang',
     name: 'Yin Yang',
     description: 'Every round: Y and N are revealed. No slot.',
-    price: 9,
+    price: 10,
     effects: [
       { type: 'revealLetter', letter: 'y' },
       { type: 'revealLetter', letter: 'n' },

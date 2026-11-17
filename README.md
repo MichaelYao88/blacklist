@@ -41,10 +41,10 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - 109 items (90 shop items + 19 rare relics), 6 spells, 26 foods and 15 happenings
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
 - **Field Kit** reveals exactly 4 letters that are not in the word; **Doggy Bag** reveals 2 and queues another after every food
-- Letter foods cover B, G, X, Q, I, D, and Y+N; the X and Q foods are cheaper
+- Letter foods cover B, G, X, Q, I, D, and Y+N; a letter food stops appearing once all its letters are permanently revealed
 - New solve rewards: **Brace** (+2 max armor), **Bloom** (+5 max HP, +1 per trigger), **Patch Kit** (heal 30% of max HP +1)
 - **Four-Leaf Clover** has a 20% chance of a random spell when you eat or cast
-- **Bottomless** starts at +5 max armor and gains +1 every 4 foods
+- **Bottomless** starts at +4 max armor; eating food has a 20% chance of +1 max armor
 - **Big Belt** gains +1 item slot every 5 eats or solves
 - **Pen Club** pays a random 1-5 gold for guesses starting with PEN; **Gourmand** gains +1 max HP on eat or spell cast
 - **Old McDonald** is an expensive relic: EIEIO is guessed for free at round start

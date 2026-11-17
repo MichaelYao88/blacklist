@@ -207,6 +207,15 @@ export function createCore(content: Content): Core {
     )) {
       return false;
     }
+    const revealLetters = def.effects
+      .filter((effect) => effect.type === 'revealLetter')
+      .map((effect) => effect.letter);
+    if (
+      revealLetters.length > 0
+      && revealLetters.every((letter) => state.permanentReveals.includes(letter))
+    ) {
+      return false;
+    }
     return !def.requiresClock || hasClock(state);
   };
 
@@ -756,6 +765,7 @@ export function createCore(content: Content): Core {
         changeArmor(rt, state.maxArmor - state.armor);
         break;
       case 'maxArmor':
+        if (effect.chancePct !== undefined && !rngChance(state, effect.chancePct)) break;
         changeMaxArmor(rt, effect.delta);
         break;
       case 'revive': {

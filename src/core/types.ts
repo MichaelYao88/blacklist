@@ -259,7 +259,7 @@ export type Effect =
   | { type: 'maxHp'; delta: number }
   | { type: 'armor'; delta: number }
   | { type: 'refillArmor' }
-  | { type: 'maxArmor'; delta: number }
+  | { type: 'maxArmor'; delta: number; chancePct?: number }
   | { type: 'revive'; hp: number }
   | { type: 'gold'; amount: number }
   | { type: 'solveGold'; amount: number }

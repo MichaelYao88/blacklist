@@ -611,27 +611,27 @@ describe('new item and event batch', () => {
     }
   });
 
-  it('Bottomless starts at +5 max armor and gains 1 every 4 eats', () => {
+  it('Bottomless starts at +4 max armor and has a 20% eat chance', () => {
     const { state } = start('bottomless');
     state.phase = 'shop';
     state.gold = 100;
     state.shop = shopState([{ id: 'o0', kind: 'item', def: 'bottomless', price: 12 }]);
     const bought = act(state, { type: 'buy', offerId: 'o0' });
-    expect(bought.state.maxArmor).toBe(7);
+    expect(bought.state.maxArmor).toBe(6);
+    expect(ITEM_BY_ID.get('bottomless')?.description)
+      .toContain('20% chance of +1 max armor');
+  });
 
-    bought.state.phase = 'shop';
-    bought.state.shop = shopState([
-      { id: 'f0', kind: 'eat', def: 'snack', price: 3 },
-      { id: 'f1', kind: 'eat', def: 'snack', price: 3 },
-      { id: 'f2', kind: 'eat', def: 'snack', price: 3 },
-      { id: 'f3', kind: 'eat', def: 'snack', price: 3 },
-    ]);
-    let result = bought;
-    for (const id of ['f0', 'f1', 'f2', 'f3']) {
-      result = act(result.state, { type: 'buy', offerId: id });
-      if (id !== 'f3') expect(result.state.maxArmor).toBe(7);
+  it('stops offering food that permanently revealed its letter', () => {
+    const { state } = start('gg-repeat');
+    state.permanentReveals.push('g');
+    for (let index = 0; index < 50; index++) {
+      state.nodeIndex = 0;
+      state.nodes[1] = { kind: 'shop', level: 1 };
+      state.phase = 'shop';
+      const shop = act(state, { type: 'continue' }).state.shop;
+      expect(shop?.offers.some((offer) => offer.def === 'gg-gum')).toBe(false);
     }
-    expect(result.state.maxArmor).toBe(8);
   });
 
   it('Tight Slots removes 2 slots and bags the overflow', () => {
@@ -892,6 +892,8 @@ describe('latest balance pass', () => {
 
   it('applies the latest prices and text', () => {
     expect(FOOD_BY_ID.get('plating')?.price).toBe(8);
+    expect(ITEM_BY_ID.get('compound-interest')?.price).toBe(6);
+    expect(FOOD_BY_ID.get('yin-yang')?.price).toBe(10);
     expect(ITEM_BY_ID.get('loyalty-card')?.description).toContain('Every 7 shop purchases');
     expect(ITEM_BY_ID.get('tithe-box')?.description).toContain('10% chance');
     expect(ITEM_BY_ID.get('mimic-mouth')?.description).toContain('Once per round');

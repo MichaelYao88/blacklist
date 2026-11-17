@@ -265,7 +265,7 @@ export const ITEMS: ItemDef[] = [
     id: 'compound-interest',
     name: 'Compound Interest',
     description: 'On solve: gain 10% of your current gold, up to 10 gold.',
-    price: 10,
+    price: 6,
     kind: 'gear',
     on: {
       onSolve: (ctx) => [
@@ -344,20 +344,12 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'bottomless',
     name: 'Bottomless',
-    description: 'Gain 5 max armor. Every 4 foods eaten: +1 max armor.',
+    description: 'Gain 4 max armor. Eating food: 20% chance of +1 max armor.',
     price: 12,
     kind: 'gear',
-    initial: { ate: 0 },
-    onAcquire: () => [{ type: 'maxArmor', delta: 5 }],
+    onAcquire: () => [{ type: 'maxArmor', delta: 4 }],
     on: {
-      onEat: (ctx) => {
-        const total = ctx.self.data.ate + 1;
-        const gains = Math.floor(total / 4);
-        return [
-          { type: 'setItemData', stat: 'ate', value: total % 4 },
-          ...Array.from({ length: gains }, () => ({ type: 'maxArmor' as const, delta: 1 })),
-        ];
-      },
+      onEat: () => [{ type: 'maxArmor', delta: 1, chancePct: 20 }],
     },
   }),
   defineItem({
