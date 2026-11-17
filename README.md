@@ -48,7 +48,7 @@ The first word of every round is added to the blacklist. It has no limit, nothin
 - Damage numbers slam into the centre of the screen as `N damage`, with a block message when armor or immunity eats the hit
 - Spells and the blacklist sit on the right, with items below them
 - Pause (Space or Esc), independent music/SFX mutes, synthesized SFX, keyboard and on-screen keyboard, colorblind symbols, reduced-motion-friendly CSS
-- Top-bar **MUSIC** selector with seven tracks; boss encounters automatically switch to More Power. Music sits below the game sounds in the mix
+- Automatic soundtrack: runs open on Dark Synthwave, each new act picks a random track, and boss encounters switch to More Power. The top-bar **MUSIC** control mutes it separately from game sounds; music sits below the SFX mix
 
 Not in this version: daily seeds, meta unlocks beyond win/run counters and ascension, dordle grids, Antiwordle, liar clues, Green Warden. The state and seed plumbing is already there for those.
 
@@ -56,7 +56,7 @@ Not in this version: daily seeds, meta unlocks beyond win/run counters and ascen
 
 ## Music
 
-Music can be changed or muted from the **MUSIC** control on the title screen and in the top bar. The boss override uses **More Power**; the selected track returns after the boss.
+Music is automatic. The title screen and the first act open on **Dark Synthwave**; every new act picks a random regular track; boss encounters switch to **More Power**, then the area track returns. The **MUSIC** control on the title screen and top bar mutes music separately from game sounds.
 
 **Liborio Conti** — free to use, no attribution required, via [no-copyright-music.com](https://www.no-copyright-music.com/):
 

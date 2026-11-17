@@ -29,7 +29,7 @@ import {
   spellIcon,
 } from './icons';
 import { sfx } from './audio';
-import { MUSIC_TRACKS, music, type MusicTrack } from './music';
+import { music } from './music';
 import {
   ASCENSION_MAX,
   ascensionStats,
@@ -220,6 +220,7 @@ function startNewRun(): void {
   paused = false;
   damageFx = null;
   heartbeatSecond = -1;
+  music.resetArea();
   processEvents(events);
   lastTick = performance.now();
   render();
@@ -500,14 +501,6 @@ window.setInterval(() => {
   render();
 }, 1_000);
 
-app.addEventListener('change', (event) => {
-  const select = (event.target as HTMLElement | null)?.closest<HTMLSelectElement>('[data-music-track]');
-  if (!select) return;
-  music.unlock();
-  music.setTrack(select.value === 'off' ? 'off' : (select.value as MusicTrack));
-  render();
-});
-
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
     music.pause();
@@ -536,6 +529,8 @@ function render(): void {
     ),
   );
   music.setBoss(bossMusic);
+  if (screen === 'run' && view) music.setArea(view.act);
+  if (screen === 'title') music.resetArea();
 
   if (screen === 'title') {
     app!.innerHTML = renderTitle();
@@ -710,7 +705,7 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>Controls</h3>
-        <p>Type letters, <b>Backspace</b> to delete, <b>Enter</b> to submit. <b>Space</b> or <b>Esc</b> pauses the clock. You can also click the on-screen keyboard. Your character, HP and items are in the left rail; spells and the blacklist are on the right. The <b>MUSIC</b> control in the top bar changes the track and mutes music separately from game sounds. The purge modal accepts any letter.</p>
+        <p>Type letters, <b>Backspace</b> to delete, <b>Enter</b> to submit. <b>Space</b> or <b>Esc</b> pauses the clock. You can also click the on-screen keyboard. Your character, HP and items are in the left rail; spells and the blacklist are on the right. The <b>MUSIC</b> control in the top bar mutes music separately from game sounds; the track changes on each new act, and bosses play More Power. The purge modal accepts any letter.</p>
       </article>
     </div>
     <div class="help-actions">
@@ -720,14 +715,10 @@ function renderHelp(): string {
 }
 
 function renderMusicControls(): string {
-  const selected = music.selectedTrack ?? 'off';
   return `
   <div class="music-controls ${music.bossActive ? 'boss' : ''}" title="Music: ${escapeHtml(music.currentName)}">
     <span class="music-kicker">MUSIC</span>
-    <select class="music-select" data-music-track aria-label="Music track">
-      <option value="off" ${selected === 'off' ? 'selected' : ''}>Off</option>
-      ${MUSIC_TRACKS.map((track) => `<option value="${track.id}" ${selected === track.id ? 'selected' : ''}>${escapeHtml(track.name)}</option>`).join('')}
-    </select>
+    <span class="music-now">${escapeHtml(music.currentName)}</span>
     ${music.bossActive ? '<span class="music-boss">BOSS</span>' : ''}
     <button class="btn tiny ghost music-mute" data-action="music-mute" title="${music.mutedState ? 'Unmute music' : 'Mute music'}" aria-label="${music.mutedState ? 'Unmute music' : 'Mute music'}">${music.mutedState ? '🔇' : '🎵'}</button>
   </div>`;

@@ -405,22 +405,16 @@ button {
   letter-spacing: 0.14em;
 }
 
-.music-select {
-  max-width: 132px;
-  padding: 3px 18px 3px 5px;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
+.music-now {
+  max-width: 150px;
+  overflow: hidden;
   color: var(--muted);
   font-family: var(--sans);
   font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.02em;
-  cursor: pointer;
-}
-
-.music-select:focus-visible {
-  outline: 1px solid var(--gold);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .music-boss {
@@ -3096,7 +3090,7 @@ button {
     display: none;
   }
 
-  .music-select {
+  .music-now {
     max-width: 104px;
   }
 
