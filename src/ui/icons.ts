@@ -15,7 +15,6 @@ const ITEM_ICONS: Record<string, string> = {
   encore: '🔁',
   tally: '🧮',
   'iron-hide': '🛡️',
-  'rabbit-foot': '🐇',
   scattershot: '🎯',
   'grey-matter': '🧠',
   'deja-vu': '🔁',

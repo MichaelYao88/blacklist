@@ -175,14 +175,6 @@ export const ITEMS: ItemDef[] = [
     modifyDamage: (_ctx, amount) => Math.max(0, amount - 1),
   }),
   defineItem({
-    id: 'rabbit-foot',
-    name: "Rabbit's Foot",
-    description: '+1 free guess per round.',
-    price: 11,
-    kind: 'gear',
-    on: { onRoundStart: () => [{ type: 'freeGuesses', count: 1 }] },
-  }),
-  defineItem({
     id: 'scattershot',
     name: 'Scattershot',
     description: 'Once per round: no shared letters means a free guess.',
@@ -249,16 +241,17 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'encore',
     name: 'Encore',
-    description: 'The last solved answer is always a free guess.',
+    description: 'Round start: the last solved answer is guessed for free.',
     price: 11,
     kind: 'gear',
     on: {
-      onGuessScored: (ctx, p) =>
-        ctx.state.lastAnswer &&
-        p.guess.word === ctx.state.lastAnswer &&
-        !p.guess.free
-          ? [{ type: 'makeGuessFree' }]
-          : [],
+      onRoundStart: (ctx) => {
+        const answer = ctx.state.lastAnswer;
+        if (!answer) return [];
+        if (ctx.state.blacklist.includes(answer)) return [];
+        if (answer.split('').some((ch) => ctx.state.purged.includes(ch))) return [];
+        return [{ type: 'autoGuess', word: answer }];
+      },
     },
   }),
   defineItem({
@@ -1065,8 +1058,8 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'pawn-ticket',
     name: 'Pawn Ticket',
-    description: 'Every 3rd item sold: +1 random spell.',
-    price: 8,
+    description: 'Every 2 items sold: +1 random spell.',
+    price: 4,
     kind: 'gear',
     initial: { sold: 0 },
     on: {
@@ -1074,7 +1067,7 @@ export const ITEMS: ItemDef[] = [
         const next = ctx.self.data.sold + 1;
         return [
           { type: 'grow', stat: 'sold', by: 1 },
-          ...(next % 3 === 0
+          ...(next % 2 === 0
             ? [{ type: 'giveSpell' as const, spell: 'random' as const }]
             : []),
         ];
@@ -1473,19 +1466,14 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'counterweight',
     name: 'Counterweight',
-    description: 'First completely blocked hit each round: +2 gold.',
+    description: 'Completely blocked hit: +2 gold.',
     price: 20,
     kind: 'gear',
     rarity: 'rare',
-    initial: { used: 0 },
     on: {
-      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
-      onDamageTaken: (ctx, p) => {
-        if (ctx.self.data.used || p.dealt > 0 || p.blocked <= 0) return [];
-        return [
-          { type: 'gold', amount: 2 },
-          { type: 'setItemData', stat: 'used', value: 1 },
-        ];
+      onDamageTaken: (_ctx, p) => {
+        if (p.dealt > 0 || p.blocked <= 0) return [];
+        return [{ type: 'gold', amount: 2 }];
       },
     },
   }),

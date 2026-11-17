@@ -78,6 +78,13 @@ export const FOODS: FoodDef[] = [
     ],
   }),
   defineFood({
+    id: 'iron-ration',
+    name: 'Iron Ration',
+    description: '+3 max armor. No slot.',
+    price: 9,
+    effects: [{ type: 'maxArmor', delta: 3 }],
+  }),
+  defineFood({
     id: 'honey-cake',
     name: 'Honey Cake',
     description: 'Heal 6 HP and gain Omen. No slot.',
@@ -136,9 +143,9 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'bounty',
     name: 'Bounty',
-    description: '+2 gold per solve. No slot.',
-    price: 8,
-    effects: [{ type: 'solveGold', amount: 2 }],
+    description: '+1 gold per solve. No slot.',
+    price: 4,
+    effects: [{ type: 'solveGold', amount: 1 }],
   }),
 
   // Letter reveals are too narrow for a gear slot, so they are sold as

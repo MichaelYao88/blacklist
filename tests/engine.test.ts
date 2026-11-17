@@ -798,7 +798,8 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('piggy-bank')).toBeUndefined();
     expect(ITEM_BY_ID.get('blacklist-scholar')).toBeUndefined();
     expect(ITEM_BY_ID.get('gilded-fork')).toBeUndefined();
-    expect(FOOD_BY_ID.get('iron-ration')).toBeUndefined();
+    expect(ITEM_BY_ID.get('rabbit-foot')).toBeUndefined();
+    expect(FOOD_BY_ID.get('iron-ration')).toBeDefined();
     expect(CURSE_BY_ID.get('monochrome')?.name).toBe('Silver SLT');
   });
 
@@ -917,11 +918,57 @@ describe('latest balance pass', () => {
       .toContain('+3 gold');
   });
 
-  it('prices Rabbit’s Foot at 11 and adds 2g Leftovers', () => {
-    expect(ITEM_BY_ID.get('rabbit-foot')?.price).toBe(11);
+  it('adds 2g Leftovers and 9g Iron Ration', () => {
+    expect(ITEM_BY_ID.get('rabbit-foot')).toBeUndefined();
     expect(FOOD_BY_ID.get('leftovers')?.price).toBe(2);
     expect(FOOD_BY_ID.get('leftovers')?.effects)
       .toContainEqual({ type: 'healMissingPercent', percent: 50 });
+    expect(FOOD_BY_ID.get('iron-ration')?.price).toBe(9);
+  });
+
+  it('Pawn Ticket pays a spell every 2 sales and costs 4', () => {
+    const { state } = start('pawn-ticket');
+    state.items.push(
+      { instance: 'i-pawn', id: 'pawn-ticket', data: { sold: 0 }, equipped: true },
+      { instance: 'i-sell-1', id: 'hourglass', data: {}, equipped: true },
+      { instance: 'i-sell-2', id: 'hourglass', data: {}, equipped: true },
+    );
+    state.phase = 'shop';
+    state.shop = shopState();
+    const first = act(state, { type: 'sell', instance: 'i-sell-1' });
+    expect(first.state.spells).toHaveLength(1);
+    const second = act(first.state, { type: 'sell', instance: 'i-sell-2' });
+    expect(second.state.spells).toHaveLength(2);
+    expect(ITEM_BY_ID.get('pawn-ticket')?.price).toBe(4);
+    expect(ITEM_BY_ID.get('pawn-ticket')?.description).toContain('Every 2 items sold');
+  });
+
+  it('Counterweight pays 2 gold for every fully blocked hit', () => {
+    const { state } = start('counterweight');
+    state.items.push({
+      instance: 'i-counter',
+      id: 'counterweight',
+      data: {},
+      equipped: true,
+    });
+    state.maxArmor = 10;
+    state.armor = 10;
+    setAnswer(state, 'crane');
+    state.round!.freeLeft = 0;
+    const first = act(state, { type: 'guess', word: 'slate' });
+    expect(first.state.gold).toBe(12);
+    const second = act(first.state, { type: 'guess', word: 'pious' });
+    expect(second.state.gold).toBe(14);
+  });
+
+  it('Encore auto-guesses the last solved answer', () => {
+    const { state } = start('encore');
+    state.lastAnswer = 'crane';
+    state.items.push({ instance: 'i-encore', id: 'encore', data: {}, equipped: true });
+    const next = nextRound(state);
+    const guess = next.state.round?.guesses[0];
+    expect(guess?.word).toBe('crane');
+    expect(guess?.free).toBe(true);
   });
 
   it('Leftovers heals half of missing HP', () => {
@@ -994,6 +1041,10 @@ describe('latest balance pass', () => {
     expect(FOOD_BY_ID.get('plating')?.price).toBe(8);
     expect(ITEM_BY_ID.get('compound-interest')?.price).toBe(6);
     expect(FOOD_BY_ID.get('yin-yang')?.price).toBe(10);
+    expect(FOOD_BY_ID.get('bounty')?.price).toBe(4);
+    expect(FOOD_BY_ID.get('bounty')?.effects).toContainEqual({ type: 'solveGold', amount: 1 });
+    expect(ITEM_BY_ID.get('counterweight')?.description).toContain('Completely blocked hit');
+    expect(ITEM_BY_ID.get('encore')?.description).toContain('last solved answer');
     expect(ITEM_BY_ID.get('shortcut')?.description).toContain('2 guesses or fewer');
     expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('Every 13 reveals');
     expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('-3 max HP');
