@@ -1483,6 +1483,57 @@ describe('timer, shop and engine batch', () => {
   });
 });
 
+describe('clean-guess batch', () => {
+  it('Off-Road grants Restore for a non-overlapping guess once per round', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.items.push({ instance: 'i-offroad', id: 'off-road', data: { used: 0 }, equipped: true });
+
+    const first = act(state, { type: 'guess', word: 'tiger' });
+    expect(first.state.spells).toHaveLength(0);
+
+    const second = act(first.state, { type: 'guess', word: 'bland' });
+    expect(second.state.spells.filter((spell) => spell.id === 'restore')).toHaveLength(1);
+    expect(second.state.items[0].data.used).toBe(1);
+
+    const third = act(second.state, { type: 'guess', word: 'pious' });
+    expect(third.state.spells.filter((spell) => spell.id === 'restore')).toHaveLength(1);
+  });
+
+  it('Clean Slate grants max armor for a non-overlapping guess', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.items.push({ instance: 'i-clean', id: 'clean-slate', data: {}, equipped: true });
+    const armorBefore = state.maxArmor;
+
+    const first = act(state, { type: 'guess', word: 'tiger' });
+    expect(first.state.maxArmor).toBe(armorBefore);
+
+    const second = act(first.state, { type: 'guess', word: 'bland' });
+    expect(second.state.maxArmor).toBe(armorBefore + 1);
+  });
+
+  it('Shortcut grants a slot for solving within four guesses', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.items.push({ instance: 'i-short', id: 'shortcut', data: {}, equipped: true });
+    const slotsBefore = state.slots;
+
+    const solved = act(state, { type: 'guess', word: 'crane' });
+    expect(solved.state.slots).toBe(slotsBefore + 1);
+  });
+
+  it('Growth Spurt grants 10 max HP for solving within four guesses', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.items.push({ instance: 'i-growth', id: 'growth-spurt', data: {}, equipped: true });
+    const maxHpBefore = state.maxHp;
+
+    const solved = act(state, { type: 'guess', word: 'crane' });
+    expect(solved.state.maxHp).toBe(maxHpBefore + 10);
+  });
+});
+
 describe('content rules', () => {
   it('offers permanent HP boosts as food, not upgrades', () => {
     expect(FOOD_BY_ID.get('vitality')).toBeDefined();

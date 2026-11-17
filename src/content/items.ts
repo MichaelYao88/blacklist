@@ -1167,6 +1167,61 @@ export const ITEMS: ItemDef[] = [
     },
   }),
 
+  defineItem({
+    id: 'off-road',
+    name: 'Off-Road',
+    description: 'Once per round: a guess sharing no letters with the previous guess grants Restore.',
+    price: 9,
+    kind: 'gear',
+    initial: { used: 0 },
+    on: {
+      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
+      onGuessScored: (ctx, p) => {
+        if (ctx.self.data.used || !p.previous) return [];
+        if (sharedLetters(p.guess.word, p.previous.word) > 0) return [];
+        return [
+          { type: 'giveSpell', spell: 'restore' },
+          { type: 'setItemData', stat: 'used', value: 1 },
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'clean-slate',
+    name: 'Clean Slate',
+    description: 'A guess sharing no letters with the previous guess: +1 max armor.',
+    price: 9,
+    kind: 'gear',
+    on: {
+      onGuessScored: (_ctx, p) => {
+        if (!p.previous) return [];
+        return sharedLetters(p.guess.word, p.previous.word) === 0
+          ? [{ type: 'maxArmor', delta: 1 }]
+          : [];
+      },
+    },
+  }),
+  defineItem({
+    id: 'shortcut',
+    name: 'Shortcut',
+    description: 'Solve in 4 guesses or fewer: +1 item slot.',
+    price: 12,
+    kind: 'gear',
+    on: {
+      onSolve: (_ctx, p) => (p.guesses <= 4 ? [{ type: 'slots', delta: 1 }] : []),
+    },
+  }),
+  defineItem({
+    id: 'growth-spurt',
+    name: 'Growth Spurt',
+    description: 'Solve in 4 guesses or fewer: +10 max HP.',
+    price: 10,
+    kind: 'gear',
+    on: {
+      onSolve: (_ctx, p) => (p.guesses <= 4 ? [{ type: 'maxHp', delta: 10 }] : []),
+    },
+  }),
+
   // ── boss relics ─────────────────────────────────────────────────────────
   // Rare passives. They take no slots, never appear in shops, and are only
   // offered as boss prizes. Several of them feed the spell engine.

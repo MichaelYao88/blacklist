@@ -31,7 +31,7 @@ The first word of every round is added to the blacklist. It has no limit, nothin
 - Boss encounters open with a full-screen intro, a plain-language rules list and a continue gate
 - Bosses award one of three rare relics with passive effects; relics consume an item slot and never appear in shops
 - Defeat reveals the answer you missed (all of them, on The Gauntlet)
-- 97 items (79 shop items + 18 rare relics), 7 spells, 19 foods and 12 happenings
+- 101 items (83 shop items + 18 rare relics), 7 spells, 19 foods and 12 happenings
 - Purge is an event (The Redaction), not a spell
 - Eight bosses:
   - **The Editor** — hides the last three tiles of each guess
