@@ -17,7 +17,7 @@ import {
   ITEM_BY_ID,
   SPELL_BY_ID,
 } from '../content';
-import { LocalStore, hasSave, readMeta, recordOutcome, recordStart } from './store';
+import { LocalStore, hasSave, readMeta, recordRun, recordStart } from './store';
 import { describeEvent, escapeHtml, formatTime, reasonText, roman } from './format';
 import { glossaryText } from './glossary';
 import {
@@ -44,7 +44,7 @@ document.body.appendChild(fxRoot);
 
 const host = new CoreHost({ core: game, store: new LocalStore() });
 
-type Screen = 'title' | 'run' | 'help';
+type Screen = 'title' | 'run' | 'help' | 'stats';
 interface Notice {
   text: string;
   kind: 'info' | 'good' | 'bad';
@@ -183,7 +183,16 @@ function processEvents(events: GameEvent[]): void {
     if (event.type === 'rewardChosen' || event.type === 'offerBought') sfx.play('buy');
     if (event.type === 'runEnded') {
       const view = host.view();
-      recordOutcome(event.result, view?.act ?? 0, view?.ascension ?? 0);
+      const finalState = host.current;
+      recordRun({
+        result: event.result,
+        level: view?.level ?? 1,
+        act: view?.act ?? 0,
+        ascension: view?.ascension ?? 0,
+        curses: finalState?.curses.map((curse) => curse.id) ?? [],
+        items: finalState?.items.map((item) => item.id) ?? [],
+        stats: event.stats,
+      });
       notify(
         event.result === 'victory' ? 'THE LIST IS YOURS' : 'THE LIST CLOSES',
         event.result === 'victory' ? 'good' : 'bad',
@@ -315,6 +324,11 @@ app.addEventListener('click', (event) => {
       break;
     case 'help':
       screen = 'help';
+      lastTick = performance.now();
+      render();
+      break;
+    case 'stats':
+      screen = 'stats';
       lastTick = performance.now();
       render();
       break;
@@ -540,6 +554,8 @@ function render(): void {
     app!.innerHTML = renderTitle();
   } else if (screen === 'help') {
     app!.innerHTML = renderHelp();
+  } else if (screen === 'stats') {
+    app!.innerHTML = renderStats();
   } else {
     app!.innerHTML = renderRun(view as RunView);
     const current = app!.querySelector<HTMLElement>('.path-chip.current');
@@ -551,7 +567,10 @@ function render(): void {
   app!.insertAdjacentHTML('beforeend', noticeHtml());
 
   const damageId = damageFx?.id ?? 0;
-  if (damageId !== damageRendered) {
+  if (screen !== 'run') {
+    if (fxRoot.innerHTML) fxRoot.innerHTML = '';
+    damageRendered = 0;
+  } else if (damageId !== damageRendered) {
     damageRendered = damageId;
     fxRoot.innerHTML = damageOverlayHtml();
   }
@@ -619,7 +638,7 @@ function renderTitle(): string {
   const unlocked = Math.max(0, Math.min(ASCENSION_MAX, meta.ascension));
   if (selectedAscension > unlocked) selectedAscension = unlocked;
   const metaLine = meta.runs > 0
-    ? `<p class="meta-line">${meta.wins} win${meta.wins === 1 ? '' : 's'} · ${meta.runs} run${meta.runs === 1 ? '' : 's'} · furthest Act ${roman(Math.max(1, meta.bestAct))}${unlocked > 0 ? ` · Ascension ${unlocked} unlocked` : ''}</p>`
+    ? `<p class="meta-line">${meta.wins} win${meta.wins === 1 ? '' : 's'} · ${meta.runs} run${meta.runs === 1 ? '' : 's'} · best level ${meta.bestLevel || '—'}${unlocked > 0 ? ` · Ascension ${unlocked} unlocked` : ''}</p>`
     : `<p class="meta-line">A fresh list. Nothing written yet.</p>`;
   const ascensionPicker = unlocked > 0
     ? `<div class="ascension-picker">
@@ -652,6 +671,7 @@ function renderTitle(): string {
       <button class="btn primary big" data-action="new-run">NEW RUN</button>
       ${saved ? `<button class="btn big" data-action="resume">CONTINUE</button>` : ''}
       <button class="btn ghost big" data-action="help">HOW TO PLAY</button>
+      ${meta.runs > 0 ? `<button class="btn ghost big" data-action="stats">STATS</button>` : ''}
     </div>
     ${ascensionPicker}
     <div class="title-facts">
@@ -724,6 +744,86 @@ function renderMusicControls(): string {
   </div>`;
 }
 
+function topEntries(counts: Record<string, number>, limit = 5): Array<[string, number]> {
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, limit);
+}
+
+function renderStats(): string {
+  const meta = readMeta();
+  const winRate = meta.runs > 0 ? Math.round((meta.wins / meta.runs) * 100) : 0;
+  const avgSolve = meta.totalSolves > 0 ? meta.totalSolveMs / meta.totalSolves : 0;
+  const favorites = topEntries(meta.itemCounts);
+  const curses = topEntries(meta.curseCounts);
+  const history = meta.history.slice(0, 20);
+
+  return `
+  <div class="stats-screen">
+    <div class="help-head">
+      <button class="btn tiny ghost" data-action="back">← BACK</button>
+      <p class="kicker">FIELD RECORDS</p>
+      <h1>Run history</h1>
+      <p class="tagline">Every curse, every word, every mistake.</p>
+    </div>
+
+    <div class="stats-hero">
+      <div><b>${meta.runs}</b><span>runs</span></div>
+      <div><b>${meta.wins}</b><span>wins</span></div>
+      <div><b>${winRate}%</b><span>win rate</span></div>
+      <div><b>${meta.bestLevel || '—'}</b><span>best level</span></div>
+      <div><b>${formatTime(avgSolve)}</b><span>avg solve</span></div>
+      <div><b>${meta.ascension ? `A${meta.ascension}` : 'OFF'}</b><span>ascension</span></div>
+    </div>
+
+    <div class="stats-panels">
+      <section class="stats-panel">
+        <p class="panel-kicker">TOTALS</p>
+        <dl class="stat-list">
+          <div><dt>Time played</dt><dd>${formatTime(meta.totalPlayMs)}</dd></div>
+          <div><dt>Rounds cleared</dt><dd>${meta.totalRounds}</dd></div>
+          <div><dt>Solved</dt><dd>${meta.totalSolves}</dd></div>
+          <div><dt>Guesses</dt><dd>${meta.totalGuesses}</dd></div>
+          <div><dt>Gold earned</dt><dd>${meta.totalGold}</dd></div>
+          <div><dt>Damage taken</dt><dd>${meta.totalDamage}</dd></div>
+        </dl>
+      </section>
+
+      <section class="stats-panel">
+        <p class="panel-kicker">FAVORITE ITEMS</p>
+        ${favorites.length
+          ? `<ol class="favorite-list">${favorites.map(([id, count]) => `<li><span>${escapeHtml(ITEM_BY_ID.get(id)?.name ?? id)}</span><b>${count}</b></li>`).join('')}</ol>`
+          : `<p class="empty-note">No completed runs yet.</p>`}
+      </section>
+
+      <section class="stats-panel">
+        <p class="panel-kicker">FAVORITE CURSES</p>
+        ${curses.length
+          ? `<ol class="favorite-list">${curses.map(([id, count]) => `<li><span>${escapeHtml(CURSE_BY_ID.get(id)?.name ?? id)}</span><b>${count}</b></li>`).join('')}</ol>`
+          : `<p class="empty-note">No curses survived a run yet.</p>`}
+      </section>
+    </div>
+
+    <section class="history-panel">
+      <div class="panel-head"><span class="panel-kicker">RECENT RUNS</span><span class="count">${history.length}</span></div>
+      ${history.length
+        ? `<div class="history-list">${history.map((run) => {
+          const result = run.result === 'victory' ? 'WIN' : 'LOSS';
+          const solve = run.solves > 0 ? formatTime(run.solveMs / run.solves) : '—';
+          return `<article class="history-row ${run.result}">
+            <span class="history-result">${result}</span>
+            <b>Level ${run.level}</b>
+            <span>${run.curses.length} curse${run.curses.length === 1 ? '' : 's'} · ${run.items.length} item${run.items.length === 1 ? '' : 's'}</span>
+            <span>${run.rounds} rounds · ${solve} avg solve</span>
+            <span>+${run.goldEarned} gold · ${run.damageTaken} damage</span>
+            <time>${new Date(run.at).toLocaleDateString()}</time>
+          </article>`;
+        }).join('')}</div>`
+        : `<p class="empty-note">Play a run and its history will appear here.</p>`}
+    </section>
+  </div>`;
+}
+
 function renderTopbar(view: RunView): string {
   return `
   <header class="topbar">
@@ -732,7 +832,6 @@ function renderTopbar(view: RunView): string {
       <div class="chip-stat gold" title="Gold">¤ <b>${view.gold}</b></div>
       ${view.ascension > 0 ? `<div class="chip-stat ascension" title="Ascension modifiers are active">A${view.ascension}</div>` : ''}
       <div class="chip-stat" title="Area">AREA ${roman(view.act + 1)}</div>
-      <div class="chip-stat" title="Level">LEVEL ${view.level}/50</div>
     </div>
     <div class="top-actions">
       ${renderMusicControls()}
@@ -766,7 +865,7 @@ function arenaEnemy(view: RunView, bossId?: string) {
 function phaseLabel(view: RunView): string {
   const phase = view.phase;
   return phase.kind === 'round'
-    ? `ROUND ${view.nodeIndex + 1}`
+    ? `LEVEL ${view.level}`
     : phase.kind === 'summary'
       ? 'ROUND OVER'
       : phase.kind === 'reward'
@@ -1383,6 +1482,7 @@ function renderOver(phase: Extract<PhaseView, { kind: 'over' }>): string {
     </div>
     <div class="over-actions">
       <button class="btn primary big" data-action="new-run">NEW RUN</button>
+      <button class="btn ghost big" data-action="stats">STATS</button>
       <button class="btn ghost big" data-action="title">TITLE</button>
     </div>
     <p class="hint">The active save was deleted. Meta record remains.</p>
@@ -1505,7 +1605,7 @@ function renderRun(view: RunView): string {
     ${renderCurseRemovalModal(view)}
     ${count > 0 ? `<div class="countdown-overlay" aria-live="assertive">
         <div class="countdown-card">
-          <span class="countdown-kicker">ROUND ${view.nodeIndex + 1}</span>
+          <span class="countdown-kicker">LEVEL ${view.level}</span>
           <b class="countdown-number" data-count="${count}">${count}</b>
           <span class="countdown-label">READ THE LIST</span>
         </div>

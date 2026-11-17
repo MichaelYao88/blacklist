@@ -258,6 +258,48 @@ describe('shop curses', () => {
       .toBeLessThan(controlOffers.filter((offer) => offer.kind === 'eat').length);
   });
 
+  it('never offers clock-gated items or foods without The Clock', () => {
+    const gatedItems = new Set(
+      [...ITEM_BY_ID.values()]
+        .filter((item) => item.requiresClock)
+        .map((item) => item.id),
+    );
+    expect(gatedItems.size).toBeGreaterThan(0);
+    expect(gatedItems.has('ticking-fee')).toBe(true);
+
+    let sawGatedItem = false;
+    let sawGatedFood = false;
+    for (let index = 0; index < 40; index++) {
+      const { state } = start(`clock-gate-${index}`);
+      state.nodeIndex = 0;
+      state.nodes[1] = { kind: 'shop', level: 1 };
+      state.phase = 'shop';
+      const result = act(state, { type: 'continue' });
+      for (const offer of result.state.shop?.offers ?? []) {
+        if (offer.kind === 'item' && gatedItems.has(offer.def)) sawGatedItem = true;
+        if (offer.kind === 'eat' && FOOD_BY_ID.get(offer.def)?.requiresClock) sawGatedFood = true;
+      }
+    }
+    expect(sawGatedItem).toBe(false);
+    expect(sawGatedFood).toBe(false);
+
+    let sawUnlocked = false;
+    for (let index = 0; index < 40 && !sawUnlocked; index++) {
+      const { state } = start(`clock-open-${index}`);
+      state.curses.push({ id: 'clock', stacks: 1 });
+      state.nodeIndex = 0;
+      state.nodes[1] = { kind: 'shop', level: 1 };
+      state.phase = 'shop';
+      const result = act(state, { type: 'continue' });
+      if ((result.state.shop?.offers ?? []).some(
+        (offer) => offer.kind === 'item' && gatedItems.has(offer.def),
+      )) {
+        sawUnlocked = true;
+      }
+    }
+    expect(sawUnlocked).toBe(true);
+  });
+
   it('the Curse Broker accepts a percentage when you cannot pay full price', () => {
     const { state } = start();
     state.curses.push({ id: 'censor', stacks: 1 });

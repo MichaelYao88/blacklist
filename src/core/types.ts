@@ -74,6 +74,9 @@ export interface RunStats {
   bosses: number;
   timeouts: number;
   damageTaken: number;
+  solves: number;
+  solveMs: number;
+  playMs: number;
 }
 
 export interface RunNode {

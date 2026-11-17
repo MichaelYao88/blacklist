@@ -650,6 +650,7 @@ export function createCore(content: Content): Core {
       const round = state.round;
       if (round) {
         state.stats.rounds++;
+        state.stats.playMs += round.elapsedMs;
         runHook(rt, 'onRoundEnd', {
           outcome: 'died',
           boss: round.boss,
@@ -1202,6 +1203,12 @@ export function createCore(content: Content): Core {
     if (isOver(state)) return;
     const round = state.round;
     if (!round) return;
+
+    state.stats.playMs += round.elapsedMs;
+    if (outcome === 'solved') {
+      state.stats.solves++;
+      state.stats.solveMs += round.elapsedMs;
+    }
 
     if (outcome === 'solved') {
       if (round.gauntletTotal > 1) round.gauntletAnswers.push(round.answer);
@@ -2528,6 +2535,9 @@ export function createCore(content: Content): Core {
         bosses: 0,
         timeouts: 0,
         damageTaken: 0,
+        solves: 0,
+        solveMs: 0,
+        playMs: 0,
       },
     };
 

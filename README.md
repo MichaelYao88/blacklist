@@ -36,6 +36,9 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - 104 items (86 shop items + 18 rare relics), 6 spells, 21 foods and 14 happenings
 - Purge is an event (The Redaction) and rare foods; not a spell
 - One exact-state autosave slot. Defeat clears it. Victory clears it and updates meta stats.
+- A **STATS** page tracks run history (last 50 runs), win rate, best level, average solve time, favorite items and curses, play time, gold and damage totals
+- The top bar shows gold and area; the current level lives in the battle rail, not a level counter
+- Clock-gated items such as **Ticking Fee** never appear in shops or rewards until **The Clock** curse exists
 - Compact battle rail on the left: round timer with a hover tooltip for timeout damage, a wrong-guess damage chip, a side-view mini arena with the runner facing the act's monster (or boss), player HP and armor
 - Damage numbers slam into the centre of the screen as `N damage`, with a block message when armor or immunity eats the hit
 - Spells and the blacklist sit on the right, with items below them

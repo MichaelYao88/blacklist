@@ -945,6 +945,7 @@ export const ITEMS: ItemDef[] = [
     price: 8,
     kind: 'gear',
     timerInterest: true,
+    requiresClock: true,
     initial: { ms: 0 },
     on: {
       onRoundStart: () => [{ type: 'setItemData', stat: 'ms', value: 0 }],
