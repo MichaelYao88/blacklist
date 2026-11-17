@@ -191,4 +191,11 @@ Run `node scripts/build-hard.mjs` after changing the answer list.
 
 ## License
 
-Code: MIT. Word lists retain the terms of their sources above.
+The code is **source-available** under the [PolyForm Noncommercial License 1.0.0](LICENSE), not open source.
+
+- Free for personal, educational, research, hobby, and other noncommercial use.
+- **Commercial use requires a separate written license.** See [COMMERCIAL.md](COMMERCIAL.md).
+- Music, audio, and word-data terms are listed separately in [NOTICE](NOTICE).
+- Versions published before 17 November 2026 were released under MIT; those copies remain under MIT as recorded in the repository history.
+
+Commercial terms are negotiable, including flat fees or revenue sharing. Open an issue with the subject **Commercial license** to start a conversation.
