@@ -71,13 +71,6 @@ export const FOODS: FoodDef[] = [
     ],
   }),
   defineFood({
-    id: 'iron-ration',
-    name: 'Iron Ration',
-    description: '+3 max armor. No slot.',
-    price: 6,
-    effects: [{ type: 'maxArmor', delta: 3 }],
-  }),
-  defineFood({
     id: 'honey-cake',
     name: 'Honey Cake',
     description: 'Heal 6 HP and gain Omen. No slot.',

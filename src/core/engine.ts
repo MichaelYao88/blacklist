@@ -2692,6 +2692,7 @@ export function createCore(content: Content): Core {
       ascension,
       nodes: clone(state.nodes),
     });
+    if (content.spells.length > 0) addSpell(rt, rngPick(state, content.spells).id);
     if (startingCurses > 0) openCurseDraft(rt, true);
     else enterNode(rt);
     return { state, events: rt.events };

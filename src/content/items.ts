@@ -355,7 +355,9 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'spellbook',
     name: 'Spellbook',
-    description: 'Spell cast: gain 1 gold. +1 more gold each time this pays out.',
+    description: 'Spell cast: +1 gold. The bonus increases by 1 after every spell cast.',
+    dynamicDescription: (data) =>
+      `Spell cast: +${data.gold ?? 1} gold. The bonus increases by 1 after every spell cast.`,
     price: 8,
     kind: 'gear',
     initial: { gold: 1 },
@@ -394,16 +396,6 @@ export const ITEMS: ItemDef[] = [
         ];
       },
     },
-  }),
-  defineItem({
-    id: 'piggy-bank',
-    name: 'Piggy Bank',
-    description: 'Sells for 5 gold. +3 more gold per round held.',
-    price: 7,
-    kind: 'gear',
-    initial: { held: 0 },
-    on: { onRoundEnd: () => [{ type: 'grow', stat: 'held', by: 1 }] },
-    sellValue: (ctx) => 5 + ctx.self.data.held * 3,
   }),
   defineItem({
     id: 'metronome',
@@ -543,24 +535,6 @@ export const ITEMS: ItemDef[] = [
         return [
           { type: 'grow', stat: 'casts', by: 1 },
           ...(next % 3 === 0 ? [{ type: 'giveSpell' as const, spell: 'random' as const }] : []),
-        ];
-      },
-    },
-  }),
-  defineItem({
-    id: 'blacklist-scholar',
-    name: 'Null Scholar',
-    description: 'Once per round, a reveal that rules out a letter grants Omen.',
-    price: 8,
-    kind: 'gear',
-    initial: { used: 0 },
-    on: {
-      onRoundEnd: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
-      onReveal: (ctx, p) => {
-        if (ctx.self.data.used || p.status !== 'absent') return [];
-        return [
-          { type: 'giveSpell', spell: 'omen' },
-          { type: 'setItemData', stat: 'used', value: 1 },
         ];
       },
     },

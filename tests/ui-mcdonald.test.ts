@@ -31,7 +31,10 @@ describe('Old McDonald round start', () => {
 
   it('guesses EIEIO for free without the Phone a Friend word spam', () => {
     const firstRow = root.querySelector<HTMLElement>('.board-row');
-    expect(firstRow?.textContent?.replace(/\s/g, '').toLowerCase()).toContain('eieio');
+    const letters = [...(firstRow?.querySelectorAll('.tile-letter') ?? [])]
+      .map((tile) => tile.textContent?.toLowerCase())
+      .join('');
+    expect(letters).toBe('eieio');
     expect(document.querySelectorAll('#phrase-root span')).toHaveLength(0);
   });
 });

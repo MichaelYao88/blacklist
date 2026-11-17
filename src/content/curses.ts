@@ -64,7 +64,7 @@ export const CURSES: CurseDef[] = [
   }),
   defineCurse({
     id: 'monochrome',
-    name: 'Monochrome',
+    name: 'Silver SLT',
     description: 'S, L and T are ambiguous silver when present.',
     rules: ['S, L and T never show green or yellow.'],
     art: 'monochrome',

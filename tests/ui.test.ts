@@ -25,6 +25,7 @@ describe('browser UI', () => {
     expect(root.querySelector('.board')).not.toBeNull();
     expect(root.querySelector('.path')).toBeNull();
     expect(root.querySelector('.blacklist')).toBeNull();
+    expect(root.querySelectorAll('.spell-card')).toHaveLength(1);
     expect(localStorage.getItem('blacklist.run.v1')).toBeTruthy();
 
     for (const letter of 'slate') {

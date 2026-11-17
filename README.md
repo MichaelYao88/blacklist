@@ -38,7 +38,8 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Opening shields such as **Head Start** and **Quickdraw** make guesses in their window count as free guesses
 - Relics are very rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 109 items (90 shop items + 19 rare relics), 6 spells, 26 foods and 15 happenings
+- 107 items (88 shop items + 19 rare relics), 6 spells, 25 foods and 15 happenings
+- Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
 - **Field Kit** reveals exactly 4 letters that are not in the word; **Doggy Bag** reveals 2 and queues another after every food
 - Letter foods cover B, G, X, Q, I, D, and Y+N; a letter food stops appearing once all its letters are permanently revealed
@@ -105,6 +106,7 @@ Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title s
 | Starting item slots | 5 (only equipped gear counts; relics use one slot each) |
 | Free guesses per round | 1, plus every guess made inside a timed shield |
 | Starting gold | 10 |
+| Starting spells | 1 random spell |
 | Blacklist | disabled until The List curse; unlimited once active |
 | Normal timer | none until The Clock curse |
 | Clock curse | first stack 5:00, each later stack −20%, floor 0:30 |

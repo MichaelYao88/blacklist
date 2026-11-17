@@ -11,7 +11,7 @@ describe('Phone a Friend phrase FX', () => {
     state.curses.push({ id: 'clock', stacks: 1 });
     state.round!.remainingMs = 300_000;
     state.round!.timerStartMs = 300_000;
-    state.spells.push({ instance: 's-phone', id: 'phone-friend' });
+    state.spells = [{ instance: 's-phone', id: 'phone-friend' }];
     localStorage.setItem('blacklist.run.v1', game.serialize(state));
 
     document.body.innerHTML = '<div id="app"></div>';

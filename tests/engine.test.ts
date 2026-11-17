@@ -82,6 +82,8 @@ describe('cursed run setup', () => {
     expect(state.slots).toBe(5);
     expect(state.blacklist).toEqual([]);
     expect(state.curses).toEqual([]);
+    expect(state.spells).toHaveLength(1);
+    expect(SPELLS.some((spell) => spell.id === state.spells[0].id)).toBe(true);
     expect(state.round?.remainingMs).toBeNull();
     expect(state.round?.baseDamage).toBe(3);
     expect(eventTypes(events)).toContain('runStarted');
@@ -456,7 +458,7 @@ describe('curse-triggered items', () => {
     const chosen = act(state, { type: 'chooseCurse', curseId: 'censor' });
     expect(chosen.state.maxArmor).toBe(7);
     expect(chosen.state.slots).toBe(6);
-    expect(chosen.state.spells).toHaveLength(1);
+    expect(chosen.state.spells).toHaveLength(2);
   });
 
   it('describes all of them as Gain a curse', () => {
@@ -678,7 +680,7 @@ describe('new item and event batch', () => {
     state.phase = 'happening';
     state.happening = { id: 'endless-table', options: [] };
     const eaten = act(state, { type: 'choose', optionId: 'eat' });
-    expect(eaten.state.spells).toHaveLength(7);
+    expect(eaten.state.spells).toHaveLength(8);
   });
 
   it('Pen Club pays a random 1-5 gold', () => {
@@ -792,6 +794,10 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('lucky-charm')).toBeUndefined();
     expect(ITEM_BY_ID.get('second-stomach')).toBeUndefined();
     expect(ITEM_BY_ID.get('preserves')).toBeUndefined();
+    expect(ITEM_BY_ID.get('piggy-bank')).toBeUndefined();
+    expect(ITEM_BY_ID.get('blacklist-scholar')).toBeUndefined();
+    expect(FOOD_BY_ID.get('iron-ration')).toBeUndefined();
+    expect(CURSE_BY_ID.get('monochrome')?.name).toBe('Silver SLT');
   });
 
   it('The Tax halves gold and does not stack', () => {
@@ -809,9 +815,9 @@ describe('latest balance pass', () => {
     state.items.push({ instance: 'i-mimic', id: 'mimic-mouth', data: { used: 0 }, equipped: true });
     setAnswer(state, 'crane');
     const first = act(state, { type: 'guess', word: 'crate' });
-    expect(first.state.spells).toHaveLength(1);
+    expect(first.state.spells).toHaveLength(2);
     const second = act(first.state, { type: 'guess', word: 'crave' });
-    expect(second.state.spells).toHaveLength(1);
+    expect(second.state.spells).toHaveLength(2);
   });
 
   it('Tally Lens is guaranteed in a shop once a vision curse is active', () => {
@@ -888,6 +894,25 @@ describe('latest balance pass', () => {
     }
     expect(firstOptions.some((id) => !['censor', 'second-sight', 'third-eye', 'fourth-wall', 'editor', 'vowel-fog', 'monochrome', 'la-curse', 'ts-curse', 'rip-curse', 'without-d', 'e-curse', 'the-list'].includes(id)))
       .toBe(true);
+  });
+
+  it('Spellbook pays 1, then 2, then 3 gold per cast', () => {
+    const { state } = start('spellbook');
+    state.items.push({ instance: 'i-book', id: 'spellbook', data: { gold: 1 }, equipped: true });
+    state.spells = [
+      { instance: 's-omen', id: 'omen' },
+      { instance: 's-heal', id: 'heal' },
+      { instance: 's-immunity', id: 'immunity' },
+    ];
+    let current = state;
+    current = act(current, { type: 'castSpell', instance: 's-omen' }).state;
+    expect(current.gold).toBe(11);
+    current = act(current, { type: 'castSpell', instance: 's-heal' }).state;
+    expect(current.gold).toBe(13);
+    current = act(current, { type: 'castSpell', instance: 's-immunity' }).state;
+    expect(current.gold).toBe(16);
+    expect(ITEM_BY_ID.get('spellbook')?.dynamicDescription?.({ gold: 3 }))
+      .toContain('+3 gold');
   });
 
   it('applies the latest prices and text', () => {
