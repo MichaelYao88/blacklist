@@ -927,7 +927,7 @@ function renderItem(view: RunView, item: ItemView): string {
   const name = def?.name ?? item.id;
   const description = def?.description ?? '';
   const data = Object.entries(item.data)
-    .filter(([, value]) => value !== 0)
+    .filter(([key, value]) => value !== 0 && !key.startsWith('_'))
     .map(([key, value]) => `<span class="data-chip">${escapeHtml(key)} ${value}</span>`)
     .join('');
   const usable = Boolean(def?.onUse);
@@ -1112,14 +1112,26 @@ function offerInfo(offer: Offer): { name: string; description: string; slots: nu
 }
 
 function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>): string {
+  const coupon = phase.purchases === 0
+    ? view.items.reduce((max, item) => {
+      const def = ITEM_BY_ID.get(item.id);
+      return item.equipped && def?.shopDiscount
+        ? Math.max(max, def.shopDiscount)
+        : max;
+    }, 0)
+    : 0;
   const offers = phase.offers.length
     ? phase.offers.map((offer) => {
       const info = offerInfo(offer);
-      const cannotAfford = view.gold < offer.price;
+      const applies = offer.kind === 'item' || offer.kind === 'eat';
+      const finalPrice = Math.max(1, offer.price - (applies ? coupon : 0));
+      const cannotAfford = view.gold < finalPrice;
       const tag = offer.sale ? 'SALE · 50% OFF' : KIND_LABELS[offer.kind];
       const price = offer.sale && offer.originalPrice
-        ? `<s>${offer.originalPrice} G</s> ${offer.price} G`
-        : `${offer.price} G`;
+        ? `<s>${offer.originalPrice} G</s> ${finalPrice} G`
+        : applies && coupon > 0
+          ? `<s>${offer.price} G</s> ${finalPrice} G`
+          : `${offer.price} G`;
       return `
       <article class="offer-card ${cannotAfford ? 'unavailable' : ''} ${offer.sale ? 'sale' : ''}">
         <div class="offer-top">
@@ -1185,6 +1197,7 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
       </div>
       <div class="chip-stat gold">¤ <b>${view.gold}</b></div>
     </div>
+    ${coupon > 0 ? `<p class="hint coupon-hint">Coupon Book: the first item or food purchase costs ${coupon} less.</p>` : ''}
     <div class="offer-grid">${offers}</div>
     <div class="shop-actions">
       <button class="btn" data-action="reroll">REROLL · ${phase.rerollCost} G</button>

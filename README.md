@@ -21,6 +21,7 @@ The first word of every round is added to the blacklist. It has no limit, nothin
 - Five item slots by default. Only equipped gear is active, and each shop has a drag-and-drop loadout
 - **Loose Tongue**, a rare relic that lets you guess five-letter nonsense for free-form probes
 - Spells stack by type and come from food, item triggers and the shop wildcard slot
+- **Restore** clears the blacklist and refills armor; **Contrapuntal** turns into a random relic if you cast all seven spell types
 - Happenings with visible odds and persistent consequences
 - Short item, spell and offer text with hover tooltips for keywords like armor, reveal, ruled out, free guesses, blacklist, relic and timeout
 - Revealed letters stay marked on the keyboard and in a Revealed panel for the puzzle; random reveals lean toward letters that are not in the answer; letter-reveal foods are permanent for the run
@@ -30,7 +31,7 @@ The first word of every round is added to the blacklist. It has no limit, nothin
 - Boss encounters open with a full-screen intro, a plain-language rules list and a continue gate
 - Bosses award one of three rare relics with passive effects; relics consume an item slot and never appear in shops
 - Defeat reveals the answer you missed (all of them, on The Gauntlet)
-- 78 items (64 shop items + 14 rare relics), 7 spells, 18 foods and 12 happenings
+- 97 items (79 shop items + 18 rare relics), 7 spells, 19 foods and 12 happenings
 - Purge is an event (The Redaction), not a spell
 - Eight bosses:
   - **The Editor** — hides the last three tiles of each guess

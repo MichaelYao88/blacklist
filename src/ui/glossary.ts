@@ -90,7 +90,7 @@ const ENTRIES: GlossaryEntry[] = [
   },
   {
     pattern: /\bRestore\b/g,
-    tip: 'Spell: wipe the blacklist.',
+    tip: 'Spell: wipe the blacklist and refill armor.',
   },
   {
     pattern: /\bTime Freeze\b/g,

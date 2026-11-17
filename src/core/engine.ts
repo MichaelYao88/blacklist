@@ -117,6 +117,13 @@ export function createCore(content: Content): Core {
   const canEquip = (state: RunState, def: ItemDef): boolean =>
     usedSlots(state) + itemSlots(def) <= state.slots;
 
+  const firstPurchaseDiscount = (state: RunState): number =>
+    state.items.reduce((max, item) => {
+      const def = itemById.get(item.id);
+      if (!def?.shopDiscount || !isEquipped(item, def)) return max;
+      return Math.max(max, def.shopDiscount);
+    }, 0);
+
   /** Loose Tongue and friends: any five letters become a legal probe. */
   const allowsInvalidGuesses = (state: RunState): boolean =>
     state.items.some(
@@ -409,8 +416,12 @@ export function createCore(content: Content): Core {
     const state = rt.state;
     const def = foodById.get(id);
     if (!def) return;
+    const doubled = state.items.some((item) => {
+      const itemDef = itemById.get(item.id);
+      return Boolean(itemDef?.doubleFood) && isEquipped(item, itemDef);
+    });
     emit(rt, { type: 'foodEaten', food: def.id, name: def.name });
-    applyEffects(rt, def.effects, RULES);
+    applyEffects(rt, doubled ? [...def.effects, ...def.effects] : def.effects, RULES);
     runHook(rt, 'onEat', { food: def.id });
   }
 
@@ -609,6 +620,9 @@ export function createCore(content: Content): Core {
       case 'armor':
         changeArmor(rt, effect.delta);
         break;
+      case 'refillArmor':
+        changeArmor(rt, state.maxArmor - state.armor);
+        break;
       case 'maxArmor':
         changeMaxArmor(rt, effect.delta);
         break;
@@ -802,6 +816,18 @@ export function createCore(content: Content): Core {
         const pool = content.items.filter(
           (i) => i.rarity !== 'rare' && (i.kind !== 'gear' || !owned.has(i.id)),
         );
+        if (pool.length > 0) addItem(rt, rngPick(state, pool).id);
+        break;
+      }
+      case 'addRandomRelic': {
+        const owned = new Set(
+          state.items
+            .filter((i) => itemById.get(i.id)?.rarity === 'rare')
+            .map((i) => i.id),
+        );
+        const rare = content.items.filter((i) => i.rarity === 'rare');
+        const unowned = rare.filter((i) => !owned.has(i.id));
+        const pool = unowned.length > 0 ? unowned : rare;
         if (pool.length > 0) addItem(rt, rngPick(state, pool).id);
         break;
       }
@@ -1538,10 +1564,15 @@ export function createCore(content: Content): Core {
 
   function openShop(rt: Runtime): void {
     const state = rt.state;
+    const offers = generateOffers(rt);
     state.shop = {
-      offers: generateOffers(rt),
+      offers,
       rerollCost: shopPrice(state, 2),
       rerolls: 0,
+      purchases: 0,
+      visit: state.nodeIndex,
+      foodOffers: offers.filter((offer) => offer.kind === 'eat').length,
+      foodsBought: 0,
     };
     state.phase = 'shop';
     emit(rt, {
@@ -1560,12 +1591,16 @@ export function createCore(content: Content): Core {
       emit(rt, { type: 'shopRejected', offerId, reason: 'That offer is gone.' });
       return;
     }
-    if (state.gold < offer.price) {
+    const discount = shop.purchases === 0 && (offer.kind === 'item' || offer.kind === 'eat')
+      ? firstPurchaseDiscount(state)
+      : 0;
+    const price = Math.max(1, offer.price - discount);
+    if (state.gold < price) {
       emit(rt, { type: 'shopRejected', offerId, reason: 'Not enough gold.' });
       return;
     }
 
-    if (!spendGold(rt, offer.price)) return;
+    if (!spendGold(rt, price)) return;
 
     if (offer.kind === 'item') {
       addItem(rt, offer.def);
@@ -1573,12 +1608,14 @@ export function createCore(content: Content): Core {
       addSpell(rt, offer.def);
     } else if (offer.kind === 'eat') {
       eatFood(rt, offer.def);
+      shop.foodsBought++;
     }
 
     if (isOver(state)) return;
 
+    shop.purchases++;
     shop.offers = shop.offers.filter((o) => o.id !== offerId);
-    emit(rt, { type: 'offerBought', offerId, kind: offer.kind, price: offer.price });
+    emit(rt, { type: 'offerBought', offerId, kind: offer.kind, price });
     runHook(rt, 'onPurchase', { offer });
   }
 
@@ -1594,6 +1631,8 @@ export function createCore(content: Content): Core {
     shop.rerolls++;
     shop.rerollCost *= 2;
     shop.offers = generateOffers(rt);
+    shop.foodOffers = shop.offers.filter((offer) => offer.kind === 'eat').length;
+    shop.foodsBought = 0;
     emit(rt, {
       type: 'shopRerolled',
       offers: clone(shop.offers),
@@ -1944,6 +1983,7 @@ export function createCore(content: Content): Core {
           kind: 'shop',
           offers: clone(state.shop?.offers ?? []),
           rerollCost: state.shop?.rerollCost ?? 2,
+          purchases: state.shop?.purchases ?? 0,
         };
         break;
       case 'happening':
@@ -2255,6 +2295,12 @@ export function createCore(content: Content): Core {
         state.shop.offers = state.shop.offers.filter(
           (offer) => (offer.kind as string) !== 'upgrade',
         );
+        if (typeof state.shop.purchases !== 'number') state.shop.purchases = 0;
+        if (typeof state.shop.visit !== 'number') state.shop.visit = state.nodeIndex;
+        if (typeof state.shop.foodOffers !== 'number') {
+          state.shop.foodOffers = state.shop.offers.filter((offer) => offer.kind === 'eat').length;
+        }
+        if (typeof state.shop.foodsBought !== 'number') state.shop.foodsBought = 0;
       }
       if (state.reward) {
         state.reward.options = state.reward.options.filter(

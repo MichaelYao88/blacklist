@@ -28,10 +28,10 @@ export const SPELLS: SpellDef[] = [
   defineSpell({
     id: 'restore',
     name: 'Restore',
-    description: 'Wipe the blacklist.',
+    description: 'Wipe the blacklist and refill armor.',
     price: 6,
     usable: 'any',
-    cast: () => [{ type: 'clearBlacklist' }],
+    cast: () => [{ type: 'clearBlacklist' }, { type: 'refillArmor' }],
   }),
   defineSpell({
     id: 'immunity',

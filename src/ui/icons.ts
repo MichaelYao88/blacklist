@@ -77,6 +77,25 @@ const ITEM_ICONS: Record<string, string> = {
   'omen-loom': '🔮',
   'mercy-ledger': '📗',
   'ward-engine': '🔰',
+  deadline: '⏰',
+  'ticking-fee': '🕰️',
+  'second-skin': '🦺',
+  'double-blind': '🎯',
+  'pawn-ticket': '🎫',
+  miser: '🧾',
+  'coupon-book': '🎟️',
+  contrapuntal: '🎼',
+  'trophy-room': '🏛️',
+  'loyalty-card': '💳',
+  bookend: '🔖',
+  'last-cast': '🪄',
+  'empty-hand': '✋',
+  'bulk-order': '🛒',
+  'solo-note': '🎵',
+  counterweight: '⚖️',
+  'acquired-taste': '👅',
+  'ritual-circle': '🔯',
+  potluck: '🥘',
 };
 
 const SPELL_ICONS: Record<string, string> = {
@@ -109,6 +128,7 @@ const FOOD_ICONS: Record<string, string> = {
   'b-file': '🅱️',
   'x-ray': '🩻',
   'q-tip': '🧵',
+  'bitter-root': '🌿',
 };
 
 const BOSS_SIGILS: Record<string, string> = {

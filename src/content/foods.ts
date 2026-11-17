@@ -154,6 +154,16 @@ export const FOODS: FoodDef[] = [
     price: 12,
     effects: [{ type: 'revealLetter', letter: 'q' }],
   }),
+  defineFood({
+    id: 'bitter-root',
+    name: 'Bitter Root',
+    description: 'Heal 4 and gain 1 armor. No slot.',
+    price: 5,
+    effects: [
+      { type: 'heal', amount: 4 },
+      { type: 'armor', delta: 1 },
+    ],
+  }),
 ];
 
 export const FOOD_BY_ID = new Map(FOODS.map((f) => [f.id, f]));

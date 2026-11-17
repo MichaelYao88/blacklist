@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CoreHost, MemoryStore, game } from '../src/game';
-import type { Command, GameEvent, RoundState, RunState, StepResult } from '../src/game';
+import type { Command, GameEvent, RoundState, RunState, ShopState, StepResult } from '../src/game';
 import { FOOD_BY_ID, HAPPENING_BY_ID, ITEM_BY_ID, SPELL_BY_ID } from '../src/content';
 import { FRIEND_PHRASES } from '../src/data/friends';
 import { rngNext } from '../src/core/rng';
@@ -17,6 +17,18 @@ function setAnswer(state: RunState, word: string): void {
   if (!state.round) throw new Error('not in a round');
   state.round.answer = word;
   state.round.guesses = [];
+}
+
+function shopState(offers: ShopState['offers'] = []): ShopState {
+  return {
+    offers,
+    rerollCost: 2,
+    rerolls: 0,
+    purchases: 0,
+    visit: 0,
+    foodOffers: offers.filter((offer) => offer.kind === 'eat').length,
+    foodsBought: 0,
+  };
 }
 
 function eventTypes(events: GameEvent[]): string[] {
@@ -93,7 +105,7 @@ describe('ascension', () => {
     state.nodeIndex = 0;
     state.nodes[1] = { kind: 'shop' };
     state.phase = 'shop';
-    state.shop = { offers: [], rerollCost: 2, rerolls: 0 };
+    state.shop = shopState();
 
     const shop = act(state, { type: 'continue' });
     expect(shop.state.phase).toBe('shop');
@@ -115,7 +127,7 @@ describe('ascension', () => {
       state.nodeIndex = 4;
       state.nodes[5] = { kind: 'boss', boss: 'editor' };
       state.phase = 'shop';
-      state.shop = { offers: [], rerollCost: 2, rerolls: 0 };
+      state.shop = shopState();
       const intro = act(state, { type: 'continue' });
       const started = act(intro.state, { type: 'continue' });
       return started.state.round?.baseDamage;
@@ -865,7 +877,7 @@ describe('event-driven engines', () => {
   it('pays Tithe Box after 10 gold spent', () => {
     const { state } = start();
     state.phase = 'shop';
-    state.shop = { offers: [], rerollCost: 2, rerolls: 0 };
+    state.shop = shopState();
     state.gold = 20;
     state.items.push({ instance: 'i-tithe', id: 'tithe-box', data: { spent: 8 }, equipped: true });
 
@@ -1004,7 +1016,7 @@ describe('déjà vu', () => {
     state.nodeIndex = 0;
     state.nodes[1] = { kind: 'round' };
     state.phase = 'shop';
-    state.shop = { offers: [], rerollCost: 2, rerolls: 0 };
+    state.shop = shopState();
     state.items.push({ instance: 'i-deja', id: 'deja-vu', data: {}, equipped: true });
 
     const next = act(state, { type: 'continue' });
@@ -1084,7 +1096,7 @@ describe('rebalanced relics', () => {
 describe('gold engines and relic slots', () => {
   it('turns every rare relic into a one-slot item', () => {
     const rares = [...ITEM_BY_ID.values()].filter((item) => item.rarity === 'rare');
-    expect(rares.length).toBe(14);
+    expect(rares.length).toBe(18);
     for (const item of rares) {
       expect(item.slots ?? 1).toBe(1);
     }
@@ -1174,11 +1186,7 @@ describe('new item batch', () => {
       equipped: true,
     });
     state.phase = 'shop';
-    state.shop = {
-      offers: [{ id: 'o0', kind: 'eat', def: 'snack', price: 6 }],
-      rerollCost: 2,
-      rerolls: 0,
-    };
+    state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'snack', price: 6 }]);
 
     const bought = act(state, { type: 'buy', offerId: 'o0' });
     expect(bought.state.maxHp).toBe(41);
@@ -1206,11 +1214,7 @@ describe('new item batch', () => {
     const { state } = start();
     state.gold = 20;
     state.phase = 'shop';
-    state.shop = {
-      offers: [{ id: 'o0', kind: 'item', def: 'mending-plate', price: 20 }],
-      rerollCost: 2,
-      rerolls: 0,
-    };
+    state.shop = shopState([{ id: 'o0', kind: 'item', def: 'mending-plate', price: 20 }]);
 
     const bought = act(state, { type: 'buy', offerId: 'o0' });
     expect(bought.state.maxArmor).toBe(6);
@@ -1248,11 +1252,7 @@ describe('new item batch', () => {
     expect(FOOD_BY_ID.get('b-file')?.description).toContain('Every round');
     state.gold = 20;
     state.phase = 'shop';
-    state.shop = {
-      offers: [{ id: 'o0', kind: 'eat', def: 'b-file', price: 10 }],
-      rerollCost: 2,
-      rerolls: 0,
-    };
+    state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'b-file', price: 10 }]);
 
     const bought = act(state, { type: 'buy', offerId: 'o0' });
     expect(bought.state.permanentReveals).toContain('b');
@@ -1265,13 +1265,221 @@ describe('new item batch', () => {
     );
 
     first.state.phase = 'shop';
-    first.state.shop = { offers: [], rerollCost: 2, rerolls: 0 };
+    first.state.shop = shopState();
     first.state.nodeIndex = 1;
     first.state.nodes[2] = { kind: 'round' };
     const second = act(first.state, { type: 'continue' });
     expect(second.state.round?.hints.b).toBe(
       second.state.round?.answer.includes('b') ? 'present' : 'absent',
     );
+  });
+});
+
+describe('timer, shop and engine batch', () => {
+  it('Restore clears the blacklist and refills armor', () => {
+    const { state } = start();
+    state.blacklist = ['slate'];
+    state.armor = 1;
+    state.spells.push({ instance: 's-restore', id: 'restore' });
+
+    const cast = act(state, { type: 'castSpell', instance: 's-restore' });
+    expect(cast.state.blacklist).toHaveLength(0);
+    expect(cast.state.armor).toBe(cast.state.maxArmor);
+  });
+
+  it('makes a late Deadline guess free', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.round!.freeLeft = 0;
+    state.round!.remainingMs = 30_000;
+    state.armor = 0;
+    state.items.push({ instance: 'i-deadline', id: 'deadline', data: { used: 0 }, equipped: true });
+    const hp = state.hp;
+
+    const guess = act(state, { type: 'guess', word: 'tiger' });
+    expect(guess.state.round?.guesses[0].free).toBe(true);
+    expect(guess.state.hp).toBe(hp);
+  });
+
+  it('pays Ticking Fee every 20 seconds', () => {
+    const { state } = start();
+    state.items.push({ instance: 'i-fee', id: 'ticking-fee', data: { ms: 19_000 }, equipped: true });
+    const goldBefore = state.gold;
+
+    const tick = act(state, { type: 'tick', dtMs: 1_000 });
+    expect(tick.state.gold).toBe(goldBefore + 1);
+    expect(tick.state.items[0].data.ms).toBe(0);
+  });
+
+  it('Solo Note grants Restore for exactly one yellow and no green', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.items.push({ instance: 'i-solo', id: 'solo-note', data: { used: 0 }, equipped: true });
+
+    const guess = act(state, { type: 'guess', word: 'waltz' });
+    expect(guess.state.spells.filter((spell) => spell.id === 'restore')).toHaveLength(1);
+    expect(guess.state.items[0].data.used).toBe(1);
+  });
+
+  it('Double Blind makes the same one-yellow guess free', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.round!.freeLeft = 0;
+    state.armor = 0;
+    state.items.push({ instance: 'i-blind', id: 'double-blind', data: { used: 0 }, equipped: true });
+    const hp = state.hp;
+
+    const guess = act(state, { type: 'guess', word: 'waltz' });
+    expect(guess.state.round?.guesses[0].free).toBe(true);
+    expect(guess.state.hp).toBe(hp);
+  });
+
+  it('Coupon Book discounts the first shop purchase', () => {
+    const { state } = start();
+    state.gold = 20;
+    state.phase = 'shop';
+    state.shop = shopState([{ id: 'o0', kind: 'item', def: 'hourglass', price: 6 }]);
+    state.items.push({ instance: 'i-coupon', id: 'coupon-book', data: {}, equipped: true });
+
+    const bought = act(state, { type: 'buy', offerId: 'o0' });
+    expect(bought.state.gold).toBe(16);
+    expect(bought.state.shop?.purchases).toBe(1);
+  });
+
+  it('Bulk Order pays after every food in a shop is bought', () => {
+    const { state } = start();
+    state.gold = 20;
+    state.phase = 'shop';
+    state.shop = shopState([
+      { id: 'o0', kind: 'eat', def: 'snack', price: 3 },
+      { id: 'o1', kind: 'eat', def: 'coffee', price: 3 },
+    ]);
+    state.items.push({ instance: 'i-bulk', id: 'bulk-order', data: { _visit: -1 }, equipped: true });
+    const maxHpBefore = state.maxHp;
+
+    const first = act(state, { type: 'buy', offerId: 'o0' });
+    expect(first.state.maxHp).toBe(maxHpBefore);
+    const second = act(first.state, { type: 'buy', offerId: 'o1' });
+    expect(second.state.maxHp).toBe(maxHpBefore + 2);
+    expect(second.state.armor).toBe(second.state.maxArmor);
+  });
+
+  it('Contrapuntal turns into a relic after all seven spell types', () => {
+    const { state } = start();
+    state.items.push({ instance: 'i-counter', id: 'contrapuntal', data: { _mask: 0, types: 0 }, equipped: true });
+    state.spells = [
+      { instance: 's1', id: 'time-freeze' },
+      { instance: 's2', id: 'omen' },
+      { instance: 's3', id: 'heal' },
+      { instance: 's4', id: 'restore' },
+      { instance: 's5', id: 'immunity' },
+      { instance: 's6', id: 'time-warp' },
+      { instance: 's7', id: 'phone-friend' },
+    ];
+
+    let result = state;
+    for (const spell of state.spells.slice()) {
+      result = act(result, { type: 'castSpell', instance: spell.instance }).state;
+    }
+    expect(result.items.some((item) => item.id === 'contrapuntal')).toBe(false);
+    expect(result.items.some((item) => ITEM_BY_ID.get(item.id)?.rarity === 'rare')).toBe(true);
+  });
+
+  it('Last Cast refills an empty hand once per round', () => {
+    const { state } = start();
+    state.spells.push({ instance: 's-last', id: 'time-warp' });
+    state.items.push({ instance: 'i-last', id: 'last-cast', data: { used: 0 }, equipped: true });
+
+    const cast = act(state, { type: 'castSpell', instance: 's-last' });
+    expect(cast.state.spells).toHaveLength(1);
+    expect(cast.state.items[0].data.used).toBe(1);
+  });
+
+  it('Empty Hand starts a spellless round with a spell', () => {
+    const { state } = start();
+    state.items.push({ instance: 'i-empty', id: 'empty-hand', data: {}, equipped: true });
+    state.spells = [];
+    state.nodeIndex = 0;
+    state.nodes[1] = { kind: 'round' };
+    state.phase = 'shop';
+    state.shop = shopState();
+
+    const next = act(state, { type: 'continue' });
+    expect(next.state.spells).toHaveLength(1);
+  });
+
+  it('Potluck doubles food effects without duplicating on-eat triggers', () => {
+    const { state } = start();
+    state.gold = 20;
+    state.phase = 'shop';
+    state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'vitality', price: 6 }]);
+    state.items.push({ instance: 'i-pot', id: 'potluck', data: {}, equipped: true });
+    const maxHpBefore = state.maxHp;
+
+    const bought = act(state, { type: 'buy', offerId: 'o0' });
+    expect(bought.state.maxHp).toBe(maxHpBefore + 16);
+  });
+
+  it('Counterweight pays for the first fully blocked hit', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.round!.freeLeft = 0;
+    state.round!.baseDamage = 2;
+    state.items.push({ instance: 'i-weight', id: 'counterweight', data: { used: 0 }, equipped: true });
+    const goldBefore = state.gold;
+
+    const guess = act(state, { type: 'guess', word: 'tiger' });
+    expect(guess.state.gold).toBe(goldBefore + 2);
+    expect(guess.state.items[0].data.used).toBe(1);
+  });
+
+  it('Pawn Ticket pays on every third sale', () => {
+    const { state } = start();
+    state.phase = 'shop';
+    state.shop = shopState();
+    state.items.push({ instance: 'i-pawn', id: 'pawn-ticket', data: { sold: 2 }, equipped: true });
+    state.items.push({ instance: 'i-spare', id: 'hourglass', data: {}, equipped: true });
+
+    const sold = act(state, { type: 'sell', instance: 'i-spare' });
+    expect(sold.state.spells).toHaveLength(1);
+  });
+
+  it('Loyalty Card grants a slot on the fifth purchase', () => {
+    const { state } = start();
+    state.gold = 20;
+    state.phase = 'shop';
+    state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'snack', price: 3 }]);
+    state.items.push({ instance: 'i-loyal', id: 'loyalty-card', data: { buys: 4 }, equipped: true });
+    const slotsBefore = state.slots;
+
+    const bought = act(state, { type: 'buy', offerId: 'o0' });
+    expect(bought.state.slots).toBe(slotsBefore + 1);
+  });
+
+  it('Bookend pays for a guess with matching first and last letters', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.round!.freeLeft = 2;
+    state.items.push({ instance: 'i-book', id: 'bookend', data: {}, equipped: true });
+    const goldBefore = state.gold;
+
+    const guess = act(state, { type: 'guess', word: 'level' });
+    expect(guess.state.gold).toBe(goldBefore + 3);
+  });
+
+  it('Trophy Room grants a slot for beating a boss', () => {
+    const { state } = start();
+    state.nodeIndex = 4;
+    state.phase = 'shop';
+    state.shop = shopState();
+    state.items.push({ instance: 'i-trophy', id: 'trophy-room', data: {}, equipped: true });
+
+    const intro = act(state, { type: 'continue' });
+    const begun = act(intro.state, { type: 'continue' });
+    const answer = begun.state.round!.answer;
+    const slotsBefore = begun.state.slots;
+    const solved = act(begun.state, { type: 'guess', word: answer });
+    expect(solved.state.slots).toBe(slotsBefore + 1);
   });
 });
 

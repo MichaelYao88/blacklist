@@ -1,5 +1,27 @@
-import { defineItem, type ItemDef } from '../core/types';
-import { isAllAbsent, sharedLetters } from '../core/score';
+import { defineItem, type Effect, type ItemDef } from '../core/types';
+import { isAllAbsent, sharedLetters, truthCounts } from '../core/score';
+import { FOODS } from './foods';
+
+const SPELL_BITS: Record<string, number> = {
+  'time-freeze': 1,
+  omen: 2,
+  heal: 4,
+  restore: 8,
+  immunity: 16,
+  'phone-friend': 32,
+  'time-warp': 64,
+};
+
+const FOOD_BITS = new Map(FOODS.map((food, index) => [food.id, 1 << index]));
+
+function popcount(value: number): number {
+  let count = 0;
+  while (value) {
+    value &= value - 1;
+    count++;
+  }
+  return count;
+}
 
 export const ITEMS: ItemDef[] = [
   defineItem({
@@ -890,6 +912,261 @@ export const ITEMS: ItemDef[] = [
     },
   }),
 
+  // ── timer, shop and engine items ─────────────────────────────────────────
+
+  defineItem({
+    id: 'deadline',
+    name: 'Deadline',
+    description: 'The first guess with 30s or less left each round is free.',
+    price: 8,
+    kind: 'gear',
+    initial: { used: 0 },
+    on: {
+      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
+      onGuessScored: (ctx, p) => {
+        if (ctx.self.data.used || p.guess.free) return [];
+        if (p.remainingMs === null || p.remainingMs > 30_000) return [];
+        return [
+          { type: 'makeGuessFree' },
+          { type: 'setItemData', stat: 'used', value: 1 },
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'ticking-fee',
+    name: 'Ticking Fee',
+    description: 'Every 20s that pass in a round: +1 gold.',
+    price: 8,
+    kind: 'gear',
+    initial: { ms: 0 },
+    on: {
+      onRoundStart: () => [{ type: 'setItemData', stat: 'ms', value: 0 }],
+      onTimerTick: (ctx, p) => {
+        const total = ctx.self.data.ms + p.dtMs;
+        const gold = Math.floor(total / 20_000);
+        return [
+          { type: 'setItemData', stat: 'ms', value: total % 20_000 },
+          ...Array.from({ length: gold }, () => ({ type: 'gold' as const, amount: 1 })),
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'second-skin',
+    name: 'Second Skin',
+    description: 'First time armor hits 0 each round: heal 4, +1 armor.',
+    price: 9,
+    kind: 'gear',
+    initial: { used: 0 },
+    on: {
+      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
+      onDamageTaken: (ctx, p) => {
+        if (ctx.self.data.used || p.armorUsed <= 0 || ctx.state.armor > 0) return [];
+        return [
+          { type: 'heal', amount: 4 },
+          { type: 'armor', delta: 1 },
+          { type: 'setItemData', stat: 'used', value: 1 },
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'double-blind',
+    name: 'Double Blind',
+    description: 'Once per round: a guess with exactly one yellow and no green is free.',
+    price: 8,
+    kind: 'gear',
+    initial: { used: 0 },
+    on: {
+      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
+      onGuessScored: (ctx, p) => {
+        if (ctx.self.data.used) return [];
+        const counts = truthCounts(p.guess.truth);
+        if (counts.correct !== 0 || counts.present !== 1) return [];
+        return [
+          { type: 'makeGuessFree' },
+          { type: 'setItemData', stat: 'used', value: 1 },
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'pawn-ticket',
+    name: 'Pawn Ticket',
+    description: 'Every 3rd item sold: +1 random spell.',
+    price: 8,
+    kind: 'gear',
+    initial: { sold: 0 },
+    on: {
+      onSell: (ctx) => {
+        const next = ctx.self.data.sold + 1;
+        return [
+          { type: 'grow', stat: 'sold', by: 1 },
+          ...(next % 3 === 0
+            ? [{ type: 'giveSpell' as const, spell: 'random' as const }]
+            : []),
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'miser',
+    name: 'Miser',
+    description: 'End of round: +1 gold per 10 gold held, max 3.',
+    price: 9,
+    kind: 'gear',
+    on: {
+      onRoundEnd: (ctx) => {
+        const amount = Math.min(3, Math.floor(ctx.state.gold / 10));
+        return amount > 0 ? [{ type: 'gold', amount }] : [];
+      },
+    },
+  }),
+  defineItem({
+    id: 'coupon-book',
+    name: 'Coupon Book',
+    description: 'The first purchase in each shop costs 2 less.',
+    price: 8,
+    kind: 'gear',
+    shopDiscount: 2,
+  }),
+  defineItem({
+    id: 'contrapuntal',
+    name: 'Contrapuntal',
+    description: 'Cast each spell type once. On the last, become a random relic.',
+    price: 12,
+    kind: 'gear',
+    initial: { _mask: 0, types: 0 },
+    on: {
+      onSpellCast: (ctx, p) => {
+        const bit = SPELL_BITS[p.spell];
+        if (!bit) return [];
+        const mask = ctx.self.data._mask ?? 0;
+        if (mask & bit) return [];
+        const next = mask | bit;
+        const types = popcount(next);
+        const effects: Effect[] = [
+          { type: 'setItemData', stat: '_mask', value: next },
+          { type: 'setItemData', stat: 'types', value: types },
+        ];
+        if (types >= 7) {
+          effects.push({ type: 'consumeSelf' }, { type: 'addRandomRelic' });
+        }
+        return effects;
+      },
+    },
+  }),
+  defineItem({
+    id: 'trophy-room',
+    name: 'Trophy Room',
+    description: 'Defeat a boss: +1 item slot.',
+    price: 10,
+    kind: 'gear',
+    on: {
+      onRoundEnd: (_ctx, p) =>
+        p.boss && p.outcome === 'solved' ? [{ type: 'slots', delta: 1 }] : [],
+    },
+  }),
+  defineItem({
+    id: 'loyalty-card',
+    name: 'Loyalty Card',
+    description: 'Every 5 shop purchases: +1 item slot.',
+    price: 8,
+    kind: 'gear',
+    initial: { buys: 0 },
+    on: {
+      onPurchase: (ctx) => {
+        const next = ctx.self.data.buys + 1;
+        return [
+          { type: 'grow', stat: 'buys', by: 1 },
+          ...(next % 5 === 0 ? [{ type: 'slots' as const, delta: 1 }] : []),
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'bookend',
+    name: 'Bookend',
+    description: 'Guess a word starting and ending with the same letter: +3 gold.',
+    price: 8,
+    kind: 'gear',
+    on: {
+      onGuessScored: (_ctx, p) =>
+        p.guess.word[0] === p.guess.word[4] ? [{ type: 'gold', amount: 3 }] : [],
+    },
+  }),
+  defineItem({
+    id: 'last-cast',
+    name: 'Last Cast',
+    description: 'Cast your last spell: +1 random spell. Once per round.',
+    price: 9,
+    kind: 'gear',
+    initial: { used: 0 },
+    on: {
+      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
+      onSpellCast: (ctx) => {
+        if (ctx.self.data.used || ctx.state.spells.length > 0) return [];
+        return [
+          { type: 'giveSpell', spell: 'random' },
+          { type: 'setItemData', stat: 'used', value: 1 },
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'empty-hand',
+    name: 'Empty Hand',
+    description: 'Start a round with no spells: +1 random spell.',
+    price: 9,
+    kind: 'gear',
+    on: {
+      onRoundStart: (ctx) =>
+        ctx.state.spells.length === 0 ? [{ type: 'giveSpell', spell: 'random' }] : [],
+    },
+  }),
+  defineItem({
+    id: 'bulk-order',
+    name: 'Bulk Order',
+    description: 'Buy every food in a shop: +2 max HP and +1 armor.',
+    price: 9,
+    kind: 'gear',
+    initial: { _visit: -1 },
+    on: {
+      onPurchase: (ctx, p) => {
+        const shop = ctx.state.shop;
+        if (!shop || p.offer.kind !== 'eat') return [];
+        if (shop.foodOffers <= 0 || shop.foodsBought < shop.foodOffers) return [];
+        if (ctx.self.data._visit === shop.visit) return [];
+        return [
+          { type: 'setItemData', stat: '_visit', value: shop.visit },
+          { type: 'maxHp', delta: 2 },
+          { type: 'armor', delta: 1 },
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'solo-note',
+    name: 'Solo Note',
+    description: 'Once per round: exactly one yellow and no green grants Restore.',
+    price: 9,
+    kind: 'gear',
+    initial: { used: 0 },
+    on: {
+      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
+      onGuessScored: (ctx, p) => {
+        if (ctx.self.data.used) return [];
+        const counts = truthCounts(p.guess.truth);
+        if (counts.correct !== 0 || counts.present !== 1) return [];
+        return [
+          { type: 'giveSpell', spell: 'restore' },
+          { type: 'setItemData', stat: 'used', value: 1 },
+        ];
+      },
+    },
+  }),
+
   // ── boss relics ─────────────────────────────────────────────────────────
   // Rare passives. They take no slots, never appear in shops, and are only
   // offered as boss prizes. Several of them feed the spell engine.
@@ -1036,6 +1313,93 @@ export const ITEMS: ItemDef[] = [
       onGuessScored: (_ctx, p) =>
         p.guess.free ? [] : [{ type: 'makeGuessFree', chancePct: 25 }],
     },
+  }),
+  defineItem({
+    id: 'counterweight',
+    name: 'Counterweight',
+    description: 'First completely blocked hit each round: +2 gold.',
+    price: 20,
+    kind: 'gear',
+    rarity: 'rare',
+    initial: { used: 0 },
+    on: {
+      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
+      onDamageTaken: (ctx, p) => {
+        if (ctx.self.data.used || p.dealt > 0 || p.blocked <= 0) return [];
+        return [
+          { type: 'gold', amount: 2 },
+          { type: 'setItemData', stat: 'used', value: 1 },
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'acquired-taste',
+    name: 'Acquired Taste',
+    description: 'Each different food you eat this run: +1 max HP.',
+    price: 20,
+    kind: 'gear',
+    rarity: 'rare',
+    initial: { _mask: 0, tasted: 0 },
+    on: {
+      onEat: (ctx, p) => {
+        const bit = FOOD_BITS.get(p.food);
+        if (!bit) return [];
+        const mask = ctx.self.data._mask ?? 0;
+        if (mask & bit) return [];
+        const next = mask | bit;
+        return [
+          { type: 'setItemData', stat: '_mask', value: next },
+          { type: 'setItemData', stat: 'tasted', value: popcount(next) },
+          { type: 'maxHp', delta: 1 },
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'ritual-circle',
+    name: 'Ritual Circle',
+    description: 'Cast 3 different spell types in one round: +1 random spell, +2 armor.',
+    price: 20,
+    kind: 'gear',
+    rarity: 'rare',
+    initial: { _mask: 0, types: 0, used: 0 },
+    on: {
+      onRoundStart: () => [
+        { type: 'setItemData', stat: '_mask', value: 0 },
+        { type: 'setItemData', stat: 'types', value: 0 },
+        { type: 'setItemData', stat: 'used', value: 0 },
+      ],
+      onSpellCast: (ctx, p) => {
+        const bit = SPELL_BITS[p.spell];
+        if (!bit) return [];
+        const mask = ctx.self.data._mask ?? 0;
+        if (mask & bit) return [];
+        const next = mask | bit;
+        const types = popcount(next);
+        const effects: Effect[] = [
+          { type: 'setItemData', stat: '_mask', value: next },
+          { type: 'setItemData', stat: 'types', value: types },
+        ];
+        if (types >= 3 && !ctx.self.data.used) {
+          effects.push(
+            { type: 'giveSpell', spell: 'random' },
+            { type: 'armor', delta: 2 },
+            { type: 'setItemData', stat: 'used', value: 1 },
+          );
+        }
+        return effects;
+      },
+    },
+  }),
+  defineItem({
+    id: 'potluck',
+    name: 'Potluck',
+    description: 'Food you eat applies its effects twice. On-eat triggers still fire once.',
+    price: 20,
+    kind: 'gear',
+    rarity: 'rare',
+    doubleFood: true,
   }),
 ];
 

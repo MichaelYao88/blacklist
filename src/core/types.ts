@@ -165,6 +165,14 @@ export interface ShopState {
   offers: Offer[];
   rerollCost: number;
   rerolls: number;
+  /** Purchases made in this shop, used by first-purchase effects. */
+  purchases: number;
+  /** Unique node index for this shop visit, used by per-shop counters. */
+  visit: number;
+  /** Food offers on the current shelf. */
+  foodOffers: number;
+  /** Foods bought from the current shelf. */
+  foodsBought: number;
 }
 
 export interface HappeningOutcomeView {
@@ -191,6 +199,7 @@ export type Effect =
   | { type: 'healPercent'; percent: number }
   | { type: 'maxHp'; delta: number }
   | { type: 'armor'; delta: number }
+  | { type: 'refillArmor' }
   | { type: 'maxArmor'; delta: number }
   | { type: 'revive'; hp: number }
   | { type: 'gold'; amount: number }
@@ -218,6 +227,7 @@ export type Effect =
   | { type: 'consumeSelf' }
   | { type: 'addItem'; item: ItemId }
   | { type: 'addRandomItem' }
+  | { type: 'addRandomRelic' }
   | { type: 'eat'; food: string }
   | { type: 'eatRandom' }
   | { type: 'slots'; delta: number }
@@ -294,6 +304,10 @@ export interface ItemDef {
   onUse?: (ctx: ItemCtx) => Effect[];
   modifyDamage?: (ctx: ItemCtx, amount: number) => number;
   sellValue?: (ctx: ItemCtx) => number;
+  /** Gold taken off the first purchase in each shop. */
+  shopDiscount?: number;
+  /** Food effects are applied twice, but on-eat hooks still fire once. */
+  doubleFood?: boolean;
 }
 
 export interface SpellDef {
@@ -459,7 +473,7 @@ export type PhaseView =
     }
   | { kind: 'reward'; options: RewardOption[]; boss: boolean; chosen?: string }
   | { kind: 'bossIntro'; boss: BossId }
-  | { kind: 'shop'; offers: Offer[]; rerollCost: number }
+  | { kind: 'shop'; offers: Offer[]; rerollCost: number; purchases: number }
   | {
       kind: 'happening';
       happening: HappeningId;
