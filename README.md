@@ -15,7 +15,9 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Wordle-style scoring with duplicate-letter handling
 - A 50-level curse run: no bosses until level 50, no starting clock, no starting blacklist
 - Round loop: `round → 40% event → shop`, then `round → 40% event → curse`
-- Curse drafts offer 2 choices after every 2 levels; levels 47–49 are curse floors
+- Curse drafts offer 2 choices after every 2 levels; levels 47-49 are curse floors
+- The first curse draft of a base run always offers a vision or blacklist curse on one side, with The Clock 3× as likely on the other; Ascension runs use the normal pool
+- Hover or focus a curse in the HUD to read its rules
 - 50 is the final boss: three rounds back-to-back with no intermission
 - Base encounter damage is fixed at 3; only curses change damage
 - The blacklist is disabled until **The List** curse is taken
@@ -43,7 +45,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Damage numbers slam into the centre of the screen as `N damage`, with a block message when armor or immunity eats the hit
 - Spells and the blacklist sit on the right, with items below them
 - Pause (Space or Esc), independent music/SFX mutes, synthesized SFX, keyboard and on-screen keyboard, colorblind symbols, reduced-motion-friendly CSS
-- Soundtrack defaults to Dark Synthwave and cycles when you click the **MUSIC** control. More Power is reserved for the final boss and is not in the carousel. Music sits below the SFX mix.
+- Soundtrack opens every run on Dark Synthwave and rerolls to a random regular track every 5 levels (repeats allowed). Click the **MUSIC** control to cycle manually. More Power is reserved for the final boss and is not in the carousel. Music sits below the SFX mix.
 
 Not in this version: daily seeds, Ascension above A2, dordle grids, Antiwordle, liar clues, Green Warden. The state and seed plumbing is already there for those.
 

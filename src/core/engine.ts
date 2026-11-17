@@ -1910,20 +1910,55 @@ export function createCore(content: Content): Core {
     });
   }
 
+  function pickWeighted(
+    state: RunState,
+    pool: CurseDef[],
+    weightOf: (def: CurseDef) => number = (def) => curseWeight(state, def),
+  ): CurseDef {
+    const total = pool.reduce((sum, def) => sum + weightOf(def), 0);
+    let roll = rngNext(state) * total;
+    for (const def of pool) {
+      roll -= weightOf(def);
+      if (roll <= 0) return def;
+    }
+    return pool[pool.length - 1];
+  }
+
+  /**
+   * The first curse draft of a base (non-Ascension) run is special: one side is
+   * always a vision curse or The List, and the other side is random with extreme
+   * clock weighting. Ascension runs use the plain weighted pool.
+   */
+  function firstDraftOptions(state: RunState, starting: boolean): CurseId[] | null {
+    if (starting || state.ascension > 0 || state.curseDrafts > 0) return null;
+    const pool = eligibleCurses(state, false);
+    if (pool.length < 2) return null;
+
+    const sightPool = pool.filter(
+      (def) => def.tags.includes('vision') || def.tags.includes('list'),
+    );
+    const first = sightPool.length > 0
+      ? pickWeighted(state, sightPool)
+      : pickWeighted(state, pool);
+    const rest = pool.filter((def) => def.id !== first.id);
+    if (rest.length === 0) return null;
+
+    const second = pickWeighted(
+      state,
+      rest,
+      (def) => curseWeight(state, def) * (def.tags.includes('clock') ? 3 : 1),
+    );
+    return [first.id, second.id];
+  }
+
   function pickCurseOptions(state: RunState, starting: boolean): CurseId[] {
+    const special = firstDraftOptions(state, starting);
+    if (special) return special;
+
     const pool = eligibleCurses(state, starting).slice();
     const picks: CurseId[] = [];
     while (picks.length < 2 && pool.length > 0) {
-      const total = pool.reduce((sum, def) => sum + curseWeight(state, def), 0);
-      let roll = rngNext(state) * total;
-      let chosen = pool[pool.length - 1];
-      for (const def of pool) {
-        roll -= curseWeight(state, def);
-        if (roll <= 0) {
-          chosen = def;
-          break;
-        }
-      }
+      const chosen = pickWeighted(state, pool);
       picks.push(chosen.id);
       pool.splice(pool.indexOf(chosen), 1);
     }
@@ -1942,6 +1977,7 @@ export function createCore(content: Content): Core {
       }
       return;
     }
+    if (!starting) state.curseDrafts += 1;
     state.curse = { options, starting };
     state.phase = 'curse';
     emit(rt, { type: 'curseOffered', options: options.slice(), starting });
@@ -2527,6 +2563,7 @@ export function createCore(content: Content): Core {
       curses: [],
       pendingStartingCurses: startingCurses,
       pendingCurseRemoval: 0,
+      curseDrafts: 0,
       phase: 'round',
       stats: {
         rounds: 0,
@@ -2594,6 +2631,7 @@ export function createCore(content: Content): Core {
       }
       if (typeof state.pendingStartingCurses !== 'number') state.pendingStartingCurses = 0;
       if (typeof state.pendingCurseRemoval !== 'number') state.pendingCurseRemoval = 0;
+      if (typeof state.curseDrafts !== 'number') state.curseDrafts = 0;
       if (!Array.isArray(state.pendingReveals)) state.pendingReveals = [];
       if (!Array.isArray(state.permanentReveals)) {
         state.permanentReveals = state.pendingReveals.slice();

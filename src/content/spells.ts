@@ -4,7 +4,7 @@ export const SPELLS: SpellDef[] = [
   defineSpell({
     id: 'time-freeze',
     name: 'Time Freeze',
-    description: 'The clock stops until your next guess.',
+    description: 'The next guess is free. Freeze any timers until you make the guess.',
     price: 7,
     usable: 'round',
     cast: () => [{ type: 'freezeUntilGuess' }],

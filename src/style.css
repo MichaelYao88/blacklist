@@ -127,6 +127,7 @@ button {
   letter-spacing: 0;
   text-align: left;
   text-transform: none;
+  white-space: pre-line;
   box-shadow: 0 24px 60px -24px #000;
   pointer-events: none;
   opacity: 0;
@@ -1266,6 +1267,14 @@ button {
   border: 1px solid var(--line);
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.015);
+  cursor: help;
+}
+
+.curse-chip:hover,
+.curse-chip:focus-visible {
+  border-color: var(--line-2);
+  background: rgba(255, 255, 255, 0.04);
+  outline: none;
 }
 
 .curse-chip b {

@@ -217,6 +217,7 @@ function startNewRun(): void {
   }
   const seed = `bl-${Date.now().toString(36)}-${Math.floor(Math.random() * 1_000_000).toString(36)}`;
   const events = host.start(seed, selectedAscension);
+  music.beginRun();
   recordStart();
   screen = 'run';
   input = '';
@@ -549,6 +550,7 @@ function render(): void {
     ),
   );
   music.setBoss(bossMusic);
+  if (screen === 'run' && view) music.setLevel(view.level);
 
   if (screen === 'title') {
     app!.innerHTML = renderTitle();
@@ -631,6 +633,12 @@ document.addEventListener('pointermove', (event) => {
 
 window.addEventListener('scroll', hideTip, true);
 window.addEventListener('resize', hideTip);
+
+document.addEventListener('focusin', (event) => {
+  const target = (event.target as Element | null)?.closest<HTMLElement>('[data-tip]');
+  if (target) showTip(target);
+});
+document.addEventListener('focusout', hideTip);
 
 function renderTitle(): string {
   const meta = readMeta();
@@ -1042,6 +1050,15 @@ function renderSidePanel(view: RunView): string {
     : `<p class="empty-note">No items yet. Shops and the Curse Broker fix that.</p>`;
   const bagged = view.items.filter((item) => !item.equipped && item.slots > 0).length;
 
+  const curseChips = view.curses.map((curse) => {
+    const def = CURSE_BY_ID.get(curse.id);
+    const detail = curse.rules.length > 0
+      ? curse.rules.join('\n')
+      : def?.description ?? '';
+    const tip = `${curse.name}${curse.stacks > 1 ? ` ×${curse.stacks}` : ''}\n${detail}`;
+    return `<div class="curse-chip" tabindex="0" data-tip="${escapeHtml(tip)}" aria-label="${escapeHtml(tip)}"><b>${escapeHtml(curse.name)}</b>${curse.stacks > 1 ? `<em>×${curse.stacks}</em>` : ''}<span>${escapeHtml(curse.tags.join(' · '))}</span></div>`;
+  }).join('');
+
   return `
   <aside class="panel side-panel">
     <section>
@@ -1052,7 +1069,7 @@ function renderSidePanel(view: RunView): string {
       <div class="panel-head"><span class="panel-kicker">CURSES</span><span class="count">${view.curses.length}</span></div>
       <div class="curse-list">
         ${view.curses.length
-          ? view.curses.map((curse) => `<div class="curse-chip"><b>${escapeHtml(curse.name)}</b>${curse.stacks > 1 ? `<em>×${curse.stacks}</em>` : ''}<span>${escapeHtml(curse.tags.join(' · '))}</span></div>`).join('')
+          ? curseChips
           : `<p class="empty-note">No curses yet. The first draft comes after level 2.</p>`}
       </div>
     </section>

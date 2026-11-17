@@ -617,12 +617,12 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'pen-club',
     name: 'Pen Club',
-    description: 'Guess a word that starts with PEN: +4 gold.',
-    price: 8,
+    description: 'Guess a word that starts with PEN: +3 gold.',
+    price: 15,
     kind: 'gear',
     on: {
       onGuessScored: (_ctx, p) =>
-        p.guess.word.startsWith('pen') ? [{ type: 'gold', amount: 4 }] : [],
+        p.guess.word.startsWith('pen') ? [{ type: 'gold', amount: 3 }] : [],
     },
   }),
   defineItem({

@@ -94,7 +94,7 @@ const ENTRIES: GlossaryEntry[] = [
   },
   {
     pattern: /\bTime Freeze\b/g,
-    tip: 'Spell: stop the clock until your next guess. With no clock, the next guess is free.',
+    tip: 'Spell: the next guess is free. Freeze any timers until you make the guess.',
   },
   {
     pattern: /\bcurse\b/gi,

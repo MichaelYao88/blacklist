@@ -488,6 +488,8 @@ export interface RunState {
   curses: CurseStack[];
   pendingStartingCurses: number;
   pendingCurseRemoval: number;
+  /** Non-starting curse drafts opened this run. Used for the first-draft rules. */
+  curseDrafts: number;
   phase: PhaseKind;
   bossIntro?: { boss: BossId };
   curse?: CurseState;

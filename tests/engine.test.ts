@@ -5,10 +5,11 @@ import type {
   GameEvent,
   RunNode,
   RunState,
+  RunView,
   ShopState,
   StepResult,
 } from '../src/game';
-import { CURSE_BY_ID, FOOD_BY_ID, ITEM_BY_ID, SPELL_BY_ID, SPELLS } from '../src/content';
+import { CURSE_BY_ID, CURSES, FOOD_BY_ID, ITEM_BY_ID, SPELL_BY_ID, SPELLS } from '../src/content';
 
 function start(seed = 'test-seed', ascension = 0): StepResult {
   return game.newRun({ seed, ascension });
@@ -51,6 +52,27 @@ function nextRound(state: RunState): StepResult {
   state.phase = 'shop';
   state.shop = shopState();
   return act(state, { type: 'continue' });
+}
+
+/** Resolve any starting drafts, then open the first curse node of the run. */
+function firstDraft(
+  seed: string,
+  ascension = 0,
+): Extract<RunView['phase'], { kind: 'curse' }> {
+  let current = start(seed, ascension).state;
+  while (current.phase === 'curse') {
+    const phase = game.view(current).phase;
+    if (phase.kind !== 'curse') break;
+    current = act(current, { type: 'chooseCurse', curseId: phase.options[0] }).state;
+  }
+  const curseIndex = nodeAt(current, (node) => node.kind === 'curse');
+  current.nodeIndex = curseIndex - 1;
+  current.phase = 'shop';
+  current.shop = shopState();
+  const draft = act(current, { type: 'continue' });
+  const phase = game.view(draft.state).phase;
+  if (phase.kind !== 'curse') throw new Error('expected curse phase');
+  return phase;
 }
 
 describe('cursed run setup', () => {
@@ -125,6 +147,35 @@ describe('curse drafting', () => {
     const third = act(second.state, { type: 'chooseCurse', curseId: next.options[0] });
     expect(third.state.pendingStartingCurses).toBe(0);
     expect(third.state.phase).toBe('round');
+  });
+
+  it('forces a vision/blacklist curse into one side of the first base-run draft', () => {
+    const sightIds = new Set(
+      CURSES.filter((curse) => curse.tags.includes('vision') || curse.tags.includes('list'))
+        .map((curse) => curse.id),
+    );
+    let clockSecond = 0;
+    for (let index = 0; index < 80; index++) {
+      const phase = firstDraft(`first-draft-${index}`, 0);
+      expect(sightIds.has(phase.options[0]), phase.options.join(',')).toBe(true);
+      expect(phase.options[1]).not.toBe(phase.options[0]);
+      if (phase.options[1] === 'clock') clockSecond += 1;
+    }
+    // The Clock has triple weight in the wildcard slot.
+    expect(clockSecond).toBeGreaterThan(5);
+  });
+
+  it('drops the first-draft rules in Ascension', () => {
+    const sightIds = new Set(
+      CURSES.filter((curse) => curse.tags.includes('vision') || curse.tags.includes('list'))
+        .map((curse) => curse.id),
+    );
+    let offGroup = 0;
+    for (let index = 0; index < 40; index++) {
+      const phase = firstDraft(`asc-first-draft-${index}`, 2);
+      if (!sightIds.has(phase.options[0])) offGroup += 1;
+    }
+    expect(offGroup).toBeGreaterThan(0);
   });
 });
 
@@ -342,6 +393,17 @@ describe('spells and foods', () => {
   it('has six spells and no Time Warp', () => {
     expect(SPELLS).toHaveLength(6);
     expect(SPELL_BY_ID.get('time-warp')).toBeUndefined();
+  });
+
+  it('uses the new Time Freeze text', () => {
+    expect(SPELL_BY_ID.get('time-freeze')?.description)
+      .toBe('The next guess is free. Freeze any timers until you make the guess.');
+  });
+
+  it('prices Pen Club at 15 gold for a +3 payout', () => {
+    const pen = ITEM_BY_ID.get('pen-club');
+    expect(pen?.price).toBe(15);
+    expect(pen?.description).toContain('+3 gold');
   });
 
   it('has rare purge foods', () => {
