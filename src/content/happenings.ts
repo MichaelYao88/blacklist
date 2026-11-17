@@ -311,6 +311,33 @@ export const HAPPENINGS: HappeningDef[] = [
       },
     ],
   }),
+  defineHappening({
+    id: 'endless-table',
+    name: 'The Endless Table',
+    description: 'Dishes keep arriving. Nobody is eating.',
+    options: [
+      {
+        id: 'eat',
+        label: 'Eat everything',
+        description: 'Trigger every on-eat effect 7 times.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'Seven courses later, your gear is still working.',
+          effects: [{ type: 'eatBurst', count: 7 }],
+        }],
+      },
+      {
+        id: 'gold',
+        label: 'Take the tip jar',
+        description: 'Gain 7 gold.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'Seven coins, still warm.',
+          effects: [{ type: 'gold', amount: 7 }],
+        }],
+      },
+    ],
+  }),
 ];
 
 export const HAPPENING_BY_ID = new Map(HAPPENINGS.map((h) => [h.id, h]));

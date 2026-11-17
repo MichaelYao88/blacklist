@@ -9,7 +9,16 @@ import type {
   ShopState,
   StepResult,
 } from '../src/game';
-import { CONTENT, CURSE_BY_ID, CURSES, FOOD_BY_ID, ITEM_BY_ID, SPELL_BY_ID, SPELLS } from '../src/content';
+import {
+  CONTENT,
+  CURSE_BY_ID,
+  CURSES,
+  FOOD_BY_ID,
+  HAPPENING_BY_ID,
+  ITEM_BY_ID,
+  SPELL_BY_ID,
+  SPELLS,
+} from '../src/content';
 
 function start(seed = 'test-seed', ascension = 0): StepResult {
   return game.newRun({ seed, ascension });
@@ -527,13 +536,13 @@ describe('scaling gold items', () => {
     setAnswer(state, 'crane');
 
     const first = act(state, { type: 'guess', word: 'crane' });
-    expect(first.state.gold).toBe(20);
+    expect(first.state.gold).toBe(23);
     expect(first.state.items.find((item) => item.id === 'hat-trick')?.data.gold).toBe(7);
 
     const second = nextRound(first.state);
     setAnswer(second.state, 'crane');
     const secondSolve = act(second.state, { type: 'guess', word: 'crane' });
-    expect(secondSolve.state.gold).toBe(32);
+    expect(secondSolve.state.gold).toBe(38);
     expect(secondSolve.state.items.find((item) => item.id === 'hat-trick')?.data.gold).toBe(9);
   });
 
@@ -545,7 +554,8 @@ describe('scaling gold items', () => {
     state.round.totalGuesses = 3;
 
     const solve = act(state, { type: 'guess', word: 'crane' });
-    expect(solve.state.gold).toBe(15);
+    expect(solve.state.gold).toBeGreaterThanOrEqual(15);
+    expect(solve.state.gold).toBeLessThanOrEqual(18);
     expect(solve.state.items.find((item) => item.id === 'hat-trick')?.data.gold).toBe(5);
   });
 
@@ -554,6 +564,165 @@ describe('scaling gold items', () => {
     expect(def?.rarity).toBeUndefined();
     expect(def?.description).toContain('gain 5 gold');
     expect(def?.dynamicDescription?.({ gold: 9 })).toContain('gain 9 gold');
+  });
+});
+
+describe('new item and event batch', () => {
+  it('pays 8 on a quick solve and 5-8 otherwise', () => {
+    const fast = start('gold-fast');
+    setAnswer(fast.state, 'crane');
+    const quick = act(fast.state, { type: 'guess', word: 'crane' });
+    expect(quick.state.gold).toBe(18);
+
+    for (let index = 0; index < 20; index++) {
+      const { state } = start(`gold-slow-${index}`);
+      if (!state.round) throw new Error('expected round');
+      setAnswer(state, 'crane');
+      state.round.totalGuesses = 3;
+      const slow = act(state, { type: 'guess', word: 'crane' });
+      expect(slow.state.gold).toBeGreaterThanOrEqual(15);
+      expect(slow.state.gold).toBeLessThanOrEqual(18);
+    }
+  });
+
+  it('Brace pays 2 max armor, Bloom grows max HP, Patch Kit heals 30% +1', () => {
+    const brace = start('brace');
+    brace.state.items.push({ instance: 'i-brace', id: 'brace', data: {}, equipped: true });
+    setAnswer(brace.state, 'crane');
+    const braced = act(brace.state, { type: 'guess', word: 'crane' });
+    expect(braced.state.maxArmor).toBe(4);
+
+    const bloom = start('bloom');
+    bloom.state.items.push({ instance: 'i-bloom', id: 'bloom', data: { hp: 5 }, equipped: true });
+    setAnswer(bloom.state, 'crane');
+    const grown = act(bloom.state, { type: 'guess', word: 'crane' });
+    expect(grown.state.maxHp).toBe(45);
+    expect(grown.state.items.find((item) => item.id === 'bloom')?.data.hp).toBe(6);
+    const bloomNext = nextRound(grown.state);
+    setAnswer(bloomNext.state, 'crane');
+    const grownAgain = act(bloomNext.state, { type: 'guess', word: 'crane' });
+    expect(grownAgain.state.maxHp).toBe(51);
+
+    const patch = start('patch-kit');
+    patch.state.items.push({ instance: 'i-patch', id: 'patch-kit', data: {}, equipped: true });
+    patch.state.hp = 10;
+    setAnswer(patch.state, 'crane');
+    const patched = act(patch.state, { type: 'guess', word: 'crane' });
+    expect(patched.state.hp).toBe(23);
+  });
+
+  it('Doggy Bag reveals 2 absent letters and queues 1 after eating', () => {
+    const { state } = start('doggy-bag');
+    state.items.push({ instance: 'i-dog', id: 'doggy-bag', data: {}, equipped: true });
+    state.phase = 'shop';
+    state.gold = 50;
+    state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'snack', price: 3 }]);
+    const eaten = act(state, { type: 'buy', offerId: 'o0' });
+    expect(eaten.state.pendingAbsent).toBe(1);
+
+    const next = nextRound(eaten.state);
+    const round = next.state.round;
+    if (!round) throw new Error('expected round');
+    const hints = Object.entries(round.hints);
+    expect(hints).toHaveLength(3);
+    for (const [letter, status] of hints) {
+      expect(status).toBe('absent');
+      expect(round.answer).not.toContain(letter);
+    }
+  });
+
+  it('Bottomless starts at +5 max armor and gains 1 every 4 eats', () => {
+    const { state } = start('bottomless');
+    state.phase = 'shop';
+    state.gold = 100;
+    state.shop = shopState([{ id: 'o0', kind: 'item', def: 'bottomless', price: 12 }]);
+    const bought = act(state, { type: 'buy', offerId: 'o0' });
+    expect(bought.state.maxArmor).toBe(7);
+
+    bought.state.phase = 'shop';
+    bought.state.shop = shopState([
+      { id: 'f0', kind: 'eat', def: 'snack', price: 3 },
+      { id: 'f1', kind: 'eat', def: 'snack', price: 3 },
+      { id: 'f2', kind: 'eat', def: 'snack', price: 3 },
+      { id: 'f3', kind: 'eat', def: 'snack', price: 3 },
+    ]);
+    let result = bought;
+    for (const id of ['f0', 'f1', 'f2', 'f3']) {
+      result = act(result.state, { type: 'buy', offerId: id });
+      if (id !== 'f3') expect(result.state.maxArmor).toBe(7);
+    }
+    expect(result.state.maxArmor).toBe(8);
+  });
+
+  it('Tight Slots removes 2 slots and bags the overflow', () => {
+    const { state } = start('tight-slots');
+    for (let index = 0; index < 5; index++) {
+      state.items.push({
+        instance: `i-hour-${index}`,
+        id: 'hourglass',
+        data: {},
+        equipped: true,
+      });
+    }
+    state.curse = { options: ['tight-slots'], starting: false };
+    state.phase = 'curse';
+    const cursed = act(state, { type: 'chooseCurse', curseId: 'tight-slots' });
+    expect(cursed.state.slots).toBe(3);
+    expect(cursed.state.items.filter((item) => item.equipped)).toHaveLength(3);
+    expect(cursed.state.items.filter((item) => !item.equipped)).toHaveLength(2);
+  });
+
+  it('never offers more than 2 copies of a shop entry, and does offer duplicates', () => {
+    let sawDuplicate = false;
+    for (let index = 0; index < 300; index++) {
+      const { state } = start(`shop-dupes-${index}`);
+      state.nodeIndex = 0;
+      state.nodes[1] = { kind: 'shop', level: 1 };
+      state.phase = 'shop';
+      const shop = act(state, { type: 'continue' }).state.shop;
+      const counts = new Map<string, number>();
+      for (const offer of shop?.offers ?? []) {
+        const key = `${offer.kind}:${offer.def}`;
+        const count = (counts.get(key) ?? 0) + 1;
+        counts.set(key, count);
+        expect(count).toBeLessThanOrEqual(2);
+        if (count === 2) sawDuplicate = true;
+      }
+    }
+    expect(sawDuplicate).toBe(true);
+  });
+
+  it('The Endless Table fires on-eat effects 7 times', () => {
+    const { state } = start('endless-table');
+    state.items.push({ instance: 'i-feast', id: 'feast-of-ideas', data: {}, equipped: true });
+    state.phase = 'happening';
+    state.happening = { id: 'endless-table', options: [] };
+    const eaten = act(state, { type: 'choose', optionId: 'eat' });
+    expect(eaten.state.spells).toHaveLength(7);
+  });
+
+  it('applies the tuned content text and values', () => {
+    expect(FOOD_BY_ID.get('gg-gum')?.effects)
+      .toContainEqual({ type: 'revealLetter', letter: 'g' });
+    expect(FOOD_BY_ID.get('gumdrop')?.price).toBe(3);
+    expect(CURSE_BY_ID.get('porcupine')?.damagePerGreen).toBe(2);
+    expect(CURSE_BY_ID.get('tight-slots')?.slotDelta).toBe(-2);
+    expect(SPELL_BY_ID.get('restore')?.description)
+      .toBe('Refill armor and clear the blacklist.');
+    expect(ITEM_BY_ID.get('siphon')?.description).toContain('4 HP');
+    expect(ITEM_BY_ID.get('gourmand')?.description).toContain('+2 max HP');
+    expect(ITEM_BY_ID.get('miser')?.description).not.toContain('max');
+    expect(ITEM_BY_ID.get('plate-timer')?.requiresClock).toBe(true);
+    expect(ITEM_BY_ID.get('solo-note')?.description)
+      .toContain('one yellow and no green');
+    expect(ITEM_BY_ID.get('four-leaf-clover')?.description).toContain('20%');
+
+    const table = HAPPENING_BY_ID.get('endless-table');
+    expect(table?.options).toHaveLength(2);
+    expect(table?.options[0].outcomes[0].effects)
+      .toContainEqual({ type: 'eatBurst', count: 7 });
+    expect(table?.options[1].outcomes[0].effects)
+      .toContainEqual({ type: 'gold', amount: 7 });
   });
 });
 

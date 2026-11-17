@@ -70,6 +70,59 @@ export const ITEMS: ItemDef[] = [
     },
   }),
   defineItem({
+    id: 'brace',
+    name: 'Brace',
+    description: 'Solve in 3 guesses: +2 max armor.',
+    price: 8,
+    kind: 'gear',
+    on: {
+      onSolve: (_ctx, p) => (p.guesses <= 3 ? [{ type: 'maxArmor', delta: 2 }] : []),
+    },
+  }),
+  defineItem({
+    id: 'bloom',
+    name: 'Bloom',
+    description: 'Solve in 3 guesses: +5 max HP. +1 more each time.',
+    dynamicDescription: (data) =>
+      `Solve in 3 guesses: +${data.hp ?? 5} max HP. +1 more each time.`,
+    price: 11,
+    kind: 'gear',
+    initial: { hp: 5 },
+    on: {
+      onSolve: (ctx, p) =>
+        p.guesses <= 3
+          ? [
+              { type: 'maxHp', delta: ctx.self.data.hp },
+              { type: 'grow', stat: 'hp', by: 1 },
+            ]
+          : [],
+    },
+  }),
+  defineItem({
+    id: 'patch-kit',
+    name: 'Patch Kit',
+    description: 'Solve in 3 guesses: heal 30% of max HP +1.',
+    price: 10,
+    kind: 'gear',
+    on: {
+      onSolve: (ctx, p) =>
+        p.guesses <= 3
+          ? [{ type: 'heal', amount: Math.ceil(ctx.state.maxHp * 0.3) + 1 }]
+          : [],
+    },
+  }),
+  defineItem({
+    id: 'four-leaf-clover',
+    name: 'Four-Leaf Clover',
+    description: '20% chance of a random spell when you eat or cast.',
+    price: 9,
+    kind: 'gear',
+    on: {
+      onEat: () => [{ type: 'giveSpell', spell: 'random', chancePct: 20 }],
+      onSpellCast: () => [{ type: 'giveSpell', spell: 'random', chancePct: 20 }],
+    },
+  }),
+  defineItem({
     id: 'head-start',
     name: 'Head Start',
     description: 'The first 12s of each round: guesses are free.',
@@ -250,18 +303,37 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'siphon',
     name: 'Siphon',
-    description: 'Casting a spell heals 1 HP.',
+    description: 'Casting a spell heals 4 HP.',
     price: 8,
     kind: 'gear',
-    on: { onSpellCast: () => [{ type: 'heal', amount: 1 }] },
+    on: { onSpellCast: () => [{ type: 'heal', amount: 4 }] },
   }),
   defineItem({
     id: 'gourmand',
     name: 'Gourmand',
-    description: 'Eating: +1 max HP.',
+    description: 'Eating: +2 max HP.',
     price: 8,
     kind: 'gear',
-    on: { onEat: () => [{ type: 'maxHp', delta: 1 }] },
+    on: { onEat: () => [{ type: 'maxHp', delta: 2 }] },
+  }),
+  defineItem({
+    id: 'bottomless',
+    name: 'Bottomless',
+    description: 'Gain 5 max armor. Every 4 foods eaten: +1 max armor.',
+    price: 12,
+    kind: 'gear',
+    initial: { ate: 0 },
+    onAcquire: () => [{ type: 'maxArmor', delta: 5 }],
+    on: {
+      onEat: (ctx) => {
+        const total = ctx.self.data.ate + 1;
+        const gains = Math.floor(total / 4);
+        return [
+          { type: 'setItemData', stat: 'ate', value: total % 4 },
+          ...Array.from({ length: gains }, () => ({ type: 'maxArmor' as const, delta: 1 })),
+        ];
+      },
+    },
   }),
   defineItem({
     id: 'spellbook',
@@ -625,6 +697,17 @@ export const ITEMS: ItemDef[] = [
     price: 10,
     kind: 'gear',
     on: { onRoundStart: () => [{ type: 'revealAbsent', count: 4 }] },
+  }),
+  defineItem({
+    id: 'doggy-bag',
+    name: 'Doggy Bag',
+    description: 'Round start: learn 2 letters not in the word. Eating food: 1 more next round.',
+    price: 11,
+    kind: 'gear',
+    on: {
+      onRoundStart: () => [{ type: 'revealAbsent', count: 2 }],
+      onEat: () => [{ type: 'pendingAbsent', count: 1 }],
+    },
   }),
   defineItem({
     id: 'field-dressing',
@@ -1039,12 +1122,12 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'miser',
     name: 'Miser',
-    description: 'End of round: +1 gold per 10 gold held, max 3.',
+    description: 'End of round: +1 gold per 10 gold held.',
     price: 9,
     kind: 'gear',
     on: {
       onRoundEnd: (ctx) => {
-        const amount = Math.min(3, Math.floor(ctx.state.gold / 10));
+        const amount = Math.floor(ctx.state.gold / 10);
         return amount > 0 ? [{ type: 'gold', amount }] : [];
       },
     },
@@ -1174,7 +1257,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'solo-note',
     name: 'Solo Note',
-    description: 'Once per round: exactly one yellow and no green grants Restore.',
+    description: 'Once per round: a guess with one yellow and no green grants Restore.',
     price: 9,
     kind: 'gear',
     initial: { used: 0 },
@@ -1272,6 +1355,7 @@ export const ITEMS: ItemDef[] = [
     description: 'Every 10 armor lost adds 3s to the clock.',
     price: 9,
     kind: 'gear',
+    requiresClock: true,
     initial: { lost: 0 },
     on: {
       onDamageTaken: (ctx, p) => {

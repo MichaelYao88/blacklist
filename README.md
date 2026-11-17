@@ -38,11 +38,17 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Opening shields such as **Head Start** and **Quickdraw** make guesses in their window count as free guesses
 - Relics are very rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 105 items (86 shop items + 19 rare relics), 6 spells, 24 foods and 14 happenings
+- 111 items (92 shop items + 19 rare relics), 6 spells, 26 foods and 15 happenings
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
-- **Field Kit** now reveals exactly 4 letters that are not in the word; the damage-cap item was removed
-- Letter foods cover B, X, Q, I, D, and Y+N; the X and Q foods are cheaper
+- **Field Kit** reveals exactly 4 letters that are not in the word; **Doggy Bag** reveals 2 and queues another after every food
+- Letter foods cover B, G, X, Q, I, D, and Y+N; the X and Q foods are cheaper
+- New solve rewards: **Brace** (+2 max armor), **Bloom** (+5 max HP, +1 per trigger), **Patch Kit** (heal 30% of max HP +1)
+- **Four-Leaf Clover** has a 20% chance of a random spell when you eat or cast
+- **Bottomless** starts at +5 max armor and gains +1 every 4 foods
 - **Old McDonald** is an expensive relic: EIEIO is guessed for free at round start
+- Shops can show up to 2 copies of the same entry; sell rows are hoverable
+- Solve gold is 8 for 3 guesses or fewer, otherwise a random 5-8
+- **The Endless Table** fires every on-eat effect 7 times or pays 7 gold
 - The run path rail is gone; the current level stays in the battle rail
 - Purge is an event (The Redaction) and rare foods; not a spell
 - One exact-state autosave slot. Defeat clears it. Victory clears it and updates meta stats.
@@ -96,7 +102,7 @@ Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title s
 | Final boss damage | 3 base plus curses |
 | Timeout damage | `2 × guess hit + ceil(maxHp × 0.3)`, bypasses armor, ends the round |
 | Armor | a pool that soaks damage point-for-point before HP; refills each round |
-| Solve gold | `5 + solveGoldBonus` (Midas Touch can double any gain) |
+| Solve gold | `8` on a solve in 3 guesses or fewer, else random `5-8`, plus `solveGoldBonus` (Midas Touch can double any gain) |
 | Timeout gold | `1`; a death pays nothing |
 | Solve reward | a flat 5 gold plus a spell (65%) or food (35%); gear is an 8% find |
 | Relic source | very rare shop/reward finds and the Curse Broker |

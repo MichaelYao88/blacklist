@@ -145,12 +145,12 @@ export const CURSES: CurseDef[] = [
   defineCurse({
     id: 'porcupine',
     name: "Porcupine's Dilemma",
-    description: 'Every green letter in your guess adds 1 damage.',
-    rules: ['Each green letter adds +1 damage. Stacks freely.'],
+    description: 'Every green letter in your guess adds 2 damage.',
+    rules: ['Each green letter adds +2 damage. Stacks freely.'],
     art: 'sleeper',
     tags: ['damage'],
     maxStacks: Infinity,
-    damagePerGreen: 1,
+    damagePerGreen: 2,
   }),
   defineCurse({
     id: 'heavy-hand',
@@ -243,12 +243,12 @@ export const CURSES: CurseDef[] = [
   defineCurse({
     id: 'tight-slots',
     name: 'Tight Slots',
-    description: 'One fewer item slot per stack.',
-    rules: ['Each stack removes 1 item slot.'],
+    description: 'Two fewer item slots per stack.',
+    rules: ['Each stack removes 2 item slots.'],
     art: 'censor',
     tags: ['body', 'shop'],
     maxStacks: Infinity,
-    slotDelta: -1,
+    slotDelta: -2,
   }),
   defineCurse({
     id: 'wasting',

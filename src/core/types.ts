@@ -273,6 +273,7 @@ export type Effect =
   | { type: 'revealLetter'; letter: Letter }
   | { type: 'revealRandom'; count: number }
   | { type: 'revealAbsent'; count: number }
+  | { type: 'pendingAbsent'; count: number }
   | { type: 'purgeLetter'; letter: Letter }
   | { type: 'clearBlacklist' }
   | { type: 'randomChoice'; options: Effect[][] }
@@ -280,6 +281,7 @@ export type Effect =
   | { type: 'castSpell'; spell: SpellId }
   | { type: 'friendGuesses'; count: number }
   | { type: 'autoGuess'; word: string }
+  | { type: 'eatBurst'; count: number }
   | { type: 'grow'; stat: string; by: number }
   | { type: 'setItemData'; stat: string; value: number }
   | { type: 'consumeSelf' }
@@ -489,6 +491,8 @@ export interface RunState {
   usedAnswers: string[];
   lastAnswer?: string;
   pendingPurge: number;
+  /** Absent letters queued to reveal at the start of the next round. */
+  pendingAbsent: number;
   /** Letter reveals queued outside a round, applied when the next round starts. */
   pendingReveals: Letter[];
   /** Letters that are re-revealed for every round for the rest of the run. */

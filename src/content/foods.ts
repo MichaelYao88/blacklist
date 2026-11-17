@@ -9,6 +9,13 @@ export const FOODS: FoodDef[] = [
     effects: [{ type: 'heal', amount: 8 }],
   }),
   defineFood({
+    id: 'gumdrop',
+    name: 'Gumdrop',
+    description: 'Recover 5 HP. No slot.',
+    price: 3,
+    effects: [{ type: 'heal', amount: 5 }],
+  }),
+  defineFood({
     id: 'feast',
     name: 'Feast',
     description: '+5 max HP, heal 5. No slot.',
@@ -156,6 +163,13 @@ export const FOODS: FoodDef[] = [
     description: 'Every round: reveal whether the answer has Q. No slot.',
     price: 8,
     effects: [{ type: 'revealLetter', letter: 'q' }],
+  }),
+  defineFood({
+    id: 'gg-gum',
+    name: 'GG Gum',
+    description: 'Every round: G is revealed. No slot.',
+    price: 8,
+    effects: [{ type: 'revealLetter', letter: 'g' }],
   }),
   defineFood({
     id: 'i-spy',

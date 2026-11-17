@@ -881,6 +881,9 @@ export function createCore(content: Content): Core {
         if (noReveal(state) && (source.kind === 'item' || source.kind === 'spell')) break;
         revealAbsentLetters(rt, effect.count);
         break;
+      case 'pendingAbsent':
+        state.pendingAbsent += effect.count;
+        break;
       case 'purgeLetter':
         purgeLetterNow(rt, effect.letter);
         break;
@@ -919,6 +922,13 @@ export function createCore(content: Content): Core {
         if (word.split('').some((ch) => state.purged.includes(ch))) break;
         if (round.guesses.some((guess) => guess.word === word)) break;
         scorePlayerGuess(rt, word, 'friend');
+        break;
+      }
+      case 'eatBurst': {
+        for (let index = 0; index < effect.count; index++) {
+          runHook(rt, 'onEat', { food: 'a seven-course meal' });
+          if (isOver(state)) break;
+        }
         break;
       }
       case 'grow': {
@@ -1198,6 +1208,10 @@ export function createCore(content: Content): Core {
     for (const letter of watched) {
       hintLetter(rt, letter, round.answer.includes(letter) ? 'present' : 'absent');
     }
+    if (state.pendingAbsent > 0) {
+      revealAbsentLetters(rt, state.pendingAbsent);
+      state.pendingAbsent = 0;
+    }
 
     runHook(rt, 'onRoundStart', {
       boss: boss?.id,
@@ -1243,13 +1257,16 @@ export function createCore(content: Content): Core {
       if (round.boss) state.stats.bosses++;
     }
 
-    // Every finished encounter pays a flat prize. Gold never inflates with the
-    // act or the round number; only Bounty and similar items add to it.
-    const baseGold = outcome === 'solved'
-      ? 5 + state.bonusSolveGold
-      : outcome === 'timeout'
-        ? 1
-        : 0;
+    // Every finished encounter pays a prize. Quick solves (3 guesses or fewer)
+    // always pay 8; otherwise the base is a random 5-8. Bounty-style bonuses
+    // still add on top.
+    let baseGold = 0;
+    if (outcome === 'solved') {
+      const rolled = round.totalGuesses <= 3 ? 8 : rngPick(state, [5, 6, 7, 8]);
+      baseGold = rolled + state.bonusSolveGold;
+    } else if (outcome === 'timeout') {
+      baseGold = 1;
+    }
     const goldAward = Math.max(0, Math.floor(baseGold * goldMultiplier(state)));
     if (goldAward > 0) changeGold(rt, goldAward, RULES);
 
@@ -1638,13 +1655,7 @@ export function createCore(content: Content): Core {
 
   function generateOffers(rt: Runtime): Offer[] {
     const state = rt.state;
-    const ownedGear = new Set(
-      state.items.filter((i) => itemById.get(i.id)?.kind === 'gear').map((i) => i.id),
-    );
-    const availableItems = content.items.filter(
-      (item) => itemAvailable(state, item)
-        && (item.kind !== 'gear' || !ownedGear.has(item.id)),
-    );
+    const availableItems = content.items.filter((item) => itemAvailable(state, item));
     const commonItems = availableItems.filter((item) => item.rarity !== 'rare');
     const rareItems = availableItems.filter((item) => item.rarity === 'rare');
     const availableFoods = content.foods.filter((food) => foodAvailable(state, food));
@@ -1659,10 +1670,14 @@ export function createCore(content: Content): Core {
       sale?: boolean;
       originalPrice?: number;
     }> = [];
-    const usedDefs = new Set<string>();
+    const usedDefs = new Map<string, number>();
+    const usedCount = (key: string): number => usedDefs.get(key) ?? 0;
+    const markUsed = (key: string): void => {
+      usedDefs.set(key, usedCount(key) + 1);
+    };
 
     const pickItem = (item: ItemDef, sale = false): void => {
-      usedDefs.add(`item:${item.id}`);
+      markUsed(`item:${item.id}`);
       const base = sale ? Math.max(1, Math.floor(item.price / 2)) : item.price;
       picked.push({
         kind: 'item',
@@ -1673,26 +1688,26 @@ export function createCore(content: Content): Core {
       });
     };
     const pickFood = (food: (typeof content.foods)[number]): void => {
-      usedDefs.add(`eat:${food.id}`);
+      markUsed(`eat:${food.id}`);
       picked.push({ kind: 'eat', def: food.id, price: shopPrice(state, food.price) });
     };
     const pickSpell = (spell: (typeof content.spells)[number]): void => {
-      usedDefs.add(`spell:${spell.id}`);
+      markUsed(`spell:${spell.id}`);
       picked.push({ kind: 'spell', def: spell.id, price: shopPrice(state, spell.price) });
     };
     const pickRandomItem = (): boolean => {
-      let pool = commonItems.filter((item) => !usedDefs.has(`item:${item.id}`));
+      let pool = commonItems.filter((item) => usedCount(`item:${item.id}`) < 2);
       if (rareItems.length > 0 && rngChance(state, 10)) {
-        pool = rareItems.filter((item) => !usedDefs.has(`item:${item.id}`));
+        pool = rareItems.filter((item) => usedCount(`item:${item.id}`) < 2);
       }
       if (pool.length === 0) return false;
       pickItem(rngPick(state, pool));
       return true;
     };
     const pickRandomFood = (): boolean => {
-      let pool = commonFoods.filter((food) => !usedDefs.has(`eat:${food.id}`));
+      let pool = commonFoods.filter((food) => usedCount(`eat:${food.id}`) < 2);
       if (rareFoods.length > 0 && rngChance(state, 10)) {
-        pool = rareFoods.filter((food) => !usedDefs.has(`eat:${food.id}`));
+        pool = rareFoods.filter((food) => usedCount(`eat:${food.id}`) < 2);
       }
       if (pool.length === 0) return false;
       pickFood(rngPick(state, pool));
@@ -2014,6 +2029,24 @@ export function createCore(content: Content): Core {
     emit(rt, { type: 'curseOffered', options: options.slice(), starting });
   }
 
+  /** Unequip overflow when the slot count shrinks, keeping the bag usable. */
+  function enforceSlotCapacity(state: RunState): string[] {
+    let equippedCost = 0;
+    const dropped: string[] = [];
+    for (const item of state.items) {
+      const def = itemById.get(item.id);
+      const cost = def ? itemSlots(def) : 0;
+      if (item.equipped === false || cost === 0) continue;
+      if (equippedCost + cost > state.slots) {
+        item.equipped = false;
+        dropped.push(def?.name ?? item.id);
+        continue;
+      }
+      equippedCost += cost;
+    }
+    return dropped;
+  }
+
   function applyCurse(rt: Runtime, id: CurseId): void {
     const state = rt.state;
     const def = curseById.get(id);
@@ -2037,6 +2070,13 @@ export function createCore(content: Content): Core {
     if (def.slotDelta) {
       state.slots = Math.max(0, state.slots + def.slotDelta);
       emit(rt, { type: 'slotsChanged', slots: state.slots });
+      const dropped = enforceSlotCapacity(state);
+      if (dropped.length > 0) {
+        emit(rt, {
+          type: 'message',
+          text: `Slots tightened. Moved to the bag: ${dropped.join(', ')}.`,
+        });
+      }
     }
     if (def.id === 'the-list') {
       const before = state.blacklist.length;
@@ -2601,6 +2641,7 @@ export function createCore(content: Content): Core {
       purged: [],
       usedAnswers: [],
       pendingPurge: 0,
+      pendingAbsent: 0,
       pendingReveals: [],
       permanentReveals: [],
       curses: [],
@@ -2676,6 +2717,7 @@ export function createCore(content: Content): Core {
       if (typeof state.pendingStartingCurses !== 'number') state.pendingStartingCurses = 0;
       if (typeof state.pendingCurseRemoval !== 'number') state.pendingCurseRemoval = 0;
       if (typeof state.curseDrafts !== 'number') state.curseDrafts = 0;
+      if (typeof state.pendingAbsent !== 'number') state.pendingAbsent = 0;
       if (!Array.isArray(state.pendingReveals)) state.pendingReveals = [];
       if (!Array.isArray(state.permanentReveals)) {
         state.permanentReveals = state.pendingReveals.slice();

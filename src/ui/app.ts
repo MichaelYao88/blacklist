@@ -1383,7 +1383,8 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
   const sellable = view.items.length
     ? view.items.map((item) => {
       const def = ITEM_BY_ID.get(item.id);
-      return `<div class="sell-row"><span>${itemIcon(item.id)} ${escapeHtml(def?.name ?? item.id)}</span><button class="btn tiny" data-action="sell" data-id="${escapeHtml(item.instance)}" ${canSell ? '' : 'disabled'}>SELL ${item.sellValue} G</button></div>`;
+      const description = def?.dynamicDescription?.(item.data) ?? def?.description ?? '';
+      return `<div class="sell-row"><span class="sell-name" tabindex="0" data-tip="${escapeHtml(description)}">${itemIcon(item.id)} ${escapeHtml(def?.name ?? item.id)}</span><button class="btn tiny" data-action="sell" data-id="${escapeHtml(item.instance)}" ${canSell ? '' : 'disabled'}>SELL ${item.sellValue} G</button></div>`;
     }).join('')
     : `<p class="empty-note">Nothing to sell.</p>`;
 
@@ -1449,6 +1450,23 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
   </div>`;
 }
 
+function happeningPreviews(happeningId: string | undefined, optionId: string): string {
+  if (happeningId !== 'the-bargain' || optionId !== 'draw') return '';
+  const item = ITEM_BY_ID.get('encore');
+  const curse = CURSE_BY_ID.get('without-d');
+  if (!item || !curse) return '';
+  const itemTip = `${item.name}\n${item.description}`;
+  const curseTip = `${curse.name}\n${curse.rules.join('\n')}`;
+  return `<div class="preview-row">
+    <span class="preview-chip" tabindex="0" data-tip="${escapeHtml(itemTip)}">
+      <span class="preview-icon" aria-hidden="true">${itemIcon('encore')}</span>${escapeHtml(item.name)}
+    </span>
+    <span class="preview-chip curse" tabindex="0" data-tip="${escapeHtml(curseTip)}">
+      <span class="preview-icon" aria-hidden="true">✦</span>${escapeHtml(curse.name)}
+    </span>
+  </div>`;
+}
+
 function renderHappening(phase: Extract<PhaseView, { kind: 'happening' }>): string {
   const def = HAPPENING_BY_ID.get(phase.happening);
   const resolved = phase.resolved;
@@ -1463,6 +1481,7 @@ function renderHappening(phase: Extract<PhaseView, { kind: 'happening' }>): stri
           <div>
             <b>${escapeHtml(option.label)}</b>
             <p>${glossaryText(option.description)}</p>
+            ${happeningPreviews(def?.id, option.id)}
             ${option.costGold ? `<span class="warn">Costs ${option.costGold} gold${option.fallbackPct ? ` · or ${Math.round(option.fallbackPct * 100)}% of your gold` : ''}</span>` : ''}
           </div>
           <div class="odds">

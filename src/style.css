@@ -1554,6 +1554,16 @@ button {
   font-size: 0.78rem;
 }
 
+.sell-name {
+  cursor: help;
+}
+
+.sell-name:hover,
+.sell-name:focus-visible {
+  color: var(--gold-soft);
+  outline: none;
+}
+
 /* ── happening ───────────────────────────────────────────────────────────── */
 
 .happening-desc {
@@ -1596,6 +1606,49 @@ button {
   margin: 3px 0 0;
   color: var(--muted);
   font-size: 0.72rem;
+}
+
+.preview-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.preview-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--muted);
+  font-size: 0.64rem;
+  cursor: help;
+}
+
+.preview-chip:hover,
+.preview-chip:focus-visible {
+  border-color: var(--gold);
+  color: var(--ink);
+  outline: none;
+}
+
+.preview-chip.curse {
+  border-color: rgba(223, 97, 90, 0.32);
+  color: #e8b6b2;
+}
+
+.preview-chip.curse:hover,
+.preview-chip.curse:focus-visible {
+  border-color: var(--red);
+  color: #ffd0cc;
+}
+
+.preview-icon {
+  font-size: 0.82rem;
+  line-height: 1;
 }
 
 .odds {

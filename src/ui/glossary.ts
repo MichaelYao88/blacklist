@@ -90,7 +90,7 @@ const ENTRIES: GlossaryEntry[] = [
   },
   {
     pattern: /\bRestore\b/g,
-    tip: 'Spell: wipe the blacklist and refill armor.',
+    tip: 'Spell: refill armor and clear the blacklist.',
   },
   {
     pattern: /\bTime Freeze\b/g,
@@ -159,6 +159,10 @@ const ENTRIES: GlossaryEntry[] = [
   {
     pattern: /\bruled[- ]out\b/gi,
     tip: 'A letter proven absent from this answer. Explorer effects count distinct ruled-out letters.',
+  },
+  {
+    pattern: /\bnot in the word\b/gi,
+    tip: 'A guaranteed absent letter. It is marked RULED OUT on the keyboard and in the Revealed panel.',
   },
   {
     pattern: /\brevealed letters?\b/gi,
