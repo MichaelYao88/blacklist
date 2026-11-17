@@ -31,6 +31,14 @@ import type {
 } from './types';
 import { hashSeed, rngChance, rngInt, rngPick, rngNext, rngShuffle } from './rng';
 import { scoreGuess } from './score';
+import {
+  ASCENSION_MAX,
+  ascensionBossMultiplier,
+  ascensionRampPerWrong,
+  ascensionShopMultiplier,
+  ascensionStats,
+  ascensionTimePenaltyMs,
+} from './ascension';
 
 const VERSION = 5;
 const WORD_LENGTH = 5;
@@ -83,17 +91,16 @@ export function createCore(content: Content): Core {
 
   const itemSlots = (def: ItemDef): number => def.slots ?? (def.kind === 'gear' ? 1 : 0);
 
-  // Ascension is cumulative. Levels 2-4 each add HP loss, shop inflation and
-  // boss damage; level 5 adds one last shop increase.
-  const ascensionShopSteps = (state: RunState): number =>
-    Math.min(4, Math.max(0, state.ascension - 1));
-  const ascensionBossSteps = (state: RunState): number =>
-    Math.min(3, Math.max(0, state.ascension - 1));
-  const shopMultiplier = (state: RunState): number => 1 + 0.1 * ascensionShopSteps(state);
+  // Ascension is cumulative. The schedule lives in core/ascension.ts so the
+  // engine, title screen and docs all describe the same stack.
+  const shopMultiplier = (state: RunState): number =>
+    ascensionShopMultiplier(state.ascension);
   const shopPrice = (state: RunState, base: number): number =>
     Math.ceil(base * shopMultiplier(state));
-  const scaleBossDamage = (state: RunState, amount: number): number =>
-    Math.ceil(amount * (1 + 0.1 * ascensionBossSteps(state)));
+  const scaleBossDamage = (state: RunState, amount: number): number => {
+    if (amount <= 0) return 0;
+    return Math.ceil(amount * ascensionBossMultiplier(state.ascension));
+  };
 
   /** Slots are only consumed by equipped items. Slotless items are always on. */
   const isEquipped = (item: ItemInstance, def?: ItemDef): boolean =>
@@ -411,6 +418,8 @@ export function createCore(content: Content): Core {
   interface DamageOptions {
     ignoreArmor?: boolean;
     ignoreImmunity?: boolean;
+    /** Lets Ascension ramp damage through a timed shield without disarming it. */
+    ignoreTimedImmunity?: boolean;
     timeout?: boolean;
   }
 
@@ -439,7 +448,12 @@ export function createCore(content: Content): Core {
       return;
     }
 
-    if (round && !options.ignoreImmunity && round.elapsedMs < round.immuneUntilMs) {
+    if (
+      round &&
+      !options.ignoreImmunity &&
+      !options.ignoreTimedImmunity &&
+      round.elapsedMs < round.immuneUntilMs
+    ) {
       emit(rt, {
         type: 'damageTaken',
         incoming: modified,
@@ -704,15 +718,18 @@ export function createCore(content: Content): Core {
       }
       case 'revealLetter': {
         const letter = effect.letter.toLowerCase();
+        if (!state.permanentReveals) state.permanentReveals = [];
+        const firstTime = !state.permanentReveals.includes(letter);
+        if (firstTime) state.permanentReveals.push(letter);
         const round = state.round;
         if (state.phase === 'round' && round) {
           hintLetter(rt, letter, round.answer.includes(letter) ? 'present' : 'absent');
         } else {
-          if (!state.pendingReveals) state.pendingReveals = [];
-          if (!state.pendingReveals.includes(letter)) state.pendingReveals.push(letter);
           emit(rt, {
             type: 'message',
-            text: `${letter.toUpperCase()} will be revealed when the next round starts.`,
+            text: firstTime
+              ? `${letter.toUpperCase()} will be revealed every round from now on.`
+              : `${letter.toUpperCase()} is already revealed every round.`,
           });
         }
         break;
@@ -923,13 +940,13 @@ export function createCore(content: Content): Core {
     let remaining: number | null;
     let timerStart: number | null;
     if (boss?.gauntlet) {
-      remaining = boss.gauntlet.timerMs;
+      remaining = Math.max(15_000, boss.gauntlet.timerMs - ascensionTimePenaltyMs(state.ascension));
     } else if (boss && boss.timerMs === null) {
       remaining = null;
     } else if (boss && boss.timerMs !== null) {
-      remaining = boss.timerMs;
+      remaining = Math.max(15_000, boss.timerMs - ascensionTimePenaltyMs(state.ascension));
     } else {
-      remaining = normalTimerMs(state);
+      remaining = Math.max(15_000, normalTimerMs(state) - ascensionTimePenaltyMs(state.ascension));
     }
     timerStart = remaining;
 
@@ -948,6 +965,7 @@ export function createCore(content: Content): Core {
       freeLeft: 1,
       paidGuesses: 0,
       baseDamage,
+      damageRamp: 0,
       elapsedMs: 0,
       remainingMs: remaining,
       timerStartMs: timerStart,
@@ -983,14 +1001,16 @@ export function createCore(content: Content): Core {
       gauntletTotal: round.gauntletTotal,
     });
 
-    // Reveal foods bought between rounds pay out here, once there is a live
-    // answer to inspect.
-    if (state.pendingReveals?.length) {
-      const queued = state.pendingReveals.slice();
-      state.pendingReveals = [];
-      for (const letter of queued) {
-        hintLetter(rt, letter, round.answer.includes(letter) ? 'present' : 'absent');
-      }
+    // Reveal foods are permanent. Legacy queued reveals are folded into the
+    // permanent list so an old save keeps its hint too.
+    const watched = new Set<string>([
+      ...(state.permanentReveals ?? []),
+      ...(state.pendingReveals ?? []),
+    ]);
+    state.permanentReveals = [...watched];
+    state.pendingReveals = [];
+    for (const letter of watched) {
+      hintLetter(rt, letter, round.answer.includes(letter) ? 'present' : 'absent');
     }
 
     runHook(rt, 'onRoundStart', {
@@ -1093,7 +1113,10 @@ export function createCore(content: Content): Core {
   }
 
   function timeoutDamageFor(state: RunState, round: RoundState): number {
-    return 2 * guessDamageFor(state, round, true) + Math.ceil(state.maxHp * 0.3);
+    return (
+      2 * (guessDamageFor(state, round, true) + round.damageRamp) +
+      Math.ceil(state.maxHp * 0.3)
+    );
   }
 
   function expireRound(rt: Runtime): void {
@@ -1279,20 +1302,29 @@ export function createCore(content: Content): Core {
     if (isOver(state)) return;
 
     // A correct guess never hurts you. A wrong paid guess takes the monster's
-    // fixed hit; repeated mistakes do not make the next hit bigger.
+    // fixed hit plus any Ascension ramp built up by earlier wrong guesses.
     const solved = word === round.answer;
     if (!solved && !guess.free && by === 'player') {
       const boss = round.boss ? bossById.get(round.boss) : undefined;
       if (!boss?.noGuessDamage) {
         round.paidGuesses++;
-        const amount = guessDamageFor(state, round);
-        if (amount > 0) {
-          dealDamage(
-            rt,
-            amount,
-            round.boss ? { kind: 'boss', boss: round.boss } : RULES,
-          );
+        const source = round.boss ? { kind: 'boss' as const, boss: round.boss } : RULES;
+        const base = guessDamageFor(state, round);
+        const ramp = round.damageRamp;
+        if (round.elapsedMs < round.immuneUntilMs) {
+          // A timed shield still eats the encounter's normal hit, but the
+          // Ascension ramp is not free: it lands through the shield.
+          if (base > 0) dealDamage(rt, base, source);
+          if (ramp > 0) {
+            dealDamage(rt, ramp, source, { ignoreTimedImmunity: true });
+          }
+        } else if (base + ramp > 0) {
+          dealDamage(rt, base + ramp, source);
         }
+        // The ramp advances even when armor or a timed shield eats the hit.
+        // That is what stops an opening immunity from making the Ascension
+        // penalty free.
+        round.damageRamp += ascensionRampPerWrong(state.ascension);
       }
     }
 
@@ -1813,7 +1845,7 @@ export function createCore(content: Content): Core {
     const boss = round.boss ? bossById.get(round.boss) : undefined;
     // damageFor describes the hit a wrong guess takes at the round's current
     // progress, so preview the next guess by stepping the counter forward.
-    const rawNext = guessDamageFor(state, round, true);
+    const rawNext = guessDamageFor(state, round, true) + round.damageRamp;
     const timeoutDamage = timeoutDamageFor(state, round);
     const noGuessDamage = Boolean(boss?.noGuessDamage);
 
@@ -2074,12 +2106,10 @@ export function createCore(content: Content): Core {
 
   function newRun(opts: { seed: string; ascension?: number }): StepResult {
     const seed = String(opts.seed || 'blacklist');
-    const ascension = Math.max(0, Math.min(5, Math.floor(opts.ascension ?? 0)));
-    // A1 strips starting armor. A2-A4 each remove 10 HP, add 10% to shop
-    // prices and add 10% to boss damage. A5 adds one final shop increase.
-    const hpPenalty = 10 * Math.min(3, Math.max(0, ascension - 1));
-    const maxHp = Math.max(10, 40 - hpPenalty);
-    const startArmor = ascension >= 1 ? 1 : 5;
+    const ascension = Math.max(0, Math.min(ASCENSION_MAX, Math.floor(opts.ascension ?? 0)));
+    const stats = ascensionStats(ascension);
+    const maxHp = Math.max(10, 40 - stats.hpLoss);
+    const startArmor = stats.armorPenalty ? 1 : 5;
     const state: RunState = {
       version: VERSION,
       seed,
@@ -2105,6 +2135,7 @@ export function createCore(content: Content): Core {
       usedAnswers: [],
       pendingPurge: 0,
       pendingReveals: [],
+      permanentReveals: [],
       phase: 'round',
       stats: {
         rounds: 0,
@@ -2160,7 +2191,7 @@ export function createCore(content: Content): Core {
       const fromVersion = typeof parsed.version === 'number' ? parsed.version : 0;
       state.version = VERSION;
       state.ascension = typeof state.ascension === 'number'
-        ? Math.max(0, Math.min(5, Math.floor(state.ascension)))
+        ? Math.max(0, Math.min(ASCENSION_MAX, Math.floor(state.ascension)))
         : 0;
       // Version 5 gives every run one more slot than it had before, because
       // relics now compete with gear for space.
@@ -2171,6 +2202,10 @@ export function createCore(content: Content): Core {
       }
       state.bonusSolveGold = typeof state.bonusSolveGold === 'number' ? state.bonusSolveGold : 0;
       if (!Array.isArray(state.pendingReveals)) state.pendingReveals = [];
+      if (!Array.isArray(state.permanentReveals)) {
+        state.permanentReveals = state.pendingReveals.slice();
+      }
+      state.pendingReveals = [];
       delete (state as RunState & { blacklistCapacity?: number }).blacklistCapacity;
       // Retired item ids are remapped or dropped so an old save can never
       // reference a definition the current content set no longer ships.
@@ -2206,6 +2241,9 @@ export function createCore(content: Content): Core {
         }
         if (typeof state.round.immuneUntilMs !== 'number') {
           state.round.immuneUntilMs = 0;
+        }
+        if (typeof state.round.damageRamp !== 'number') {
+          state.round.damageRamp = 0;
         }
       }
       // Older saves can still have the retired upgrade offer kind. Drop those

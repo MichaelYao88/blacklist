@@ -29,6 +29,12 @@ import {
   spellIcon,
 } from './icons';
 import { sfx } from './audio';
+import {
+  ASCENSION_MAX,
+  ascensionStats,
+  ascensionSummary,
+  ascensionTimePenaltyMs,
+} from '../core/ascension';
 
 const app = document.getElementById('app');
 if (!app) throw new Error('Missing #app root');
@@ -293,7 +299,7 @@ app.addEventListener('click', (event) => {
       startNewRun();
       break;
     case 'ascension':
-      selectedAscension = Math.max(0, Math.min(5, Number(target.dataset.level) || 0));
+      selectedAscension = Math.max(0, Math.min(ASCENSION_MAX, Number(target.dataset.level) || 0));
       render();
       break;
     case 'help':
@@ -572,22 +578,10 @@ document.addEventListener('pointermove', (event) => {
 window.addEventListener('scroll', hideTip, true);
 window.addEventListener('resize', hideTip);
 
-function ascensionSummary(level: number): string {
-  if (level <= 0) return 'Base difficulty. No Ascension modifiers.';
-  const parts = ['Start with 1 armor instead of 5.'];
-  const hpLoss = 10 * Math.min(3, Math.max(0, level - 1));
-  if (hpLoss > 0) parts.push(`Start with ${Math.max(10, 40 - hpLoss)} max HP.`);
-  const shop = 10 * Math.min(4, Math.max(0, level - 1));
-  if (shop > 0) parts.push(`Shop prices +${shop}%.`);
-  const boss = 10 * Math.min(3, Math.max(0, level - 1));
-  if (boss > 0) parts.push(`Boss damage +${boss}%.`);
-  return parts.join(' ');
-}
-
 function renderTitle(): string {
   const meta = readMeta();
   const saved = hasSave();
-  const unlocked = Math.max(0, Math.min(5, meta.ascension));
+  const unlocked = Math.max(0, Math.min(ASCENSION_MAX, meta.ascension));
   if (selectedAscension > unlocked) selectedAscension = unlocked;
   const metaLine = meta.runs > 0
     ? `<p class="meta-line">${meta.wins} win${meta.wins === 1 ? '' : 's'} · ${meta.runs} run${meta.runs === 1 ? '' : 's'} · furthest Act ${roman(Math.max(1, meta.bestAct))}${unlocked > 0 ? ` · Ascension ${unlocked} unlocked` : ''}</p>`
@@ -663,7 +657,7 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>Items & spells</h3>
-        <p>Items only work while they are <b>equipped</b> in a slot. Extra gear goes to your bag, and shops are where you drag pieces between the bag and your slots. Spells stack: duplicates sit in one pile. <b>Relics</b> are boss prizes, but they use an item slot like any other gear and only work while equipped. Reveals stay marked on the keyboard and in the Revealed panel for the puzzle. Letter-reveal foods queue their hint for the next round.</p>
+        <p>Items only work while they are <b>equipped</b> in a slot. Extra gear goes to your bag, and shops are where you drag pieces between the bag and your slots. Spells stack: duplicates sit in one pile. <b>Relics</b> are boss prizes, but they use an item slot like any other gear and only work while equipped. Reveals stay marked on the keyboard and in the Revealed panel for the puzzle. Letter-reveal foods are permanent: once eaten, that letter is checked every round for the rest of the run.</p>
       </article>
       <article class="rule-card">
         <h3>Bosses</h3>
@@ -671,7 +665,7 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>Ascension</h3>
-        <p>Win a run to unlock <b>Ascension 1</b>. Each level keeps every lower modifier and adds another: <b>−4 starting armor</b>, then <b>−10 max HP</b>, <b>+10% shop prices</b> and <b>+10% boss damage</b> for three levels, then one final <b>+10% shop prices</b>. Pick your level on the title screen.</p>
+        <p>Win a run to unlock <b>Ascension 1</b>. Each level keeps every lower modifier and adds another. A1 makes every wrong guess that is not free add <b>+1 damage</b> to later wrong guesses; three levels shorten every timer by <b>20s</b>; and the old max HP, shop and boss percentage penalties are spread between them. A1's damage ramp returns once more, stacking to <b>+2</b>. Pick your level on the title screen.</p>
       </article>
       <article class="rule-card">
         <h3>The run</h3>
@@ -1296,9 +1290,13 @@ function renderPurgeModal(view: RunView): string {
 function renderBossIntro(view: RunView, phase: Extract<PhaseView, { kind: 'bossIntro' }>): string {
   const boss = BOSS_BY_ID.get(phase.boss);
   if (!boss) return '';
-  const timer = boss.timerMs === null ? 'NO TIMER' : formatTime(boss.timerMs);
-  const bossMult = 1 + 0.1 * Math.min(3, Math.max(0, view.ascension - 1));
-  const scaledDamage = Math.ceil((boss.damage ?? 3) * bossMult);
+  const stats = ascensionStats(view.ascension);
+  const timer = boss.timerMs === null
+    ? 'NO TIMER'
+    : formatTime(Math.max(15_000, boss.timerMs - ascensionTimePenaltyMs(view.ascension)));
+  const scaledDamage = boss.noGuessDamage
+    ? 0
+    : Math.ceil((boss.damage ?? 3) * (1 + 0.1 * stats.bossPctSteps));
   const damage = boss.noGuessDamage
     ? 'NO GUESS DAMAGE'
     : boss.damageLabel

@@ -106,6 +106,8 @@ export interface RoundState {
   freeLeft: number;
   paidGuesses: number;
   baseDamage: number;
+  /** Extra damage added to each later wrong, non-free guess this round. */
+  damageRamp: number;
   elapsedMs: number;
   remainingMs: number | null;
   timerStartMs: number | null;
@@ -392,6 +394,8 @@ export interface RunState {
   pendingPurge: number;
   /** Letter reveals queued outside a round, applied when the next round starts. */
   pendingReveals: Letter[];
+  /** Letters that are re-revealed for every round for the rest of the run. */
+  permanentReveals: Letter[];
   phase: PhaseKind;
   bossIntro?: { boss: BossId };
   round?: RoundState;

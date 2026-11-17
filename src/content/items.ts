@@ -13,7 +13,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'early-bird',
     name: 'Early Bird',
-    description: 'Solve under 30s: gain 2 gold. The reward grows by 1 gold each time this activates.',
+    description: 'Solve under 30s: gain 2 gold. +1 more gold each time this triggers.',
     price: 6,
     kind: 'gear',
     initial: { gold: 2 },
@@ -48,6 +48,17 @@ export const ITEMS: ItemDef[] = [
       onRoundStart: () => [{ type: 'timedImmunity', ms: 10_000 }],
       onGuessScored: (_ctx, p) =>
         p.elapsedMs < 10_000 ? [{ type: 'gold', amount: 1 }] : [],
+    },
+  }),
+  defineItem({
+    id: 'daredevil',
+    name: 'Daredevil',
+    description: 'Rounds start 20s shorter. Every guess: +1 gold.',
+    price: 10,
+    kind: 'gear',
+    on: {
+      onRoundStart: () => [{ type: 'addTime', ms: -20_000 }],
+      onGuessScored: () => [{ type: 'gold', amount: 1 }],
     },
   }),
   defineItem({
@@ -145,7 +156,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'compound-interest',
     name: 'Compound Interest',
-    description: 'On solve: gain 10% of your current gold (up to 10).',
+    description: 'On solve: gain 10% of your current gold, up to 10 gold.',
     price: 10,
     kind: 'gear',
     on: {
@@ -181,6 +192,17 @@ export const ITEMS: ItemDef[] = [
     on: { onRoundEnd: () => [{ type: 'heal', amount: 2 }] },
   }),
   defineItem({
+    id: 'placebo',
+    name: 'Placebo',
+    description: 'Every guess you make: heal 1 HP.',
+    price: 10,
+    kind: 'gear',
+    on: {
+      onGuessScored: (_ctx, p) =>
+        p.guess.by === 'player' ? [{ type: 'heal', amount: 1 }] : [],
+    },
+  }),
+  defineItem({
     id: 'siphon',
     name: 'Siphon',
     description: 'Casting a spell heals 1 HP.',
@@ -199,7 +221,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'spellbook',
     name: 'Spellbook',
-    description: 'Spell cast: 1 gold. +1 each payout.',
+    description: 'Spell cast: gain 1 gold. +1 more gold each time this pays out.',
     price: 8,
     kind: 'gear',
     initial: { gold: 1 },
@@ -232,7 +254,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'necronomicon',
     name: 'Necronomicon',
-    description: 'Round start: reveal 2 letters. Every 5 reveals: Omen.',
+    description: 'Round start: reveal 2 letters. Every 5 reveals: +1 Omen.',
     price: 10,
     kind: 'gear',
     initial: { reveals: 0 },
@@ -251,7 +273,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'piggy-bank',
     name: 'Piggy Bank',
-    description: 'Sells for more each round you hold it.',
+    description: 'Sells for 5 gold. +3 more gold per round held.',
     price: 7,
     kind: 'gear',
     initial: { held: 0 },
@@ -274,7 +296,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'tally',
     name: 'Tally',
-    description: 'Every 4 guesses: +1 gold. Cumulative.',
+    description: 'Every 4 guesses: +1 gold.',
     price: 7,
     kind: 'gear',
     initial: { guesses: 0 },
@@ -385,7 +407,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'spellhoarder',
     name: 'Spellhoarder',
-    description: 'Every 3rd spell cast: random spell.',
+    description: 'Every 3rd spell cast: +1 random spell.',
     price: 9,
     kind: 'gear',
     initial: { casts: 0 },
@@ -515,7 +537,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'sticky-fingers',
     name: 'Sticky Fingers',
-    description: 'Every 3rd shop purchase: random spell.',
+    description: 'Every 3rd shop purchase: +1 random spell.',
     price: 9,
     kind: 'gear',
     initial: { buys: 0 },
@@ -591,7 +613,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'bulwark',
     name: 'Bulwark',
-    description: 'Every 5 damage blocked by armor or immunity: gain a random spell.',
+    description: 'Every 5 damage blocked: +1 random spell.',
     price: 10,
     kind: 'gear',
     initial: { blocked: 0 },
@@ -640,7 +662,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'spellplate',
     name: 'Spellplate',
-    description: 'Cast a spell: +1 max armor. Cumulative.',
+    description: 'Cast a spell: +1 max armor.',
     price: 18,
     kind: 'gear',
     rarity: 'rare',
@@ -649,12 +671,21 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'mending-plate',
     name: 'Mending Plate',
-    description: 'Whenever you are healed: +1 max armor.',
+    description: 'Gives +1 armor now. +1 more max armor per 4 HP healed.',
     price: 20,
     kind: 'gear',
     rarity: 'rare',
+    initial: { healed: 0 },
+    onAcquire: () => [{ type: 'maxArmor', delta: 1 }],
     on: {
-      onHeal: () => [{ type: 'maxArmor', delta: 1 }],
+      onHeal: (ctx, p) => {
+        const total = ctx.self.data.healed + p.amount;
+        const armor = Math.floor(total / 4);
+        return [
+          { type: 'setItemData', stat: 'healed', value: total % 4 },
+          ...Array.from({ length: armor }, () => ({ type: 'maxArmor' as const, delta: 1 })),
+        ];
+      },
     },
   }),
   defineItem({
@@ -677,9 +708,27 @@ export const ITEMS: ItemDef[] = [
     },
   }),
   defineItem({
+    id: 'life-savings',
+    name: 'Life Savings',
+    description: 'Every 6 gold spent: +1 max HP.',
+    price: 9,
+    kind: 'gear',
+    initial: { spent: 0 },
+    on: {
+      onGoldSpent: (ctx, p) => {
+        const total = ctx.self.data.spent + p.amount;
+        const growth = Math.floor(total / 6);
+        return [
+          { type: 'setItemData', stat: 'spent', value: total % 6 },
+          ...Array.from({ length: growth }, () => ({ type: 'maxHp' as const, delta: 1 })),
+        ];
+      },
+    },
+  }),
+  defineItem({
     id: 'tithe-box',
     name: 'Tithe Box',
-    description: 'Every 10 gold spent: gain a Heal spell.',
+    description: 'Every 10 gold spent: +1 Heal spell.',
     price: 9,
     kind: 'gear',
     initial: { spent: 0 },
@@ -697,7 +746,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'growth-chart',
     name: 'Growth Chart',
-    description: 'Every 5 max HP gained: gain Time Warp.',
+    description: 'Every 5 max HP gained: +1 Time Warp.',
     price: 9,
     kind: 'gear',
     initial: { grown: 0 },
@@ -948,7 +997,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'warding-idol',
     name: 'Warding Idol',
-    description: 'Every 10 armor spent blocking damage: gain a random spell.',
+    description: 'Every 10 damage blocked by armor: +1 random spell.',
     price: 20,
     kind: 'gear',
     rarity: 'rare',
@@ -968,7 +1017,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'loaded-dice',
     name: 'Loaded Dice',
-    description: 'Every guess has a 25% chance to be free.',
+    description: 'Every guess: 25% chance to be free.',
     price: 20,
     kind: 'gear',
     rarity: 'rare',

@@ -23,13 +23,13 @@ The first word of every round is added to the blacklist. It has no limit, nothin
 - Spells stack by type and come from food, item triggers and the shop wildcard slot
 - Happenings with visible odds and persistent consequences
 - Short item, spell and offer text with hover tooltips for keywords like armor, reveal, ruled out, free guesses, blacklist, relic and timeout
-- Revealed letters stay marked on the keyboard and in a Revealed panel for the puzzle; random reveals lean toward letters that are not in the answer
+- Revealed letters stay marked on the keyboard and in a Revealed panel for the puzzle; random reveals lean toward letters that are not in the answer; letter-reveal foods are permanent for the run
 - Every finished encounter pays gold; solves offer coins, usually a spell, and only rarely gear or a meal
 - **Compound Interest** pays 10% of current gold on every solve; **Midas Touch** has a 20% chance to double any gold gain
 - Boss encounters open with a full-screen intro, a plain-language rules list and a continue gate
 - Bosses award one of three rare relics with passive effects; relics consume an item slot and never appear in shops
 - Defeat reveals the answer you missed (all of them, on The Gauntlet)
-- 74 items (61 shop items + 13 rare relics), 7 spells, 18 foods and 12 happenings
+- 77 items (64 shop items + 13 rare relics), 7 spells, 18 foods and 12 happenings
 - Purge is an event (The Redaction), not a spell
 - Eight bosses:
   - **The Editor** — hides the last three tiles of each guess
@@ -40,7 +40,7 @@ The first word of every round is added to the blacklist. It has no limit, nothin
   - **Monochrome** — every present letter is an ambiguous silver tile, never positioned
   - **The Horde** — each wrong guess adds a body that covers one more tile from the right
   - **The Gauntlet** — three puzzles, one shared 150-second clock, no per-guess damage
-- Ascension 1–5 unlock one level at a time after a victory; modifiers stack and are chosen on the title screen
+- Ascension 1–9 unlock one level at a time after a victory; modifiers stack and are chosen on the title screen
 - One exact-state autosave slot. Defeat clears it. Victory clears it and updates meta stats.
 - Compact battle rail on the left: round timer with a hover tooltip for timeout damage, a wrong-guess damage chip, a side-view mini arena with the runner facing the act's monster (or boss), player HP and armor
 - Damage numbers slam into the centre of the screen as `N damage`, with a block message when armor or immunity eats the hit
@@ -64,7 +64,7 @@ Not in this version: daily seeds, meta unlocks beyond win/run counters and ascen
 | Normal timer | `max(45s, 150s − 6s × roundsSeen) + timeBonus` |
 | Boss timer | none, except The Gauntlet |
 | Base damage | `2 + 2 × act + roundSlot + ⌊roundsSeen / 3⌋` (roundSlot is 0, 1 or 2 within the act) |
-| Paid guess damage | the encounter's fixed hit, only on a wrong guess; it does not climb per guess |
+| Paid guess damage | the encounter's fixed hit, plus the Ascension damage ramp; it does not climb on its own |
 | Boss damage | fixed per boss (`5–10`), scaled by the active Ascension bonus |
 | Timeout damage | `2 × guess hit + ceil(maxHp × 0.3)`, bypasses armor, ends the round |
 | Armor | a pool that soaks damage point-for-point before HP; refills each round |
@@ -80,13 +80,17 @@ Ascension is unlocked after a victory. Each level is cumulative:
 
 | Level | Modifier |
 |---|---|
-| 1 | Start with 1 armor instead of 5 |
-| 2 | −10 max HP, shop prices +10%, boss damage +10% |
+| 1 | Wrong non-free guesses add +1 damage to later wrong guesses |
+| 2 | Rounds start 20s shorter; start with 1 armor instead of 5 |
 | 3 | −10 max HP, shop prices +10%, boss damage +10% |
-| 4 | −10 max HP, shop prices +10%, boss damage +10% |
-| 5 | Shop prices +10% |
+| 4 | Rounds start 20s shorter |
+| 5 | Wrong non-free guesses add +1 more damage (ramp +2) |
+| 6 | −10 max HP, shop prices +10%, boss damage +10% |
+| 7 | Rounds start 20s shorter |
+| 8 | −10 max HP, shop prices +10%, boss damage +10% |
+| 9 | Shop prices +10% |
 
-So A5 starts with 10 max HP, 1 armor, shop prices +40% and boss damage +30%. Beating level N unlocks N+1, up to A5.
+So A9 starts with 10 max HP, 1 armor, rounds 60s shorter, shop prices +40%, boss damage +30% and a +2 damage ramp per wrong non-free guess. Beating level N unlocks N+1, up to A9.
 
 The answer pool excludes the blacklist, already-used answers and purged letters.
 

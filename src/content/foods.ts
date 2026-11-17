@@ -132,25 +132,25 @@ export const FOODS: FoodDef[] = [
   }),
 
   // Letter reveals are too narrow for a gear slot, so they are sold as
-  // expensive one-shot meals. Their reveal lands when the next round starts.
+  // expensive meals. Once eaten, the reveal is permanent for the rest of the run.
   defineFood({
     id: 'b-file',
     name: 'B-File',
-    description: 'Next round: reveal whether the answer has B. No slot.',
+    description: 'Every round: reveal whether the answer has B. No slot.',
     price: 10,
     effects: [{ type: 'revealLetter', letter: 'b' }],
   }),
   defineFood({
     id: 'x-ray',
     name: 'X-Ray',
-    description: 'Next round: reveal whether the answer has X. No slot.',
+    description: 'Every round: reveal whether the answer has X. No slot.',
     price: 12,
     effects: [{ type: 'revealLetter', letter: 'x' }],
   }),
   defineFood({
     id: 'q-tip',
     name: 'Q-Tip',
-    description: 'Next round: reveal whether the answer has Q. No slot.',
+    description: 'Every round: reveal whether the answer has Q. No slot.',
     price: 12,
     effects: [{ type: 'revealLetter', letter: 'q' }],
   }),

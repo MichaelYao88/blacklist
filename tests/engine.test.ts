@@ -54,29 +54,41 @@ describe('new run', () => {
 describe('ascension', () => {
   const runAt = (ascension: number) => game.newRun({ seed: `asc-${ascension}`, ascension });
 
-  it('A1 strips starting armor and leaves the rest of the base run alone', () => {
+  it('starts A1 with the wrong-guess damage ramp and no armor penalty', () => {
     const { state } = runAt(1);
     expect(state.ascension).toBe(1);
     expect(state.hp).toBe(40);
     expect(state.maxHp).toBe(40);
-    expect(state.armor).toBe(1);
-    expect(state.maxArmor).toBe(1);
+    expect(state.armor).toBe(5);
+    expect(state.maxArmor).toBe(5);
     expect(state.gold).toBe(10);
     expect(state.slots).toBe(5);
   });
 
-  it('stacks HP losses for A2, A3 and A4, then adds a final shop increase at A5', () => {
-    expect(runAt(2).state.maxHp).toBe(30);
-    expect(runAt(3).state.maxHp).toBe(20);
-    expect(runAt(4).state.maxHp).toBe(10);
-    expect(runAt(5).state.maxHp).toBe(10);
-    for (const level of [1, 2, 3, 4, 5]) {
+  it('spreads HP losses and shop/boss scaling through A3, A6 and A8', () => {
+    expect(runAt(2).state.maxHp).toBe(40);
+    expect(runAt(3).state.maxHp).toBe(30);
+    expect(runAt(5).state.maxHp).toBe(30);
+    expect(runAt(6).state.maxHp).toBe(20);
+    expect(runAt(7).state.maxHp).toBe(20);
+    expect(runAt(8).state.maxHp).toBe(10);
+    expect(runAt(9).state.maxHp).toBe(10);
+    for (const level of [2, 3, 4, 5, 6, 7, 8, 9]) {
       expect(runAt(level).state.armor).toBe(1);
     }
   });
 
+  it('shortens the clock by 20s on each timer level', () => {
+    const timerAt = (level: number) => runAt(level).state.round?.timerStartMs;
+    expect(timerAt(1)).toBe(150_000);
+    expect(timerAt(2)).toBe(130_000);
+    expect(timerAt(4)).toBe(110_000);
+    expect(timerAt(7)).toBe(90_000);
+    expect(timerAt(9)).toBe(90_000);
+  });
+
   it('raises shop prices and reroll costs', () => {
-    const begun = runAt(2);
+    const begun = runAt(3);
     const state = begun.state;
     state.nodeIndex = 0;
     state.nodes[1] = { kind: 'shop' };
@@ -97,7 +109,7 @@ describe('ascension', () => {
     }
   });
 
-  it('raises boss damage by 10% per level, capped at A4', () => {
+  it('raises boss damage by 10% per HP-scaling level', () => {
     const bossRound = (ascension: number) => {
       const { state } = runAt(ascension);
       state.nodeIndex = 4;
@@ -109,10 +121,47 @@ describe('ascension', () => {
       return started.state.round?.baseDamage;
     };
     expect(bossRound(1)).toBe(5);
-    expect(bossRound(2)).toBe(6);
     expect(bossRound(3)).toBe(6);
-    expect(bossRound(4)).toBe(7);
-    expect(bossRound(5)).toBe(7);
+    expect(bossRound(6)).toBe(6);
+    expect(bossRound(8)).toBe(7);
+    expect(bossRound(9)).toBe(7);
+  });
+
+  it('ramps damage only on wrong non-free guesses', () => {
+    const { state } = runAt(1);
+    setAnswer(state, 'crane');
+    state.round!.baseDamage = 5;
+    state.round!.freeLeft = 1;
+    state.armor = 0;
+
+    const free = act(state, { type: 'guess', word: 'slate' });
+    expect(free.state.hp).toBe(40);
+    expect(free.state.round?.damageRamp).toBe(0);
+
+    free.state.round!.freeLeft = 0;
+    const firstPaid = act(free.state, { type: 'guess', word: 'pious' });
+    expect(firstPaid.state.hp).toBe(35);
+    expect(firstPaid.state.round?.damageRamp).toBe(1);
+
+    const secondPaid = act(firstPaid.state, { type: 'guess', word: 'tiger' });
+    expect(secondPaid.state.hp).toBe(29);
+    expect(secondPaid.state.round?.damageRamp).toBe(2);
+  });
+
+  it('stacks the ramp again at A5', () => {
+    const { state } = runAt(5);
+    setAnswer(state, 'crane');
+    state.round!.baseDamage = 5;
+    state.round!.freeLeft = 0;
+    state.armor = 0;
+
+    const first = act(state, { type: 'guess', word: 'slate' });
+    expect(first.state.hp).toBe(25);
+    expect(first.state.round?.damageRamp).toBe(2);
+
+    const second = act(first.state, { type: 'guess', word: 'pious' });
+    expect(second.state.hp).toBe(18);
+    expect(second.state.round?.damageRamp).toBe(4);
   });
 });
 
@@ -866,6 +915,35 @@ describe('opening and guess engines', () => {
     expect(guess.state.round?.immuneUntilMs).toBe(12_000);
   });
 
+  it('still ramps damage when Head Start blocks the opening hit', () => {
+    const { state } = game.newRun({ seed: 'ramp-immunity', ascension: 1 });
+    setAnswer(state, 'crane');
+    state.nodeIndex = 0;
+    state.nodes[1] = { kind: 'round' };
+    state.phase = 'shop';
+    state.items.push({ instance: 'i-head', id: 'head-start', data: {}, equipped: true });
+
+    const next = act(state, { type: 'continue' });
+    expect(next.state.round?.immuneUntilMs).toBe(12_000);
+    setAnswer(next.state, 'crane');
+    next.state.round!.freeLeft = 0;
+    next.state.round!.baseDamage = 5;
+    next.state.round!.elapsedMs = 0;
+    next.state.armor = 0;
+
+    const first = act(next.state, { type: 'guess', word: 'slate' });
+    expect(first.state.hp).toBe(40);
+    expect(first.state.round?.damageRamp).toBe(1);
+
+    const second = act(first.state, { type: 'guess', word: 'pious' });
+    expect(second.state.hp).toBe(39);
+    expect(second.state.round?.damageRamp).toBe(2);
+
+    second.state.round!.elapsedMs = 20_000;
+    const third = act(second.state, { type: 'guess', word: 'tiger' });
+    expect(third.state.hp).toBe(32);
+  });
+
   it('pays Quickdraw for a guess in the opening window', () => {
     const { state } = start();
     setAnswer(state, 'crane');
@@ -1038,6 +1116,136 @@ describe('gold engines and relic slots', () => {
     expect(solved.state.gold).toBe(20);
     expect(eventTypes(solved.events)).toContain('message');
     expect(solved.state.stats.goldEarned).toBe(10);
+  });
+});
+
+describe('new item batch', () => {
+  it('spells out how much Piggy Bank grows each round held', () => {
+    const def = ITEM_BY_ID.get('piggy-bank');
+    expect(def?.description).toContain('+3 more gold per round');
+    const { state } = start();
+    const item = { instance: 'i-pig', id: 'piggy-bank', data: { held: 3 }, equipped: true };
+    expect(def?.sellValue?.({ state, self: item })).toBe(14);
+  });
+
+  it('gives Daredevil a shorter clock and gold for every guess', () => {
+    const nextRound = (withItem: boolean) => {
+      const begun = start('daredevil-seed');
+      if (withItem) {
+        begun.state.items.push({
+          instance: 'i-devil',
+          id: 'daredevil',
+          data: {},
+          equipped: true,
+        });
+      }
+      begun.state.nodeIndex = 0;
+      begun.state.nodes[1] = { kind: 'round' };
+      begun.state.phase = 'shop';
+      return act(begun.state, { type: 'continue' }).state;
+    };
+
+    const control = nextRound(false);
+    const daredevil = nextRound(true);
+    expect((control.round?.remainingMs ?? 0) - (daredevil.round?.remainingMs ?? 0)).toBe(20_000);
+
+    setAnswer(daredevil, 'crane');
+    daredevil.round!.freeLeft = 0;
+    daredevil.round!.baseDamage = 0;
+    daredevil.armor = 0;
+    const goldBefore = daredevil.gold;
+    const guess = act(daredevil, { type: 'guess', word: 'slate' });
+    expect(guess.state.gold).toBe(goldBefore + 1);
+  });
+
+  it('turns every 6 gold spent into +1 max HP', () => {
+    const { state } = start();
+    state.gold = 20;
+    state.items.push({
+      instance: 'i-savings',
+      id: 'life-savings',
+      data: { spent: 0 },
+      equipped: true,
+    });
+    state.phase = 'shop';
+    state.shop = {
+      offers: [{ id: 'o0', kind: 'eat', def: 'snack', price: 6 }],
+      rerollCost: 2,
+      rerolls: 0,
+    };
+
+    const bought = act(state, { type: 'buy', offerId: 'o0' });
+    expect(bought.state.maxHp).toBe(41);
+    expect(bought.state.items[0].data.spent).toBe(0);
+  });
+
+  it('heals 1 HP for every guess the player makes', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.hp = 30;
+    state.round!.freeLeft = 1;
+    state.round!.baseDamage = 0;
+    state.armor = 0;
+    state.items.push({ instance: 'i-placebo', id: 'placebo', data: {}, equipped: true });
+
+    const first = act(state, { type: 'guess', word: 'slate' });
+    expect(first.state.hp).toBe(31);
+
+    first.state.round!.freeLeft = 0;
+    const second = act(first.state, { type: 'guess', word: 'pious' });
+    expect(second.state.hp).toBe(32);
+  });
+
+  it('gives Mending Plate +1 armor now, then +1 max armor per 4 HP healed', () => {
+    const { state } = start();
+    state.gold = 20;
+    state.phase = 'shop';
+    state.shop = {
+      offers: [{ id: 'o0', kind: 'item', def: 'mending-plate', price: 20 }],
+      rerollCost: 2,
+      rerolls: 0,
+    };
+
+    const bought = act(state, { type: 'buy', offerId: 'o0' });
+    expect(bought.state.maxArmor).toBe(6);
+    expect(bought.state.armor).toBe(6);
+
+    bought.state.hp = 32;
+    bought.state.spells.push({ instance: 's-heal', id: 'heal' });
+    const healed = act(bought.state, { type: 'castSpell', instance: 's-heal' });
+    expect(healed.state.maxArmor).toBe(7);
+    expect(healed.state.armor).toBe(7);
+  });
+
+  it('keeps letter-reveal foods permanent for every later round', () => {
+    const { state } = start('reveal-food');
+    expect(FOOD_BY_ID.get('b-file')?.description).toContain('Every round');
+    state.gold = 20;
+    state.phase = 'shop';
+    state.shop = {
+      offers: [{ id: 'o0', kind: 'eat', def: 'b-file', price: 10 }],
+      rerollCost: 2,
+      rerolls: 0,
+    };
+
+    const bought = act(state, { type: 'buy', offerId: 'o0' });
+    expect(bought.state.permanentReveals).toContain('b');
+
+    bought.state.nodeIndex = 0;
+    bought.state.nodes[1] = { kind: 'round' };
+    const first = act(bought.state, { type: 'continue' });
+    expect(first.state.round?.hints.b).toBe(
+      first.state.round?.answer.includes('b') ? 'present' : 'absent',
+    );
+
+    first.state.phase = 'shop';
+    first.state.shop = { offers: [], rerollCost: 2, rerolls: 0 };
+    first.state.nodeIndex = 1;
+    first.state.nodes[2] = { kind: 'round' };
+    const second = act(first.state, { type: 'continue' });
+    expect(second.state.round?.hints.b).toBe(
+      second.state.round?.answer.includes('b') ? 'present' : 'absent',
+    );
   });
 });
 

@@ -1,4 +1,5 @@
 import type { SaveStore } from '../core/host';
+import { ASCENSION_MAX } from '../core/ascension';
 
 const RUN_KEY = 'blacklist.run.v1';
 const META_KEY = 'blacklist.meta.v1';
@@ -7,7 +8,7 @@ export interface Meta {
   runs: number;
   wins: number;
   bestAct: number;
-  /** Highest ascension level unlocked. Beating level N unlocks N+1, up to 5. */
+  /** Highest ascension level unlocked. Beating level N unlocks N+1. */
   ascension: number;
 }
 
@@ -56,7 +57,7 @@ export function readMeta(): Meta {
       runs: Number(parsed.runs) || 0,
       wins: Number(parsed.wins) || 0,
       bestAct: Number(parsed.bestAct) || 0,
-      ascension: Math.max(0, Math.min(5, Number(parsed.ascension) || 0)),
+      ascension: Math.max(0, Math.min(ASCENSION_MAX, Number(parsed.ascension) || 0)),
     };
   } catch {
     return { ...DEFAULT_META };
@@ -85,7 +86,7 @@ export function recordOutcome(
   const meta = readMeta();
   if (result === 'victory') {
     meta.wins += 1;
-    meta.ascension = Math.max(meta.ascension, Math.min(5, ascension + 1));
+    meta.ascension = Math.max(meta.ascension, Math.min(ASCENSION_MAX, ascension + 1));
   }
   meta.bestAct = Math.max(meta.bestAct, act + 1);
   writeMeta(meta);
