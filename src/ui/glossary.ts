@@ -86,7 +86,7 @@ const ENTRIES: GlossaryEntry[] = [
   },
   {
     pattern: /\bHeal\b/g,
-    tip: 'Spell: restore half of your missing HP.',
+    tip: 'Spell: restore half of your max HP.',
   },
   {
     pattern: /\bRestore\b/g,

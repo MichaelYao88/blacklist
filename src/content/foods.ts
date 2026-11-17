@@ -115,7 +115,7 @@ export const FOODS: FoodDef[] = [
     id: 'plating',
     name: 'Plating',
     description: '+2 max armor. No slot.',
-    price: 6,
+    price: 8,
     effects: [{ type: 'maxArmor', delta: 2 }],
   }),
   defineFood({

@@ -251,9 +251,9 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'relic',
         label: 'Buy a rare relic',
-        description: '60 gold. If you cannot pay, he takes 60% of your gold.',
-        costGold: 60,
-        fallbackPct: 0.6,
+        description: '12 gold. If you cannot pay, lose 2 max armor.',
+        costGold: 12,
+        fallbackMaxArmor: 2,
         outcomes: [{
           chancePct: 100,
           text: 'He slides a relic across the counter.',
@@ -263,9 +263,9 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'remove',
         label: 'Remove a curse',
-        description: '90 gold. If you cannot pay, he takes 90% of your gold.',
-        costGold: 90,
-        fallbackPct: 0.9,
+        description: '15 gold. If you cannot pay, lose 2 max armor.',
+        costGold: 15,
+        fallbackMaxArmor: 2,
         outcomes: [{
           chancePct: 100,
           text: 'He uncorks one burden and lets it evaporate.',

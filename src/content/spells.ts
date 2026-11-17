@@ -20,10 +20,10 @@ export const SPELLS: SpellDef[] = [
   defineSpell({
     id: 'heal',
     name: 'Heal',
-    description: 'Heal half of your missing HP.',
+    description: 'Heal half of your max HP.',
     price: 6,
     usable: 'any',
-    cast: ({ state }) => [{ type: 'heal', amount: Math.ceil((state.maxHp - state.hp) / 2) }],
+    cast: ({ state }) => [{ type: 'heal', amount: Math.ceil(state.maxHp / 2) }],
   }),
   defineSpell({
     id: 'restore',

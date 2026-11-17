@@ -5,14 +5,12 @@ import type {
   GameEvent,
   RunNode,
   RunState,
-  RunView,
   ShopState,
   StepResult,
 } from '../src/game';
 import {
   CONTENT,
   CURSE_BY_ID,
-  CURSES,
   FOOD_BY_ID,
   HAPPENING_BY_ID,
   ITEM_BY_ID,
@@ -72,33 +70,13 @@ function nextHappening(state: RunState): StepResult {
   return act(state, { type: 'continue' });
 }
 
-/** Resolve any starting drafts, then open the first curse node of the run. */function firstDraft(
-  seed: string,
-  ascension = 0,
-): Extract<RunView['phase'], { kind: 'curse' }> {
-  let current = start(seed, ascension).state;
-  while (current.phase === 'curse') {
-    const phase = game.view(current).phase;
-    if (phase.kind !== 'curse') break;
-    current = act(current, { type: 'chooseCurse', curseId: phase.options[0] }).state;
-  }
-  const curseIndex = nodeAt(current, (node) => node.kind === 'curse');
-  current.nodeIndex = curseIndex - 1;
-  current.phase = 'shop';
-  current.shop = shopState();
-  const draft = act(current, { type: 'continue' });
-  const phase = game.view(draft.state).phase;
-  if (phase.kind !== 'curse') throw new Error('expected curse phase');
-  return phase;
-}
-
 describe('cursed run setup', () => {
   it('starts at level 1 with no clock, blacklist or curses', () => {
     const { state, events } = start();
     expect(state.phase).toBe('round');
     expect(state.level).toBe(1);
-    expect(state.hp).toBe(40);
-    expect(state.maxHp).toBe(40);
+    expect(state.hp).toBe(16);
+    expect(state.maxHp).toBe(16);
     expect(state.armor).toBe(2);
     expect(state.gold).toBe(10);
     expect(state.slots).toBe(5);
@@ -164,35 +142,6 @@ describe('curse drafting', () => {
     const third = act(second.state, { type: 'chooseCurse', curseId: next.options[0] });
     expect(third.state.pendingStartingCurses).toBe(0);
     expect(third.state.phase).toBe('round');
-  });
-
-  it('forces a vision/blacklist curse into one side of the first base-run draft', () => {
-    const sightIds = new Set(
-      CURSES.filter((curse) => curse.tags.includes('vision') || curse.tags.includes('list'))
-        .map((curse) => curse.id),
-    );
-    let clockSecond = 0;
-    for (let index = 0; index < 80; index++) {
-      const phase = firstDraft(`first-draft-${index}`, 0);
-      expect(sightIds.has(phase.options[0]), phase.options.join(',')).toBe(true);
-      expect(phase.options[1]).not.toBe(phase.options[0]);
-      if (phase.options[1] === 'clock') clockSecond += 1;
-    }
-    // The Clock has triple weight in the wildcard slot.
-    expect(clockSecond).toBeGreaterThan(5);
-  });
-
-  it('drops the first-draft rules in Ascension', () => {
-    const sightIds = new Set(
-      CURSES.filter((curse) => curse.tags.includes('vision') || curse.tags.includes('list'))
-        .map((curse) => curse.id),
-    );
-    let offGroup = 0;
-    for (let index = 0; index < 40; index++) {
-      const phase = firstDraft(`asc-first-draft-${index}`, 2);
-      if (!sightIds.has(phase.options[0])) offGroup += 1;
-    }
-    expect(offGroup).toBeGreaterThan(0);
   });
 });
 
@@ -272,36 +221,30 @@ describe('blacklist curse', () => {
 });
 
 describe('damage and curses', () => {
-  it('uses level-scaled base damage and Heavy Hand doubles per stack', () => {
+  it('base damage is 3 plus curse stacks, and Heavy Hand doubles per stack', () => {
     const { state } = start();
     expect(state.round?.baseDamage).toBe(3);
     state.curses.push({ id: 'heavy-hand', stacks: 2 });
     const next = nextRound(state);
-    expect(next.state.round?.baseDamage).toBe(12);
+    expect(next.state.round?.baseDamage).toBe(20);
   });
 
-  it('raises base damage by 1 every 7 levels', () => {
-    const seven = start('level-7');
-    seven.state.level = 6;
-    expect(nextRound(seven.state).state.round?.baseDamage).toBe(3);
-
-    const eight = start('level-8');
-    eight.state.level = 7;
-    expect(nextRound(eight.state).state.round?.baseDamage).toBe(4);
-
-    const fifteen = start('level-15');
-    fifteen.state.level = 14;
-    expect(nextRound(fifteen.state).state.round?.baseDamage).toBe(5);
+  it('raises base damage by 1 for every curse stack', () => {
+    const { state } = start('curse-damage');
+    state.curses.push({ id: 'censor', stacks: 1 });
+    state.curses.push({ id: 'clock', stacks: 1 });
+    expect(nextRound(state).state.round?.baseDamage).toBe(5);
   });
 
   it('Porcupine counts greens in the latest guess', () => {
     const { state } = start('porcupine');
-    setAnswer(state, 'crane');
     state.curses.push({ id: 'porcupine', stacks: 1 });
-    state.round!.freeLeft = 0;
-    state.armor = 0;
-    const guess = act(state, { type: 'guess', word: 'slate' });
-    expect(guess.state.hp).toBe(33);
+    const next = nextRound(state);
+    setAnswer(next.state, 'crane');
+    next.state.round!.freeLeft = 0;
+    next.state.armor = 0;
+    const guess = act(next.state, { type: 'guess', word: 'slate' });
+    expect(guess.state.hp).toBe(8);
   });
 
   it('Clumsy does not stack', () => {
@@ -344,7 +287,7 @@ describe('timer curses', () => {
     const cast = act(state, { type: 'castSpell', instance: 's-freeze' });
     expect(cast.state.round?.frozenUntilGuess).toBe(false);
     const guess = act(cast.state, { type: 'guess', word: 'tiger' });
-    expect(guess.state.hp).toBe(40);
+    expect(guess.state.hp).toBe(16);
     expect(guess.state.round?.guesses.at(-1)?.free).toBe(true);
   });
 
@@ -427,7 +370,7 @@ describe('shop curses', () => {
     expect(sawUnlocked).toBe(true);
   });
 
-  it('the Curse Broker accepts a percentage when you cannot pay full price', () => {
+  it('the Curse Broker charges 12 gold for a relic', () => {
     const { state } = start();
     state.curses.push({ id: 'censor', stacks: 1 });
     state.phase = 'happening';
@@ -439,6 +382,19 @@ describe('shop curses', () => {
     expect(bought.state.items.some((item) => ITEM_BY_ID.get(item.id)?.rarity === 'rare')).toBe(true);
   });
 
+  it('the Curse Broker takes 2 max armor when you cannot pay', () => {
+    const { state } = start();
+    state.curses.push({ id: 'censor', stacks: 1 });
+    state.phase = 'happening';
+    state.happening = { id: 'curse-broker', options: [] };
+    state.gold = 5;
+
+    const bought = act(state, { type: 'choose', optionId: 'relic' });
+    expect(bought.state.gold).toBe(5);
+    expect(bought.state.maxArmor).toBe(0);
+    expect(bought.state.items.some((item) => ITEM_BY_ID.get(item.id)?.rarity === 'rare')).toBe(true);
+  });
+
   it('the Curse Broker can remove a chosen curse', () => {
     const { state } = start();
     state.curses.push({ id: 'censor', stacks: 1 });
@@ -447,6 +403,7 @@ describe('shop curses', () => {
     state.gold = 200;
 
     const bought = act(state, { type: 'choose', optionId: 'remove' });
+    expect(bought.state.gold).toBe(185);
     expect(bought.state.pendingCurseRemoval).toBe(1);
     const removed = act(bought.state, { type: 'removeCurse', curseId: 'censor' });
     expect(removed.state.curses).toEqual([]);
@@ -494,16 +451,9 @@ describe('curse-triggered items', () => {
       { instance: 'i-boss-aegis', id: 'boss-aegis', data: {}, equipped: true },
       { instance: 'i-trophy-room', id: 'trophy-room', data: {}, equipped: true },
     );
-    const curseIndex = nodeAt(state, (node) => node.kind === 'curse');
-    state.nodeIndex = curseIndex - 1;
-    state.phase = 'shop';
-    state.shop = shopState();
-    const draft = act(state, { type: 'continue' });
-    const phase = game.view(draft.state).phase;
-    if (phase.kind !== 'curse') throw new Error('expected curse phase');
-
-    // The first option is always a vision/list curse, so it cannot alter slots.
-    const chosen = act(draft.state, { type: 'chooseCurse', curseId: phase.options[0] });
+    state.curse = { options: ['censor'], starting: false };
+    state.phase = 'curse';
+    const chosen = act(state, { type: 'chooseCurse', curseId: 'censor' });
     expect(chosen.state.maxArmor).toBe(7);
     expect(chosen.state.slots).toBe(6);
     expect(chosen.state.spells).toHaveLength(1);
@@ -539,7 +489,7 @@ describe('item and food batch', () => {
     const guess = next.state.round?.guesses.find((entry) => entry.word === 'eieio');
     expect(guess).toBeDefined();
     expect(guess?.free).toBe(true);
-    expect(next.state.hp).toBe(40);
+    expect(next.state.hp).toBe(16);
     expect(ITEM_BY_ID.get('old-mcdonald')?.rarity).toBe('rare');
     expect(ITEM_BY_ID.get('old-mcdonald')?.price).toBe(24);
   });
@@ -626,19 +576,19 @@ describe('new item and event batch', () => {
     bloom.state.items.push({ instance: 'i-bloom', id: 'bloom', data: { hp: 5 }, equipped: true });
     setAnswer(bloom.state, 'crane');
     const grown = act(bloom.state, { type: 'guess', word: 'crane' });
-    expect(grown.state.maxHp).toBe(45);
+    expect(grown.state.maxHp).toBe(21);
     expect(grown.state.items.find((item) => item.id === 'bloom')?.data.hp).toBe(6);
     const bloomNext = nextRound(grown.state);
     setAnswer(bloomNext.state, 'crane');
     const grownAgain = act(bloomNext.state, { type: 'guess', word: 'crane' });
-    expect(grownAgain.state.maxHp).toBe(51);
+    expect(grownAgain.state.maxHp).toBe(27);
 
     const patch = start('patch-kit');
     patch.state.items.push({ instance: 'i-patch', id: 'patch-kit', data: {}, equipped: true });
     patch.state.hp = 10;
     setAnswer(patch.state, 'crane');
     const patched = act(patch.state, { type: 'guess', word: 'crane' });
-    expect(patched.state.hp).toBe(23);
+    expect(patched.state.hp).toBe(16);
   });
 
   it('Doggy Bag reveals 2 absent letters and queues 1 after eating', () => {
@@ -747,13 +697,13 @@ describe('new item and event batch', () => {
     eater.state.gold = 50;
     eater.state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'snack', price: 3 }]);
     const eaten = act(eater.state, { type: 'buy', offerId: 'o0' });
-    expect(eaten.state.maxHp).toBe(41);
+    expect(eaten.state.maxHp).toBe(17);
 
     const caster = start('gourmand-cast');
     caster.state.items.push({ instance: 'i-gour', id: 'gourmand', data: {}, equipped: true });
     caster.state.spells.push({ instance: 's-omen', id: 'omen' });
     const cast = act(caster.state, { type: 'castSpell', instance: 's-omen' });
-    expect(cast.state.maxHp).toBe(41);
+    expect(cast.state.maxHp).toBe(17);
   });
 
   it('Big Belt gains a slot every 5 eats or solves', () => {
@@ -800,7 +750,7 @@ describe('new item and event batch', () => {
     let current = state;
     current = act(current, { type: 'buy', offerId: 'f0' }).state;
     current = act(current, { type: 'buy', offerId: 'f1' }).state;
-    expect(current.maxHp).toBe(47);
+    expect(current.maxHp).toBe(23);
     expect(current.maxArmor).toBe(3);
   });
 
@@ -834,6 +784,121 @@ describe('new item and event batch', () => {
       .toContainEqual({ type: 'eatBurst', count: 7 });
     expect(table?.options[1].outcomes[0].effects)
       .toContainEqual({ type: 'gold', amount: 7 });
+  });
+});
+
+describe('latest balance pass', () => {
+  it('removes Lucky Charm, Second Stomach and Preserves', () => {
+    expect(ITEM_BY_ID.get('lucky-charm')).toBeUndefined();
+    expect(ITEM_BY_ID.get('second-stomach')).toBeUndefined();
+    expect(ITEM_BY_ID.get('preserves')).toBeUndefined();
+  });
+
+  it('The Tax halves gold and does not stack', () => {
+    expect(CURSE_BY_ID.get('tax')?.maxStacks).toBe(1);
+    expect(CURSE_BY_ID.get('tax')?.goldMult).toBe(0.5);
+    const { state } = start('tax');
+    state.curses.push({ id: 'tax', stacks: 1 });
+    setAnswer(state, 'crane');
+    const solved = act(state, { type: 'guess', word: 'crane' });
+    expect(solved.state.gold).toBe(14);
+  });
+
+  it('Mimic Mouth only triggers once per round', () => {
+    const { state } = start('mimic');
+    state.items.push({ instance: 'i-mimic', id: 'mimic-mouth', data: { used: 0 }, equipped: true });
+    setAnswer(state, 'crane');
+    const first = act(state, { type: 'guess', word: 'crate' });
+    expect(first.state.spells).toHaveLength(1);
+    const second = act(first.state, { type: 'guess', word: 'crave' });
+    expect(second.state.spells).toHaveLength(1);
+  });
+
+  it('Tally Lens is guaranteed in a shop once a vision curse is active', () => {
+    const { state } = start('tally-shop');
+    state.curses.push({ id: 'censor', stacks: 1 });
+    state.nodeIndex = 0;
+    state.nodes[1] = { kind: 'shop', level: 1 };
+    state.phase = 'shop';
+    const shop = act(state, { type: 'continue' }).state.shop;
+    expect(shop?.offers.some((offer) => offer.kind === 'item' && offer.def === 'tally-lens'))
+      .toBe(true);
+  });
+
+  it('Purge the D never returns after D is purged', () => {
+    const { state } = start('purge-d');
+    state.purged.push('d');
+    for (let index = 0; index < 60; index++) {
+      state.nodeIndex = 0;
+      state.nodes[1] = { kind: 'shop', level: 1 };
+      state.phase = 'shop';
+      const shop = act(state, { type: 'continue' }).state.shop;
+      expect(shop?.offers.some((offer) => offer.def === 'purge-the-d')).toBe(false);
+    }
+  });
+
+  it('Ritual Circle gives max armor and Heal restores half max HP', () => {
+    const ritual = start('ritual');
+    ritual.state.items.push({
+      instance: 'i-ritual',
+      id: 'ritual-circle',
+      data: { _mask: 0, types: 0, used: 0 },
+      equipped: true,
+    });
+    ritual.state.spells.push(
+      { instance: 's-omen', id: 'omen' },
+      { instance: 's-heal', id: 'heal' },
+      { instance: 's-immunity', id: 'immunity' },
+    );
+    let current = ritual.state;
+    for (const instance of ['s-omen', 's-heal', 's-immunity']) {
+      current = act(current, { type: 'castSpell', instance }).state;
+    }
+    expect(current.maxArmor).toBe(4);
+
+    const heal = start('heal-half');
+    heal.state.hp = 4;
+    heal.state.spells.push({ instance: 's-heal', id: 'heal' });
+    const cast = act(heal.state, { type: 'castSpell', instance: 's-heal' });
+    expect(cast.state.hp).toBe(12);
+  });
+
+  it('Second Skin restores half of max armor', () => {
+    const { state } = start('second-skin');
+    state.items.push({ instance: 'i-skin', id: 'second-skin', data: { used: 0 }, equipped: true });
+    state.maxArmor = 6;
+    state.armor = 1;
+    setAnswer(state, 'crane');
+    state.round!.freeLeft = 0;
+    const guess = act(state, { type: 'guess', word: 'slate' });
+    expect(guess.state.armor).toBe(3);
+    expect(guess.state.hp).toBe(16);
+  });
+
+  it('uses the normal curse pool for the first draft', () => {
+    const firstOptions: string[] = [];
+    for (let index = 0; index < 40; index++) {
+      const { state } = start(`normal-pool-${index}`);
+      const curseIndex = nodeAt(state, (node) => node.kind === 'curse');
+      state.nodeIndex = curseIndex - 1;
+      state.phase = 'shop';
+      state.shop = shopState();
+      const phase = game.view(act(state, { type: 'continue' }).state).phase;
+      if (phase.kind === 'curse') firstOptions.push(phase.options[0]);
+    }
+    expect(firstOptions.some((id) => !['censor', 'second-sight', 'third-eye', 'fourth-wall', 'editor', 'vowel-fog', 'monochrome', 'la-curse', 'ts-curse', 'rip-curse', 'without-d', 'e-curse', 'the-list'].includes(id)))
+      .toBe(true);
+  });
+
+  it('applies the latest prices and text', () => {
+    expect(FOOD_BY_ID.get('plating')?.price).toBe(8);
+    expect(ITEM_BY_ID.get('loyalty-card')?.description).toContain('Every 7 shop purchases');
+    expect(ITEM_BY_ID.get('tithe-box')?.description).toContain('10% chance');
+    expect(ITEM_BY_ID.get('mimic-mouth')?.description).toContain('Once per round');
+    expect(ITEM_BY_ID.get('second-skin')?.description).toContain('half your max armor');
+    expect(ITEM_BY_ID.get('ritual-circle')?.description).toContain('+2 max armor');
+    expect(SPELL_BY_ID.get('heal')?.description).toBe('Heal half of your max HP.');
+    expect(CURSE_BY_ID.get('tax')?.description).toBe('Encounter gold is halved.');
   });
 });
 

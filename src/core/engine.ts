@@ -198,8 +198,17 @@ export function createCore(content: Content): Core {
     return true;
   };
 
-  const foodAvailable = (state: RunState, def: (typeof content.foods)[number]): boolean =>
-    !def.requiresClock || hasClock(state);
+  const foodAvailable = (
+    state: RunState,
+    def: (typeof content.foods)[number],
+  ): boolean => {
+    if (def.effects.some(
+      (effect) => effect.type === 'purgeLetter' && state.purged.includes(effect.letter),
+    )) {
+      return false;
+    }
+    return !def.requiresClock || hasClock(state);
+  };
 
   /** Slots are only consumed by equipped items. Slotless items are always on. */
   const isEquipped = (item: ItemInstance, def?: ItemDef): boolean =>
@@ -1148,12 +1157,12 @@ export function createCore(content: Content): Core {
     const remaining = clock === null ? null : Math.max(30_000, clock + state.bonusTimeMs);
     const timerStart = remaining;
 
-    // Encounter damage is 3, rising by 1 every 7 levels. Curses are the other
-    // source of growth.
-    const levelDamage = 3 + Math.floor((state.level - 1) / 7);
+    // Encounter damage is 3 plus one per curse stack. Curses are the only
+    // growth; Heavy Hand still multiplies the total.
+    const curseTotal = state.curses.reduce((sum, entry) => sum + entry.stacks, 0);
     const baseDamage = Math.max(
       0,
-      Math.round(levelDamage * damageMultiplier(state) + state.bonusBaseDamage),
+      Math.round((3 + curseTotal) * damageMultiplier(state) + state.bonusBaseDamage),
     );
 
     const round: RoundState = {
@@ -1707,16 +1716,35 @@ export function createCore(content: Content): Core {
       return true;
     };
     const pickRandomFood = (): boolean => {
-      let pool = commonFoods.filter((food) => usedCount(`eat:${food.id}`) < 2);
+      let pool = commonFoods.filter((food) => {
+        const unique = food.effects.some((effect) => effect.type === 'purgeLetter');
+        return usedCount(`eat:${food.id}`) < (unique ? 1 : 2);
+      });
       if (rareFoods.length > 0 && rngChance(state, 10)) {
-        pool = rareFoods.filter((food) => usedCount(`eat:${food.id}`) < 2);
+        pool = rareFoods.filter((food) => {
+          const unique = food.effects.some((effect) => effect.type === 'purgeLetter');
+          return usedCount(`eat:${food.id}`) < (unique ? 1 : 2);
+        });
       }
       if (pool.length === 0) return false;
       pickFood(rngPick(state, pool));
       return true;
     };
 
-    for (let index = 0; index < itemTarget; index++) pickRandomItem();
+    const wantsTally = sightCount(state) > 0
+      && !state.items.some((item) => item.id === 'tally-lens');
+    let forceTally = wantsTally;
+    for (let index = 0; index < itemTarget; index++) {
+      if (forceTally) {
+        forceTally = false;
+        const tally = commonItems.find((item) => item.id === 'tally-lens');
+        if (tally) {
+          pickItem(tally);
+          continue;
+        }
+      }
+      pickRandomItem();
+    }
     if (picked.length > 0) {
       const saleIndex = rngInt(state, picked.length);
       const sale = picked[saleIndex];
@@ -1875,6 +1903,7 @@ export function createCore(content: Content): Core {
         description: option.description,
         costGold: option.costGold,
         fallbackPct: option.fallbackPct,
+        fallbackMaxArmor: option.fallbackMaxArmor,
         chancePct: option.outcomes.length === 1
           ? 100
           : option.outcomes[0]?.chancePct,
@@ -1899,15 +1928,21 @@ export function createCore(content: Content): Core {
     if (!option) return;
 
     if (option.costGold && option.costGold > 0) {
-      let cost = option.costGold;
-      if (state.gold < cost) {
-        if (!option.fallbackPct) {
-          emit(rt, { type: 'message', text: 'Not enough gold.' });
-          return;
-        }
-        cost = Math.max(0, Math.floor(state.gold * option.fallbackPct));
+      if (state.gold >= option.costGold) {
+        spendGold(rt, option.costGold, { kind: 'happening', happening: def.id });
+      } else if (option.fallbackMaxArmor) {
+        applyEffects(
+          rt,
+          [{ type: 'maxArmor', delta: -option.fallbackMaxArmor }],
+          { kind: 'happening', happening: def.id },
+        );
+      } else if (option.fallbackPct) {
+        const cost = Math.max(0, Math.floor(state.gold * option.fallbackPct));
+        if (cost > 0) spendGold(rt, cost, { kind: 'happening', happening: def.id });
+      } else {
+        emit(rt, { type: 'message', text: 'Not enough gold.' });
+        return;
       }
-      if (cost > 0) spendGold(rt, cost, { kind: 'happening', happening: def.id });
     }
 
     const roll = rngNext(state) * 100;
@@ -1972,37 +2007,7 @@ export function createCore(content: Content): Core {
     return pool[pool.length - 1];
   }
 
-  /**
-   * The first curse draft of a base (non-Ascension) run is special: one side is
-   * always a vision curse or The List, and the other side is random with extreme
-   * clock weighting. Ascension runs use the plain weighted pool.
-   */
-  function firstDraftOptions(state: RunState, starting: boolean): CurseId[] | null {
-    if (starting || state.ascension > 0 || state.curseDrafts > 0) return null;
-    const pool = eligibleCurses(state, false);
-    if (pool.length < 2) return null;
-
-    const sightPool = pool.filter(
-      (def) => def.tags.includes('vision') || def.tags.includes('list'),
-    );
-    const first = sightPool.length > 0
-      ? pickWeighted(state, sightPool)
-      : pickWeighted(state, pool);
-    const rest = pool.filter((def) => def.id !== first.id);
-    if (rest.length === 0) return null;
-
-    const second = pickWeighted(
-      state,
-      rest,
-      (def) => curseWeight(state, def) * (def.tags.includes('clock') ? 3 : 1),
-    );
-    return [first.id, second.id];
-  }
-
   function pickCurseOptions(state: RunState, starting: boolean): CurseId[] {
-    const special = firstDraftOptions(state, starting);
-    if (special) return special;
-
     const pool = eligibleCurses(state, starting).slice();
     const picks: CurseId[] = [];
     while (picks.length < 2 && pool.length > 0) {
@@ -2025,7 +2030,6 @@ export function createCore(content: Content): Core {
       }
       return;
     }
-    if (!starting) state.curseDrafts += 1;
     state.curse = { options, starting };
     state.phase = 'curse';
     emit(rt, { type: 'curseOffered', options: options.slice(), starting });
@@ -2615,7 +2619,7 @@ export function createCore(content: Content): Core {
     const seed = String(opts.seed || 'blacklist');
     const ascension = Math.max(0, Math.min(ASCENSION_MAX, Math.floor(opts.ascension ?? 0)));
     const startingCurses = ascensionStartingCurses(ascension);
-    const maxHp = 40;
+    const maxHp = 16;
     const startArmor = 2;
     const state: RunState = {
       version: VERSION,
@@ -2649,7 +2653,6 @@ export function createCore(content: Content): Core {
       curses: [],
       pendingStartingCurses: startingCurses,
       pendingCurseRemoval: 0,
-      curseDrafts: 0,
       phase: 'round',
       stats: {
         rounds: 0,
@@ -2718,7 +2721,6 @@ export function createCore(content: Content): Core {
       }
       if (typeof state.pendingStartingCurses !== 'number') state.pendingStartingCurses = 0;
       if (typeof state.pendingCurseRemoval !== 'number') state.pendingCurseRemoval = 0;
-      if (typeof state.curseDrafts !== 'number') state.curseDrafts = 0;
       if (typeof state.pendingAbsent !== 'number') state.pendingAbsent = 0;
       if (!Array.isArray(state.pendingReveals)) state.pendingReveals = [];
       if (!Array.isArray(state.permanentReveals)) {

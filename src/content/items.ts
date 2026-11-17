@@ -385,14 +385,6 @@ export const ITEMS: ItemDef[] = [
     },
   }),
   defineItem({
-    id: 'lucky-charm',
-    name: 'Lucky Charm',
-    description: 'On solve: 25% chance of a random spell.',
-    price: 8,
-    kind: 'gear',
-    on: { onSolve: () => [{ type: 'giveSpell', spell: 'random', chancePct: 25 }] },
-  }),
-  defineItem({
     id: 'necronomicon',
     name: 'Necronomicon',
     description: 'Round start: reveal 2 letters. Every 5 reveals: +1 Omen.',
@@ -621,14 +613,21 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'mimic-mouth',
     name: 'Mimic Mouth',
-    description: 'A guess with 4+ revealed letters: random spell.',
+    description: 'A guess with 4+ revealed letters: random spell. Once per round.',
     price: 9,
     kind: 'gear',
+    initial: { used: 0 },
     on: {
-      onGuessScored: (_ctx, p) =>
-        p.guess.truth.filter((tile) => tile !== 'absent').length >= 4
-          ? [{ type: 'giveSpell', spell: 'random' }]
-          : [],
+      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
+      onGuessScored: (ctx, p) => {
+        if (ctx.self.data.used) return [];
+        return p.guess.truth.filter((tile) => tile !== 'absent').length >= 4
+          ? [
+              { type: 'giveSpell', spell: 'random' },
+              { type: 'setItemData', stat: 'used', value: 1 },
+            ]
+          : [];
+      },
     },
   }),
   defineItem({
@@ -892,19 +891,11 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'tithe-box',
     name: 'Tithe Box',
-    description: 'Every 10 gold spent: +1 Heal spell.',
+    description: 'Every time you spend gold: 10% chance of a Heal spell.',
     price: 9,
     kind: 'gear',
-    initial: { spent: 0 },
     on: {
-      onGoldSpent: (ctx, p) => {
-        const total = ctx.self.data.spent + p.amount;
-        const heals = Math.floor(total / 10);
-        return [
-          { type: 'setItemData', stat: 'spent', value: total % 10 },
-          ...Array.from({ length: heals }, () => ({ type: 'giveSpell' as const, spell: 'heal' as const })),
-        ];
-      },
+      onGoldSpent: () => [{ type: 'giveSpell', spell: 'heal', chancePct: 10 }],
     },
   }),
   defineItem({
@@ -942,43 +933,6 @@ export const ITEMS: ItemDef[] = [
           { type: 'setItemData', stat: 'used', value: 1 },
         ];
       },
-    },
-  }),
-  defineItem({
-    id: 'second-stomach',
-    name: 'Second Stomach',
-    description: 'Eat food: +2 max HP and heal 2. Once per round.',
-    price: 9,
-    kind: 'gear',
-    initial: { used: 0 },
-    on: {
-      onRoundEnd: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
-      onEat: (ctx) => {
-        if (ctx.self.data.used) return [];
-        return [
-          { type: 'maxHp', delta: 2 },
-          { type: 'heal', amount: 2 },
-          { type: 'setItemData', stat: 'used', value: 1 },
-        ];
-      },
-    },
-  }),
-  defineItem({
-    id: 'preserves',
-    name: 'Preserves',
-    description: 'Eat food: gain a random spell. Once per round.',
-    price: 8,
-    kind: 'gear',
-    initial: { used: 0 },
-    on: {
-      onRoundEnd: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
-      onEat: (ctx) =>
-        ctx.self.data.used
-          ? []
-          : [
-              { type: 'giveSpell', spell: 'random' },
-              { type: 'setItemData', stat: 'used', value: 1 },
-            ],
     },
   }),
   defineItem({
@@ -1100,7 +1054,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'second-skin',
     name: 'Second Skin',
-    description: 'First time armor hits 0 each round: heal 4, +1 armor.',
+    description: 'First time armor hits 0 each round: heal 4, restore half your max armor.',
     price: 9,
     kind: 'gear',
     initial: { used: 0 },
@@ -1110,7 +1064,7 @@ export const ITEMS: ItemDef[] = [
         if (ctx.self.data.used || p.armorUsed <= 0 || ctx.state.armor > 0) return [];
         return [
           { type: 'heal', amount: 4 },
-          { type: 'armor', delta: 1 },
+          { type: 'armor', delta: Math.ceil(ctx.state.maxArmor / 2) },
           { type: 'setItemData', stat: 'used', value: 1 },
         ];
       },
@@ -1215,7 +1169,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'loyalty-card',
     name: 'Loyalty Card',
-    description: 'Every 5 shop purchases: +1 item slot.',
+    description: 'Every 7 shop purchases: +1 item slot.',
     price: 8,
     kind: 'gear',
     initial: { buys: 0 },
@@ -1224,7 +1178,7 @@ export const ITEMS: ItemDef[] = [
         const next = ctx.self.data.buys + 1;
         return [
           { type: 'grow', stat: 'buys', by: 1 },
-          ...(next % 5 === 0 ? [{ type: 'slots' as const, delta: 1 }] : []),
+          ...(next % 7 === 0 ? [{ type: 'slots' as const, delta: 1 }] : []),
         ];
       },
     },
@@ -1600,7 +1554,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'ritual-circle',
     name: 'Ritual Circle',
-    description: 'Cast 3 different spell types in one round: +1 random spell, +2 armor.',
+    description: 'Cast 3 different spell types in one round: +1 random spell, +2 max armor.',
     price: 20,
     kind: 'gear',
     rarity: 'rare',
@@ -1625,7 +1579,7 @@ export const ITEMS: ItemDef[] = [
         if (types >= 3 && !ctx.self.data.used) {
           effects.push(
             { type: 'giveSpell', spell: 'random' },
-            { type: 'armor', delta: 2 },
+            { type: 'maxArmor', delta: 2 },
             { type: 'setItemData', stat: 'used', value: 1 },
           );
         }

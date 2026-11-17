@@ -241,6 +241,8 @@ export interface HappeningOptionView {
   description: string;
   costGold?: number;
   fallbackPct?: number;
+  /** If the player cannot pay costGold, lose this much max armor instead. */
+  fallbackMaxArmor?: number;
   chancePct?: number;
   outcomes: HappeningOutcomeView[];
 }
@@ -435,6 +437,8 @@ export interface HappeningOptionDef {
   costGold?: number;
   /** If the player cannot pay costGold, take this fraction of their gold instead. */
   fallbackPct?: number;
+  /** If the player cannot pay costGold, lose this much max armor instead. */
+  fallbackMaxArmor?: number;
   outcomes: HappeningOutcomeDef[];
 }
 export interface HappeningDef {
@@ -500,8 +504,6 @@ export interface RunState {
   curses: CurseStack[];
   pendingStartingCurses: number;
   pendingCurseRemoval: number;
-  /** Non-starting curse drafts opened this run. Used for the first-draft rules. */
-  curseDrafts: number;
   phase: PhaseKind;
   bossIntro?: { boss: BossId };
   curse?: CurseState;

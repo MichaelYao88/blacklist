@@ -264,13 +264,13 @@ export const CURSES: CurseDef[] = [
   defineCurse({
     id: 'tax',
     name: 'The Tax',
-    description: 'Encounter gold is multiplied by 0.6 per stack.',
-    rules: ['Each stack multiplies encounter gold by 0.6.', 'Only offered through level 40.'],
+    description: 'Encounter gold is halved.',
+    rules: ['Encounter gold is halved.', 'Only offered through level 40.'],
     art: 'censor',
     tags: ['economy'],
-    maxStacks: Infinity,
+    maxStacks: 1,
     maxLevel: 40,
-    goldMult: 0.6,
+    goldMult: 0.5,
   }),
   defineCurse({
     id: 'chained',
