@@ -357,8 +357,7 @@ export function createCore(content: Content): Core {
   }
 
   /** Reveal random unknown letters, leaning toward letters not in the answer. */
-  function revealRandomLetters(rt: Runtime, count: number): void {
-    const state = rt.state;
+  function revealRandomLetters(rt: Runtime, count: number): void {    const state = rt.state;
     const round = state.round;
     if (!round || count <= 0) return;
 
@@ -384,6 +383,30 @@ export function createCore(content: Content): Core {
       const letter = rngPick(state, pool);
       pool.splice(pool.indexOf(letter), 1);
       hintLetter(rt, letter, round.answer.includes(letter) ? 'present' : 'absent');
+    }
+  }
+
+  /** Reveal only letters that are guaranteed not to be in the answer. */
+  function revealAbsentLetters(rt: Runtime, count: number): void {
+    const state = rt.state;
+    const round = state.round;
+    if (!round || count <= 0) return;
+
+    const known = new Set<string>([
+      ...Object.keys(round.hints ?? {}),
+      ...state.purged,
+    ]);
+    for (const guess of round.guesses) {
+      for (const letter of guess.word.split('')) known.add(letter);
+    }
+
+    const candidates = ALPHABET.filter(
+      (letter) => !known.has(letter) && !round.answer.includes(letter),
+    );
+    for (let index = 0; index < count && candidates.length > 0; index++) {
+      const letter = rngPick(state, candidates);
+      candidates.splice(candidates.indexOf(letter), 1);
+      hintLetter(rt, letter, 'absent');
     }
   }
 
@@ -853,6 +876,10 @@ export function createCore(content: Content): Core {
       case 'revealRandom':
         if (noReveal(state) && (source.kind === 'item' || source.kind === 'spell')) break;
         revealRandomLetters(rt, effect.count);
+        break;
+      case 'revealAbsent':
+        if (noReveal(state) && (source.kind === 'item' || source.kind === 'spell')) break;
+        revealAbsentLetters(rt, effect.count);
         break;
       case 'purgeLetter':
         purgeLetterNow(rt, effect.letter);
@@ -2547,7 +2574,7 @@ export function createCore(content: Content): Core {
     const ascension = Math.max(0, Math.min(ASCENSION_MAX, Math.floor(opts.ascension ?? 0)));
     const startingCurses = ascensionStartingCurses(ascension);
     const maxHp = 40;
-    const startArmor = 5;
+    const startArmor = 2;
     const state: RunState = {
       version: VERSION,
       seed,

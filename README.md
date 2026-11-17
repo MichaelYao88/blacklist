@@ -24,7 +24,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - The clock is disabled until **The Clock** curse is taken; the first stack gives 5:00
 - The Clockmaker event only appears once The Clock exists
 - **Phone a Friend** delivers a one- or two-word catchphrase, quietly adds 5 seconds, and spams his words across the screen
-- Trophy Hunter, Boss Trophy, Boss Aegis and Trophy Room now trigger on gaining a curse ("Whenever you gain a curse: Gain …")
+- Curse Collector, Witch Charm, Curse Bulwark and Reliquary trigger on gaining a curse ("Whenever you gain a curse: Gain …")
 - Ascension A1/A2 draft 1/2 starting curses
 - Shops with rerolls that double in price: three items, two foods and one wildcard; one item is always 50% off
 - Five item slots by default. Only equipped gear is active, and each shop has a drag-and-drop loadout
@@ -38,8 +38,11 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Opening shields such as **Head Start** and **Quickdraw** make guesses in their window count as free guesses
 - Relics are very rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 105 items (87 shop items + 18 rare relics), 6 spells, 21 foods and 14 happenings
+- 105 items (86 shop items + 19 rare relics), 6 spells, 24 foods and 14 happenings
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
+- **Field Kit** now reveals exactly 4 letters that are not in the word; the damage-cap item was removed
+- Letter foods cover B, X, Q, I, D, and Y+N; the X and Q foods are cheaper
+- **Old McDonald** is an expensive relic: EIEIO is guessed for free at round start
 - The run path rail is gone; the current level stays in the battle rail
 - Purge is an event (The Redaction) and rare foods; not a spell
 - One exact-state autosave slot. Defeat clears it. Victory clears it and updates meta stats.
@@ -80,7 +83,7 @@ Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title s
 | Thing | Value |
 |---|---|
 | Starting HP | 40 |
-| Starting armor | 5 points |
+| Starting armor | 2 points |
 | Starting item slots | 5 (only equipped gear counts; relics use one slot each) |
 | Free guesses per round | 1, plus every guess made inside a timed shield |
 | Starting gold | 10 |

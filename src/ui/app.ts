@@ -225,9 +225,14 @@ function processEvents(events: GameEvent[]): void {
     }
   }
 
-  const friendWords = events.flatMap((event) =>
-    event.type === 'guessScored' && event.by === 'friend' ? [event.word] : [],
+  const phoneFriend = events.some(
+    (event) => event.type === 'spellCast' && event.spell.id === 'phone-friend',
   );
+  const friendWords = phoneFriend
+    ? events.flatMap((event) =>
+        event.type === 'guessScored' && event.by === 'friend' ? [event.word] : [],
+      )
+    : [];
   if (friendWords.length > 0) flashFriendPhrases(friendWords);
 }
 

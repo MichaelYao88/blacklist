@@ -104,14 +104,6 @@ export const ITEMS: ItemDef[] = [
     },
   }),
   defineItem({
-    id: 'hard-hat',
-    name: 'Hard Hat',
-    description: 'Each hit is capped at 3.',
-    price: 8,
-    kind: 'gear',
-    modifyDamage: (_ctx, amount) => Math.min(amount, 3),
-  }),
-  defineItem({
     id: 'iron-hide',
     name: 'Iron Hide',
     description: 'Every hit deals 1 less.',
@@ -178,6 +170,17 @@ export const ITEMS: ItemDef[] = [
         if (answer.split('').some((ch) => ctx.state.purged.includes(ch))) return [];
         return [{ type: 'autoGuess', word: answer }];
       },
+    },
+  }),
+  defineItem({
+    id: 'old-mcdonald',
+    name: 'Old McDonald',
+    description: 'Round start: EIEIO is guessed for free.',
+    price: 24,
+    kind: 'gear',
+    rarity: 'rare',
+    on: {
+      onRoundStart: () => [{ type: 'autoGuess', word: 'eieio' }],
     },
   }),
   defineItem({
@@ -276,7 +279,7 @@ export const ITEMS: ItemDef[] = [
   }),
   defineItem({
     id: 'trophy-hunter',
-    name: 'Trophy Hunter',
+    name: 'Curse Collector',
     description: 'Whenever you gain a curse: Gain 1 max armor.',
     price: 9,
     kind: 'gear',
@@ -407,7 +410,7 @@ export const ITEMS: ItemDef[] = [
   }),
   defineItem({
     id: 'boss-trophy',
-    name: 'Boss Trophy',
+    name: 'Witch Charm',
     description: 'Whenever you gain a curse: Gain a random spell.',
     price: 10,
     kind: 'gear',
@@ -618,10 +621,10 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'field-kit',
     name: 'Field Kit',
-    description: 'Round start: reveal 5 random letters, mostly not in the answer.',
+    description: 'Round start, learn 4 letters not in the word.',
     price: 10,
     kind: 'gear',
-    on: { onRoundStart: () => [{ type: 'revealRandom', count: 5 }] },
+    on: { onRoundStart: () => [{ type: 'revealAbsent', count: 4 }] },
   }),
   defineItem({
     id: 'field-dressing',
@@ -693,7 +696,7 @@ export const ITEMS: ItemDef[] = [
   }),
   defineItem({
     id: 'boss-aegis',
-    name: 'Boss Aegis',
+    name: 'Curse Bulwark',
     description: 'Whenever you gain a curse: Gain 4 max armor.',
     price: 10,
     kind: 'gear',
@@ -1082,7 +1085,7 @@ export const ITEMS: ItemDef[] = [
   }),
   defineItem({
     id: 'trophy-room',
-    name: 'Trophy Room',
+    name: 'Reliquary',
     description: 'Whenever you gain a curse: Gain 1 item slot.',
     price: 10,
     kind: 'gear',

@@ -7,7 +7,6 @@ const ITEM_ICONS: Record<string, string> = {
   daredevil: '😈',
   encore: '🔁',
   tally: '🧮',
-  'hard-hat': '⛑️',
   'iron-hide': '🛡️',
   'rabbit-foot': '🐇',
   scattershot: '🎯',
@@ -135,9 +134,13 @@ const FOOD_ICONS: Record<string, string> = {
   'b-file': '🅱️',
   'x-ray': '🩻',
   'q-tip': '🧵',
+  'i-spy': '🔍',
+  'reveal-the-d': '🌼',
+  'yin-yang': '☯️',
   'bitter-root': '🌿',
   inkcap: '🍄',
   'purge-the-d': '♀️',
+  'old-mcdonald': '🚜',
 };
 
 const BOSS_SIGILS: Record<string, string> = {

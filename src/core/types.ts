@@ -272,6 +272,7 @@ export type Effect =
   | { type: 'revealYellow' }
   | { type: 'revealLetter'; letter: Letter }
   | { type: 'revealRandom'; count: number }
+  | { type: 'revealAbsent'; count: number }
   | { type: 'purgeLetter'; letter: Letter }
   | { type: 'clearBlacklist' }
   | { type: 'randomChoice'; options: Effect[][] }

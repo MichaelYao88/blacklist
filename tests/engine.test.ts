@@ -90,7 +90,7 @@ describe('cursed run setup', () => {
     expect(state.level).toBe(1);
     expect(state.hp).toBe(40);
     expect(state.maxHp).toBe(40);
-    expect(state.armor).toBe(5);
+    expect(state.armor).toBe(2);
     expect(state.gold).toBe(10);
     expect(state.slots).toBe(5);
     expect(state.blacklist).toEqual([]);
@@ -465,7 +465,7 @@ describe('curse-triggered items', () => {
 
     // The first option is always a vision/list curse, so it cannot alter slots.
     const chosen = act(draft.state, { type: 'chooseCurse', curseId: phase.options[0] });
-    expect(chosen.state.maxArmor).toBe(10);
+    expect(chosen.state.maxArmor).toBe(7);
     expect(chosen.state.slots).toBe(6);
     expect(chosen.state.spells).toHaveLength(1);
   });
@@ -473,7 +473,50 @@ describe('curse-triggered items', () => {
   it('describes all of them as Gain a curse', () => {
     for (const id of ['trophy-hunter', 'boss-trophy', 'boss-aegis', 'trophy-room']) {
       expect(ITEM_BY_ID.get(id)?.description.startsWith('Whenever you gain a curse: Gain ')).toBe(true);
+      expect(ITEM_BY_ID.get(id)?.name).not.toMatch(/boss|trophy/i);
     }
+  });
+});
+
+describe('item and food batch', () => {
+  it('Field Kit reveals 4 letters that are not in the word', () => {
+    const { state } = start('field-kit');
+    state.items.push({ instance: 'i-kit', id: 'field-kit', data: {}, equipped: true });
+    const next = nextRound(state);
+    const round = next.state.round;
+    if (!round) throw new Error('expected round');
+    const hints = Object.entries(round.hints);
+    expect(hints).toHaveLength(4);
+    for (const [letter, status] of hints) {
+      expect(status).toBe('absent');
+      expect(round.answer).not.toContain(letter);
+    }
+  });
+
+  it('Old McDonald makes a free EIEIO guess at round start', () => {
+    const { state } = start('old-mcdonald');
+    state.items.push({ instance: 'i-mac', id: 'old-mcdonald', data: {}, equipped: true });
+    const next = nextRound(state);
+    const guess = next.state.round?.guesses.find((entry) => entry.word === 'eieio');
+    expect(guess).toBeDefined();
+    expect(guess?.free).toBe(true);
+    expect(next.state.hp).toBe(40);
+    expect(ITEM_BY_ID.get('old-mcdonald')?.rarity).toBe('rare');
+    expect(ITEM_BY_ID.get('old-mcdonald')?.price).toBe(24);
+  });
+
+  it('removes the damage cap and prices letter foods by rarity', () => {
+    expect(ITEM_BY_ID.get('hard-hat')).toBeUndefined();
+    expect(FOOD_BY_ID.get('x-ray')?.price).toBe(8);
+    expect(FOOD_BY_ID.get('q-tip')?.price).toBe(8);
+    expect(FOOD_BY_ID.get('i-spy')?.effects)
+      .toContainEqual({ type: 'revealLetter', letter: 'i' });
+    expect(FOOD_BY_ID.get('reveal-the-d')?.effects)
+      .toContainEqual({ type: 'revealLetter', letter: 'd' });
+    expect(FOOD_BY_ID.get('yin-yang')?.effects).toEqual([
+      { type: 'revealLetter', letter: 'y' },
+      { type: 'revealLetter', letter: 'n' },
+    ]);
   });
 });
 
