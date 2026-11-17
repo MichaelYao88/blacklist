@@ -51,6 +51,25 @@ export const ITEMS: ItemDef[] = [
     },
   }),
   defineItem({
+    id: 'hat-trick',
+    name: 'Hat Trick',
+    description: 'Solve in 3 guesses: gain 5 gold. +2 more gold each time this triggers.',
+    dynamicDescription: (data) =>
+      `Solve in 3 guesses: gain ${data.gold ?? 5} gold. +2 more gold each time this triggers.`,
+    price: 9,
+    kind: 'gear',
+    initial: { gold: 5 },
+    on: {
+      onSolve: (ctx, p) =>
+        p.guesses <= 3
+          ? [
+              { type: 'gold', amount: ctx.self.data.gold },
+              { type: 'grow', stat: 'gold', by: 2 },
+            ]
+          : [],
+    },
+  }),
+  defineItem({
     id: 'head-start',
     name: 'Head Start',
     description: 'The first 12s of each round: guesses are free.',

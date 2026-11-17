@@ -22,8 +22,9 @@ describe('browser UI', () => {
     expect(newRun).not.toBeNull();
     newRun!.click();
 
-    expect(root.textContent).toContain('PATH');
     expect(root.querySelector('.board')).not.toBeNull();
+    expect(root.querySelector('.path')).toBeNull();
+    expect(root.querySelector('.blacklist')).toBeNull();
     expect(localStorage.getItem('blacklist.run.v1')).toBeTruthy();
 
     for (const letter of 'slate') {
@@ -53,6 +54,6 @@ describe('browser UI', () => {
     const back = root.querySelector<HTMLElement>('[data-action="back"]');
     expect(back).not.toBeNull();
     back!.click();
-    expect(root.textContent).toContain('PATH');
+    expect(root.querySelector('.layout')).not.toBeNull();
   });
 });

@@ -84,7 +84,6 @@ let damageSeq = 0;
 let damageRendered = 0;
 let countdownUntil = 0;
 const COUNTDOWN_MS = 2_400;
-let lastPathNode = -1;
 let selectedAscension = 0;
 
 const KIND_LABELS: Record<Offer['kind'], string> = {
@@ -591,12 +590,7 @@ function render(): void {
     app!.innerHTML = renderStats();
   } else {
     app!.innerHTML = renderRun(view as RunView);
-    const current = app!.querySelector<HTMLElement>('.path-chip.current');
-    if (current && typeof current.scrollIntoView === 'function' && lastPathNode !== view?.nodeIndex) {
-      current.scrollIntoView({ block: 'nearest', inline: 'center' });
-    }
   }
-  lastPathNode = view?.nodeIndex ?? -1;
   app!.insertAdjacentHTML('beforeend', noticeHtml());
 
   const damageId = damageFx?.id ?? 0;
@@ -1046,21 +1040,6 @@ function renderBattleRail(view: RunView, bossId?: string): string {
   </aside>`;
 }
 
-function renderPath(view: RunView): string {
-  const chips = view.nodes.map((node, index) => {
-    const done = index < view.nodeIndex;
-    const current = index === view.nodeIndex;
-    const boss = node.boss ? BOSS_BY_ID.get(node.boss) : undefined;
-    const icon = node.kind === 'boss' ? '☠' : node.kind === 'shop' ? '$' : node.kind === 'happening' ? '?' : node.kind === 'curse' ? '✦' : '•';
-    const label = boss ? boss.name : node.kind === 'round' ? 'Round' : node.kind === 'shop' ? 'Shop' : node.kind === 'curse' ? 'Curse' : 'Happening';
-    const classes = ['path-chip', node.kind, done ? 'done' : '', current ? 'current' : ''].filter(Boolean).join(' ');
-    return `<span class="${classes}" title="Level ${node.level ?? index + 1} · ${escapeHtml(label)}">
-      <i>${icon}</i><em>${node.level ?? index + 1}</em>
-    </span>`;
-  }).join('');
-  return `<nav class="path" aria-label="Run path"><span class="path-label">PATH</span>${chips}</nav>`;
-}
-
 function renderSidePanel(view: RunView): string {
   const stacks = new Map<string, { spell: SpellView; count: number }>();
   for (const spell of view.spells) {
@@ -1080,6 +1059,7 @@ function renderSidePanel(view: RunView): string {
     ? view.items.map((item) => renderItem(view, item)).join('')
     : `<p class="empty-note">No items yet. Shops and the Curse Broker fix that.</p>`;
   const bagged = view.items.filter((item) => !item.equipped && item.slots > 0).length;
+  const hasList = view.curses.some((curse) => curse.id === 'the-list');
 
   const curseChips = view.curses.map((curse) => {
     const def = CURSE_BY_ID.get(curse.id);
@@ -1104,15 +1084,17 @@ function renderSidePanel(view: RunView): string {
           : `<p class="empty-note">No curses yet. The first draft comes after level 2.</p>`}
       </div>
     </section>
-    <section>
+    ${hasList ? `<section>
       <div class="panel-head"><span class="panel-kicker">BLACKLIST</span><span class="count" title="No limit. Every spent word stays here.">${view.blacklist.length}</span></div>
       <ol class="blacklist">${blacklist}</ol>
+    </section>` : ''}
+    ${(view.revealed.length || view.purged.length) ? `<section>
       ${view.revealed.length ? `<div class="revealed">
         <span class="panel-kicker">REVEALED THIS PUZZLE</span>
         <div>${view.revealed.map(({ letter, status }) => `<span class="reveal-chip ${status}"><b>${escapeHtml(letter.toUpperCase())}</b><em>${status === 'present' ? 'IN WORD' : 'RULED OUT'}</em></span>`).join('')}</div>
       </div>` : ''}
       ${view.purged.length ? `<div class="purged"><span class="panel-kicker">PURGED</span><div>${view.purged.map((letter) => `<span class="letter-chip">${escapeHtml(letter.toUpperCase())}</span>`).join('')}</div></div>` : ''}
-    </section>
+    </section>` : ''}
     <section class="rail-items">
       <div class="panel-head">
         <span class="panel-kicker">ITEMS</span>
@@ -1127,7 +1109,7 @@ function renderSidePanel(view: RunView): string {
 function renderItem(view: RunView, item: ItemView): string {
   const def = ITEM_BY_ID.get(item.id);
   const name = def?.name ?? item.id;
-  const description = def?.description ?? '';
+  const description = def?.dynamicDescription?.(item.data) ?? def?.description ?? '';
   const data = Object.entries(item.data)
     .filter(([key, value]) => value !== 0 && !key.startsWith('_'))
     .map(([key, value]) => `<span class="data-chip">${escapeHtml(key)} ${value}</span>`)
@@ -1641,7 +1623,6 @@ function renderRun(view: RunView): string {
   <div class="shell ${shake ? 'shake' : ''} ${tense ? 'tense' : ''}">
     ${tense ? `<div class="danger-vignette" aria-hidden="true"></div>` : ''}
     ${renderTopbar(view)}
-    ${renderPath(view)}
     ${over
       ? `<main class="over-layout">${phasePanel(view)}</main>`
       : `<main class="layout">

@@ -1,6 +1,7 @@
 const ITEM_ICONS: Record<string, string> = {
   hourglass: '⏳',
   'early-bird': '🐦',
+  'hat-trick': '🎩',
   'head-start': '🏃',
   quickdraw: '🤠',
   daredevil: '😈',

@@ -349,6 +349,8 @@ export interface ItemDef {
   id: ItemId;
   name: string;
   description: string;
+  /** Optional live text for items that track state, such as growing rewards. */
+  dynamicDescription?: (data: Record<string, number>) => string;
   price: number;
   kind: ItemKind;
   /** Rare relics are boss prizes. They consume an item slot like any other gear. */
@@ -480,6 +482,8 @@ export interface RunState {
   items: ItemInstance[];
   spells: SpellInstance[];
   blacklist: string[];
+  /** First guess of every round this run, used to seed The List when taken. */
+  firstGuesses: string[];
   purged: Letter[];
   usedAnswers: string[];
   lastAnswer?: string;

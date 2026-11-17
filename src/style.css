@@ -450,77 +450,6 @@ button {
   z-index: 4;
 }
 
-.path {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 10px 4px 14px;
-  overflow-x: auto;
-  scrollbar-width: thin;
-}
-
-.path-label {
-  font-size: 0.58rem;
-  font-weight: 800;
-  letter-spacing: 0.18em;
-  color: var(--faint);
-  margin-right: 6px;
-}
-
-.path-chip {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  width: 33px;
-  height: 25px;
-  flex: 0 0 auto;
-  border: 1px solid var(--line);
-  border-radius: 5px;
-  background: rgba(255, 255, 255, 0.015);
-  color: var(--faint);
-  font-style: normal;
-  font-size: 0.58rem;
-}
-
-.path-chip i {
-  font-style: normal;
-  font-size: 0.62rem;
-}
-
-.path-chip em {
-  font-style: normal;
-  font-size: 0.5rem;
-  opacity: 0.6;
-}
-
-.path-chip.done {
-  border-color: rgba(79, 191, 135, 0.22);
-  color: rgba(79, 191, 135, 0.55);
-  background: rgba(79, 191, 135, 0.04);
-}
-
-.path-chip.current {
-  border-color: var(--gold);
-  color: var(--gold);
-  background: rgba(231, 184, 90, 0.1);
-  box-shadow: 0 0 0 1px rgba(231, 184, 90, 0.15), 0 0 18px -4px rgba(231, 184, 90, 0.5);
-}
-
-.path-chip.boss {
-  width: 40px;
-  border-color: rgba(223, 97, 90, 0.28);
-  color: #c98a86;
-}
-
-.path-chip.boss.current {
-  border-color: var(--red);
-  color: #ff9c96;
-  background: rgba(223, 97, 90, 0.12);
-  box-shadow: 0 0 0 1px rgba(223, 97, 90, 0.18), 0 0 18px -4px rgba(223, 97, 90, 0.6);
-}
-
 /* ── layout ──────────────────────────────────────────────────────────────── */
 
 .layout {
@@ -3583,15 +3512,6 @@ button {
 
   .hp-numbers {
     font-size: 1.2rem;
-  }
-
-  .path {
-    padding-left: 0;
-  }
-
-  .path-chip {
-    width: 28px;
-    height: 23px;
   }
 
   .board-panel {

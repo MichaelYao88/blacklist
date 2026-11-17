@@ -20,7 +20,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Hover or focus a curse in the HUD to read its rules
 - 50 is the final boss: three rounds back-to-back with no intermission
 - Base encounter damage is fixed at 3; only curses change damage
-- The blacklist is disabled until **The List** curse is taken; The List is a single curse and never stacks
+- The blacklist is disabled and hidden until **The List** curse is taken; The List is a single curse, never stacks, and arrives stocked with the first guess from every earlier round
 - The clock is disabled until **The Clock** curse is taken; the first stack gives 5:00
 - The Clockmaker event only appears once The Clock exists
 - **Phone a Friend** delivers a one- or two-word catchphrase, quietly adds 5 seconds, and spams his words across the screen
@@ -38,7 +38,9 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Opening shields such as **Head Start** and **Quickdraw** make guesses in their window count as free guesses
 - Relics are very rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 104 items (86 shop items + 18 rare relics), 6 spells, 21 foods and 14 happenings
+- 105 items (87 shop items + 18 rare relics), 6 spells, 21 foods and 14 happenings
+- **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
+- The run path rail is gone; the current level stays in the battle rail
 - Purge is an event (The Redaction) and rare foods; not a spell
 - One exact-state autosave slot. Defeat clears it. Victory clears it and updates meta stats.
 - A **STATS** page tracks run history (last 50 runs), win rate, best level, average solve time, favorite items and curses, play time, gold and damage totals

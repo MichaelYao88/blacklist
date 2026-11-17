@@ -236,6 +236,18 @@ describe('blacklist curse', () => {
     expect(first.state.blacklist).toContain('pious');
   });
 
+  it('comes with every earlier first guess when taken', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    const first = act(state, { type: 'guess', word: 'slate' });
+    expect(first.state.firstGuesses).toContain('slate');
+    first.state.firstGuesses.push('pious');
+    first.state.curse = { options: ['the-list'], starting: false };
+    first.state.phase = 'curse';
+    const chosen = act(first.state, { type: 'chooseCurse', curseId: 'the-list' });
+    expect(chosen.state.blacklist).toEqual(['slate', 'pious']);
+  });
+
   it('does not stack and only lists the first guess', () => {
     expect(CURSE_BY_ID.get('the-list')?.maxStacks).toBe(1);
     expect(CURSE_BY_ID.get('the-list')?.description).not.toContain('stack');
@@ -462,6 +474,43 @@ describe('curse-triggered items', () => {
     for (const id of ['trophy-hunter', 'boss-trophy', 'boss-aegis', 'trophy-room']) {
       expect(ITEM_BY_ID.get(id)?.description.startsWith('Gain a curse:')).toBe(true);
     }
+  });
+});
+
+describe('scaling gold items', () => {
+  it('pays 5 gold, then 7, then 9 for solves within 3 guesses', () => {
+    const { state } = start('hat-trick');
+    state.items.push({ instance: 'i-hat', id: 'hat-trick', data: { gold: 5 }, equipped: true });
+    setAnswer(state, 'crane');
+
+    const first = act(state, { type: 'guess', word: 'crane' });
+    expect(first.state.gold).toBe(20);
+    expect(first.state.items.find((item) => item.id === 'hat-trick')?.data.gold).toBe(7);
+
+    const second = nextRound(first.state);
+    setAnswer(second.state, 'crane');
+    const secondSolve = act(second.state, { type: 'guess', word: 'crane' });
+    expect(secondSolve.state.gold).toBe(32);
+    expect(secondSolve.state.items.find((item) => item.id === 'hat-trick')?.data.gold).toBe(9);
+  });
+
+  it('does not pay on the fourth guess', () => {
+    const { state } = start('hat-trick-slow');
+    state.items.push({ instance: 'i-hat', id: 'hat-trick', data: { gold: 5 }, equipped: true });
+    if (!state.round) throw new Error('expected round');
+    setAnswer(state, 'crane');
+    state.round.totalGuesses = 3;
+
+    const solve = act(state, { type: 'guess', word: 'crane' });
+    expect(solve.state.gold).toBe(15);
+    expect(solve.state.items.find((item) => item.id === 'hat-trick')?.data.gold).toBe(5);
+  });
+
+  it('describes the live payout', () => {
+    const def = ITEM_BY_ID.get('hat-trick');
+    expect(def?.rarity).toBeUndefined();
+    expect(def?.description).toContain('gain 5 gold');
+    expect(def?.dynamicDescription?.({ gold: 9 })).toContain('gain 9 gold');
   });
 });
 

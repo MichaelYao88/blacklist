@@ -1470,9 +1470,13 @@ export function createCore(content: Content): Core {
     }
     rt.events.push(...hookEvents);
 
-    // The List blacklists only the first guess of the round. It is one curse,
-    // not a stacking counter.
-    if (hasCurse(state, 'the-list') && round.guesses.length === 1) addBlacklist(rt, word);
+    // Remember the first guess of every round even before The List exists, so
+    // taking the curse can seed the blacklist with all previous rounds. The
+    // curse itself blacklists only that one word per round.
+    if (round.guesses.length === 1) {
+      if (!state.firstGuesses.includes(word)) state.firstGuesses.push(word);
+      if (hasCurse(state, 'the-list')) addBlacklist(rt, word);
+    }
 
     if (isOver(state)) return;
 
@@ -2007,6 +2011,15 @@ export function createCore(content: Content): Core {
       state.slots = Math.max(0, state.slots + def.slotDelta);
       emit(rt, { type: 'slotsChanged', slots: state.slots });
     }
+    if (def.id === 'the-list') {
+      const before = state.blacklist.length;
+      for (const word of state.firstGuesses) {
+        if (!state.blacklist.includes(word)) state.blacklist.push(word);
+      }
+      if (state.blacklist.length !== before) {
+        emit(rt, { type: 'blacklistChanged', list: state.blacklist.slice() });
+      }
+    }
     emit(rt, { type: 'curseChosen', curse: id, stacks: entry.stacks, name: def.name });
     runHook(rt, 'onCurseGained', { curse: id, stacks: entry.stacks });
   }
@@ -2045,6 +2058,7 @@ export function createCore(content: Content): Core {
       emit(rt, { type: 'slotsChanged', slots: state.slots });
     }
     if (entry.stacks <= 0) state.curses.splice(index, 1);
+    if (curseId === 'the-list' && entry.stacks <= 0) clearBlacklist(rt);
     state.pendingCurseRemoval--;
     emit(rt, { type: 'curseRemoved', curse: curseId, stacks: entry.stacks });
     if (state.pendingCurseRemoval <= 0 && state.phase === 'happening') {
@@ -2556,6 +2570,7 @@ export function createCore(content: Content): Core {
       items: [],
       spells: [],
       blacklist: [],
+      firstGuesses: [],
       purged: [],
       usedAnswers: [],
       pendingPurge: 0,
@@ -2627,6 +2642,7 @@ export function createCore(content: Content): Core {
       }
       state.bonusSolveGold = typeof state.bonusSolveGold === 'number' ? state.bonusSolveGold : 0;
       if (!Array.isArray(state.curses)) state.curses = [];
+      if (!Array.isArray(state.firstGuesses)) state.firstGuesses = state.blacklist.slice();
       if (typeof state.level !== 'number') {
         state.level = state.nodes[state.nodeIndex]?.level ?? 1;
       }
