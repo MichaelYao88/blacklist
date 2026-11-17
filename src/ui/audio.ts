@@ -130,11 +130,12 @@ class Sfx {
     const start = ctx.currentTime + delay;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
+    const level = Math.min(0.32, volume * 1.6);
     osc.type = type;
     osc.frequency.setValueAtTime(from, start);
     osc.frequency.exponentialRampToValueAtTime(Math.max(30, to), start + seconds);
     gain.gain.setValueAtTime(0.0001, start);
-    gain.gain.exponentialRampToValueAtTime(volume, start + 0.012);
+    gain.gain.exponentialRampToValueAtTime(level, start + 0.012);
     gain.gain.exponentialRampToValueAtTime(0.0001, start + seconds);
     osc.connect(gain).connect(ctx.destination);
     osc.start(start);

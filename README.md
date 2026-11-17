@@ -47,9 +47,29 @@ The first word of every round is added to the blacklist. It has no limit, nothin
 - Compact battle rail on the left: round timer with a hover tooltip for timeout damage, a wrong-guess damage chip, a side-view mini arena with the runner facing the act's monster (or boss), player HP and armor
 - Damage numbers slam into the centre of the screen as `N damage`, with a block message when armor or immunity eats the hit
 - Spells and the blacklist sit on the right, with items below them
-- Pause (Space or Esc), mute, synthesized SFX, keyboard and on-screen keyboard, colorblind symbols, reduced-motion-friendly CSS
+- Pause (Space or Esc), independent music/SFX mutes, synthesized SFX, keyboard and on-screen keyboard, colorblind symbols, reduced-motion-friendly CSS
+- Top-bar **MUSIC** selector with seven tracks; boss encounters automatically switch to More Power. Music sits below the game sounds in the mix
 
 Not in this version: daily seeds, meta unlocks beyond win/run counters and ascension, dordle grids, Antiwordle, liar clues, Green Warden. The state and seed plumbing is already there for those.
+
+---
+
+## Music
+
+Music can be changed or muted from the **MUSIC** control on the title screen and in the top bar. The boss override uses **More Power**; the selected track returns after the boss.
+
+**Liborio Conti** — free to use, no attribution required, via [no-copyright-music.com](https://www.no-copyright-music.com/):
+
+- More Power
+- Chip Tunes (Chiptune)
+- Dark Score
+- Drums (Upbeat Drums)
+- Dangerous
+
+**Sub_Clair** — via [Pixabay](https://pixabay.com/users/sub_clair-55456531/) under the Pixabay Content License:
+
+- Dark
+- Dark Synthwave
 
 ---
 

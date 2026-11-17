@@ -379,7 +379,72 @@ button {
 
 .top-actions {
   display: flex;
+  align-items: center;
   gap: 6px;
+}
+
+.music-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 4px 2px 7px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.music-controls.boss {
+  border-color: rgba(231, 184, 90, 0.45);
+  background: rgba(231, 184, 90, 0.06);
+}
+
+.music-kicker {
+  color: var(--faint);
+  font-size: 0.5rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.music-select {
+  max-width: 132px;
+  padding: 3px 18px 3px 5px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.music-select:focus-visible {
+  outline: 1px solid var(--gold);
+}
+
+.music-boss {
+  padding: 2px 5px;
+  border: 1px solid rgba(231, 184, 90, 0.4);
+  border-radius: 4px;
+  color: var(--gold);
+  font-size: 0.47rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.music-mute {
+  min-width: 28px;
+  padding: 4px 6px;
+  font-size: 0.72rem;
+  letter-spacing: 0;
+}
+
+.title-music {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 4;
 }
 
 .path {
@@ -3023,6 +3088,22 @@ button {
   min-width: 32px;
   font-size: 0.82rem;
   letter-spacing: 0;
+}
+
+@media (max-width: 760px) {
+  .music-kicker,
+  .music-boss {
+    display: none;
+  }
+
+  .music-select {
+    max-width: 104px;
+  }
+
+  .title-music {
+    top: 10px;
+    right: 10px;
+  }
 }
 
 /* ── responsive ──────────────────────────────────────────────────────────── */

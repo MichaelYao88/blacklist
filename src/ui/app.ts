@@ -29,6 +29,7 @@ import {
   spellIcon,
 } from './icons';
 import { sfx } from './audio';
+import { MUSIC_TRACKS, music, type MusicTrack } from './music';
 import {
   ASCENSION_MAX,
   ascensionStats,
@@ -239,6 +240,7 @@ function resumeRun(): void {
   damageFx = null;
   heartbeatSecond = -1;
   countdownUntil = 0;
+  music.resume();
   lastTick = performance.now();
   render();
 }
@@ -273,6 +275,7 @@ function submitGuess(): void {
 
 app.addEventListener('click', (event) => {
   sfx.unlock();
+  music.unlock();
   const target = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-action]');
   if (!target) return;
   event.preventDefault();
@@ -281,6 +284,7 @@ app.addEventListener('click', (event) => {
     case 'pause':
       paused = true;
       lastTick = performance.now();
+      music.pause();
       render();
       break;
     case 'resume':
@@ -289,10 +293,16 @@ app.addEventListener('click', (event) => {
     case 'unpause':
       paused = false;
       lastTick = performance.now();
+      music.resume();
       render();
       break;
     case 'sound':
       soundMuted = sfx.toggle();
+      render();
+      break;
+    case 'music-mute':
+      music.unlock();
+      music.toggleMute();
       render();
       break;
     case 'new-run':
@@ -413,6 +423,7 @@ app.addEventListener('drop', (event) => {
 
 window.addEventListener('keydown', (event) => {
   sfx.unlock();
+  music.unlock();
   if (screen !== 'run') return;
   if (event.metaKey || event.ctrlKey || event.altKey) return;
   const view = host.view();
@@ -423,6 +434,8 @@ window.addEventListener('keydown', (event) => {
       event.preventDefault();
       paused = !paused;
       lastTick = performance.now();
+      if (paused) music.pause();
+      else music.resume();
       render();
     }
     return;
@@ -487,11 +500,24 @@ window.setInterval(() => {
   render();
 }, 1_000);
 
+app.addEventListener('change', (event) => {
+  const select = (event.target as HTMLElement | null)?.closest<HTMLSelectElement>('[data-music-track]');
+  if (!select) return;
+  music.unlock();
+  music.setTrack(select.value === 'off' ? 'off' : (select.value as MusicTrack));
+  render();
+});
+
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden && screen === 'run' && host.view()?.phase.kind !== 'over') {
-    paused = true;
-    lastTick = performance.now();
-    render();
+  if (document.hidden) {
+    music.pause();
+    if (screen === 'run' && host.view()?.phase.kind !== 'over') {
+      paused = true;
+      lastTick = performance.now();
+      render();
+    }
+  } else if (!paused) {
+    music.resume();
   }
 });
 
@@ -500,6 +526,16 @@ document.addEventListener('visibilitychange', () => {
 function render(): void {
   const view = host.view();
   if (screen === 'run' && !view) screen = 'title';
+
+  const bossMusic = screen === 'run' && Boolean(
+    view
+    && (
+      view.phase.kind === 'bossIntro'
+      || ((view.phase.kind === 'round' || view.phase.kind === 'summary') && view.phase.boss)
+      || (view.phase.kind === 'reward' && view.phase.boss)
+    ),
+  );
+  music.setBoss(bossMusic);
 
   if (screen === 'title') {
     app!.innerHTML = renderTitle();
@@ -603,6 +639,7 @@ function renderTitle(): string {
 
   return `
   <div class="title-screen">
+    <div class="title-music">${renderMusicControls()}</div>
     <div class="title-mark" aria-hidden="true">
       <span class="ring r1"></span>
       <span class="ring r2"></span>
@@ -673,12 +710,26 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>Controls</h3>
-        <p>Type letters, <b>Backspace</b> to delete, <b>Enter</b> to submit. <b>Space</b> or <b>Esc</b> pauses the clock. You can also click the on-screen keyboard. Your character, HP and items are in the left rail; spells and the blacklist are on the right. The purge modal accepts any letter.</p>
+        <p>Type letters, <b>Backspace</b> to delete, <b>Enter</b> to submit. <b>Space</b> or <b>Esc</b> pauses the clock. You can also click the on-screen keyboard. Your character, HP and items are in the left rail; spells and the blacklist are on the right. The <b>MUSIC</b> control in the top bar changes the track and mutes music separately from game sounds. The purge modal accepts any letter.</p>
       </article>
     </div>
     <div class="help-actions">
       <button class="btn primary" data-action="back">GOT IT</button>
     </div>
+  </div>`;
+}
+
+function renderMusicControls(): string {
+  const selected = music.selectedTrack ?? 'off';
+  return `
+  <div class="music-controls ${music.bossActive ? 'boss' : ''}" title="Music: ${escapeHtml(music.currentName)}">
+    <span class="music-kicker">MUSIC</span>
+    <select class="music-select" data-music-track aria-label="Music track">
+      <option value="off" ${selected === 'off' ? 'selected' : ''}>Off</option>
+      ${MUSIC_TRACKS.map((track) => `<option value="${track.id}" ${selected === track.id ? 'selected' : ''}>${escapeHtml(track.name)}</option>`).join('')}
+    </select>
+    ${music.bossActive ? '<span class="music-boss">BOSS</span>' : ''}
+    <button class="btn tiny ghost music-mute" data-action="music-mute" title="${music.mutedState ? 'Unmute music' : 'Mute music'}" aria-label="${music.mutedState ? 'Unmute music' : 'Mute music'}">${music.mutedState ? '🔇' : '🎵'}</button>
   </div>`;
 }
 
@@ -693,7 +744,8 @@ function renderTopbar(view: RunView): string {
       <div class="chip-stat" title="Node">NODE ${view.nodeIndex + 1}/${view.nodes.length}</div>
     </div>
     <div class="top-actions">
-      <button class="btn tiny ghost sound-btn" data-action="sound" title="${soundMuted ? 'Unmute sound' : 'Mute sound'}" aria-label="${soundMuted ? 'Unmute sound' : 'Mute sound'}">${soundMuted ? '🔇' : '🔊'}</button>
+      ${renderMusicControls()}
+      <button class="btn tiny ghost sound-btn" data-action="sound" title="${soundMuted ? 'Unmute game sounds' : 'Mute game sounds'}" aria-label="${soundMuted ? 'Unmute game sounds' : 'Mute game sounds'}">${soundMuted ? '🔇' : '🔊'}</button>
       <button class="btn tiny" data-action="pause" ${paused ? 'disabled' : ''}>⏸ PAUSE</button>
       <button class="btn tiny ghost" data-action="help">RULES</button>
       <button class="btn tiny danger" data-action="abandon">ABANDON</button>
