@@ -52,14 +52,6 @@ export const SPELLS: SpellDef[] = [
       { type: 'freezeTime', ms: 20_000 },
     ],
   }),
-  defineSpell({
-    id: 'time-warp',
-    name: 'Time Warp',
-    description: '+30s this round.',
-    price: 5,
-    usable: 'round',
-    cast: () => [{ type: 'addTime', ms: 30_000 }],
-  }),
 ];
 
 export const SPELL_BY_ID = new Map(SPELLS.map((s) => [s.id, s]));

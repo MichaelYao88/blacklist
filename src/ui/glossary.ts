@@ -94,11 +94,11 @@ const ENTRIES: GlossaryEntry[] = [
   },
   {
     pattern: /\bTime Freeze\b/g,
-    tip: 'Spell: the clock stops until your next guess.',
+    tip: 'Spell: stop the clock until your next guess. With no clock, the next guess is free.',
   },
   {
-    pattern: /\bTime Warp\b/g,
-    tip: 'Spell: add 30 seconds to the current round.',
+    pattern: /\bcurse\b/gi,
+    tip: 'A permanent rule taken from a curse draft. It affects every future encounter.',
   },
   {
     pattern: /\bPhone a Friend\b/g,

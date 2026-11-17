@@ -241,6 +241,75 @@ export const HAPPENINGS: HappeningDef[] = [
       },
     ],
   }),
+  defineHappening({
+    id: 'curse-broker',
+    name: 'The Curse Broker',
+    description: 'A quiet stall with a ledger full of other people’s burdens.',
+    requiresCurseCount: 1,
+    options: [
+      {
+        id: 'relic',
+        label: 'Buy a rare relic',
+        description: '60 gold. If you cannot pay, he takes 60% of your gold.',
+        costGold: 60,
+        fallbackPct: 0.6,
+        outcomes: [{
+          chancePct: 100,
+          text: 'He slides a relic across the counter.',
+          effects: [{ type: 'addRandomRelic' }],
+        }],
+      },
+      {
+        id: 'remove',
+        label: 'Remove a curse',
+        description: '90 gold. If you cannot pay, he takes 90% of your gold.',
+        costGold: 90,
+        fallbackPct: 0.9,
+        outcomes: [{
+          chancePct: 100,
+          text: 'He uncorks one burden and lets it evaporate.',
+          effects: [{ type: 'awaitCurseRemoval' }],
+        }],
+      },
+      {
+        id: 'leave',
+        label: 'Leave',
+        description: 'Nothing happens.',
+        outcomes: [{ chancePct: 100, text: 'The broker closes the ledger.', effects: [] }],
+      },
+    ],
+  }),
+  defineHappening({
+    id: 'the-bargain',
+    name: 'The Bargain',
+    description: 'Two objects on a table. One is help. One is a new rule.',
+    weight: 2,
+    options: [
+      {
+        id: 'draw',
+        label: 'Draw one',
+        description: '50%: Encore item. 50%: Without the D curse.',
+        outcomes: [
+          {
+            chancePct: 50,
+            text: 'Your hand closes around a small brass echo.',
+            effects: [{ type: 'addItem', item: 'encore' }],
+          },
+          {
+            chancePct: 50,
+            text: 'The D falls out of your alphabet.',
+            effects: [{ type: 'addCurse', curse: 'without-d' }],
+          },
+        ],
+      },
+      {
+        id: 'leave',
+        label: 'Walk away',
+        description: 'Nothing happens.',
+        outcomes: [{ chancePct: 100, text: 'You leave both where they lie.', effects: [] }],
+      },
+    ],
+  }),
 ];
 
 export const HAPPENING_BY_ID = new Map(HAPPENINGS.map((h) => [h.id, h]));

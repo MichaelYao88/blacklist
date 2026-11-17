@@ -92,6 +92,9 @@ const ITEM_ICONS: Record<string, string> = {
   'empty-hand': '✋',
   'bulk-order': '🛒',
   'solo-note': '🎵',
+  'tally-lens': '🧮',
+  'meal-timer': '🍽️',
+  'plate-timer': '🛡️',
   'off-road': '🚙',
   'clean-slate': '🧼',
   shortcut: '⚡',
@@ -109,7 +112,6 @@ const SPELL_ICONS: Record<string, string> = {
   restore: '🧹',
   immunity: '🛡️',
   'phone-friend': '📞',
-  'time-warp': '⏩',
   purge: '🧽',
 };
 
@@ -133,6 +135,8 @@ const FOOD_ICONS: Record<string, string> = {
   'x-ray': '🩻',
   'q-tip': '🧵',
   'bitter-root': '🌿',
+  inkcap: '🍄',
+  'purge-the-d': '♀️',
 };
 
 const BOSS_SIGILS: Record<string, string> = {

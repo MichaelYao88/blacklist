@@ -32,28 +32,30 @@ export const MUSIC_TRACKS: MusicTrackInfo[] = [
 ];
 
 const TRACK_BY_ID = new Map(MUSIC_TRACKS.map((track) => [track.id, track]));
-const AREA_TRACKS = MUSIC_TRACKS.filter((track) => track.id !== 'more-power');
-const MUSIC_KEY = 'blacklist.music.v1';
-const DEFAULT_AREA_TRACK: MusicTrack = 'dark-synthwave';
+const CAROUSEL = MUSIC_TRACKS.filter((track) => track.id !== 'more-power');
+const MUSIC_KEY = 'blacklist.music.v2';
+const DEFAULT_TRACK: MusicTrack = 'dark-synthwave';
 
 class Music {
   private audio: HTMLAudioElement | null = null;
   private volume = 0.11;
   private muted = false;
+  private selected: MusicTrack = DEFAULT_TRACK;
   private boss = false;
   private unlocked = false;
-  private areaAct = 0;
-  private areaTrack: MusicTrack = DEFAULT_AREA_TRACK;
 
   constructor() {
     try {
       const raw = localStorage.getItem(MUSIC_KEY);
       if (raw) {
-        const parsed = JSON.parse(raw) as { muted?: boolean };
+        const parsed = JSON.parse(raw) as { track?: string; muted?: boolean };
+        if (parsed.track && TRACK_BY_ID.has(parsed.track as MusicTrack)) {
+          this.selected = parsed.track as MusicTrack;
+        }
         this.muted = Boolean(parsed.muted);
       }
     } catch {
-      // Use the defaults.
+      // Use defaults.
     }
   }
 
@@ -66,26 +68,14 @@ class Music {
   }
 
   get currentName(): string {
-    if (this.boss) return 'More Power · boss';
-    return TRACK_BY_ID.get(this.areaTrack)?.name ?? 'Dark Synthwave';
+    if (this.boss) return 'More Power · final boss';
+    return TRACK_BY_ID.get(this.selected)?.name ?? 'Dark Synthwave';
   }
 
-  resetArea(): void {
-    this.areaAct = 0;
-    this.areaTrack = DEFAULT_AREA_TRACK;
-    this.boss = false;
-    this.sync();
-  }
-
-  setArea(act: number): void {
-    if (act === this.areaAct) return;
-    this.areaAct = act;
-    if (act === 0) {
-      this.areaTrack = DEFAULT_AREA_TRACK;
-    } else {
-      const pool = AREA_TRACKS.filter((track) => track.id !== this.areaTrack);
-      this.areaTrack = pool[Math.floor(Math.random() * pool.length)]?.id ?? DEFAULT_AREA_TRACK;
-    }
+  cycleTrack(): void {
+    const index = CAROUSEL.findIndex((track) => track.id === this.selected);
+    this.selected = CAROUSEL[(index + 1) % CAROUSEL.length].id;
+    this.persist();
     this.sync();
   }
 
@@ -102,7 +92,6 @@ class Music {
     this.sync();
   }
 
-  /** Browsers require a gesture before audio can start. */
   unlock(): void {
     this.unlocked = true;
     this.sync();
@@ -118,7 +107,10 @@ class Music {
 
   private persist(): void {
     try {
-      localStorage.setItem(MUSIC_KEY, JSON.stringify({ muted: this.muted }));
+      localStorage.setItem(MUSIC_KEY, JSON.stringify({
+        track: this.selected,
+        muted: this.muted,
+      }));
     } catch {
       // Ignore private mode.
     }
@@ -130,7 +122,7 @@ class Music {
       this.audio?.pause();
       return;
     }
-    const info = TRACK_BY_ID.get(this.boss ? 'more-power' : this.areaTrack);
+    const info = TRACK_BY_ID.get(this.boss ? 'more-power' : this.selected);
     if (!info) return;
     const audio = this.ensure();
     if (audio.dataset.track !== info.id) {

@@ -11,6 +11,7 @@ import type {
 } from '../game';
 import {
   BOSS_BY_ID,
+  CURSE_BY_ID,
   FOOD_BY_ID,
   HAPPENING_BY_ID,
   ITEM_BY_ID,
@@ -30,12 +31,7 @@ import {
 } from './icons';
 import { sfx } from './audio';
 import { music } from './music';
-import {
-  ASCENSION_MAX,
-  ascensionStats,
-  ascensionSummary,
-  ascensionTimePenaltyMs,
-} from '../core/ascension';
+import { ASCENSION_MAX, ascensionSummary } from '../core/ascension';
 
 const app = document.getElementById('app');
 if (!app) throw new Error('Missing #app root');
@@ -220,7 +216,6 @@ function startNewRun(): void {
   paused = false;
   damageFx = null;
   heartbeatSecond = -1;
-  music.resetArea();
   processEvents(events);
   lastTick = performance.now();
   render();
@@ -301,6 +296,11 @@ app.addEventListener('click', (event) => {
       soundMuted = sfx.toggle();
       render();
       break;
+    case 'music-next':
+      music.unlock();
+      music.cycleTrack();
+      render();
+      break;
     case 'music-mute':
       music.unlock();
       music.toggleMute();
@@ -377,6 +377,12 @@ app.addEventListener('click', (event) => {
       break;
     case 'choose':
       dispatchCommand({ type: 'choose', optionId: target.dataset.id ?? '' });
+      break;
+    case 'curse':
+      dispatchCommand({ type: 'chooseCurse', curseId: target.dataset.id ?? '' });
+      break;
+    case 'remove-curse':
+      dispatchCommand({ type: 'removeCurse', curseId: target.dataset.id ?? '' });
       break;
     case 'reward':
       dispatchCommand({ type: 'chooseReward', optionId: target.dataset.id ?? '' });
@@ -529,8 +535,6 @@ function render(): void {
     ),
   );
   music.setBoss(bossMusic);
-  if (screen === 'run' && view) music.setArea(view.act);
-  if (screen === 'title') music.resetArea();
 
   if (screen === 'title') {
     app!.innerHTML = renderTitle();
@@ -624,7 +628,7 @@ function renderTitle(): string {
           <span class="ascension-current">${selectedAscension === 0 ? 'OFF' : `LEVEL ${selectedAscension}`}</span>
         </div>
         <div class="ascension-levels">
-          ${Array.from({ length: unlocked + 1 }, (_, level) => `
+          ${Array.from({ length: Math.min(ASCENSION_MAX, unlocked) + 1 }, (_, level) => `
             <button class="ascension-btn ${level === selectedAscension ? 'active' : ''}" data-action="ascension" data-level="${level}">${level === 0 ? 'OFF' : level}</button>
           `).join('')}
         </div>
@@ -651,9 +655,9 @@ function renderTitle(): string {
     </div>
     ${ascensionPicker}
     <div class="title-facts">
-      <div><b>5</b><span>acts</span></div>
-      <div><b>∞</b><span>blacklist</span></div>
-      <div><b>8</b><span>bosses</span></div>
+      <div><b>50</b><span>levels</span></div>
+      <div><b>2</b><span>curse choices</span></div>
+      <div><b>3</b><span>base damage</span></div>
       <div><b>1</b><span>free guess</span></div>
     </div>
     ${metaLine}
@@ -672,40 +676,36 @@ function renderHelp(): string {
     </div>
     <div class="rules-grid">
       <article class="rule-card">
-        <h3>The blacklist</h3>
-        <p>The <b>first word</b> of every round is added to the blacklist. There is no limit and nothing is ever evicted: every word you spend is gone forever. The answer is always picked from words that are not on the list.</p>
+        <h3>The run</h3>
+        <p>Fifty levels. The loop is <b>round → event chance → shop</b>, then <b>round → event chance → curse</b>. Levels 47–49 are curse floors, and level 50 is the final boss. You must choose one of two curses every time a curse is offered.</p>
       </article>
       <article class="rule-card">
         <h3>Damage</h3>
-        <p>Your first <b>guess</b> each round is free. After that, a wrong guess takes the monster's fixed hit. It starts around <b>3</b> and grows with the act, with how deep into the act you are, and with <b>every 3 rounds cleared</b>. A correct guess never hurts you.</p>
+        <p>Your first guess each round is free. Wrong paid guesses take <b>3 damage</b> before curses. Damage never grows with level; only curses change it. A correct guess never hurts you.</p>
       </article>
       <article class="rule-card">
         <h3>Armor</h3>
-        <p>Armor is a pool of damage reduction. Each point soaks one point of an incoming hit before HP is touched, and the remainder still gets through. The pool refills at the start of every round. Timeout damage ignores armor entirely.</p>
+        <p>Armor is a pool of damage reduction. Each point soaks one point of an incoming hit before HP is touched. The pool refills at the start of every round. Timeout damage ignores armor.</p>
       </article>
       <article class="rule-card">
         <h3>The clock</h3>
-        <p>The timer reads <b>MASSIVE DAMAGE IN</b>. Normal rounds start generous and get shorter as you clear rounds. If the clock reaches zero, you take <b>2× the guess hit + 30% of max HP</b>, ignoring armor, and the round ends. Hover the timer to see the exact timeout hit. Bosses have no timer. The Gauntlet is the exception: three puzzles, one shared 150-second clock.</p>
+        <p>There is no clock until you take <b>The Clock</b> curse. The first stack gives 5:00; each later stack cuts 20%. Reveal-time items show a count-up timer, while clock rounds show a count-down.</p>
+      </article>
+      <article class="rule-card">
+        <h3>Curses</h3>
+        <p>Curses are permanent rules. Vision curses hide tiles or letters; others change damage, shops, healing, slots, HP, gold or the clock. Some stack; boolean vision curses are one copy each. <b>Tally Lens</b> reveals correct/misplaced counts after the first vision curse.</p>
       </article>
       <article class="rule-card">
         <h3>Items & spells</h3>
-        <p>Items only work while they are <b>equipped</b> in a slot. Extra gear goes to your bag, and shops are where you drag pieces between the bag and your slots. Spells stack: duplicates sit in one pile. <b>Relics</b> are boss prizes, but they use an item slot like any other gear and only work while equipped. Reveals stay marked on the keyboard and in the Revealed panel for the puzzle. Letter-reveal foods are permanent: once eaten, that letter is checked every round for the rest of the run. Timed shields such as Head Start and Quickdraw make guesses in that window count as free guesses.</p>
-      </article>
-      <article class="rule-card">
-        <h3>Bosses</h3>
-        <p>Each act ends with a boss intro that spells out the changed rules before you commit. Beat it and choose one of three rare relics with passive effects. Relics use an item slot.</p>
+        <p>Items work only while equipped. Spells stack. <b>Time Warp is gone</b>; Time Freeze stops the clock, or makes the next guess free when there is no clock. Time-based foods and remaining-time items are gated until The Clock is taken.</p>
       </article>
       <article class="rule-card">
         <h3>Ascension</h3>
-        <p>Win a run to unlock <b>Ascension 1</b>. Each level keeps every lower modifier and adds another. A1 makes every wrong guess that is not free add <b>+1 damage</b> to later wrong guesses; three levels shorten every timer by <b>20s</b>; and the old max HP, shop and boss percentage penalties are spread between them. A1's damage ramp returns once more, stacking to <b>+2</b>. Pick your level on the title screen.</p>
-      </article>
-      <article class="rule-card">
-        <h3>The run</h3>
-        <p>Five acts. Six nodes per act: three rounds, two shops or happenings, then a boss. Every finished encounter pays a flat amount of gold. A solve also offers a spell or a meal, and only rarely a piece of gear. Shops carry <b>three items, two foods, and one wildcard</b> that can be a spell, food, or item. One item is always half price, and each reroll costs double the last. Defeat wipes the save and shows you the word you missed. Victory keeps your meta record.</p>
+        <p>Ascension only adds starting curses. A1 drafts one curse before level 1; A2 drafts two.</p>
       </article>
       <article class="rule-card">
         <h3>Controls</h3>
-        <p>Type letters, <b>Backspace</b> to delete, <b>Enter</b> to submit. <b>Space</b> or <b>Esc</b> pauses the clock. You can also click the on-screen keyboard. Your character, HP and items are in the left rail; spells and the blacklist are on the right. The <b>MUSIC</b> control in the top bar mutes music separately from game sounds; the track changes on each new act, and bosses play More Power. The purge modal accepts any letter.</p>
+        <p>Type letters, <b>Backspace</b> to delete, <b>Enter</b> to submit. <b>Space</b> or <b>Esc</b> pauses. Click the <b>MUSIC</b> name to cycle tracks; the mute button is separate. More Power only plays for the final boss.</p>
       </article>
     </div>
     <div class="help-actions">
@@ -718,7 +718,7 @@ function renderMusicControls(): string {
   return `
   <div class="music-controls ${music.bossActive ? 'boss' : ''}" title="Music: ${escapeHtml(music.currentName)}">
     <span class="music-kicker">MUSIC</span>
-    <span class="music-now">${escapeHtml(music.currentName)}</span>
+    <button class="music-now" data-action="music-next" title="Click to change track">${escapeHtml(music.currentName)}</button>
     ${music.bossActive ? '<span class="music-boss">BOSS</span>' : ''}
     <button class="btn tiny ghost music-mute" data-action="music-mute" title="${music.mutedState ? 'Unmute music' : 'Mute music'}" aria-label="${music.mutedState ? 'Unmute music' : 'Mute music'}">${music.mutedState ? '🔇' : '🎵'}</button>
   </div>`;
@@ -731,8 +731,8 @@ function renderTopbar(view: RunView): string {
     <div class="top-stats">
       <div class="chip-stat gold" title="Gold">¤ <b>${view.gold}</b></div>
       ${view.ascension > 0 ? `<div class="chip-stat ascension" title="Ascension modifiers are active">A${view.ascension}</div>` : ''}
-      <div class="chip-stat" title="Act">ACT ${roman(view.act + 1)}</div>
-      <div class="chip-stat" title="Node">NODE ${view.nodeIndex + 1}/${view.nodes.length}</div>
+      <div class="chip-stat" title="Area">AREA ${roman(view.act + 1)}</div>
+      <div class="chip-stat" title="Level">LEVEL ${view.level}/50</div>
     </div>
     <div class="top-actions">
       ${renderMusicControls()}
@@ -773,11 +773,13 @@ function phaseLabel(view: RunView): string {
         ? 'REWARD'
         : phase.kind === 'bossIntro'
           ? 'BOSS'
-          : phase.kind === 'shop'
-            ? 'SHOP'
-            : phase.kind === 'happening'
-              ? 'INTERRUPTION'
-              : 'THE LIST';
+          : phase.kind === 'curse'
+            ? 'CURSE'
+            : phase.kind === 'shop'
+              ? 'SHOP'
+              : phase.kind === 'happening'
+                ? 'INTERRUPTION'
+                : 'THE LIST';
 }
 
 function damageOverlayHtml(): string {
@@ -822,18 +824,20 @@ function bossStateChips(entries: Array<[string, number]>): string {
 }
 
 function renderTimer(view: RunView, board: BoardView): string {
-  const time = board.remainingMs === null ? '∞' : formatTime(board.remainingMs);
-  const label = board.remainingMs === null
-    ? 'NO LIMIT'
+  if (board.timerMode === 'hidden') return '';
+  const countUp = board.timerMode === 'countup';
+  const time = countUp ? formatTime(board.elapsedMs) : formatTime(board.remainingMs);
+  const label = countUp
+    ? 'TIME'
     : board.timerFrozen
       ? 'FROZEN'
       : 'MASSIVE DAMAGE IN';
   const timeoutHit = board.timeoutDamage;
-  const pct = board.remainingMs === null || !board.timerStartMs
+  const pct = countUp || !board.timerStartMs || board.remainingMs === null
     ? 100
     : Math.max(0, Math.min(100, (board.remainingMs / board.timerStartMs) * 100));
-  const urgent = board.remainingMs !== null && board.remainingMs <= 15_000;
-  return `<div class="timer ${urgent ? 'urgent' : ''} ${board.timerFrozen ? 'frozen' : ''}" title="${board.remainingMs === null ? 'This round has no clock.' : `When this reaches zero you take ${timeoutHit} damage: twice the guess hit plus 30% of max HP.`}">
+  const urgent = !countUp && board.remainingMs !== null && board.remainingMs <= 15_000;
+  return `<div class="timer ${urgent ? 'urgent' : ''} ${board.timerFrozen ? 'frozen' : ''}" title="${countUp ? 'No clock limit. Time is shown because an equipped item cares about it.' : `When this reaches zero you take ${timeoutHit} damage.`}">
     <span class="timer-label">${label}</span>
     <b>${time}</b>
     <div class="timer-bar"><i style="width:${pct}%"></i></div>
@@ -909,11 +913,11 @@ function renderPath(view: RunView): string {
     const done = index < view.nodeIndex;
     const current = index === view.nodeIndex;
     const boss = node.boss ? BOSS_BY_ID.get(node.boss) : undefined;
-    const icon = node.kind === 'boss' ? '☠' : node.kind === 'shop' ? '$' : node.kind === 'happening' ? '?' : '•';
-    const label = boss ? boss.name : node.kind === 'round' ? 'Round' : node.kind === 'shop' ? 'Shop' : 'Happening';
+    const icon = node.kind === 'boss' ? '☠' : node.kind === 'shop' ? '$' : node.kind === 'happening' ? '?' : node.kind === 'curse' ? '✦' : '•';
+    const label = boss ? boss.name : node.kind === 'round' ? 'Round' : node.kind === 'shop' ? 'Shop' : node.kind === 'curse' ? 'Curse' : 'Happening';
     const classes = ['path-chip', node.kind, done ? 'done' : '', current ? 'current' : ''].filter(Boolean).join(' ');
-    return `<span class="${classes}" title="Act ${Math.floor(index / 6) + 1} · ${escapeHtml(label)}">
-      <i>${icon}</i><em>${index + 1}</em>
+    return `<span class="${classes}" title="Level ${node.level ?? index + 1} · ${escapeHtml(label)}">
+      <i>${icon}</i><em>${node.level ?? index + 1}</em>
     </span>`;
   }).join('');
   return `<nav class="path" aria-label="Run path"><span class="path-label">PATH</span>${chips}</nav>`;
@@ -936,7 +940,7 @@ function renderSidePanel(view: RunView): string {
 
   const items = view.items.length
     ? view.items.map((item) => renderItem(view, item)).join('')
-    : `<p class="empty-note">No items yet. Shops and bosses fix that.</p>`;
+    : `<p class="empty-note">No items yet. Shops and the Curse Broker fix that.</p>`;
   const bagged = view.items.filter((item) => !item.equipped && item.slots > 0).length;
 
   return `
@@ -944,6 +948,14 @@ function renderSidePanel(view: RunView): string {
     <section>
       <div class="panel-head"><span class="panel-kicker">SPELLS</span><span class="count">${view.spells.length}</span></div>
       <div class="spell-list">${spells}</div>
+    </section>
+    <section>
+      <div class="panel-head"><span class="panel-kicker">CURSES</span><span class="count">${view.curses.length}</span></div>
+      <div class="curse-list">
+        ${view.curses.length
+          ? view.curses.map((curse) => `<div class="curse-chip"><b>${escapeHtml(curse.name)}</b>${curse.stacks > 1 ? `<em>×${curse.stacks}</em>` : ''}<span>${escapeHtml(curse.tags.join(' · '))}</span></div>`).join('')
+          : `<p class="empty-note">No curses yet. The first draft comes after level 2.</p>`}
+      </div>
     </section>
     <section>
       <div class="panel-head"><span class="panel-kicker">BLACKLIST</span><span class="count" title="No limit. Every spent word stays here.">${view.blacklist.length}</span></div>
@@ -1097,7 +1109,9 @@ function renderSummary(view: RunView, phase: Extract<PhaseView, { kind: 'summary
       <div class="gold-fact"><b>+${phase.gold}</b><span>gold</span></div>
     </div>
     <p class="muted">${phase.outcome === 'solved'
-      ? 'The first word of the round is on the blacklist now. Choose a reward and keep moving.'
+      ? boss
+        ? 'The final boss is down. Continue to finish the run.'
+        : 'The round is clear. Choose a reward and keep moving.'
       : phase.outcome === 'timeout'
         ? 'The clock took its cut, but the encounter still paid. No reward this time. The run continues if you do.'
         : 'The run is over. The save is gone.'}</p>
@@ -1154,6 +1168,49 @@ function offerInfo(offer: Offer): { name: string; description: string; slots: nu
   return { name: def?.name ?? offer.def, description: def?.description ?? '', slots: 0, icon: foodIcon(offer.def) };
 }
 
+function renderCurse(phase: Extract<PhaseView, { kind: 'curse' }>): string {
+  return `
+  <div class="phase-card curse-draft">
+    <p class="panel-kicker">${phase.starting ? 'STARTING CURSE' : 'CURSE DRAFT'}</p>
+    <h2>Choose a burden</h2>
+    <p class="muted">Both curses affect every future encounter. You must take one.</p>
+    <div class="curse-grid">
+      ${phase.options.map((id) => {
+        const def = CURSE_BY_ID.get(id);
+        if (!def) return '';
+        return `
+        <button class="curse-card" data-action="curse" data-id="${escapeHtml(def.id)}" style="--enemy:${bossColor(def.art)}">
+          <div class="curse-card-art" aria-hidden="true">${enemyArt(def.art)}</div>
+          <span class="tag">${def.tags.join(' · ').toUpperCase()}</span>
+          <b>${escapeHtml(def.name)}</b>
+          <p>${escapeHtml(def.description)}</p>
+          <ul>${def.rules.map((rule) => `<li>${escapeHtml(rule)}</li>`).join('')}</ul>
+          <span class="curse-take">TAKE THIS CURSE →</span>
+        </button>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
+function renderCurseRemovalModal(view: RunView): string {
+  if (view.pendingCurseRemoval <= 0) return '';
+  return `
+  <div class="modal">
+    <div class="modal-card">
+      <p class="panel-kicker">CURSE REMOVAL</p>
+      <h2>Choose one burden</h2>
+      <p class="muted">One stack is removed. Permanent stat losses already suffered are not refunded.</p>
+      <div class="curse-removal-list">
+        ${view.curses.map((curse) => `
+          <button class="btn" data-action="remove-curse" data-id="${escapeHtml(curse.id)}">
+            ${escapeHtml(curse.name)}${curse.stacks > 1 ? ` ×${curse.stacks}` : ''}
+          </button>
+        `).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
 function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>): string {
   const coupon = phase.purchases === 0
     ? view.items.reduce((max, item) => {
@@ -1188,10 +1245,13 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
     }).join('')
     : `<p class="empty-note">The shelves are bare. Reroll or leave.</p>`;
 
-  const sellable = view.items.map((item) => {
-    const def = ITEM_BY_ID.get(item.id);
-    return `<div class="sell-row"><span>${itemIcon(item.id)} ${escapeHtml(def?.name ?? item.id)}</span><button class="btn tiny" data-action="sell" data-id="${escapeHtml(item.instance)}">SELL ${item.sellValue} G</button></div>`;
-  }).join('');
+  const canSell = !view.curses.some((curse) => curse.id === 'chained');
+  const sellable = view.items.length
+    ? view.items.map((item) => {
+      const def = ITEM_BY_ID.get(item.id);
+      return `<div class="sell-row"><span>${itemIcon(item.id)} ${escapeHtml(def?.name ?? item.id)}</span><button class="btn tiny" data-action="sell" data-id="${escapeHtml(item.instance)}" ${canSell ? '' : 'disabled'}>SELL ${item.sellValue} G</button></div>`;
+    }).join('')
+    : `<p class="empty-note">Nothing to sell.</p>`;
 
   const gear = view.items.filter((item) => item.slots > 0);
   const equippedGear = gear.filter((item) => item.equipped);
@@ -1247,8 +1307,11 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
       <button class="btn ghost" data-action="continue">LEAVE →</button>
     </div>
     ${loadout}
-    ${sellable ? `<details class="sell-box"><summary>Sell items</summary>${sellable}</details>` : ''}
-    <p class="hint">Three items, two foods, and one wildcard slot that can be a spell, food, or item. Food is eaten on purchase and takes no slot. One item is always half price, and each reroll costs double the last. Relics never appear in shops.</p>
+    <div class="sell-box">
+      <p class="panel-kicker">SELL ITEMS${canSell ? '' : ' · CHAINED'}</p>
+      ${sellable}
+    </div>
+    <p class="hint">Shops carry items, foods, and one wildcard slot. Curses can remove slots. Food is eaten on purchase and takes no slot. One item is always half price, and each reroll costs double the last. Relics are very rare items.</p>
   </div>`;
 }
 
@@ -1266,7 +1329,7 @@ function renderHappening(phase: Extract<PhaseView, { kind: 'happening' }>): stri
           <div>
             <b>${escapeHtml(option.label)}</b>
             <p>${glossaryText(option.description)}</p>
-            ${option.costGold ? `<span class="warn">Costs ${option.costGold} gold</span>` : ''}
+            ${option.costGold ? `<span class="warn">Costs ${option.costGold} gold${option.fallbackPct ? ` · or ${Math.round(option.fallbackPct * 100)}% of your gold` : ''}</span>` : ''}
           </div>
           <div class="odds">
             ${option.outcomes.map((outcome) => `<span>${outcome.chancePct}% · ${escapeHtml(outcome.text)}</span>`).join('')}
@@ -1306,14 +1369,14 @@ function renderOver(phase: Extract<PhaseView, { kind: 'over' }>): string {
     <p class="kicker">RUN OVER</p>
     <h1>${victory ? 'THE LIST IS YOURS' : 'THE LIST CLOSES'}</h1>
     <p class="tagline">${victory
-      ? 'Five acts. Every boss. The words you gave up are the ones that carried you.'
+      ? 'Fifty levels. Every curse. The words you gave up are the ones that carried you.'
       : 'The word that ended you is written below. It will not be so kind next time.'}</p>
     ${ascNote ? `<p class="ascension-result">${ascNote}</p>` : ''}
     ${reveal}
     <div class="stats-grid">
       <div><b>${stats.rounds}</b><span>rounds</span></div>
       <div><b>${stats.guesses}</b><span>guesses</span></div>
-      <div><b>${stats.bosses}</b><span>bosses</span></div>
+      <div><b>${stats.bosses}</b><span>final boss</span></div>
       <div><b>${stats.goldEarned}</b><span>gold earned</span></div>
       <div><b>${stats.damageTaken}</b><span>damage taken</span></div>
       <div><b>${stats.timeouts}</b><span>timeouts</span></div>
@@ -1346,18 +1409,10 @@ function renderPurgeModal(view: RunView): string {
 function renderBossIntro(view: RunView, phase: Extract<PhaseView, { kind: 'bossIntro' }>): string {
   const boss = BOSS_BY_ID.get(phase.boss);
   if (!boss) return '';
-  const stats = ascensionStats(view.ascension);
-  const timer = boss.timerMs === null
-    ? 'NO TIMER'
-    : formatTime(Math.max(15_000, boss.timerMs - ascensionTimePenaltyMs(view.ascension)));
-  const scaledDamage = boss.noGuessDamage
-    ? 0
-    : Math.ceil((boss.damage ?? 3) * (1 + 0.1 * stats.bossPctSteps));
+  const timer = boss.timerFromCurse ? 'CURSED CLOCK' : boss.timerMs === null ? 'NO TIMER' : formatTime(boss.timerMs);
   const damage = boss.noGuessDamage
     ? 'NO GUESS DAMAGE'
-    : boss.damageLabel
-      ? boss.damageLabel.replace(/\d+/, String(scaledDamage))
-      : `HIT ${scaledDamage}`;
+    : `BASE HIT ${boss.damage ?? 3}`;
   return `
   <div class="phase-card boss-intro" style="--enemy:${bossColor(boss.id)}">
     <p class="panel-kicker">BOSS ENCOUNTER · ACT ${roman(view.act + 1)}</p>
@@ -1388,6 +1443,8 @@ function phasePanel(view: RunView): string {
       return renderReward(phase);
     case 'bossIntro':
       return renderBossIntro(view, phase);
+    case 'curse':
+      return renderCurse(phase);
     case 'shop':
       return renderShop(view, phase);
     case 'happening':
@@ -1445,6 +1502,7 @@ function renderRun(view: RunView): string {
           ${renderSidePanel(view)}
         </main>`}
     ${renderPurgeModal(view)}
+    ${renderCurseRemovalModal(view)}
     ${count > 0 ? `<div class="countdown-overlay" aria-live="assertive">
         <div class="countdown-card">
           <span class="countdown-kicker">ROUND ${view.nodeIndex + 1}</span>

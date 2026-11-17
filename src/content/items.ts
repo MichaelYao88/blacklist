@@ -9,7 +9,6 @@ const SPELL_BITS: Record<string, number> = {
   restore: 8,
   immunity: 16,
   'phone-friend': 32,
-  'time-warp': 64,
 };
 
 const FOOD_BITS = new Map(FOODS.map((food, index) => [food.id, 1 << index]));
@@ -30,6 +29,7 @@ export const ITEMS: ItemDef[] = [
     description: '+15s per round.',
     price: 6,
     kind: 'gear',
+    requiresClock: true,
     on: { onRoundStart: () => [{ type: 'addTime', ms: 15_000 }] },
   }),
   defineItem({
@@ -38,6 +38,7 @@ export const ITEMS: ItemDef[] = [
     description: 'Solve under 30s: gain 2 gold. +1 more gold each time this triggers.',
     price: 6,
     kind: 'gear',
+    timerInterest: true,
     initial: { gold: 2 },
     on: {
       onSolve: (ctx, p) =>
@@ -308,6 +309,7 @@ export const ITEMS: ItemDef[] = [
     description: 'Guess with ≤5s on the clock: +6 gold.',
     price: 8,
     kind: 'gear',
+    requiresClock: true,
     on: {
       onGuessScored: (_ctx, p) => {
         if (p.remainingMs == null || p.remainingMs > 5_000) return [];
@@ -399,12 +401,13 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'fast-learner',
     name: 'Fast Learner',
-    description: 'Solve under 30s: Time Warp.',
+    description: 'Solve under 30s: Time Freeze.',
     price: 8,
     kind: 'gear',
+    timerInterest: true,
     on: {
       onSolve: (_ctx, p) =>
-        p.elapsedMs < 30_000 ? [{ type: 'giveSpell', spell: 'time-warp' }] : [],
+        p.elapsedMs < 30_000 ? [{ type: 'giveSpell', spell: 'time-freeze' }] : [],
     },
   }),
   defineItem({
@@ -464,9 +467,10 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'sundial',
     name: 'Sundial',
-    description: '+2 minutes per round. −1 free guess per round.',
+    description: '+2 minutes per round. -1 free guess per round.',
     price: 9,
     kind: 'gear',
+    requiresClock: true,
     on: {
       onRoundStart: () => [
         { type: 'addTime', ms: 120_000 },
@@ -536,12 +540,12 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'second-hand',
     name: 'Second Hand',
-    description: 'Casting Time Freeze or Time Warp also grants a Heal spell.',
+    description: 'Casting Time Freeze also grants a Heal spell.',
     price: 9,
     kind: 'gear',
     on: {
       onSpellCast: (_ctx, p) =>
-        p.spell === 'time-freeze' || p.spell === 'time-warp'
+        p.spell === 'time-freeze'
           ? [{ type: 'giveSpell', spell: 'heal' }]
           : [],
     },
@@ -768,7 +772,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'growth-chart',
     name: 'Growth Chart',
-    description: 'Every 5 max HP gained: +1 Time Warp.',
+    description: 'Every 5 max HP gained: +1 Time Freeze.',
     price: 9,
     kind: 'gear',
     initial: { grown: 0 },
@@ -776,10 +780,10 @@ export const ITEMS: ItemDef[] = [
       onMaxHpChanged: (ctx, p) => {
         if (p.delta <= 0) return [];
         const total = ctx.self.data.grown + p.delta;
-        const warps = Math.floor(total / 5);
+        const freezes = Math.floor(total / 5);
         return [
           { type: 'setItemData', stat: 'grown', value: total % 5 },
-          ...Array.from({ length: warps }, () => ({ type: 'giveSpell' as const, spell: 'time-warp' as const })),
+          ...Array.from({ length: freezes }, () => ({ type: 'giveSpell' as const, spell: 'time-freeze' as const })),
         ];
       },
     },
@@ -842,14 +846,14 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'time-lattice',
     name: 'Time Lattice',
-    description: 'Cast Time Warp: gain Restore. Once per round.',
+    description: 'Cast Time Freeze: gain Restore. Once per round.',
     price: 8,
     kind: 'gear',
     initial: { used: 0 },
     on: {
       onRoundEnd: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
       onSpellCast: (ctx, p) => {
-        if (ctx.self.data.used || p.spell !== 'time-warp') return [];
+        if (ctx.self.data.used || p.spell !== 'time-freeze') return [];
         return [
           { type: 'giveSpell', spell: 'restore' },
           { type: 'setItemData', stat: 'used', value: 1 },
@@ -920,6 +924,7 @@ export const ITEMS: ItemDef[] = [
     description: 'The first guess with 30s or less left each round is free.',
     price: 8,
     kind: 'gear',
+    requiresClock: true,
     initial: { used: 0 },
     on: {
       onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
@@ -939,6 +944,7 @@ export const ITEMS: ItemDef[] = [
     description: 'Every 20s that pass in a round: +1 gold.',
     price: 8,
     kind: 'gear',
+    timerInterest: true,
     initial: { ms: 0 },
     on: {
       onRoundStart: () => [{ type: 'setItemData', stat: 'ms', value: 0 }],
@@ -1034,7 +1040,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'contrapuntal',
     name: 'Contrapuntal',
-    description: 'Cast each spell type once. On the last, become a random relic.',
+    description: 'Cast each of the six spell types once. On the last, become a random relic.',
     price: 12,
     kind: 'gear',
     initial: { _mask: 0, types: 0 },
@@ -1050,7 +1056,7 @@ export const ITEMS: ItemDef[] = [
           { type: 'setItemData', stat: '_mask', value: next },
           { type: 'setItemData', stat: 'types', value: types },
         ];
-        if (types >= 7) {
+        if (types >= 6) {
           effects.push({ type: 'consumeSelf' }, { type: 'addRandomRelic' });
         }
         return effects;
@@ -1222,6 +1228,45 @@ export const ITEMS: ItemDef[] = [
     },
   }),
 
+  defineItem({
+    id: 'tally-lens',
+    name: 'Tally Lens',
+    description: 'While a vision curse is active, guesses show correct and misplaced counts.',
+    price: 8,
+    kind: 'gear',
+    requiresVisionCurse: 1,
+  }),
+  defineItem({
+    id: 'meal-timer',
+    name: 'Meal Timer',
+    description: 'Eating food adds 2s to the clock. Only appears with a clock.',
+    price: 8,
+    kind: 'gear',
+    requiresClock: true,
+    on: {
+      onEat: () => [{ type: 'addTime', ms: 2_000 }],
+    },
+  }),
+  defineItem({
+    id: 'plate-timer',
+    name: 'Plate Timer',
+    description: 'Every 10 armor lost adds 3s to the clock.',
+    price: 9,
+    kind: 'gear',
+    initial: { lost: 0 },
+    on: {
+      onDamageTaken: (ctx, p) => {
+        if (p.armorUsed <= 0) return [];
+        const total = ctx.self.data.lost + p.armorUsed;
+        const seconds = Math.floor(total / 10);
+        return [
+          { type: 'setItemData', stat: 'lost', value: total % 10 },
+          ...Array.from({ length: seconds }, () => ({ type: 'addTime' as const, ms: 3_000 })),
+        ];
+      },
+    },
+  }),
+
   // ── boss relics ─────────────────────────────────────────────────────────
   // Rare passives. They take no slots, never appear in shops, and are only
   // offered as boss prizes. Several of them feed the spell engine.
@@ -1305,13 +1350,14 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'chrono-anchor',
     name: 'Chrono Anchor',
-    description: '+20s per round. On solve: Time Warp.',
+    description: '+20s per round. On solve: Time Freeze.',
     price: 22,
     kind: 'gear',
     rarity: 'rare',
+    requiresClock: true,
     on: {
       onRoundStart: () => [{ type: 'addTime', ms: 20_000 }],
-      onSolve: () => [{ type: 'giveSpell', spell: 'time-warp' }],
+      onSolve: () => [{ type: 'giveSpell', spell: 'time-freeze' }],
     },
   }),
   defineItem({
@@ -1332,6 +1378,7 @@ export const ITEMS: ItemDef[] = [
     price: 18,
     kind: 'gear',
     rarity: 'rare',
+    timerInterest: true,
     on: {
       onSolve: (_ctx, p) =>
         p.elapsedMs < 60_000 ? [{ type: 'giveSpell', spell: 'omen' }] : [],

@@ -8,7 +8,7 @@ describe('ascension title UI', () => {
     localStorage.clear();
     localStorage.setItem(
       'blacklist.meta.v1',
-      JSON.stringify({ runs: 2, wins: 1, bestAct: 5, ascension: 9 }),
+      JSON.stringify({ runs: 2, wins: 1, bestAct: 5, ascension: 2 }),
     );
     document.body.innerHTML = '<div id="app"></div>';
     await import('../src/ui/app');
@@ -18,9 +18,9 @@ describe('ascension title UI', () => {
   it('offers every unlocked ascension level', () => {
     const buttons = [...root.querySelectorAll<HTMLElement>('[data-action="ascension"]')];
     expect(buttons.map((button) => button.textContent?.trim())).toEqual([
-      'OFF', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+      'OFF', '1', '2',
     ]);
-    expect(root.textContent).toContain('Ascension 9 unlocked');
+    expect(root.textContent).toContain('Ascension 2 unlocked');
   });
 
   it('starts the next run at the selected ascension', () => {

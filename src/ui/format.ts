@@ -69,9 +69,10 @@ export function describeEvent(event: GameEvent): string | null {
     case 'nodeEntered': {
       const label = {
         round: 'A new round',
-        boss: 'A boss blocks the way',
+        boss: 'The final boss waits',
         shop: 'A shop unfolds',
         happening: 'Something happens',
+        curse: 'A burden is offered',
       }[event.kind];
       return `Act ${event.act + 1} · ${label}`;
     }

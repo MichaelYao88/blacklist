@@ -3,6 +3,8 @@ import type {
   BossDef,
   Content,
   Core,
+  CurseDef,
+  CurseId,
   Effect,
   GameEvent,
   HappeningDef,
@@ -31,20 +33,13 @@ import type {
   HookPayloads,
 } from './types';
 import { hashSeed, rngChance, rngInt, rngPick, rngNext, rngShuffle } from './rng';
-import { scoreGuess } from './score';
-import {
-  ASCENSION_MAX,
-  ascensionBossMultiplier,
-  ascensionRampPerWrong,
-  ascensionShopMultiplier,
-  ascensionStats,
-  ascensionTimePenaltyMs,
-} from './ascension';
+import { scoreGuess, truthCounts } from './score';
+import { ASCENSION_MAX, ascensionStartingCurses } from './ascension';
 
-const VERSION = 5;
+const VERSION = 6;
 const WORD_LENGTH = 5;
-const ACTS = 5;
-const NODES_PER_ACT = 6;
+const MAX_LEVEL = 50;
+const LEVELS_PER_AREA = 10;
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyz'.split('');
 
 const RULES: Source = { kind: 'rules' };
@@ -70,6 +65,7 @@ export function createCore(content: Content): Core {
   const itemById = new Map<string, ItemDef>(content.items.map((i) => [i.id, i]));
   const spellById = new Map<string, SpellDef>(content.spells.map((s) => [s.id, s]));
   const bossById = new Map<string, BossDef>(content.bosses.map((b) => [b.id, b]));
+  const curseById = new Map<string, CurseDef>(content.curses.map((c) => [c.id, c]));
   const foodById = new Map(content.foods.map((f) => [f.id, f]));
   const happeningById = new Map<string, HappeningDef>(content.happenings.map((h) => [h.id, h]));
 
@@ -92,16 +88,118 @@ export function createCore(content: Content): Core {
 
   const itemSlots = (def: ItemDef): number => def.slots ?? (def.kind === 'gear' ? 1 : 0);
 
-  // Ascension is cumulative. The schedule lives in core/ascension.ts so the
-  // engine, title screen and docs all describe the same stack.
-  const shopMultiplier = (state: RunState): number =>
-    ascensionShopMultiplier(state.ascension);
-  const shopPrice = (state: RunState, base: number): number =>
-    Math.ceil(base * shopMultiplier(state));
-  const scaleBossDamage = (state: RunState, amount: number): number => {
-    if (amount <= 0) return 0;
-    return Math.ceil(amount * ascensionBossMultiplier(state.ascension));
+  const curseStacks = (state: RunState, id: CurseId): number =>
+    state.curses.find((entry) => entry.id === id)?.stacks ?? 0;
+
+  const curseDefs = (state: RunState): Array<{ def: CurseDef; stacks: number }> =>
+    state.curses
+      .map((entry) => {
+        const def = curseById.get(entry.id);
+        return def ? { def, stacks: entry.stacks } : null;
+      })
+      .filter((entry): entry is { def: CurseDef; stacks: number } => Boolean(entry));
+
+  const hasCurse = (state: RunState, id: CurseId): boolean => curseStacks(state, id) > 0;
+
+  const clockStacks = (state: RunState): number => curseStacks(state, 'clock');
+
+  const clockLimitMs = (state: RunState): number | null => {
+    const stacks = clockStacks(state);
+    if (stacks <= 0) return null;
+    const limit = 300_000 * Math.pow(0.8, Math.max(0, stacks - 1));
+    return Math.max(30_000, Math.floor(limit));
   };
+
+  const hasClock = (state: RunState): boolean => clockLimitMs(state) !== null;
+
+  const sightCount = (state: RunState): number =>
+    curseDefs(state).reduce(
+      (sum, entry) => sum + (entry.def.tags.includes('vision') ? 1 : 0),
+      0,
+    );
+
+  const noReveal = (state: RunState): boolean =>
+    curseDefs(state).some((entry) => entry.def.noReveal);
+
+  const noSell = (state: RunState): boolean =>
+    curseDefs(state).some((entry) => entry.def.noSell);
+
+  const shopPrice = (state: RunState, base: number): number => {
+    const add = curseDefs(state).reduce(
+      (sum, entry) => sum + (entry.def.shopPriceAdd ?? 0) * entry.stacks,
+      0,
+    );
+    return Math.max(1, Math.ceil(base * (1 + add)));
+  };
+
+  const shopItemDelta = (state: RunState): number =>
+    curseDefs(state).reduce(
+      (sum, entry) => sum + (entry.def.shopItemDelta ?? 0) * entry.stacks,
+      0,
+    );
+
+  const shopFoodDelta = (state: RunState): number =>
+    curseDefs(state).reduce(
+      (sum, entry) => sum + (entry.def.shopFoodDelta ?? 0) * entry.stacks,
+      0,
+    );
+
+  const freeGuessPenalty = (state: RunState): number =>
+    curseDefs(state).reduce(
+      (sum, entry) => sum + (entry.def.freeGuessDelta ?? 0) * entry.stacks,
+      0,
+    );
+
+  const armorRefillMultiplier = (state: RunState): number =>
+    curseDefs(state).reduce(
+      (mult, entry) => mult * Math.pow(entry.def.armorRefillMult ?? 1, entry.stacks),
+      1,
+    );
+
+  const healMultiplier = (state: RunState): number =>
+    curseDefs(state).reduce(
+      (mult, entry) => mult * Math.pow(entry.def.healMult ?? 1, entry.stacks),
+      1,
+    );
+
+  const goldMultiplier = (state: RunState): number =>
+    curseDefs(state).reduce(
+      (mult, entry) => mult * Math.pow(entry.def.goldMult ?? 1, entry.stacks),
+      1,
+    );
+
+  const damageMultiplier = (state: RunState): number =>
+    curseDefs(state).reduce(
+      (mult, entry) => mult * Math.pow(entry.def.damageMultiplier ?? 1, entry.stacks),
+      1,
+    );
+
+  const damagePerGreen = (state: RunState): number =>
+    curseDefs(state).reduce((sum, entry) => {
+      if (entry.def.damageTiers) {
+        const tier = entry.def.damageTiers[Math.min(entry.stacks, entry.def.damageTiers.length) - 1];
+        return sum + (tier?.green ?? 0);
+      }
+      return sum + (entry.def.damagePerGreen ?? 0) * entry.stacks;
+    }, 0);
+
+  const damagePerYellow = (state: RunState): number =>
+    curseDefs(state).reduce((sum, entry) => {
+      if (entry.def.damageTiers) {
+        const tier = entry.def.damageTiers[Math.min(entry.stacks, entry.def.damageTiers.length) - 1];
+        return sum + (tier?.yellow ?? 0);
+      }
+      return sum + (entry.def.damagePerYellow ?? 0) * entry.stacks;
+    }, 0);
+
+  const itemAvailable = (state: RunState, def: ItemDef): boolean => {
+    if (def.requiresClock && !hasClock(state)) return false;
+    if (def.requiresVisionCurse && sightCount(state) < def.requiresVisionCurse) return false;
+    return true;
+  };
+
+  const foodAvailable = (state: RunState, def: (typeof content.foods)[number]): boolean =>
+    !def.requiresClock || hasClock(state);
 
   /** Slots are only consumed by equipped items. Slotless items are always on. */
   const isEquipped = (item: ItemInstance, def?: ItemDef): boolean =>
@@ -185,7 +283,8 @@ export function createCore(content: Content): Core {
     if (amount <= 0) return;
     const state = rt.state;
     const before = state.hp;
-    state.hp = Math.min(state.maxHp, state.hp + amount);
+    const adjusted = Math.max(1, Math.round(amount * healMultiplier(state)));
+    state.hp = Math.min(state.maxHp, state.hp + adjusted);
     const applied = state.hp - before;
     if (applied > 0) {
       emit(rt, { type: 'healed', amount: applied, hp: state.hp, source });
@@ -670,6 +769,12 @@ export function createCore(content: Content): Core {
       case 'freezeUntilGuess': {
         const round = state.round;
         if (!round) break;
+        if (round.remainingMs === null) {
+          round.freeLeft += 1;
+          emit(rt, { type: 'freeGuessesChanged', remaining: round.freeLeft, source });
+          emit(rt, { type: 'message', text: 'No clock. The next guess is free instead.' });
+          break;
+        }
         round.frozenUntilGuess = true;
         emit(rt, {
           type: 'timerChanged',
@@ -709,6 +814,7 @@ export function createCore(content: Content): Core {
       case 'revealYellow': {
         const round = state.round;
         if (!round) break;
+        if (noReveal(state) && (source.kind === 'item' || source.kind === 'spell')) break;
         const known = new Set<string>();
         for (const guess of round.guesses) {
           guess.truth.forEach((tile, i) => {
@@ -725,6 +831,7 @@ export function createCore(content: Content): Core {
         break;
       }
       case 'revealLetter': {
+        if (noReveal(state) && (source.kind === 'item' || source.kind === 'spell')) break;
         const letter = effect.letter.toLowerCase();
         if (!state.permanentReveals) state.permanentReveals = [];
         const firstTime = !state.permanentReveals.includes(letter);
@@ -743,6 +850,7 @@ export function createCore(content: Content): Core {
         break;
       }
       case 'revealRandom':
+        if (noReveal(state) && (source.kind === 'item' || source.kind === 'spell')) break;
         revealRandomLetters(rt, effect.count);
         break;
       case 'purgeLetter':
@@ -814,7 +922,9 @@ export function createCore(content: Content): Core {
           state.items.filter((i) => itemById.get(i.id)?.kind === 'gear').map((i) => i.id),
         );
         const pool = content.items.filter(
-          (i) => i.rarity !== 'rare' && (i.kind !== 'gear' || !owned.has(i.id)),
+          (i) => i.rarity !== 'rare'
+            && itemAvailable(state, i)
+            && (i.kind !== 'gear' || !owned.has(i.id)),
         );
         if (pool.length > 0) addItem(rt, rngPick(state, pool).id);
         break;
@@ -825,7 +935,9 @@ export function createCore(content: Content): Core {
             .filter((i) => itemById.get(i.id)?.rarity === 'rare')
             .map((i) => i.id),
         );
-        const rare = content.items.filter((i) => i.rarity === 'rare');
+        const rare = content.items.filter(
+          (i) => i.rarity === 'rare' && itemAvailable(state, i),
+        );
         const unowned = rare.filter((i) => !owned.has(i.id));
         const pool = unowned.length > 0 ? unowned : rare;
         if (pool.length > 0) addItem(rt, rngPick(state, pool).id);
@@ -834,15 +946,23 @@ export function createCore(content: Content): Core {
       case 'eat':
         eatFood(rt, effect.food);
         break;
-      case 'eatRandom':
-        if (content.foods.length > 0) eatFood(rt, rngPick(state, content.foods).id);
+      case 'eatRandom': {
+        const pool = content.foods.filter((food) => foodAvailable(state, food));
+        if (pool.length > 0) eatFood(rt, rngPick(state, pool).id);
         break;
+      }
       case 'slots':
         state.slots = Math.max(0, state.slots + effect.delta);
         emit(rt, { type: 'slotsChanged', slots: state.slots });
         break;
       case 'pendingPurge':
         state.pendingPurge += effect.count;
+        break;
+      case 'addCurse':
+        applyCurse(rt, effect.curse);
+        break;
+      case 'awaitCurseRemoval':
+        state.pendingCurseRemoval += 1;
         break;
       case 'bossData': {
         const round = state.round;
@@ -897,13 +1017,44 @@ export function createCore(content: Content): Core {
 
   function presentGuess(state: RunState, guess: ScoredGuess): PresentedGuess {
     const bossId = state.round?.boss;
-    if (bossId) {
-      const boss = bossById.get(bossId);
-      if (boss?.present) {
-        return boss.present({ state }, guess);
+    const boss = bossId ? bossById.get(bossId) : undefined;
+    if (boss?.present) {
+      return boss.present({ state }, guess);
+    }
+
+    const vision = curseDefs(state).filter((entry) => entry.def.tags.includes('vision'));
+    let tiles = guess.truth.slice() as Array<'correct' | 'present' | 'absent' | 'hit' | 'hidden'>;
+    for (const entry of vision) {
+      for (const effect of entry.def.vision ?? []) {
+        if (effect.kind === 'ambiguousLetters') {
+          const letters = new Set(effect.letters.split(''));
+          tiles = tiles.map((tile, index) =>
+            letters.has(guess.word[index]) && (tile === 'correct' || tile === 'present')
+              ? 'hit'
+              : tile,
+          );
+        }
       }
     }
-    return { word: guess.word, tiles: guess.truth.slice() };
+    for (const entry of vision) {
+      for (const effect of entry.def.vision ?? []) {
+        if (effect.kind === 'hidePosition') {
+          if (effect.index >= 0 && effect.index < tiles.length) tiles[effect.index] = 'hidden';
+        } else if (effect.kind === 'hideLetters') {
+          const letters = new Set(effect.letters.split(''));
+          tiles = tiles.map((tile, index) =>
+            letters.has(guess.word[index]) ? 'hidden' : tile,
+          );
+        }
+      }
+    }
+
+    const tally = state.items.some((item) => {
+      const def = itemById.get(item.id);
+      return def?.id === 'tally-lens' && isEquipped(item, def);
+    });
+    const counts = vision.length > 0 && tally ? truthCounts(guess.truth) : undefined;
+    return { word: guess.word, tiles, counts };
   }
 
   // ── answers ──────────────────────────────────────────────────────────────
@@ -948,11 +1099,6 @@ export function createCore(content: Content): Core {
 
   // ── round lifecycle ──────────────────────────────────────────────────────
 
-  function normalTimerMs(state: RunState): number {
-    const base = Math.max(45_000, 150_000 - 6_000 * state.stats.rounds);
-    return Math.max(15_000, base + state.bonusTimeMs);
-  }
-
   function startRound(rt: Runtime): void {
     const state = rt.state;
     const node = state.nodes[state.nodeIndex];
@@ -960,32 +1106,21 @@ export function createCore(content: Content): Core {
     const boss = node.boss ? bossById.get(node.boss) : undefined;
     const answer = chooseAnswer(rt, boss);
 
-    let remaining: number | null;
-    let timerStart: number | null;
-    if (boss?.gauntlet) {
-      remaining = Math.max(15_000, boss.gauntlet.timerMs - ascensionTimePenaltyMs(state.ascension));
-    } else if (boss && boss.timerMs === null) {
-      remaining = null;
-    } else if (boss && boss.timerMs !== null) {
-      remaining = Math.max(15_000, boss.timerMs - ascensionTimePenaltyMs(state.ascension));
-    } else {
-      remaining = Math.max(15_000, normalTimerMs(state) - ascensionTimePenaltyMs(state.ascension));
-    }
-    timerStart = remaining;
+    const clock = clockLimitMs(state);
+    const remaining = clock === null ? null : Math.max(30_000, clock + state.bonusTimeMs);
+    const timerStart = remaining;
 
-    // Damage is fixed for the encounter. It grows with the act, with how deep
-    // into the act the monster sits, and with the run's overall progress.
-    const roundSlot = Math.floor((state.nodeIndex % NODES_PER_ACT) / 2);
-    const roundTier = Math.floor(state.stats.rounds / 3);
-    const baseDamage = boss
-      ? scaleBossDamage(state, boss.damage ?? 3 + state.act * 2 + roundTier)
-      : 2 + state.act * 2 + roundSlot + roundTier + state.bonusBaseDamage;
+    // Encounter damage is fixed at 3. Curses are the only growth.
+    const baseDamage = Math.max(
+      0,
+      Math.round(3 * damageMultiplier(state) + state.bonusBaseDamage),
+    );
 
     const round: RoundState = {
       answer,
       boss: boss?.id,
       guesses: [],
-      freeLeft: 1,
+      freeLeft: Math.max(0, 1 + freeGuessPenalty(state)),
       paidGuesses: 0,
       baseDamage,
       damageRamp: 0,
@@ -1012,7 +1147,7 @@ export function createCore(content: Content): Core {
     state.happening = undefined;
     state.bossIntro = undefined;
     state.phase = 'round';
-    state.armor = state.maxArmor;
+    state.armor = Math.floor(state.maxArmor * armorRefillMultiplier(state));
     emit(rt, { type: 'armorChanged', armor: state.armor, max: state.maxArmor });
     emit(rt, {
       type: 'roundStarted',
@@ -1076,11 +1211,12 @@ export function createCore(content: Content): Core {
 
     // Every finished encounter pays a flat prize. Gold never inflates with the
     // act or the round number; only Bounty and similar items add to it.
-    const goldAward = outcome === 'solved'
+    const baseGold = outcome === 'solved'
       ? 5 + state.bonusSolveGold
       : outcome === 'timeout'
         ? 1
         : 0;
+    const goldAward = Math.max(0, Math.floor(baseGold * goldMultiplier(state)));
     if (goldAward > 0) changeGold(rt, goldAward, RULES);
 
     if (outcome === 'solved') {
@@ -1112,7 +1248,7 @@ export function createCore(content: Content): Core {
       guesses: round.totalGuesses,
       elapsedMs: round.elapsedMs,
       boss: round.boss,
-      rewardPending: outcome === 'solved',
+      rewardPending: outcome === 'solved' && !round.boss,
       gold: goldAward,
     };
     state.phase = 'summary';
@@ -1130,9 +1266,17 @@ export function createCore(content: Content): Core {
   function guessDamageFor(state: RunState, round: RoundState, next = false): number {
     const boss = round.boss ? bossById.get(round.boss) : undefined;
     if (boss?.noGuessDamage) return 0;
-    if (!boss?.damageFor) return round.baseDamage;
-    const probe = next ? { ...round, totalGuesses: round.totalGuesses + 1 } : round;
-    return scaleBossDamage(state, boss.damageFor(state, probe));
+    const last = round.guesses.length > 0
+      ? round.guesses[round.guesses.length - 1]
+      : undefined;
+    const counts = last ? truthCounts(last.truth) : { correct: 0, present: 0 };
+    const curseBonus =
+      counts.correct * damagePerGreen(state) +
+      counts.present * damagePerYellow(state);
+    const base = boss?.damageFor
+      ? boss.damageFor(state, next ? { ...round, totalGuesses: round.totalGuesses + 1 } : round)
+      : round.baseDamage;
+    return Math.max(0, Math.round(base + curseBonus));
   }
 
   function timeoutDamageFor(state: RunState, round: RoundState): number {
@@ -1319,20 +1463,21 @@ export function createCore(content: Content): Core {
     }
     rt.events.push(...hookEvents);
 
-    // Only the first word of a round goes on the blacklist. Later guesses
-    // still reveal information, but they do not burn more of the list.
-    if (round.guesses.length === 1) addBlacklist(rt, word);
+    // The List blacklists the first N guesses of the round, where N is its
+    // stack count. Without the curse, nothing is blacklisted.
+    const listStacks = curseStacks(state, 'the-list');
+    if (listStacks > 0 && round.guesses.length <= listStacks) addBlacklist(rt, word);
 
     if (isOver(state)) return;
 
-    // A correct guess never hurts you. A wrong paid guess takes the monster's
-    // fixed hit plus any Ascension ramp built up by earlier wrong guesses.
+    // A correct guess never hurts you. A wrong paid guess takes the fixed
+    // encounter hit plus any curse scaling from eligible letters.
     const solved = word === round.answer;
     if (!solved && !guess.free && by === 'player') {
       const boss = round.boss ? bossById.get(round.boss) : undefined;
       if (!boss?.noGuessDamage) {
         round.paidGuesses++;
-        const amount = guessDamageFor(state, round) + round.damageRamp;
+        const amount = guessDamageFor(state, round);
         if (amount > 0) {
           dealDamage(
             rt,
@@ -1340,9 +1485,6 @@ export function createCore(content: Content): Core {
             round.boss ? { kind: 'boss', boss: round.boss } : RULES,
           );
         }
-        // Guesses made under a timed shield are marked free before this point,
-        // so they never reach the ramp.
-        round.damageRamp += ascensionRampPerWrong(state.ascension);
       }
     }
 
@@ -1356,50 +1498,7 @@ export function createCore(content: Content): Core {
     const state = rt.state;
     const options: RewardOption[] = [];
 
-    // Bosses do not hand out coins or ordinary spells. They hand over a
-    // relic: three rare passives, one of which is yours to keep.
-    if (state.summary?.boss) {
-      const owned = new Set(state.items.map((i) => i.id));
-      const rare = content.items.filter((i) => i.rarity === 'rare');
-      const unowned = rare.filter((i) => !owned.has(i.id));
-      const fallback = rare.filter((i) => owned.has(i.id));
-      const ordered = [...rngShuffle(state, unowned), ...rngShuffle(state, fallback)];
-      const picks: ItemDef[] = [];
-      const seen = new Set<string>();
-
-      for (const item of ordered) {
-        if (picks.length >= 3) break;
-        if (seen.has(item.id)) continue;
-        seen.add(item.id);
-        picks.push(item);
-      }
-
-      for (const item of picks) {
-        options.push({
-          id: `item:${item.id}`,
-          kind: 'item',
-          def: item.id,
-          rarity: 'rare',
-          label: item.name,
-          description: item.description,
-        });
-      }
-      if (options.length === 0) {
-        options.push({
-          id: 'gold',
-          kind: 'gold',
-          amount: 30,
-          label: '30 gold',
-          description: 'The vault is empty, but the coins are real.',
-        });
-      }
-      return options;
-    }
-
-    // A basic monster always offers coins plus a real choice: a spell or a
-    // meal. A second coin pile is never a reward. Gear is a rare find; shops
-    // remain the reliable place to buy it.
-    const goldAmount = 5;
+    const goldAmount = Math.max(1, Math.floor(5 * goldMultiplier(state)));
     options.push({
       id: 'gold',
       kind: 'gold',
@@ -1408,8 +1507,11 @@ export function createCore(content: Content): Core {
       description: 'A handful of coins. Always useful.',
     });
 
+    const foods = content.foods.filter((food) => foodAvailable(state, food));
+    const commonFoods = foods.filter((food) => food.rarity !== 'rare');
+    const rareFoods = foods.filter((food) => food.rarity === 'rare');
     const wantSpell = content.spells.length > 0
-      && (content.foods.length === 0 || rngChance(state, 65));
+      && (foods.length === 0 || rngChance(state, 65));
     if (wantSpell) {
       const spell = rngPick(state, content.spells);
       options.push({
@@ -1419,8 +1521,9 @@ export function createCore(content: Content): Core {
         label: spell.name,
         description: spell.description,
       });
-    } else if (content.foods.length > 0) {
-      const food = rngPick(state, content.foods);
+    } else if (foods.length > 0) {
+      const pool = rareFoods.length > 0 && rngChance(state, 10) ? rareFoods : commonFoods;
+      const food = rngPick(state, pool.length > 0 ? pool : foods);
       options.push({
         id: `eat:${food.id}`,
         kind: 'eat',
@@ -1431,15 +1534,25 @@ export function createCore(content: Content): Core {
     }
 
     if (rngChance(state, 8)) {
-      const itemPool = content.items.filter(
-        (i) => i.rarity !== 'rare' && (i.kind !== 'gear' || !state.items.some((owned) => owned.id === i.id)),
+      const owned = new Set(state.items.map((item) => item.id));
+      const common = content.items.filter(
+        (item) => item.rarity !== 'rare'
+          && itemAvailable(state, item)
+          && (item.kind !== 'gear' || !owned.has(item.id)),
       );
-      if (itemPool.length > 0) {
-        const item = rngPick(state, itemPool);
+      const rare = content.items.filter(
+        (item) => item.rarity === 'rare'
+          && itemAvailable(state, item)
+          && (item.kind !== 'gear' || !owned.has(item.id)),
+      );
+      const pool = rare.length > 0 && rngChance(state, 12) ? rare : common;
+      if (pool.length > 0) {
+        const item = rngPick(state, pool);
         options.push({
           id: `item:${item.id}`,
           kind: 'item',
           def: item.id,
+          rarity: item.rarity,
           label: item.name,
           description: item.description,
         });
@@ -1491,9 +1604,17 @@ export function createCore(content: Content): Core {
     const ownedGear = new Set(
       state.items.filter((i) => itemById.get(i.id)?.kind === 'gear').map((i) => i.id),
     );
-    const itemPool = content.items.filter(
-      (i) => i.rarity !== 'rare' && (i.kind !== 'gear' || !ownedGear.has(i.id)),
+    const availableItems = content.items.filter(
+      (item) => itemAvailable(state, item)
+        && (item.kind !== 'gear' || !ownedGear.has(item.id)),
     );
+    const commonItems = availableItems.filter((item) => item.rarity !== 'rare');
+    const rareItems = availableItems.filter((item) => item.rarity === 'rare');
+    const availableFoods = content.foods.filter((food) => foodAvailable(state, food));
+    const commonFoods = availableFoods.filter((food) => food.rarity !== 'rare');
+    const rareFoods = availableFoods.filter((food) => food.rarity === 'rare');
+    const itemTarget = Math.max(0, 3 + shopItemDelta(state));
+    const foodTarget = Math.max(0, 2 + shopFoodDelta(state));
     const picked: Array<{
       kind: Offer['kind'];
       def: string;
@@ -1522,37 +1643,49 @@ export function createCore(content: Content): Core {
       usedDefs.add(`spell:${spell.id}`);
       picked.push({ kind: 'spell', def: spell.id, price: shopPrice(state, spell.price) });
     };
+    const pickRandomItem = (): boolean => {
+      let pool = commonItems.filter((item) => !usedDefs.has(`item:${item.id}`));
+      if (rareItems.length > 0 && rngChance(state, 10)) {
+        pool = rareItems.filter((item) => !usedDefs.has(`item:${item.id}`));
+      }
+      if (pool.length === 0) return false;
+      pickItem(rngPick(state, pool));
+      return true;
+    };
+    const pickRandomFood = (): boolean => {
+      let pool = commonFoods.filter((food) => !usedDefs.has(`eat:${food.id}`));
+      if (rareFoods.length > 0 && rngChance(state, 10)) {
+        pool = rareFoods.filter((food) => !usedDefs.has(`eat:${food.id}`));
+      }
+      if (pool.length === 0) return false;
+      pickFood(rngPick(state, pool));
+      return true;
+    };
 
-    // The shelf always carries three items and two foods.
-    const itemPicks = rngShuffle(state, itemPool).slice(0, 3);
-    const saleIndex = itemPicks.length > 0 ? rngInt(state, itemPicks.length) : -1;
-    itemPicks.forEach((item, index) => pickItem(item, index === saleIndex));
-
-    for (const food of rngShuffle(state, content.foods).slice(0, 2)) {
-      pickFood(food);
+    for (let index = 0; index < itemTarget; index++) pickRandomItem();
+    if (picked.length > 0) {
+      const saleIndex = rngInt(state, picked.length);
+      const sale = picked[saleIndex];
+      if (sale.kind === 'item') {
+        const original = sale.price;
+        sale.price = Math.max(1, Math.floor(original / 2));
+        sale.sale = true;
+        sale.originalPrice = original;
+      }
     }
+    for (let index = 0; index < foodTarget; index++) pickRandomFood();
 
-    // The sixth slot rolls one of the three categories.
     const categories = ['spell', 'eat', 'item'] as const;
     const wildcard = categories[rngInt(state, categories.length)];
     if (wildcard === 'spell') {
-      const pool = content.spells.filter((spell) => !usedDefs.has(`spell:${spell.id}`));
-      if (pool.length > 0) pickSpell(rngPick(state, pool));
+      if (content.spells.length > 0) pickSpell(rngPick(state, content.spells));
     } else if (wildcard === 'eat') {
-      const pool = content.foods.filter((food) => !usedDefs.has(`eat:${food.id}`));
-      if (pool.length > 0) pickFood(rngPick(state, pool));
+      pickRandomFood();
     } else {
-      const pool = itemPool.filter((item) => !usedDefs.has(`item:${item.id}`));
-      if (pool.length > 0) pickItem(rngPick(state, pool));
+      pickRandomItem();
     }
 
-    // Guarantee a sixth offer even when the rolled pool was exhausted.
-    if (picked.length < 6 && content.spells.length > 0) {
-      const pool = content.spells.filter((spell) => !usedDefs.has(`spell:${spell.id}`));
-      if (pool.length > 0) pickSpell(rngPick(state, pool));
-    }
-
-    return picked.slice(0, 6).map((pick, index) => ({
+    return picked.map((pick, index) => ({
       id: `o${index}`,
       kind: pick.kind,
       def: pick.def,
@@ -1643,6 +1776,10 @@ export function createCore(content: Content): Core {
   function sellItem(rt: Runtime, instance: InstanceId): void {
     const state = rt.state;
     if (state.phase !== 'shop' || !state.shop) return;
+    if (noSell(state)) {
+      emit(rt, { type: 'message', text: 'The Chained prevents selling.' });
+      return;
+    }
     const item = findItem(state, instance);
     if (!item) return;
     const def = itemById.get(item.id);
@@ -1658,11 +1795,23 @@ export function createCore(content: Content): Core {
 
   function openHappening(rt: Runtime): void {
     const state = rt.state;
-    if (content.happenings.length === 0) {
+    const pool = content.happenings.filter(
+      (happening) => (happening.requiresCurseCount ?? 0) <= state.curses.length,
+    );
+    if (pool.length === 0) {
       advanceNode(rt);
       return;
     }
-    const def = rngPick(state, content.happenings);
+    const totalWeight = pool.reduce((sum, happening) => sum + (happening.weight ?? 1), 0);
+    let roll = rngNext(state) * totalWeight;
+    let def = pool[pool.length - 1];
+    for (const happening of pool) {
+      roll -= happening.weight ?? 1;
+      if (roll <= 0) {
+        def = happening;
+        break;
+      }
+    }
     state.happening = {
       id: def.id,
       options: def.options.map((option) => ({
@@ -1670,6 +1819,7 @@ export function createCore(content: Content): Core {
         label: option.label,
         description: option.description,
         costGold: option.costGold,
+        fallbackPct: option.fallbackPct,
         chancePct: option.outcomes.length === 1
           ? 100
           : option.outcomes[0]?.chancePct,
@@ -1694,11 +1844,15 @@ export function createCore(content: Content): Core {
     if (!option) return;
 
     if (option.costGold && option.costGold > 0) {
-      if (state.gold < option.costGold) {
-        emit(rt, { type: 'message', text: 'Not enough gold.' });
-        return;
+      let cost = option.costGold;
+      if (state.gold < cost) {
+        if (!option.fallbackPct) {
+          emit(rt, { type: 'message', text: 'Not enough gold.' });
+          return;
+        }
+        cost = Math.max(0, Math.floor(state.gold * option.fallbackPct));
       }
-      spendGold(rt, option.costGold, { kind: 'happening', happening: def.id });
+      if (cost > 0) spendGold(rt, cost, { kind: 'happening', happening: def.id });
     }
 
     const roll = rngNext(state) * 100;
@@ -1731,6 +1885,129 @@ export function createCore(content: Content): Core {
 
   // ── node flow ────────────────────────────────────────────────────────────
 
+  function curseWeight(state: RunState, def: CurseDef): number {
+    let weight = def.weight ?? 1;
+    if (state.level <= 12 && ['la-curse', 'ts-curse', 'rip-curse'].includes(def.id)) {
+      weight *= 2;
+    }
+    return weight;
+  }
+
+  function eligibleCurses(state: RunState, starting: boolean): CurseDef[] {
+    return content.curses.filter((def) => {
+      if (curseStacks(state, def.id) >= def.maxStacks) return false;
+      if (starting && def.startingEligible === false) return false;
+      if (def.minLevel && state.level < def.minLevel) return false;
+      if (def.maxLevel && state.level > def.maxLevel) return false;
+      return true;
+    });
+  }
+
+  function pickCurseOptions(state: RunState, starting: boolean): CurseId[] {
+    const pool = eligibleCurses(state, starting).slice();
+    const picks: CurseId[] = [];
+    while (picks.length < 2 && pool.length > 0) {
+      const total = pool.reduce((sum, def) => sum + curseWeight(state, def), 0);
+      let roll = rngNext(state) * total;
+      let chosen = pool[pool.length - 1];
+      for (const def of pool) {
+        roll -= curseWeight(state, def);
+        if (roll <= 0) {
+          chosen = def;
+          break;
+        }
+      }
+      picks.push(chosen.id);
+      pool.splice(pool.indexOf(chosen), 1);
+    }
+    return picks;
+  }
+
+  function openCurseDraft(rt: Runtime, starting: boolean): void {
+    const state = rt.state;
+    const options = pickCurseOptions(state, starting);
+    if (options.length === 0) {
+      if (starting && state.pendingStartingCurses > 0) {
+        state.pendingStartingCurses = 0;
+        enterNode(rt);
+      } else {
+        advanceNode(rt);
+      }
+      return;
+    }
+    state.curse = { options, starting };
+    state.phase = 'curse';
+    emit(rt, { type: 'curseOffered', options: options.slice(), starting });
+  }
+
+  function applyCurse(rt: Runtime, id: CurseId): void {
+    const state = rt.state;
+    const def = curseById.get(id);
+    if (!def) return;
+    let entry = state.curses.find((curse) => curse.id === id);
+    if (entry && entry.stacks >= def.maxStacks) return;
+    if (!entry) {
+      entry = { id, stacks: 0 };
+      state.curses.push(entry);
+    }
+    entry.stacks++;
+    if (def.maxHpMult) {
+      const before = state.maxHp;
+      state.maxHp = Math.max(1, Math.floor(state.maxHp * def.maxHpMult));
+      state.hp = Math.min(state.hp, state.maxHp);
+      emit(rt, { type: 'maxHpChanged', maxHp: state.maxHp, hp: state.hp, source: RULES });
+      if (state.maxHp !== before) {
+        // Max HP changed; the event above carries the new value.
+      }
+    }
+    if (def.slotDelta) {
+      state.slots = Math.max(0, state.slots + def.slotDelta);
+      emit(rt, { type: 'slotsChanged', slots: state.slots });
+    }
+    emit(rt, { type: 'curseChosen', curse: id, stacks: entry.stacks, name: def.name });
+  }
+
+  function chooseCurse(rt: Runtime, curseId: CurseId): void {
+    const state = rt.state;
+    const draft = state.curse;
+    if (!draft || state.phase !== 'curse' || !draft.options.includes(curseId)) return;
+    applyCurse(rt, curseId);
+    draft.chosen = curseId;
+    if (draft.starting && state.pendingStartingCurses > 0) {
+      state.pendingStartingCurses--;
+      if (state.pendingStartingCurses > 0) {
+        openCurseDraft(rt, true);
+        return;
+      }
+      state.curse = undefined;
+      state.phase = 'round';
+      enterNode(rt);
+      return;
+    }
+    state.curse = undefined;
+    advanceNode(rt);
+  }
+
+  function removeCurse(rt: Runtime, curseId: CurseId): void {
+    const state = rt.state;
+    if (state.pendingCurseRemoval <= 0) return;
+    const index = state.curses.findIndex((curse) => curse.id === curseId);
+    if (index < 0) return;
+    const entry = state.curses[index];
+    const def = curseById.get(curseId);
+    entry.stacks--;
+    if (def?.slotDelta) {
+      state.slots = Math.max(0, state.slots - def.slotDelta);
+      emit(rt, { type: 'slotsChanged', slots: state.slots });
+    }
+    if (entry.stacks <= 0) state.curses.splice(index, 1);
+    state.pendingCurseRemoval--;
+    emit(rt, { type: 'curseRemoved', curse: curseId, stacks: entry.stacks });
+    if (state.pendingCurseRemoval <= 0 && state.phase === 'happening') {
+      // The event remains resolved; CONTINUE advances normally.
+    }
+  }
+
   function enterNode(rt: Runtime): void {
     const state = rt.state;
     if (state.nodeIndex >= state.nodes.length) {
@@ -1738,14 +2015,20 @@ export function createCore(content: Content): Core {
       return;
     }
     const node = state.nodes[state.nodeIndex];
-    state.act = Math.floor(state.nodeIndex / NODES_PER_ACT);
+    state.level = node.level ?? state.nodeIndex + 1;
+    state.act = Math.floor((state.level - 1) / LEVELS_PER_AREA);
     emit(rt, {
       type: 'nodeEntered',
       index: state.nodeIndex,
       kind: node.kind,
       act: state.act,
+      level: state.level,
     });
 
+    if (node.kind === 'curse') {
+      openCurseDraft(rt, false);
+      return;
+    }
     if (node.kind === 'boss' && node.boss) {
       state.phase = 'bossIntro';
       state.bossIntro = { boss: node.boss };
@@ -1766,6 +2049,14 @@ export function createCore(content: Content): Core {
     const state = rt.state;
     if (state.pendingPurge > 0) {
       emit(rt, { type: 'message', text: 'Choose a letter to purge first.' });
+      return;
+    }
+    if (state.pendingCurseRemoval > 0) {
+      emit(rt, { type: 'message', text: 'Choose a curse to remove first.' });
+      return;
+    }
+    if (state.phase === 'curse') {
+      emit(rt, { type: 'message', text: 'Choose a curse first.' });
       return;
     }
     if (state.phase === 'bossIntro') {
@@ -1870,12 +2161,21 @@ export function createCore(content: Content): Core {
 
     if (round.remainingMs === null) {
       round.elapsedMs += dt;
+      runHook(rt, 'onTimerTick', {
+        remainingMs: null,
+        elapsedMs: round.elapsedMs,
+        dtMs: dt,
+      });
       return;
     }
 
     round.elapsedMs += dt;
     round.remainingMs = Math.max(0, round.remainingMs - dt);
-    runHook(rt, 'onTimerTick', { remainingMs: round.remainingMs, dtMs: dt });
+    runHook(rt, 'onTimerTick', {
+      remainingMs: round.remainingMs,
+      elapsedMs: round.elapsedMs,
+      dtMs: dt,
+    });
     if (isOver(state)) return;
     if (round.remainingMs <= 0) expireRound(rt);
   }
@@ -1887,9 +2187,18 @@ export function createCore(content: Content): Core {
     const boss = round.boss ? bossById.get(round.boss) : undefined;
     // damageFor describes the hit a wrong guess takes at the round's current
     // progress, so preview the next guess by stepping the counter forward.
-    const rawNext = guessDamageFor(state, round, true) + round.damageRamp;
+    const rawNext = guessDamageFor(state, round, true);
     const timeoutDamage = timeoutDamageFor(state, round);
     const noGuessDamage = Boolean(boss?.noGuessDamage);
+    const timerInterest = state.items.some((item) => {
+      const def = itemById.get(item.id);
+      return Boolean(def?.timerInterest) && isEquipped(item, def);
+    });
+    const timerMode = round.remainingMs !== null
+      ? 'countdown'
+      : timerInterest
+        ? 'countup'
+        : 'hidden';
 
     const keyboard: Partial<Record<Letter, KeyboardStatus>> = {};
     const rank: Record<string, number> = { absent: 0, hit: 1, present: 2, correct: 3 };
@@ -1928,6 +2237,8 @@ export function createCore(content: Content): Core {
       timeoutDamage,
       remainingMs: round.remainingMs,
       timerStartMs: round.timerStartMs,
+      elapsedMs: round.elapsedMs,
+      timerMode,
       timerFrozen: round.frozenUntilGuess || round.frozenMs > 0,
       keyboard,
       bossState: { ...round.bossState },
@@ -1978,6 +2289,13 @@ export function createCore(content: Content): Core {
           boss: state.bossIntro?.boss ?? state.nodes[state.nodeIndex]?.boss ?? '',
         };
         break;
+      case 'curse':
+        phase = {
+          kind: 'curse',
+          options: state.curse?.options.slice() ?? [],
+          starting: state.curse?.starting ?? false,
+        };
+        break;
       case 'shop':
         phase = {
           kind: 'shop',
@@ -2010,8 +2328,20 @@ export function createCore(content: Content): Core {
       phase,
       nodes: clone(state.nodes),
       nodeIndex: state.nodeIndex,
+      level: state.level,
       act: state.act,
       ascension: state.ascension,
+      curses: state.curses.map((entry) => {
+        const def = curseById.get(entry.id);
+        return {
+          id: entry.id,
+          name: def?.name ?? entry.id,
+          stacks: entry.stacks,
+          rules: def?.rules ?? [],
+          tags: def?.tags ?? [],
+        };
+      }),
+      pendingCurseRemoval: state.pendingCurseRemoval,
       hp: state.hp,
       maxHp: state.maxHp,
       armor: state.armor,
@@ -2114,6 +2444,12 @@ export function createCore(content: Content): Core {
       case 'chooseReward':
         chooseReward(rt, cmd.optionId);
         break;
+      case 'chooseCurse':
+        chooseCurse(rt, cmd.curseId);
+        break;
+      case 'removeCurse':
+        removeCurse(rt, cmd.curseId);
+        break;
       case 'continue':
         continueRun(rt);
         break;
@@ -2125,34 +2461,35 @@ export function createCore(content: Content): Core {
   // ── run construction / serialization ─────────────────────────────────────
 
   function rollNodes(state: RunState): void {
-    const nodes: RunState['nodes'] = [];
-    const usedBosses = new Set<string>();
-    for (let act = 0; act < ACTS; act++) {
-      const bossPool = content.bosses.filter(
-        (b) => b.acts.includes(act) && !usedBosses.has(b.id),
-      );
-      const fallback = content.bosses.filter((b) => !usedBosses.has(b.id));
-      const pool = bossPool.length > 0 ? bossPool : fallback;
-      const boss = pool.length > 0 ? rngPick(state, pool) : undefined;
-      if (boss) usedBosses.add(boss.id);
-      const support = (): RunNode =>
-        rngChance(state, 60) ? { kind: 'shop' } : { kind: 'happening' };
-      nodes.push({ kind: 'round' });
-      nodes.push(support());
-      nodes.push({ kind: 'round' });
-      nodes.push(support());
-      nodes.push({ kind: 'round' });
-      nodes.push({ kind: 'boss', boss: boss?.id });
+    const nodes: RunNode[] = [];
+    const addRound = (level: number): void => {
+      nodes.push({ kind: 'round', level });
+      if (rngChance(state, 40)) nodes.push({ kind: 'happening', level });
+    };
+
+    for (let level = 1; level <= 45; level++) {
+      addRound(level);
+      if (level % 2 === 1) {
+        nodes.push({ kind: 'shop', level });
+      } else if (level <= 44) {
+        nodes.push({ kind: 'curse', level });
+      }
     }
+
+    addRound(46);
+    for (let level = 47; level <= 49; level++) {
+      nodes.push({ kind: 'curse', level });
+    }
+    nodes.push({ kind: 'boss', level: MAX_LEVEL, boss: 'final-boss' });
     state.nodes = nodes;
   }
 
   function newRun(opts: { seed: string; ascension?: number }): StepResult {
     const seed = String(opts.seed || 'blacklist');
     const ascension = Math.max(0, Math.min(ASCENSION_MAX, Math.floor(opts.ascension ?? 0)));
-    const stats = ascensionStats(ascension);
-    const maxHp = Math.max(10, 40 - stats.hpLoss);
-    const startArmor = stats.armorPenalty ? 1 : 5;
+    const startingCurses = ascensionStartingCurses(ascension);
+    const maxHp = 40;
+    const startArmor = 5;
     const state: RunState = {
       version: VERSION,
       seed,
@@ -2161,6 +2498,7 @@ export function createCore(content: Content): Core {
       ascension,
       nodes: [],
       nodeIndex: 0,
+      level: 1,
       act: 0,
       hp: maxHp,
       maxHp,
@@ -2179,6 +2517,9 @@ export function createCore(content: Content): Core {
       pendingPurge: 0,
       pendingReveals: [],
       permanentReveals: [],
+      curses: [],
+      pendingStartingCurses: startingCurses,
+      pendingCurseRemoval: 0,
       phase: 'round',
       stats: {
         rounds: 0,
@@ -2205,7 +2546,8 @@ export function createCore(content: Content): Core {
       ascension,
       nodes: clone(state.nodes),
     });
-    enterNode(rt);
+    if (startingCurses > 0) openCurseDraft(rt, true);
+    else enterNode(rt);
     return { state, events: rt.events };
   }
 
@@ -2217,15 +2559,7 @@ export function createCore(content: Content): Core {
     try {
       const parsed = JSON.parse(json) as Partial<RunState> | null;
       if (!parsed || typeof parsed !== 'object') return null;
-      if (
-        parsed.version !== VERSION &&
-        parsed.version !== 4 &&
-        parsed.version !== 3 &&
-        parsed.version !== 2 &&
-        parsed.version !== 1
-      ) {
-        return null;
-      }
+      if (parsed.version !== VERSION) return null;
       if (!Array.isArray(parsed.nodes) || !Array.isArray(parsed.items)) return null;
       if (typeof parsed.hp !== 'number' || typeof parsed.maxHp !== 'number') return null;
       if (typeof parsed.rng !== 'number') return null;
@@ -2244,6 +2578,12 @@ export function createCore(content: Content): Core {
         state.slots = 5;
       }
       state.bonusSolveGold = typeof state.bonusSolveGold === 'number' ? state.bonusSolveGold : 0;
+      if (!Array.isArray(state.curses)) state.curses = [];
+      if (typeof state.level !== 'number') {
+        state.level = state.nodes[state.nodeIndex]?.level ?? 1;
+      }
+      if (typeof state.pendingStartingCurses !== 'number') state.pendingStartingCurses = 0;
+      if (typeof state.pendingCurseRemoval !== 'number') state.pendingCurseRemoval = 0;
       if (!Array.isArray(state.pendingReveals)) state.pendingReveals = [];
       if (!Array.isArray(state.permanentReveals)) {
         state.permanentReveals = state.pendingReveals.slice();

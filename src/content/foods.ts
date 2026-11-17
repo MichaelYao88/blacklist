@@ -30,6 +30,7 @@ export const FOODS: FoodDef[] = [
     name: 'Coffee',
     description: '+3s per round, permanently. No slot.',
     price: 6,
+    requiresClock: true,
     effects: [{ type: 'timeBonus', ms: 3_000 }],
   }),
   defineFood({
@@ -84,6 +85,7 @@ export const FOODS: FoodDef[] = [
     name: 'Overtime Tea',
     description: '+20s this round and heal 4. No slot.',
     price: 5,
+    requiresClock: true,
     effects: [
       { type: 'addTime', ms: 20_000 },
       { type: 'heal', amount: 4 },
@@ -114,6 +116,7 @@ export const FOODS: FoodDef[] = [
     name: 'Chronos',
     description: '+10s per round. No slot.',
     price: 8,
+    requiresClock: true,
     effects: [{ type: 'timeBonus', ms: 10_000 }],
   }),
   defineFood({
@@ -163,6 +166,22 @@ export const FOODS: FoodDef[] = [
       { type: 'heal', amount: 4 },
       { type: 'armor', delta: 1 },
     ],
+  }),
+  defineFood({
+    id: 'inkcap',
+    name: 'Inkcap',
+    description: 'Rare. Purge one letter from all future answers. No slot.',
+    price: 14,
+    rarity: 'rare',
+    effects: [{ type: 'pendingPurge', count: 1 }],
+  }),
+  defineFood({
+    id: 'purge-the-d',
+    name: 'Purge the D',
+    description: 'Very rare. Permanently purges D. No slot.',
+    price: 18,
+    rarity: 'rare',
+    effects: [{ type: 'purgeLetter', letter: 'd' }],
   }),
 ];
 

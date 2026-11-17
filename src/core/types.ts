@@ -15,6 +15,7 @@ export type Letter = string;
 export type ItemId = string;
 export type SpellId = string;
 export type BossId = string;
+export type CurseId = string;
 export type HappeningId = string;
 export type InstanceId = string;
 
@@ -35,8 +36,9 @@ export type Source =
   | { kind: 'boss'; boss: BossId }
   | { kind: 'happening'; happening: HappeningId };
 
-export type NodeKind = 'round' | 'boss' | 'shop' | 'happening';
-export type PhaseKind = 'round' | 'summary' | 'reward' | 'shop' | 'happening' | 'bossIntro' | 'over';
+export type NodeKind = 'round' | 'boss' | 'shop' | 'happening' | 'curse';
+export type PhaseKind = 'round' | 'summary' | 'reward' | 'shop' | 'happening' | 'bossIntro' | 'curse' | 'over';
+export type CurseTag = 'vision' | 'damage' | 'clock' | 'list' | 'shop' | 'body' | 'economy' | 'rule';
 export type ItemKind = 'gear' | 'consumable';
 export type OfferKind = 'item' | 'spell' | 'eat';
 export type HookName =
@@ -76,6 +78,8 @@ export interface RunStats {
 
 export interface RunNode {
   kind: NodeKind;
+  /** Level shown in the HUD. Curse floors share the same counter. */
+  level?: number;
   boss?: BossId;
 }
 
@@ -111,6 +115,7 @@ export interface RoundState {
   elapsedMs: number;
   remainingMs: number | null;
   timerStartMs: number | null;
+  /** null when the run has no clock curse. */
   frozenMs: number;
   frozenUntilGuess: boolean;
   immuneGuesses: number;
@@ -152,6 +157,54 @@ export interface RewardState {
   chosen?: string;
 }
 
+export type VisionEffect =
+  | { kind: 'hidePosition'; index: number }
+  | { kind: 'hideLetters'; letters: string }
+  | { kind: 'ambiguousLetters'; letters: string };
+
+export interface CurseDef {
+  id: CurseId;
+  name: string;
+  description: string;
+  rules: string[];
+  art: string;
+  tags: CurseTag[];
+  maxStacks: number;
+  weight?: number;
+  startingEligible?: boolean;
+  minLevel?: number;
+  maxLevel?: number;
+  vision?: VisionEffect[];
+  timer?: boolean;
+  blacklistPerRound?: number;
+  damagePerGreen?: number;
+  damagePerYellow?: number;
+  damageTiers?: Array<{ green: number; yellow: number }>;
+  damageMultiplier?: number;
+  shopItemDelta?: number;
+  shopFoodDelta?: number;
+  shopPriceAdd?: number;
+  freeGuessDelta?: number;
+  armorRefillMult?: number;
+  healMult?: number;
+  slotDelta?: number;
+  maxHpMult?: number;
+  goldMult?: number;
+  noSell?: boolean;
+  noReveal?: boolean;
+}
+
+export interface CurseStack {
+  id: CurseId;
+  stacks: number;
+}
+
+export interface CurseState {
+  options: CurseId[];
+  starting: boolean;
+  chosen?: CurseId;
+}
+
 export interface Offer {
   id: string;
   kind: OfferKind;
@@ -184,6 +237,7 @@ export interface HappeningOptionView {
   label: string;
   description: string;
   costGold?: number;
+  fallbackPct?: number;
   chancePct?: number;
   outcomes: HappeningOutcomeView[];
 }
@@ -232,6 +286,8 @@ export type Effect =
   | { type: 'eatRandom' }
   | { type: 'slots'; delta: number }
   | { type: 'pendingPurge'; count: number }
+  | { type: 'addCurse'; curse: CurseId }
+  | { type: 'awaitCurseRemoval' }
   | { type: 'bossData'; key: string; value: number }
   | { type: 'message'; text: string };
 
@@ -263,7 +319,7 @@ export interface HookPayloads {
   onSpellCast: { spell: SpellId };
   onEat: { food: string };
   onHeal: { amount: number; hp: number };
-  onTimerTick: { remainingMs: number; dtMs: number };
+  onTimerTick: { remainingMs: number | null; elapsedMs: number; dtMs: number };
   onPurchase: { offer: Offer };
   onSell: { item: ItemView };
   onDamageTaken: {
@@ -308,6 +364,12 @@ export interface ItemDef {
   shopDiscount?: number;
   /** Food effects are applied twice, but on-eat hooks still fire once. */
   doubleFood?: boolean;
+  /** Hidden from shops/rewards until a clock curse exists. */
+  requiresClock?: boolean;
+  /** Hidden from shops/rewards until this many vision curses exist. */
+  requiresVisionCurse?: number;
+  /** Shows the count-up timer while equipped. */
+  timerInterest?: boolean;
 }
 
 export interface SpellDef {
@@ -326,6 +388,7 @@ export interface BossDef {
   acts: number[];
   timerMs: number | null;
   gauntlet?: { puzzles: number; timerMs: number };
+  timerFromCurse?: boolean;
   noGuessDamage?: boolean;
   /** Fixed damage for a boss round. Omit to use the act-based default. */
   damage?: number;
@@ -346,6 +409,8 @@ export interface FoodDef {
   name: string;
   description: string;
   price: number;
+  rarity?: 'common' | 'rare';
+  requiresClock?: boolean;
   effects: Effect[];
 }
 
@@ -359,12 +424,16 @@ export interface HappeningOptionDef {
   label: string;
   description: string;
   costGold?: number;
+  /** If the player cannot pay costGold, take this fraction of their gold instead. */
+  fallbackPct?: number;
   outcomes: HappeningOutcomeDef[];
 }
 export interface HappeningDef {
   id: HappeningId;
   name: string;
   description: string;
+  requiresCurseCount?: number;
+  weight?: number;
   options: HappeningOptionDef[];
 }
 
@@ -372,6 +441,7 @@ export interface Content {
   items: ItemDef[];
   spells: SpellDef[];
   bosses: BossDef[];
+  curses: CurseDef[];
   foods: FoodDef[];
   happenings: HappeningDef[];
   answers: readonly string[];
@@ -390,6 +460,7 @@ export interface RunState {
   ascension: number;
   nodes: RunNode[];
   nodeIndex: number;
+  level: number;
   act: number;
   hp: number;
   maxHp: number;
@@ -411,8 +482,12 @@ export interface RunState {
   pendingReveals: Letter[];
   /** Letters that are re-revealed for every round for the rest of the run. */
   permanentReveals: Letter[];
+  curses: CurseStack[];
+  pendingStartingCurses: number;
+  pendingCurseRemoval: number;
   phase: PhaseKind;
   bossIntro?: { boss: BossId };
+  curse?: CurseState;
   round?: RoundState;
   summary?: SummaryState;
   reward?: RewardState;
@@ -445,6 +520,8 @@ export interface BoardView {
   timeoutDamage: number;
   remainingMs: number | null;
   timerStartMs: number | null;
+  elapsedMs: number;
+  timerMode: 'hidden' | 'countup' | 'countdown';
   timerFrozen: boolean;
   keyboard: Partial<Record<Letter, KeyboardStatus>>;
   bossState: Record<string, number>;
@@ -473,6 +550,7 @@ export type PhaseView =
     }
   | { kind: 'reward'; options: RewardOption[]; boss: boolean; chosen?: string }
   | { kind: 'bossIntro'; boss: BossId }
+  | { kind: 'curse'; options: CurseId[]; starting: boolean }
   | { kind: 'shop'; offers: Offer[]; rerollCost: number; purchases: number }
   | {
       kind: 'happening';
@@ -492,8 +570,11 @@ export interface RunView {
   phase: PhaseView;
   nodes: RunNode[];
   nodeIndex: number;
+  level: number;
   act: number;
   ascension: number;
+  curses: Array<{ id: CurseId; name: string; stacks: number; rules: string[]; tags: CurseTag[] }>;
+  pendingCurseRemoval: number;
   hp: number;
   maxHp: number;
   armor: number;
@@ -523,12 +604,17 @@ export type Command =
   | { type: 'unequipItem'; instance: InstanceId }
   | { type: 'choose'; optionId: string }
   | { type: 'chooseReward'; optionId: string }
+  | { type: 'chooseCurse'; curseId: CurseId }
+  | { type: 'removeCurse'; curseId: CurseId }
   | { type: 'continue' };
 
 export type GameEvent =
   | { type: 'runStarted'; seed: string; ascension: number; nodes: RunNode[] }
-  | { type: 'nodeEntered'; index: number; kind: NodeKind; act: number }
+  | { type: 'nodeEntered'; index: number; kind: NodeKind; act: number; level: number }
   | { type: 'bossIntro'; boss: BossId }
+  | { type: 'curseOffered'; options: CurseId[]; starting: boolean }
+  | { type: 'curseChosen'; curse: CurseId; stacks: number; name: string }
+  | { type: 'curseRemoved'; curse: CurseId; stacks: number }
   | {
       type: 'roundStarted';
       boss?: BossId;
@@ -625,5 +711,6 @@ export interface Core {
 export const defineItem = (d: ItemDef): ItemDef => d;
 export const defineSpell = (d: SpellDef): SpellDef => d;
 export const defineBoss = (d: BossDef): BossDef => d;
+export const defineCurse = (d: CurseDef): CurseDef => d;
 export const defineFood = (d: FoodDef): FoodDef => d;
 export const defineHappening = (d: HappeningDef): HappeningDef => d;
