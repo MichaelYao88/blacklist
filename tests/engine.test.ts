@@ -788,10 +788,32 @@ describe('new item and event batch', () => {
     expect(solved.state.slots).toBe(6);
   });
 
+  it('Bulk Order converts its +1 armor into max armor', () => {
+    const { state } = start('bulk-order');
+    state.items.push({ instance: 'i-bulk', id: 'bulk-order', data: { _visit: -1 }, equipped: true });
+    state.phase = 'shop';
+    state.gold = 100;
+    state.shop = shopState([
+      { id: 'f0', kind: 'eat', def: 'snack', price: 3 },
+      { id: 'f1', kind: 'eat', def: 'feast', price: 5 },
+    ]);
+    let current = state;
+    current = act(current, { type: 'buy', offerId: 'f0' }).state;
+    current = act(current, { type: 'buy', offerId: 'f1' }).state;
+    expect(current.maxHp).toBe(47);
+    expect(current.maxArmor).toBe(3);
+  });
+
   it('applies the tuned content text and values', () => {
     expect(FOOD_BY_ID.get('gg-gum')?.effects)
       .toContainEqual({ type: 'revealLetter', letter: 'g' });
     expect(FOOD_BY_ID.get('gumdrop')?.price).toBe(3);
+    expect(FOOD_BY_ID.get('bitter-root')?.effects)
+      .toContainEqual({ type: 'maxArmor', delta: 1 });
+    expect(FOOD_BY_ID.get('bitter-root')?.effects)
+      .not.toContainEqual({ type: 'armor', delta: 1 });
+    expect(ITEM_BY_ID.get('growth-spurt')?.description).toContain('+4 max HP');
+    expect(ITEM_BY_ID.get('bulk-order')?.description).toContain('+1 max armor');
     expect(CURSE_BY_ID.get('porcupine')?.damagePerGreen).toBe(2);
     expect(CURSE_BY_ID.get('tight-slots')?.slotDelta).toBe(-2);
     expect(SPELL_BY_ID.get('restore')?.description)

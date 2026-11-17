@@ -1,8 +1,18 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
-import { music } from '../src/ui/music';
+import { MUSIC_TRACKS, music } from '../src/ui/music';
 
 describe('run music', () => {
+  it('includes the new Pixabay synthwave tracks', () => {
+    const ids = MUSIC_TRACKS.map((track) => track.id);
+    expect(ids).toContain('neon-synthwave-vibe');
+    expect(ids).toContain('synthwave-retro-80s');
+    expect(MUSIC_TRACKS.find((track) => track.id === 'neon-synthwave-vibe')?.name)
+      .toContain('echoes_of_lumen');
+    expect(MUSIC_TRACKS.find((track) => track.id === 'synthwave-retro-80s')?.name)
+      .toContain('DELOSound');
+  });
+
   it('starts every run on Dark Synthwave', () => {
     music.cycleTrack();
     expect(music.currentName).not.toContain('Dark Synthwave');

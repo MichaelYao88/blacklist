@@ -69,7 +69,7 @@ Not in this version: daily seeds, Ascension above A2, dordle grids, Antiwordle, 
 
 ## Music
 
-Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title screen or top bar to cycle through the six regular tracks; the mute button is separate. **More Power** is locked to the final boss and is not available in the carousel.
+Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title screen or top bar to cycle through the eight regular tracks; the mute button is separate. **More Power** is locked to the final boss and is not available in the carousel.
 
 **Liborio Conti** — free to use, no attribution required, via [no-copyright-music.com](https://www.no-copyright-music.com/):
 
@@ -83,6 +83,14 @@ Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title s
 
 - Dark
 - Dark Synthwave
+
+**echoes_of_lumen** — via [Pixabay](https://pixabay.com/users/echoes_of_lumen-56361169/) under the Pixabay Content License:
+
+- Neon Synthwave Vibe
+
+**DELOSound** — via [Pixabay](https://pixabay.com/users/delosound-46524562/) under the Pixabay Content License:
+
+- Synthwave Retro 80s
 
 ---
 

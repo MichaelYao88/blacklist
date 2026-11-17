@@ -198,11 +198,11 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'bitter-root',
     name: 'Bitter Root',
-    description: 'Heal 4 and gain 1 armor. No slot.',
+    description: 'Heal 4 and gain 1 max armor. No slot.',
     price: 5,
     effects: [
       { type: 'heal', amount: 4 },
-      { type: 'armor', delta: 1 },
+      { type: 'maxArmor', delta: 1 },
     ],
   }),
   defineFood({

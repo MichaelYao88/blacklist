@@ -1272,7 +1272,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'bulk-order',
     name: 'Bulk Order',
-    description: 'Buy every food in a shop: +2 max HP and +1 armor.',
+    description: 'Buy every food in a shop: +2 max HP and +1 max armor.',
     price: 9,
     kind: 'gear',
     initial: { _visit: -1 },
@@ -1285,7 +1285,7 @@ export const ITEMS: ItemDef[] = [
         return [
           { type: 'setItemData', stat: '_visit', value: shop.visit },
           { type: 'maxHp', delta: 2 },
-          { type: 'armor', delta: 1 },
+          { type: 'maxArmor', delta: 1 },
         ];
       },
     },
@@ -1358,11 +1358,11 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'growth-spurt',
     name: 'Growth Spurt',
-    description: 'Solve in 4 guesses or fewer: +10 max HP.',
+    description: 'Solve in 4 guesses or fewer: +4 max HP.',
     price: 10,
     kind: 'gear',
     on: {
-      onSolve: (_ctx, p) => (p.guesses <= 4 ? [{ type: 'maxHp', delta: 10 }] : []),
+      onSolve: (_ctx, p) => (p.guesses <= 4 ? [{ type: 'maxHp', delta: 4 }] : []),
     },
   }),
 
