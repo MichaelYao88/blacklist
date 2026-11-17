@@ -135,6 +135,36 @@ export const BOSSES: BossDef[] = [
     }),
   }),
   defineBoss({
+    id: 'horde',
+    name: 'The Horde',
+    description: 'A crowd. Every wrong guess adds another body and covers one more tile.',
+    acts: [1, 4],
+    timerMs: null,
+    damage: 6,
+    rules: [
+      'Every wrong guess draws another body into the Horde.',
+      'Each body covers one more tile of every guess, counting from the right.',
+      'At three bodies, only the first two tiles stay visible.',
+      'There is no clock. Every wrong guess deals 6 damage.',
+    ],
+    initialState: { swarm: 0 },
+    present: (ctx, g) => {
+      const swarm = Math.min(3, Math.max(0, ctx.state.round?.bossState.swarm ?? 0));
+      return {
+        word: g.word,
+        tiles: g.truth.map((tile, index) => (index < 5 - swarm ? tile : 'hidden')),
+      };
+    },
+    on: {
+      onGuessScored: (ctx, p) => {
+        const round = ctx.state.round;
+        if (!round || p.guess.word === round.answer) return [];
+        const swarm = Math.min(3, (round.bossState.swarm ?? 0) + 1);
+        return [{ type: 'bossData', key: 'swarm', value: swarm }];
+      },
+    },
+  }),
+  defineBoss({
     id: 'gauntlet',
     name: 'The Gauntlet',
     description: 'Three puzzles. One shared 150-second clock. No damage per guess.',

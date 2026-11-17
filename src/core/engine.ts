@@ -32,7 +32,7 @@ import type {
 import { hashSeed, rngChance, rngInt, rngPick, rngNext, rngShuffle } from './rng';
 import { scoreGuess } from './score';
 
-const VERSION = 4;
+const VERSION = 5;
 const WORD_LENGTH = 5;
 const ACTS = 5;
 const NODES_PER_ACT = 6;
@@ -83,6 +83,18 @@ export function createCore(content: Content): Core {
 
   const itemSlots = (def: ItemDef): number => def.slots ?? (def.kind === 'gear' ? 1 : 0);
 
+  // Ascension is cumulative. Levels 2-4 each add HP loss, shop inflation and
+  // boss damage; level 5 adds one last shop increase.
+  const ascensionShopSteps = (state: RunState): number =>
+    Math.min(4, Math.max(0, state.ascension - 1));
+  const ascensionBossSteps = (state: RunState): number =>
+    Math.min(3, Math.max(0, state.ascension - 1));
+  const shopMultiplier = (state: RunState): number => 1 + 0.1 * ascensionShopSteps(state);
+  const shopPrice = (state: RunState, base: number): number =>
+    Math.ceil(base * shopMultiplier(state));
+  const scaleBossDamage = (state: RunState, amount: number): number =>
+    Math.ceil(amount * (1 + 0.1 * ascensionBossSteps(state)));
+
   /** Slots are only consumed by equipped items. Slotless items are always on. */
   const isEquipped = (item: ItemInstance, def?: ItemDef): boolean =>
     !def || itemSlots(def) === 0 || item.equipped !== false;
@@ -126,8 +138,20 @@ export function createCore(content: Content): Core {
   function changeGold(rt: Runtime, delta: number, source: Source): void {
     if (!delta) return;
     const state = rt.state;
+    let amount = delta;
+    if (amount > 0) {
+      // Gold-income doublers roll once per equipped item. A doubled reward
+      // still counts as earned gold, and the roll happens before the payout.
+      for (const item of state.items) {
+        const def = itemById.get(item.id);
+        if (!def?.goldDoubleChance || !isEquipped(item, def)) continue;
+        if (!rngChance(state, def.goldDoubleChance)) continue;
+        amount *= 2;
+        emit(rt, { type: 'message', text: `${def.name} doubles the gold.` });
+      }
+    }
     const before = state.gold;
-    state.gold = Math.max(0, before + delta);
+    state.gold = Math.max(0, before + amount);
     const applied = state.gold - before;
     if (!applied) return;
     if (applied > 0) state.stats.goldEarned += applied;
@@ -722,6 +746,17 @@ export function createCore(content: Content): Core {
       case 'friendGuesses':
         playFriendGuesses(rt, effect.count);
         break;
+      case 'autoGuess': {
+        const round = state.round;
+        if (!round || state.phase !== 'round') break;
+        const word = normalizeWord(effect.word);
+        if (word.length !== WORD_LENGTH) break;
+        if (state.blacklist.includes(word)) break;
+        if (word.split('').some((ch) => state.purged.includes(ch))) break;
+        if (round.guesses.some((guess) => guess.word === word)) break;
+        scorePlayerGuess(rt, word, 'friend');
+        break;
+      }
       case 'grow': {
         if (!rt.self) break;
         const item = findItem(state, rt.self);
@@ -874,7 +909,7 @@ export function createCore(content: Content): Core {
   // ── round lifecycle ──────────────────────────────────────────────────────
 
   function normalTimerMs(state: RunState): number {
-    const base = Math.max(45_000, 150_000 - 6_000 * state.stats.rounds - 10_000 * state.ascension);
+    const base = Math.max(45_000, 150_000 - 6_000 * state.stats.rounds);
     return Math.max(15_000, base + state.bonusTimeMs);
   }
 
@@ -888,11 +923,11 @@ export function createCore(content: Content): Core {
     let remaining: number | null;
     let timerStart: number | null;
     if (boss?.gauntlet) {
-      remaining = Math.max(60_000, boss.gauntlet.timerMs - 10_000 * state.ascension);
+      remaining = boss.gauntlet.timerMs;
     } else if (boss && boss.timerMs === null) {
       remaining = null;
     } else if (boss && boss.timerMs !== null) {
-      remaining = Math.max(20_000, boss.timerMs - 10_000 * state.ascension);
+      remaining = boss.timerMs;
     } else {
       remaining = normalTimerMs(state);
     }
@@ -903,14 +938,14 @@ export function createCore(content: Content): Core {
     const roundSlot = Math.floor((state.nodeIndex % NODES_PER_ACT) / 2);
     const roundTier = Math.floor(state.stats.rounds / 3);
     const baseDamage = boss
-      ? (boss.damage ?? 3 + state.act * 2 + roundTier)
+      ? scaleBossDamage(state, boss.damage ?? 3 + state.act * 2 + roundTier)
       : 2 + state.act * 2 + roundSlot + roundTier + state.bonusBaseDamage;
 
     const round: RoundState = {
       answer,
       boss: boss?.id,
       guesses: [],
-      freeLeft: 2,
+      freeLeft: 1,
       paidGuesses: 0,
       baseDamage,
       elapsedMs: 0,
@@ -1054,7 +1089,7 @@ export function createCore(content: Content): Core {
     if (boss?.noGuessDamage) return 0;
     if (!boss?.damageFor) return round.baseDamage;
     const probe = next ? { ...round, totalGuesses: round.totalGuesses + 1 } : round;
-    return boss.damageFor(state, probe);
+    return scaleBossDamage(state, boss.damageFor(state, probe));
   }
 
   function timeoutDamageFor(state: RunState, round: RoundState): number {
@@ -1250,7 +1285,7 @@ export function createCore(content: Content): Core {
       const boss = round.boss ? bossById.get(round.boss) : undefined;
       if (!boss?.noGuessDamage) {
         round.paidGuesses++;
-        const amount = boss?.damageFor ? boss.damageFor(state, round) : round.baseDamage;
+        const amount = guessDamageFor(state, round);
         if (amount > 0) {
           dealDamage(
             rt,
@@ -1420,21 +1455,22 @@ export function createCore(content: Content): Core {
 
     const pickItem = (item: ItemDef, sale = false): void => {
       usedDefs.add(`item:${item.id}`);
+      const base = sale ? Math.max(1, Math.floor(item.price / 2)) : item.price;
       picked.push({
         kind: 'item',
         def: item.id,
-        price: sale ? Math.max(1, Math.floor(item.price / 2)) : item.price,
+        price: shopPrice(state, base),
         sale,
-        originalPrice: sale ? item.price : undefined,
+        originalPrice: sale ? shopPrice(state, item.price) : undefined,
       });
     };
     const pickFood = (food: (typeof content.foods)[number]): void => {
       usedDefs.add(`eat:${food.id}`);
-      picked.push({ kind: 'eat', def: food.id, price: food.price });
+      picked.push({ kind: 'eat', def: food.id, price: shopPrice(state, food.price) });
     };
     const pickSpell = (spell: (typeof content.spells)[number]): void => {
       usedDefs.add(`spell:${spell.id}`);
-      picked.push({ kind: 'spell', def: spell.id, price: spell.price });
+      picked.push({ kind: 'spell', def: spell.id, price: shopPrice(state, spell.price) });
     };
 
     // The shelf always carries three items and two foods.
@@ -1480,7 +1516,7 @@ export function createCore(content: Content): Core {
     const state = rt.state;
     state.shop = {
       offers: generateOffers(rt),
-      rerollCost: 2,
+      rerollCost: shopPrice(state, 2),
       rerolls: 0,
     };
     state.phase = 'shop';
@@ -2038,9 +2074,12 @@ export function createCore(content: Content): Core {
 
   function newRun(opts: { seed: string; ascension?: number }): StepResult {
     const seed = String(opts.seed || 'blacklist');
-    const ascension = Math.max(0, Math.floor(opts.ascension ?? 0));
-    const maxHp = Math.max(10, 40 - 3 * ascension);
-    const startArmor = Math.max(0, 5 - ascension);
+    const ascension = Math.max(0, Math.min(5, Math.floor(opts.ascension ?? 0)));
+    // A1 strips starting armor. A2-A4 each remove 10 HP, add 10% to shop
+    // prices and add 10% to boss damage. A5 adds one final shop increase.
+    const hpPenalty = 10 * Math.min(3, Math.max(0, ascension - 1));
+    const maxHp = Math.max(10, 40 - hpPenalty);
+    const startArmor = ascension >= 1 ? 1 : 5;
     const state: RunState = {
       version: VERSION,
       seed,
@@ -2054,8 +2093,8 @@ export function createCore(content: Content): Core {
       maxHp,
       armor: startArmor,
       maxArmor: startArmor,
-      gold: Math.max(0, 10 - 2 * ascension),
-      slots: 4,
+      gold: 10,
+      slots: 5,
       bonusTimeMs: 0,
       bonusBaseDamage: 0,
       bonusSolveGold: 0,
@@ -2106,6 +2145,7 @@ export function createCore(content: Content): Core {
       if (!parsed || typeof parsed !== 'object') return null;
       if (
         parsed.version !== VERSION &&
+        parsed.version !== 4 &&
         parsed.version !== 3 &&
         parsed.version !== 2 &&
         parsed.version !== 1
@@ -2117,7 +2157,18 @@ export function createCore(content: Content): Core {
       if (typeof parsed.rng !== 'number') return null;
 
       const state = parsed as RunState;
+      const fromVersion = typeof parsed.version === 'number' ? parsed.version : 0;
       state.version = VERSION;
+      state.ascension = typeof state.ascension === 'number'
+        ? Math.max(0, Math.min(5, Math.floor(state.ascension)))
+        : 0;
+      // Version 5 gives every run one more slot than it had before, because
+      // relics now compete with gear for space.
+      if (fromVersion < 5) {
+        state.slots = (typeof state.slots === 'number' ? state.slots : 4) + 1;
+      } else if (typeof state.slots !== 'number') {
+        state.slots = 5;
+      }
       state.bonusSolveGold = typeof state.bonusSolveGold === 'number' ? state.bonusSolveGold : 0;
       if (!Array.isArray(state.pendingReveals)) state.pendingReveals = [];
       delete (state as RunState & { blacklistCapacity?: number }).blacklistCapacity;
@@ -2135,6 +2186,19 @@ export function createCore(content: Content): Core {
         .filter((item) => itemById.has(item.id));
       for (const item of state.items) {
         if (typeof item.equipped !== 'boolean') item.equipped = true;
+      }
+      // A save that predates relic slots can be over capacity. Unequip the
+      // overflow rather than leaving a loadout the UI cannot represent.
+      let equippedCost = 0;
+      for (const item of state.items) {
+        const def = itemById.get(item.id);
+        const cost = def ? itemSlots(def) : 0;
+        if (item.equipped === false || cost === 0) continue;
+        if (equippedCost + cost > state.slots) {
+          item.equipped = false;
+          continue;
+        }
+        equippedCost += cost;
       }
       if (state.round) {
         if (!state.round.hints || typeof state.round.hints !== 'object') {

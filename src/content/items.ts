@@ -44,7 +44,6 @@ export const ITEMS: ItemDef[] = [
     price: 18,
     kind: 'gear',
     rarity: 'rare',
-    slots: 0,
     on: {
       onRoundStart: () => [{ type: 'timedImmunity', ms: 10_000 }],
       onGuessScored: (_ctx, p) =>
@@ -115,19 +114,16 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'deja-vu',
     name: 'Déjà Vu',
-    description: 'Once per round: last round’s answer is a free guess.',
+    description: 'Round start: last round’s answer is guessed for free.',
     price: 9,
     kind: 'gear',
-    initial: { used: 0 },
     on: {
-      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
-      onGuessScored: (ctx, p) => {
-        if (ctx.self.data.used || !ctx.state.lastAnswer) return [];
-        if (p.guess.word !== ctx.state.lastAnswer) return [];
-        return [
-          { type: 'makeGuessFree' },
-          { type: 'setItemData', stat: 'used', value: 1 },
-        ];
+      onRoundStart: (ctx) => {
+        const answer = ctx.state.lastAnswer;
+        if (!answer) return [];
+        if (ctx.state.blacklist.includes(answer)) return [];
+        if (answer.split('').some((ch) => ctx.state.purged.includes(ch))) return [];
+        return [{ type: 'autoGuess', word: answer }];
       },
     },
   }),
@@ -149,7 +145,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'compound-interest',
     name: 'Compound Interest',
-    description: 'On solve: +10% gold (max 10).',
+    description: 'On solve: gain 10% of your current gold (up to 10).',
     price: 10,
     kind: 'gear',
     on: {
@@ -157,6 +153,14 @@ export const ITEMS: ItemDef[] = [
         { type: 'gold', amount: Math.min(10, Math.ceil(ctx.state.gold * 0.1)) },
       ],
     },
+  }),
+  defineItem({
+    id: 'midas-touch',
+    name: 'Midas Touch',
+    description: 'Every gold gain: 20% chance to double it.',
+    price: 12,
+    kind: 'gear',
+    goldDoubleChance: 20,
   }),
   defineItem({
     id: 'photosynthesis',
@@ -442,7 +446,6 @@ export const ITEMS: ItemDef[] = [
     price: 18,
     kind: 'gear',
     rarity: 'rare',
-    slots: 0,
     allowInvalidGuesses: true,
   }),
 
@@ -533,25 +536,6 @@ export const ITEMS: ItemDef[] = [
     price: 8,
     kind: 'gear',
     on: { onSolve: () => [{ type: 'gold', amount: 3 }] },
-  }),
-  defineItem({
-    id: 'last-word',
-    name: 'Last Word',
-    description: 'First time below 25% HP: two random spells.',
-    price: 12,
-    kind: 'gear',
-    rarity: 'common',
-    initial: { used: 0 },
-    on: {
-      onDamageTaken: (ctx) => {
-        if (ctx.self.data.used || ctx.state.hp > ctx.state.maxHp * 0.25) return [];
-        return [
-          { type: 'giveSpell', spell: 'random' },
-          { type: 'giveSpell', spell: 'random' },
-          { type: 'setItemData', stat: 'used', value: 1 },
-        ];
-      },
-    },
   }),
   defineItem({
     id: 'waste-basket',
@@ -660,15 +644,15 @@ export const ITEMS: ItemDef[] = [
     price: 18,
     kind: 'gear',
     rarity: 'rare',
-    slots: 0,
     on: { onSpellCast: () => [{ type: 'maxArmor', delta: 1 }] },
   }),
   defineItem({
     id: 'mending-plate',
     name: 'Mending Plate',
     description: 'Whenever you are healed: +1 max armor.',
-    price: 8,
+    price: 20,
     kind: 'gear',
+    rarity: 'rare',
     on: {
       onHeal: () => [{ type: 'maxArmor', delta: 1 }],
     },
@@ -868,7 +852,6 @@ export const ITEMS: ItemDef[] = [
     price: 20,
     kind: 'gear',
     rarity: 'rare',
-    slots: 0,
     initial: { used: 0 },
     on: {
       onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
@@ -888,7 +871,6 @@ export const ITEMS: ItemDef[] = [
     price: 20,
     kind: 'gear',
     rarity: 'rare',
-    slots: 0,
     on: {
       onDamageTaken: (_ctx, p) =>
         p.dealt > 0 ? [{ type: 'giveSpell', spell: 'random', chancePct: 40 }] : [],
@@ -901,7 +883,6 @@ export const ITEMS: ItemDef[] = [
     price: 20,
     kind: 'gear',
     rarity: 'rare',
-    slots: 0,
     initial: { used: 0 },
     on: {
       onGuessScored: (ctx, p) => {
@@ -921,7 +902,6 @@ export const ITEMS: ItemDef[] = [
     price: 24,
     kind: 'gear',
     rarity: 'rare',
-    slots: 0,
     on: {
       onDeath: (ctx) => [
         { type: 'revive', hp: Math.ceil(ctx.state.maxHp * 0.5) },
@@ -937,7 +917,6 @@ export const ITEMS: ItemDef[] = [
     price: 22,
     kind: 'gear',
     rarity: 'rare',
-    slots: 0,
     on: {
       onRoundStart: () => [{ type: 'addTime', ms: 20_000 }],
       onSolve: () => [{ type: 'giveSpell', spell: 'time-warp' }],
@@ -950,7 +929,6 @@ export const ITEMS: ItemDef[] = [
     price: 20,
     kind: 'gear',
     rarity: 'rare',
-    slots: 0,
     on: {
       onEat: () => [{ type: 'giveSpell', spell: 'random', chancePct: 20 }],
     },
@@ -962,7 +940,6 @@ export const ITEMS: ItemDef[] = [
     price: 18,
     kind: 'gear',
     rarity: 'rare',
-    slots: 0,
     on: {
       onSolve: (_ctx, p) =>
         p.elapsedMs < 60_000 ? [{ type: 'giveSpell', spell: 'omen' }] : [],
@@ -975,7 +952,6 @@ export const ITEMS: ItemDef[] = [
     price: 20,
     kind: 'gear',
     rarity: 'rare',
-    slots: 0,
     initial: { blocked: 0 },
     on: {
       onDamageTaken: (ctx, p) => {
@@ -996,7 +972,6 @@ export const ITEMS: ItemDef[] = [
     price: 20,
     kind: 'gear',
     rarity: 'rare',
-    slots: 0,
     on: {
       onGuessScored: (_ctx, p) =>
         p.guess.free ? [] : [{ type: 'makeGuessFree', chancePct: 25 }],

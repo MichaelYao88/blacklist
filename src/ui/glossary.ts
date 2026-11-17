@@ -22,7 +22,7 @@ const ENTRIES: GlossaryEntry[] = [
   },
   {
     pattern: /\bfree guesses?\b/gi,
-    tip: 'A guess that costs no HP. The first two guesses of every round are free.',
+    tip: 'A guess that costs no HP. The first guess of every round is free.',
   },
   {
     pattern: /\bpaid guesses?\b/gi,
@@ -38,7 +38,7 @@ const ENTRIES: GlossaryEntry[] = [
   },
   {
     pattern: /\brelics?\b/gi,
-    tip: 'A rare boss prize. Its passive is always on, uses no slot, and it never appears in shops.',
+    tip: 'A rare boss prize. It uses an item slot like any other gear, is active only while equipped, and never appears in shops.',
   },
   {
     pattern: /\bslots?\b/gi,

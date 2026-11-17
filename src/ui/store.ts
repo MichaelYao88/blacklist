@@ -7,9 +7,11 @@ export interface Meta {
   runs: number;
   wins: number;
   bestAct: number;
+  /** Highest ascension level unlocked. Beating level N unlocks N+1, up to 5. */
+  ascension: number;
 }
 
-const DEFAULT_META: Meta = { runs: 0, wins: 0, bestAct: 0 };
+const DEFAULT_META: Meta = { runs: 0, wins: 0, bestAct: 0, ascension: 0 };
 
 export class LocalStore implements SaveStore {
   load(): string | null {
@@ -54,6 +56,7 @@ export function readMeta(): Meta {
       runs: Number(parsed.runs) || 0,
       wins: Number(parsed.wins) || 0,
       bestAct: Number(parsed.bestAct) || 0,
+      ascension: Math.max(0, Math.min(5, Number(parsed.ascension) || 0)),
     };
   } catch {
     return { ...DEFAULT_META };
@@ -74,9 +77,16 @@ export function recordStart(): void {
   writeMeta(meta);
 }
 
-export function recordOutcome(result: 'victory' | 'defeat', act: number): void {
+export function recordOutcome(
+  result: 'victory' | 'defeat',
+  act: number,
+  ascension = 0,
+): void {
   const meta = readMeta();
-  if (result === 'victory') meta.wins += 1;
+  if (result === 'victory') {
+    meta.wins += 1;
+    meta.ascension = Math.max(meta.ascension, Math.min(5, ascension + 1));
+  }
   meta.bestAct = Math.max(meta.bestAct, act + 1);
   writeMeta(meta);
 }

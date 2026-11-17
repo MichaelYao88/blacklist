@@ -371,6 +371,12 @@ button {
   color: var(--gold);
 }
 
+.chip-stat.ascension {
+  border-color: rgba(231, 184, 90, 0.45);
+  color: #ffd98d;
+  background: rgba(231, 184, 90, 0.08);
+}
+
 .top-actions {
   display: flex;
   gap: 6px;
@@ -774,19 +780,6 @@ button {
 
 .timer.frozen .timer-bar i {
   background: linear-gradient(90deg, #397b88, var(--cyan));
-}
-
-.timer-timeout {
-  margin-left: auto;
-  align-self: center;
-  padding: 1px 5px;
-  border: 1px solid rgba(223, 97, 90, 0.34);
-  border-radius: 4px;
-  color: #f0a19c;
-  font-size: 0.46rem;
-  font-weight: 800;
-  letter-spacing: 0.07em;
-  white-space: nowrap;
 }
 
 .round-facts {
@@ -1546,6 +1539,15 @@ button {
   max-width: 520px;
 }
 
+.ascension-result {
+  margin: -14px auto 22px;
+  color: #ffd98d;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
 .over-answer {
   display: flex;
   flex-direction: column;
@@ -1600,7 +1602,7 @@ button {
   min-height: 100vh;
   padding: 40px 20px;
   text-align: center;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 .title-screen::before {
@@ -1693,6 +1695,69 @@ button {
   justify-content: center;
   gap: 9px;
   margin-top: 30px;
+}
+
+.ascension-picker {
+  width: min(480px, 100%);
+  margin: 24px auto 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.ascension-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ascension-current {
+  color: var(--gold, #e7b85a);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.ascension-levels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+.ascension-btn {
+  min-width: 42px;
+  padding: 6px 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
+}
+
+.ascension-btn:hover {
+  border-color: var(--gold, #e7b85a);
+  color: var(--ink);
+}
+
+.ascension-btn.active {
+  border-color: var(--gold, #e7b85a);
+  background: rgba(231, 184, 90, 0.16);
+  color: #ffe1a3;
+}
+
+.ascension-note {
+  margin: 9px 0 0;
+  color: var(--faint);
+  font-size: 0.68rem;
+  line-height: 1.5;
 }
 
 .title-facts {
@@ -1952,11 +2017,6 @@ button {
   letter-spacing: 0.15em;
 }
 
-.battle-rail .timer-timeout {
-  margin-left: 0;
-  align-self: flex-start;
-}
-
 .guess-damage {
   display: flex;
   align-items: center;
@@ -1977,10 +2037,12 @@ button {
 
 .guess-damage b {
   color: #ff8b84;
-  font-family: var(--serif);
-  font-size: 1.16rem;
-  font-weight: 600;
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
   line-height: 1;
+  white-space: nowrap;
 }
 
 .guess-damage.safe {
@@ -2208,70 +2270,58 @@ button {
   letter-spacing: 0.07em;
 }
 
-.dmg-number {
-  position: absolute;
-  z-index: 6;
+.damage-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  gap: 8px;
   pointer-events: none;
+  text-align: center;
+  animation: damage-slam 1.2s ease-out both;
+}
+
+.damage-big {
   font-family: var(--serif);
-  font-size: 2.1rem;
+  font-size: clamp(3.4rem, 11vw, 7.5rem);
   font-weight: 700;
-  line-height: 1;
-  letter-spacing: 0.01em;
-  paint-order: stroke fill;
-  -webkit-text-stroke: 3px #050409;
-  text-shadow: 0 0 18px currentColor, 0 4px 12px #000;
-  transform-origin: center bottom;
-  animation: dmg-pop 1.15s ease-out both;
-}
-
-.dmg-number em {
-  margin-top: 2px;
-  font-family: var(--sans);
-  font-size: 0.46rem;
-  font-style: normal;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  -webkit-text-stroke: 0;
-  text-shadow: 0 2px 6px #000;
-  opacity: 0.92;
-}
-
-.dmg-number.hp {
-  top: -8px;
-  left: 0;
-  right: 0;
+  line-height: 0.92;
   color: #ff5d54;
+  letter-spacing: -0.02em;
+  paint-order: stroke fill;
+  -webkit-text-stroke: 4px #050409;
+  text-shadow: 0 0 34px rgba(255, 93, 84, 0.85), 0 8px 24px #000;
+  white-space: nowrap;
 }
 
-.mini-player .armor-line .dmg-number.armor {
-  top: -16px;
-  left: 8px;
-  right: auto;
-  color: #9fe2f0;
-  font-size: 1.45rem;
-  -webkit-text-stroke-color: #041014;
+.damage-overlay.blocked .damage-big {
+  color: #d7cee8;
+  font-size: clamp(2.5rem, 8vw, 5.4rem);
+  text-shadow: 0 0 28px rgba(207, 198, 221, 0.6), 0 8px 24px #000;
 }
 
-.dmg-number.blocked {
-  top: -4px;
-  left: 0;
-  right: 0;
-  color: #cfc6dd;
+.damage-overlay span {
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(5, 4, 9, 0.72);
+  color: #e7dfef;
   font-size: 0.72rem;
-  font-weight: 900;
+  font-weight: 800;
   letter-spacing: 0.12em;
-  -webkit-text-stroke: 2px #050409;
+  text-transform: uppercase;
 }
 
-@keyframes dmg-pop {
-  0% { opacity: 0; transform: translateY(8px) scale(0.68); }
-  15% { opacity: 1; transform: translateY(-2px) scale(1.14); }
-  36% { transform: translateY(0) scale(1); }
-  74% { opacity: 1; }
-  100% { opacity: 0; transform: translateY(-28px) scale(1); }
+@keyframes damage-slam {
+  0% { opacity: 0; transform: scale(1.7); filter: blur(6px); }
+  12% { opacity: 1; transform: scale(0.94); filter: blur(0); }
+  22% { transform: scale(1.04); }
+  32% { transform: scale(1); }
+  72% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-52px) scale(0.98); }
 }
 
 /* ── combat HUD ──────────────────────────────────────────────────────────── */

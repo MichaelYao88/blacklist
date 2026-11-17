@@ -209,6 +209,7 @@ export type Effect =
   | { type: 'randomChoice'; options: Effect[][] }
   | { type: 'giveSpell'; spell: SpellId | 'random'; chancePct?: number }
   | { type: 'friendGuesses'; count: number }
+  | { type: 'autoGuess'; word: string }
   | { type: 'grow'; stat: string; by: number }
   | { type: 'setItemData'; stat: string; value: number }
   | { type: 'consumeSelf' }
@@ -277,11 +278,13 @@ export interface ItemDef {
   description: string;
   price: number;
   kind: ItemKind;
-  /** Rare relics are boss prizes. They are never sold in shops and take no slot. */
+  /** Rare relics are boss prizes. They consume an item slot like any other gear. */
   rarity?: 'common' | 'rare';
   /** Allows guesses that are not in the dictionary. */
   allowInvalidGuesses?: boolean;
   slots?: number;
+  /** Chance to double any gold this item's owner gains. */
+  goldDoubleChance?: number;
   initial?: Record<string, number>;
   on?: Reactors<ItemCtx>;
   onAcquire?: (ctx: ItemCtx) => Effect[];

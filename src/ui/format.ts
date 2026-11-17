@@ -99,7 +99,7 @@ export function describeEvent(event: GameEvent): string | null {
       if (event.dealt === 0 && event.armorUsed > 0) return `Armor absorbed ${event.armorUsed} damage`;
       if (event.dealt === 0 && event.blocked > 0) return `Blocked ${event.blocked} damage`;
       if (event.dealt === 0) return 'No damage';
-      return `−${event.dealt} HP`;
+      return `${event.dealt} damage`;
     case 'healed':
       return `+${event.amount} HP`;
     case 'maxHpChanged':

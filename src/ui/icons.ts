@@ -12,6 +12,7 @@ const ITEM_ICONS: Record<string, string> = {
   'grey-matter': '🧠',
   'deja-vu': '🔁',
   'compound-interest': '📈',
+  'midas-touch': '🪙',
   photosynthesis: '🌿',
   'vampire-teeth': '🧛',
   siphon: '🩸',
@@ -44,7 +45,6 @@ const ITEM_ICONS: Record<string, string> = {
   'cracked-orb': '🔮',
   'sticky-fingers': '🖐️',
   'nest-egg': '🪺',
-  'last-word': '🕯️',
   'oracle-skull': '💀',
   'thorn-crown': '👑',
   'echo-chamber': '🕳️',
@@ -115,6 +115,7 @@ const BOSS_SIGILS: Record<string, string> = {
   'vowel-fog': '◌',
   monochrome: '◐',
   gauntlet: '⟳',
+  horde: '⁂',
 };
 
 const BOSS_COLORS: Record<string, string> = {
@@ -125,6 +126,7 @@ const BOSS_COLORS: Record<string, string> = {
   'vowel-fog': '#4fbf87',
   monochrome: '#c9c0d8',
   gauntlet: '#e07a4f',
+  horde: '#9ec95a',
 };
 
 export function itemIcon(id: string): string {

@@ -3,6 +3,7 @@ import { CoreHost, MemoryStore, game } from '../src/game';
 import type { Command, GameEvent, RoundState, RunState, StepResult } from '../src/game';
 import { FOOD_BY_ID, HAPPENING_BY_ID, ITEM_BY_ID, SPELL_BY_ID } from '../src/content';
 import { FRIEND_PHRASES } from '../src/data/friends';
+import { rngNext } from '../src/core/rng';
 
 function start(seed = 'test-seed'): StepResult {
   return game.newRun({ seed });
@@ -31,7 +32,7 @@ describe('new run', () => {
     expect(state.armor).toBe(5);
     expect(state.maxArmor).toBe(5);
     expect(state.gold).toBe(10);
-    expect(state.slots).toBe(4);
+    expect(state.slots).toBe(5);
     expect(state.blacklist).toEqual([]);
     expect(state.pendingReveals).toEqual([]);
     expect(state.nodes).toHaveLength(30);
@@ -50,20 +51,86 @@ describe('new run', () => {
   });
 });
 
+describe('ascension', () => {
+  const runAt = (ascension: number) => game.newRun({ seed: `asc-${ascension}`, ascension });
+
+  it('A1 strips starting armor and leaves the rest of the base run alone', () => {
+    const { state } = runAt(1);
+    expect(state.ascension).toBe(1);
+    expect(state.hp).toBe(40);
+    expect(state.maxHp).toBe(40);
+    expect(state.armor).toBe(1);
+    expect(state.maxArmor).toBe(1);
+    expect(state.gold).toBe(10);
+    expect(state.slots).toBe(5);
+  });
+
+  it('stacks HP losses for A2, A3 and A4, then adds a final shop increase at A5', () => {
+    expect(runAt(2).state.maxHp).toBe(30);
+    expect(runAt(3).state.maxHp).toBe(20);
+    expect(runAt(4).state.maxHp).toBe(10);
+    expect(runAt(5).state.maxHp).toBe(10);
+    for (const level of [1, 2, 3, 4, 5]) {
+      expect(runAt(level).state.armor).toBe(1);
+    }
+  });
+
+  it('raises shop prices and reroll costs', () => {
+    const begun = runAt(2);
+    const state = begun.state;
+    state.nodeIndex = 0;
+    state.nodes[1] = { kind: 'shop' };
+    state.phase = 'shop';
+    state.shop = { offers: [], rerollCost: 2, rerolls: 0 };
+
+    const shop = act(state, { type: 'continue' });
+    expect(shop.state.phase).toBe('shop');
+    expect(shop.state.shop?.rerollCost).toBe(3);
+
+    for (const offer of shop.state.shop?.offers ?? []) {
+      let base = 0;
+      if (offer.kind === 'item') base = ITEM_BY_ID.get(offer.def)?.price ?? 0;
+      else if (offer.kind === 'spell') base = SPELL_BY_ID.get(offer.def)?.price ?? 0;
+      else base = FOOD_BY_ID.get(offer.def)?.price ?? 0;
+      if (offer.sale) base = Math.max(1, Math.floor(base / 2));
+      expect(offer.price).toBe(Math.ceil(base * 1.1));
+    }
+  });
+
+  it('raises boss damage by 10% per level, capped at A4', () => {
+    const bossRound = (ascension: number) => {
+      const { state } = runAt(ascension);
+      state.nodeIndex = 4;
+      state.nodes[5] = { kind: 'boss', boss: 'editor' };
+      state.phase = 'shop';
+      state.shop = { offers: [], rerollCost: 2, rerolls: 0 };
+      const intro = act(state, { type: 'continue' });
+      const started = act(intro.state, { type: 'continue' });
+      return started.state.round?.baseDamage;
+    };
+    expect(bossRound(1)).toBe(5);
+    expect(bossRound(2)).toBe(6);
+    expect(bossRound(3)).toBe(6);
+    expect(bossRound(4)).toBe(7);
+    expect(bossRound(5)).toBe(7);
+  });
+});
+
 describe('guessing and the blacklist', () => {
-  it('makes the first two guesses free and blacklists only the first word', () => {
+  it('makes the first guess free and blacklists only the first word', () => {
     const { state } = start();
     setAnswer(state, 'crane');
 
     const first = act(state, { type: 'guess', word: 'slate' });
     expect(first.state.hp).toBe(40);
-    expect(first.state.round?.freeLeft).toBe(1);
+    expect(first.state.armor).toBe(5);
+    expect(first.state.round?.freeLeft).toBe(0);
     expect(first.state.blacklist).toContain('slate');
     expect(eventTypes(first.events)).toContain('guessScored');
 
     const second = act(first.state, { type: 'guess', word: 'pious' });
-    expect(second.state.hp).toBe(40);
     expect(second.state.round?.freeLeft).toBe(0);
+    expect(second.state.armor).toBe(3);
     expect(second.state.blacklist).toEqual(['slate']);
 
     const rejected = act(second.state, { type: 'guess', word: 'slate' });
@@ -560,10 +627,45 @@ describe('boss encounters', () => {
     expect(started.state.phase).toBe('round');
     expect(started.state.round?.boss).toBe(intro.state.nodes[5].boss);
   });
+
+  it('lets The Horde add a body and hide one more tile per wrong guess', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    const round = state.round as RoundState;
+    state.round = {
+      ...round,
+      boss: 'horde',
+      freeLeft: 0,
+      paidGuesses: 0,
+      bossState: { swarm: 0 },
+      baseDamage: 6,
+      remainingMs: null,
+      timerStartMs: null,
+    };
+    state.armor = 0;
+
+    const boardOf = (s: RunState) => {
+      const phase = game.view(s).phase;
+      if (phase.kind !== 'round') throw new Error('not in a round');
+      return phase.board;
+    };
+
+    const one = act(state, { type: 'guess', word: 'slate' });
+    expect(one.state.hp).toBe(34);
+    expect(one.state.round?.bossState.swarm).toBe(1);
+    expect(boardOf(one.state).guesses[0].tiles.slice(-1)).toEqual(['hidden']);
+    expect(boardOf(one.state).nextGuessDamage).toBe(6);
+
+    const two = act(one.state, { type: 'guess', word: 'pious' });
+    expect(two.state.hp).toBe(28);
+    expect(two.state.round?.bossState.swarm).toBe(2);
+    expect(boardOf(two.state).guesses[0].tiles.slice(-2)).toEqual(['hidden', 'hidden']);
+    expect(boardOf(two.state).guesses[1].tiles.slice(-1)).toEqual(['hidden']);
+  });
 });
 
 describe('nonsense guesses', () => {
-  it('rejects off-dictionary words until the Loose Tongue relic is owned', () => {
+  it('only lets Loose Tongue work while it is equipped in a slot', () => {
     const { state } = start();
     setAnswer(state, 'crane');
 
@@ -575,8 +677,13 @@ describe('nonsense guesses', () => {
     });
     expect(rejected.state.round?.guesses).toHaveLength(0);
 
-    // Relics take no slot, so merely owning Loose Tongue turns it on.
+    // Relics consume a slot now, so a relic left in the bag stays switched off.
     state.items.push({ instance: 'i-loose', id: 'loose-tongue', data: {}, equipped: false });
+    const bagged = act(state, { type: 'guess', word: 'aeiou' });
+    expect(eventTypes(bagged.events)).toContain('guessRejected');
+
+    state.items[0].equipped = true;
+    expect(game.view(state).slots.used).toBe(1);
     const accepted = act(state, { type: 'guess', word: 'aeiou' });
     expect(eventTypes(accepted.events)).toContain('guessScored');
     expect(accepted.state.round?.guesses).toHaveLength(1);
@@ -804,6 +911,31 @@ describe('opening and guess engines', () => {
   });
 });
 
+describe('déjà vu', () => {
+  it('auto-guesses last round’s answer for free at the next round start', () => {
+    const { state } = start();
+    setAnswer(state, 'blimp');
+    state.lastAnswer = 'crane';
+    state.usedAnswers = ['crane'];
+    state.blacklist = [];
+    state.nodeIndex = 0;
+    state.nodes[1] = { kind: 'round' };
+    state.phase = 'shop';
+    state.shop = { offers: [], rerollCost: 2, rerolls: 0 };
+    state.items.push({ instance: 'i-deja', id: 'deja-vu', data: {}, equipped: true });
+
+    const next = act(state, { type: 'continue' });
+    expect(next.state.phase).toBe('round');
+    expect(next.state.round?.guesses).toHaveLength(1);
+    expect(next.state.round?.guesses[0].word).toBe('crane');
+    expect(next.state.round?.guesses[0].free).toBe(true);
+    expect(next.state.round?.guesses[0].by).toBe('friend');
+    expect(next.state.round?.freeLeft).toBe(1);
+    expect(next.state.round?.answer).not.toBe('crane');
+    expect(next.state.hp).toBe(40);
+  });
+});
+
 describe('rebalanced relics', () => {
   it('pays Pen Club for a guess that starts with PEN', () => {
     const { state } = start();
@@ -863,6 +995,49 @@ describe('rebalanced relics', () => {
       ([first, second]) => words[0] === first && words[1] === second,
     );
     expect(matched).toBe(true);
+  });
+});
+
+describe('gold engines and relic slots', () => {
+  it('turns every rare relic into a one-slot item', () => {
+    const rares = [...ITEM_BY_ID.values()].filter((item) => item.rarity === 'rare');
+    expect(rares.length).toBe(13);
+    for (const item of rares) {
+      expect(item.slots ?? 1).toBe(1);
+    }
+    expect(ITEM_BY_ID.get('mending-plate')?.rarity).toBe('rare');
+    expect(ITEM_BY_ID.get('midas-touch')?.goldDoubleChance).toBe(20);
+  });
+
+  it('pays Compound Interest as 10% of current gold, capped at 10', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.gold = 100;
+    state.items.push({ instance: 'i-compound', id: 'compound-interest', data: {}, equipped: true });
+
+    const solved = act(state, { type: 'guess', word: 'crane' });
+    // Solve pays 5 first, taking gold to 105, then Compound Interest adds 10.
+    expect(solved.state.gold).toBe(115);
+  });
+
+  it('doubles a gold gain when the Midas Touch roll succeeds', () => {
+    const { state } = start();
+    setAnswer(state, 'crane');
+    state.blacklist = ['slate'];
+    state.gold = 10;
+    state.items.push({ instance: 'i-midas', id: 'midas-touch', data: {}, equipped: true });
+
+    // Move the seeded RNG to a point where the next roll is below 20%.
+    for (let i = 0; i < 10_000; i++) {
+      const probe = { rng: state.rng };
+      if (rngNext(probe) * 100 < 20) break;
+      state.rng = probe.rng;
+    }
+
+    const solved = act(state, { type: 'guess', word: 'crane' });
+    expect(solved.state.gold).toBe(20);
+    expect(eventTypes(solved.events)).toContain('message');
+    expect(solved.state.stats.goldEarned).toBe(10);
   });
 });
 
@@ -991,5 +1166,28 @@ describe('serialization', () => {
     expect(ids).not.toContain('null-lens');
     expect(ids).not.toContain('midas-relic');
     expect(ids).not.toContain('removed-thing');
+  });
+
+  it('adds the new slot and trims overflow when loading a version 4 save', () => {
+    const { state } = start();
+    state.slots = 4;
+    state.items = ['hourglass', 'early-bird', 'head-start', 'quickdraw', 'tally', 'hard-hat']
+      .map((id, index) => ({
+        instance: `i-migrate-${index}`,
+        id,
+        data: {},
+        equipped: true,
+      }));
+
+    const raw = JSON.parse(game.serialize(state)) as RunState;
+    raw.version = 4;
+    raw.slots = 4;
+
+    const restored = game.deserialize(JSON.stringify(raw));
+    expect(restored).not.toBeNull();
+    expect(restored!.version).toBe(5);
+    expect(restored!.slots).toBe(5);
+    expect(restored!.items.filter((item) => item.equipped)).toHaveLength(5);
+    expect(restored!.items.filter((item) => !item.equipped)).toHaveLength(1);
   });
 });

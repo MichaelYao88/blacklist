@@ -33,6 +33,12 @@ import { sfx } from './audio';
 const app = document.getElementById('app');
 if (!app) throw new Error('Missing #app root');
 
+// Damage feedback lives outside the main render tree so unrelated re-renders
+// (timer ticks, shake cleanup) cannot restart its animation mid-flight.
+const fxRoot = document.createElement('div');
+fxRoot.id = 'fx-root';
+document.body.appendChild(fxRoot);
+
 const host = new CoreHost({ core: game, store: new LocalStore() });
 
 type Screen = 'title' | 'run' | 'help';
@@ -66,9 +72,11 @@ interface DamageFx {
 let damageFx: DamageFx | null = null;
 let damageTimer: number | undefined;
 let damageSeq = 0;
+let damageRendered = 0;
 let countdownUntil = 0;
 const COUNTDOWN_MS = 2_400;
 let lastPathNode = -1;
+let selectedAscension = 0;
 
 const KIND_LABELS: Record<Offer['kind'], string> = {
   item: 'ITEM',
@@ -172,7 +180,7 @@ function processEvents(events: GameEvent[]): void {
     if (event.type === 'rewardChosen' || event.type === 'offerBought') sfx.play('buy');
     if (event.type === 'runEnded') {
       const view = host.view();
-      recordOutcome(event.result, view?.act ?? 0);
+      recordOutcome(event.result, view?.act ?? 0, view?.ascension ?? 0);
       notify(
         event.result === 'victory' ? 'THE LIST IS YOURS' : 'THE LIST CLOSES',
         event.result === 'victory' ? 'good' : 'bad',
@@ -196,7 +204,7 @@ function startNewRun(): void {
     if (!ok) return;
   }
   const seed = `bl-${Date.now().toString(36)}-${Math.floor(Math.random() * 1_000_000).toString(36)}`;
-  const events = host.start(seed);
+  const events = host.start(seed, selectedAscension);
   recordStart();
   screen = 'run';
   input = '';
@@ -284,6 +292,10 @@ app.addEventListener('click', (event) => {
     case 'new-run':
       startNewRun();
       break;
+    case 'ascension':
+      selectedAscension = Math.max(0, Math.min(5, Number(target.dataset.level) || 0));
+      render();
+      break;
     case 'help':
       screen = 'help';
       lastTick = performance.now();
@@ -306,6 +318,9 @@ app.addEventListener('click', (event) => {
       screen = 'title';
       chronicle = [];
       input = '';
+      damageFx = null;
+      if (damageTimer) window.clearTimeout(damageTimer);
+      damageTimer = undefined;
       render();
       break;
     }
@@ -493,6 +508,12 @@ function render(): void {
   }
   lastPathNode = view?.nodeIndex ?? -1;
   app!.insertAdjacentHTML('beforeend', noticeHtml());
+
+  const damageId = damageFx?.id ?? 0;
+  if (damageId !== damageRendered) {
+    damageRendered = damageId;
+    fxRoot.innerHTML = damageOverlayHtml();
+  }
 }
 
 function noticeHtml(): string {
@@ -551,12 +572,40 @@ document.addEventListener('pointermove', (event) => {
 window.addEventListener('scroll', hideTip, true);
 window.addEventListener('resize', hideTip);
 
+function ascensionSummary(level: number): string {
+  if (level <= 0) return 'Base difficulty. No Ascension modifiers.';
+  const parts = ['Start with 1 armor instead of 5.'];
+  const hpLoss = 10 * Math.min(3, Math.max(0, level - 1));
+  if (hpLoss > 0) parts.push(`Start with ${Math.max(10, 40 - hpLoss)} max HP.`);
+  const shop = 10 * Math.min(4, Math.max(0, level - 1));
+  if (shop > 0) parts.push(`Shop prices +${shop}%.`);
+  const boss = 10 * Math.min(3, Math.max(0, level - 1));
+  if (boss > 0) parts.push(`Boss damage +${boss}%.`);
+  return parts.join(' ');
+}
+
 function renderTitle(): string {
   const meta = readMeta();
   const saved = hasSave();
+  const unlocked = Math.max(0, Math.min(5, meta.ascension));
+  if (selectedAscension > unlocked) selectedAscension = unlocked;
   const metaLine = meta.runs > 0
-    ? `<p class="meta-line">${meta.wins} win${meta.wins === 1 ? '' : 's'} · ${meta.runs} run${meta.runs === 1 ? '' : 's'} · furthest Act ${roman(Math.max(1, meta.bestAct))}</p>`
+    ? `<p class="meta-line">${meta.wins} win${meta.wins === 1 ? '' : 's'} · ${meta.runs} run${meta.runs === 1 ? '' : 's'} · furthest Act ${roman(Math.max(1, meta.bestAct))}${unlocked > 0 ? ` · Ascension ${unlocked} unlocked` : ''}</p>`
     : `<p class="meta-line">A fresh list. Nothing written yet.</p>`;
+  const ascensionPicker = unlocked > 0
+    ? `<div class="ascension-picker">
+        <div class="ascension-head">
+          <span class="panel-kicker">ASCENSION</span>
+          <span class="ascension-current">${selectedAscension === 0 ? 'OFF' : `LEVEL ${selectedAscension}`}</span>
+        </div>
+        <div class="ascension-levels">
+          ${Array.from({ length: unlocked + 1 }, (_, level) => `
+            <button class="ascension-btn ${level === selectedAscension ? 'active' : ''}" data-action="ascension" data-level="${level}">${level === 0 ? 'OFF' : level}</button>
+          `).join('')}
+        </div>
+        <p class="ascension-note">${escapeHtml(ascensionSummary(selectedAscension))}</p>
+      </div>`
+    : '';
 
   return `
   <div class="title-screen">
@@ -574,11 +623,12 @@ function renderTitle(): string {
       ${saved ? `<button class="btn big" data-action="resume">CONTINUE</button>` : ''}
       <button class="btn ghost big" data-action="help">HOW TO PLAY</button>
     </div>
+    ${ascensionPicker}
     <div class="title-facts">
       <div><b>5</b><span>acts</span></div>
       <div><b>∞</b><span>blacklist</span></div>
-      <div><b>7</b><span>bosses</span></div>
-      <div><b>2</b><span>free guesses</span></div>
+      <div><b>8</b><span>bosses</span></div>
+      <div><b>1</b><span>free guess</span></div>
     </div>
     ${metaLine}
     <p class="title-foot">BLACKLIST · v0.1 · a pure-core word roguelike</p>
@@ -592,7 +642,7 @@ function renderHelp(): string {
       <button class="btn tiny ghost" data-action="back">← BACK</button>
       <p class="kicker">FIELD MANUAL</p>
       <h1>How to play</h1>
-      <p class="tagline">Solve the word. Pay for every guess past the first two. Do not run out of time or health.</p>
+      <p class="tagline">Solve the word. Pay for every guess past the first. Do not run out of time or health.</p>
     </div>
     <div class="rules-grid">
       <article class="rule-card">
@@ -601,7 +651,7 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>Damage</h3>
-        <p>Your first <b>2 guesses</b> each round are free. After that, a wrong guess takes the monster's fixed hit. It starts around <b>3</b> and grows with the act, with how deep into the act you are, and with <b>every 3 rounds cleared</b>. A correct guess never hurts you.</p>
+        <p>Your first <b>guess</b> each round is free. After that, a wrong guess takes the monster's fixed hit. It starts around <b>3</b> and grows with the act, with how deep into the act you are, and with <b>every 3 rounds cleared</b>. A correct guess never hurts you.</p>
       </article>
       <article class="rule-card">
         <h3>Armor</h3>
@@ -609,15 +659,19 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>The clock</h3>
-        <p>The timer reads <b>MASSIVE DAMAGE IN</b>. Normal rounds start generous and get shorter as you clear rounds. If the clock reaches zero, you take <b>2× the guess hit + 30% of max HP</b>, ignoring armor, and the round ends. The timer box always shows the exact timeout hit. Bosses have no timer. The Gauntlet is the exception: three puzzles, one shared 150-second clock.</p>
+        <p>The timer reads <b>MASSIVE DAMAGE IN</b>. Normal rounds start generous and get shorter as you clear rounds. If the clock reaches zero, you take <b>2× the guess hit + 30% of max HP</b>, ignoring armor, and the round ends. Hover the timer to see the exact timeout hit. Bosses have no timer. The Gauntlet is the exception: three puzzles, one shared 150-second clock.</p>
       </article>
       <article class="rule-card">
         <h3>Items & spells</h3>
-        <p>Items only work while they are <b>equipped</b> in a slot. Extra gear goes to your bag, and shops are where you drag pieces between the bag and your slots. Spells stack: duplicates sit in one pile. Loose Tongue, Quickdraw, Spellplate and every other <b>relic</b> takes no slot and is always on. Reveals stay marked on the keyboard and in the Revealed panel for the puzzle. Letter-reveal foods queue their hint for the next round.</p>
+        <p>Items only work while they are <b>equipped</b> in a slot. Extra gear goes to your bag, and shops are where you drag pieces between the bag and your slots. Spells stack: duplicates sit in one pile. <b>Relics</b> are boss prizes, but they use an item slot like any other gear and only work while equipped. Reveals stay marked on the keyboard and in the Revealed panel for the puzzle. Letter-reveal foods queue their hint for the next round.</p>
       </article>
       <article class="rule-card">
         <h3>Bosses</h3>
-        <p>Each act ends with a boss intro that spells out the changed rules before you commit. Beat it and choose one of three rare relics with passive effects. Relics take no slots.</p>
+        <p>Each act ends with a boss intro that spells out the changed rules before you commit. Beat it and choose one of three rare relics with passive effects. Relics use an item slot.</p>
+      </article>
+      <article class="rule-card">
+        <h3>Ascension</h3>
+        <p>Win a run to unlock <b>Ascension 1</b>. Each level keeps every lower modifier and adds another: <b>−4 starting armor</b>, then <b>−10 max HP</b>, <b>+10% shop prices</b> and <b>+10% boss damage</b> for three levels, then one final <b>+10% shop prices</b>. Pick your level on the title screen.</p>
       </article>
       <article class="rule-card">
         <h3>The run</h3>
@@ -640,6 +694,7 @@ function renderTopbar(view: RunView): string {
     <div class="brand">BLACKLIST</div>
     <div class="top-stats">
       <div class="chip-stat gold" title="Gold">¤ <b>${view.gold}</b></div>
+      ${view.ascension > 0 ? `<div class="chip-stat ascension" title="Ascension modifiers are active">A${view.ascension}</div>` : ''}
       <div class="chip-stat" title="Act">ACT ${roman(view.act + 1)}</div>
       <div class="chip-stat" title="Node">NODE ${view.nodeIndex + 1}/${view.nodes.length}</div>
     </div>
@@ -688,28 +743,32 @@ function phaseLabel(view: RunView): string {
               : 'THE LIST';
 }
 
-function damageFxHtml(part: 'hp' | 'armor'): string {
+function damageOverlayHtml(): string {
   if (!damageFx) return '';
-  if (part === 'hp') {
-    if (damageFx.hpLost > 0) {
-      return `<span class="dmg-number hp" data-seq="${damageFx.id}">−${damageFx.hpLost}<em>HP</em></span>`;
-    }
-    if (damageFx.armorSpent === 0 && damageFx.incoming > 0) {
-      return `<span class="dmg-number blocked" data-seq="${damageFx.id}">BLOCKED</span>`;
-    }
-    return '';
+  if (damageFx.hpLost > 0) {
+    const absorbed = damageFx.armorSpent > 0
+      ? `<span>${damageFx.armorSpent} armor absorbed</span>`
+      : '';
+    return `<div class="damage-overlay" data-seq="${damageFx.id}" aria-live="assertive">
+      <b class="damage-big">${damageFx.hpLost} damage</b>
+      ${absorbed}
+    </div>`;
   }
-  return damageFx.armorSpent > 0
-    ? `<span class="dmg-number armor" data-seq="${damageFx.id}">−${damageFx.armorSpent}<em>ARMOR</em></span>`
-    : '';
+  if (damageFx.incoming > 0) {
+    return `<div class="damage-overlay blocked" data-seq="${damageFx.id}" aria-live="assertive">
+      <b class="damage-big">BLOCKED</b>
+      <span>${damageFx.incoming} damage stopped</span>
+    </div>`;
+  }
+  return '';
 }
 
 function guessDamageHtml(board: BoardView): string {
   const safe = board.freeGuessesLeft > 0 || board.noGuessDamage;
   const value = safe ? 0 : board.rawNextGuessDamage;
-  return `<div class="guess-damage ${safe ? 'safe' : ''}" title="Damage a wrong guess deals once your free guesses are gone.">
+  return `<div class="guess-damage ${safe ? 'safe' : ''}" title="Damage a wrong guess deals once your free guess is gone.">
     <span>WRONG GUESS</span>
-    <b>${safe ? 'FREE' : `−${value}`}</b>
+    <b>${safe ? 'FREE' : `${value} damage`}</b>
   </div>`;
 }
 
@@ -719,6 +778,7 @@ function bossStateChips(entries: Array<[string, number]>): string {
     .map(([key, value]) => {
       if (key === 'woke') return `<span>${value ? 'AWAKE' : 'ASLEEP'}</span>`;
       if (key === 'hits') return `<span>HITS ${value}</span>`;
+      if (key === 'swarm') return `<span>SWARM ${value}</span>`;
       return `<span>${escapeHtml(key)} ${value}</span>`;
     });
   return chips.length > 0 ? `<div class="boss-state">${chips.join('')}</div>` : '';
@@ -739,7 +799,6 @@ function renderTimer(view: RunView, board: BoardView): string {
   return `<div class="timer ${urgent ? 'urgent' : ''} ${board.timerFrozen ? 'frozen' : ''}" title="${board.remainingMs === null ? 'This round has no clock.' : `When this reaches zero you take ${timeoutHit} damage: twice the guess hit plus 30% of max HP.`}">
     <span class="timer-label">${label}</span>
     <b>${time}</b>
-    <span class="timer-timeout">TIMEOUT −${timeoutHit}</span>
     <div class="timer-bar"><i style="width:${pct}%"></i></div>
   </div>`;
 }
@@ -758,7 +817,7 @@ function renderBattleRail(view: RunView, bossId?: string): string {
         `<span class="fact">FREE ${board.freeGuessesLeft}</span>`,
         board.shielded ? `<span class="fact shield">SHIELD ${formatTime(board.shieldMsLeft)}</span>` : '',
         board.gauntletTotal > 1 ? `<span class="fact gauntlet">PUZZLE ${board.gauntletIndex + 1}/${board.gauntletTotal}</span>` : '',
-        view.items.some((item) => item.id === 'loose-tongue') ? `<span class="fact free-speech">ANY WORD</span>` : '',
+        view.items.some((item) => item.id === 'loose-tongue' && item.equipped) ? `<span class="fact free-speech">ANY WORD</span>` : '',
       ].filter(Boolean).join('')
     : '';
 
@@ -776,7 +835,6 @@ function renderBattleRail(view: RunView, bossId?: string): string {
       <div class="mini-stage">
         <div class="mini-side player-side">
           <div class="sprite player-sprite">${playerSprite(pct / 100, hit)}</div>
-          ${damageFxHtml('hp')}
           <span class="mini-label">YOU</span>
         </div>
         <div class="mini-center">
@@ -798,7 +856,6 @@ function renderBattleRail(view: RunView, bossId?: string): string {
           <span class="hp-gloss"></span>
         </div>
         <div class="armor-line" title="Armor soaks damage point-for-point before HP. It refills each round. Timeout damage ignores armor.">
-          ${damageFxHtml('armor')}
           <span class="armor-bar" role="progressbar" aria-label="Armor" aria-valuemin="0" aria-valuemax="${view.maxArmor}" aria-valuenow="${view.armor}">
             <i style="width:${armorPct}%"></i>
           </span>
@@ -1018,7 +1075,7 @@ function renderReward(phase: Extract<PhaseView, { kind: 'reward' }>): string {
     <p class="panel-kicker">${boss ? 'BOSS RELIC' : 'REWARD'}</p>
     <h2>${boss ? 'Claim a relic' : 'Take one'}</h2>
     <p class="muted">${boss
-      ? 'Rare passives. They take no slots and last for the rest of the run.'
+      ? 'Rare passives. Each relic uses an item slot and lasts for the rest of the run.'
       : 'Coins plus a spell or a meal. Rarely, a find.'}</p>
     <div class="reward-grid">
       ${phase.options.map((option) => {
@@ -1174,6 +1231,17 @@ function renderHappening(phase: Extract<PhaseView, { kind: 'happening' }>): stri
 function renderOver(phase: Extract<PhaseView, { kind: 'over' }>): string {
   const victory = phase.result === 'victory';
   const stats = phase.stats;
+  const ascension = host.current?.ascension ?? 0;
+  const unlocked = readMeta().ascension;
+  const ascNote = victory
+    ? unlocked > ascension
+      ? `ASCENSION ${unlocked} UNLOCKED`
+      : ascension > 0
+        ? `ASCENSION ${ascension} CLEARED`
+        : ''
+    : ascension > 0
+      ? `ASCENSION ${ascension}`
+      : '';
   const missed = phase.answers && phase.answers.length > 1
     ? `<div class="answer-list">${phase.answers.map((answer) => `<span>${escapeHtml(answer.toUpperCase())}</span>`).join('')}</div>`
     : '';
@@ -1190,6 +1258,7 @@ function renderOver(phase: Extract<PhaseView, { kind: 'over' }>): string {
     <p class="tagline">${victory
       ? 'Five acts. Every boss. The words you gave up are the ones that carried you.'
       : 'The word that ended you is written below. It will not be so kind next time.'}</p>
+    ${ascNote ? `<p class="ascension-result">${ascNote}</p>` : ''}
     ${reveal}
     <div class="stats-grid">
       <div><b>${stats.rounds}</b><span>rounds</span></div>
@@ -1228,9 +1297,13 @@ function renderBossIntro(view: RunView, phase: Extract<PhaseView, { kind: 'bossI
   const boss = BOSS_BY_ID.get(phase.boss);
   if (!boss) return '';
   const timer = boss.timerMs === null ? 'NO TIMER' : formatTime(boss.timerMs);
+  const bossMult = 1 + 0.1 * Math.min(3, Math.max(0, view.ascension - 1));
+  const scaledDamage = Math.ceil((boss.damage ?? 3) * bossMult);
   const damage = boss.noGuessDamage
     ? 'NO GUESS DAMAGE'
-    : boss.damageLabel ?? `HIT ${boss.damage ?? 3}`;
+    : boss.damageLabel
+      ? boss.damageLabel.replace(/\d+/, String(scaledDamage))
+      : `HIT ${scaledDamage}`;
   return `
   <div class="phase-card boss-intro" style="--enemy:${bossColor(boss.id)}">
     <p class="panel-kicker">BOSS ENCOUNTER · ACT ${roman(view.act + 1)}</p>
