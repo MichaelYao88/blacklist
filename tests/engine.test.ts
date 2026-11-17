@@ -9,7 +9,7 @@ import type {
   ShopState,
   StepResult,
 } from '../src/game';
-import { CURSE_BY_ID, CURSES, FOOD_BY_ID, ITEM_BY_ID, SPELL_BY_ID, SPELLS } from '../src/content';
+import { CONTENT, CURSE_BY_ID, CURSES, FOOD_BY_ID, ITEM_BY_ID, SPELL_BY_ID, SPELLS } from '../src/content';
 
 function start(seed = 'test-seed', ascension = 0): StepResult {
   return game.newRun({ seed, ascension });
@@ -54,8 +54,16 @@ function nextRound(state: RunState): StepResult {
   return act(state, { type: 'continue' });
 }
 
-/** Resolve any starting drafts, then open the first curse node of the run. */
-function firstDraft(
+/** Force the next node to be a happening and resolve it. */
+function nextHappening(state: RunState): StepResult {
+  state.nodeIndex = 0;
+  state.nodes[1] = { kind: 'happening', level: 1 };
+  state.phase = 'shop';
+  state.shop = shopState();
+  return act(state, { type: 'continue' });
+}
+
+/** Resolve any starting drafts, then open the first curse node of the run. */function firstDraft(
   seed: string,
   ascension = 0,
 ): Extract<RunView['phase'], { kind: 'curse' }> {
@@ -228,13 +236,17 @@ describe('blacklist curse', () => {
     expect(first.state.blacklist).toContain('pious');
   });
 
-  it('blacklists one guess per stack', () => {
+  it('does not stack and only lists the first guess', () => {
+    expect(CURSE_BY_ID.get('the-list')?.maxStacks).toBe(1);
+    expect(CURSE_BY_ID.get('the-list')?.description).not.toContain('stack');
+    expect(CURSE_BY_ID.get('the-list')?.rules.join(' ')).not.toContain('stack');
     const { state } = start();
     setAnswer(state, 'crane');
+    // Simulate an old save that still carries extra stacks.
     state.curses.push({ id: 'the-list', stacks: 2 });
     const first = act(state, { type: 'guess', word: 'slate' });
     const second = act(first.state, { type: 'guess', word: 'pious' });
-    expect(second.state.blacklist).toEqual(['slate', 'pious']);
+    expect(second.state.blacklist).toEqual(['slate']);
   });
 });
 
@@ -283,6 +295,19 @@ describe('timer curses', () => {
     const guess = act(cast.state, { type: 'guess', word: 'tiger' });
     expect(guess.state.hp).toBe(40);
     expect(guess.state.round?.guesses.at(-1)?.free).toBe(true);
+  });
+
+  it('makes Phone a Friend add five seconds instead of freezing the clock', () => {
+    const { state } = start();
+    state.curses.push({ id: 'clock', stacks: 1 });
+    const next = nextRound(state);
+    next.state.spells.push({ instance: 's-phone', id: 'phone-friend' });
+    if (!next.state.round) throw new Error('expected round');
+    next.state.round.answer = 'zzzzz';
+    const cast = act(next.state, { type: 'castSpell', instance: 's-phone' });
+    expect(cast.state.round?.frozenMs).toBe(0);
+    expect(cast.state.round?.frozenUntilGuess).toBe(false);
+    expect(cast.state.round?.remainingMs).toBe(305_000);
   });
 });
 
@@ -389,6 +414,57 @@ describe('shop curses', () => {
   });
 });
 
+describe('clock-gated happenings', () => {
+  it('never offers The Clockmaker without The Clock', () => {
+    for (let index = 0; index < 80; index++) {
+      const result = nextHappening(start(`no-clockmaker-${index}`).state);
+      expect(result.state.happening?.id).not.toBe('clockmaker');
+    }
+  });
+
+  it('offers The Clockmaker once a clock exists', () => {
+    let seen = false;
+    for (let index = 0; index < 80 && !seen; index++) {
+      const { state } = start(`clockmaker-${index}`);
+      state.curses.push({ id: 'clock', stacks: 1 });
+      const result = nextHappening(state);
+      if (result.state.happening?.id === 'clockmaker') seen = true;
+    }
+    expect(seen).toBe(true);
+  });
+});
+
+describe('curse-triggered items', () => {
+  it('fires the former boss items when a curse is gained', () => {
+    const { state } = start();
+    state.items.push(
+      { instance: 'i-trophy-hunter', id: 'trophy-hunter', data: {}, equipped: true },
+      { instance: 'i-boss-trophy', id: 'boss-trophy', data: {}, equipped: true },
+      { instance: 'i-boss-aegis', id: 'boss-aegis', data: {}, equipped: true },
+      { instance: 'i-trophy-room', id: 'trophy-room', data: {}, equipped: true },
+    );
+    const curseIndex = nodeAt(state, (node) => node.kind === 'curse');
+    state.nodeIndex = curseIndex - 1;
+    state.phase = 'shop';
+    state.shop = shopState();
+    const draft = act(state, { type: 'continue' });
+    const phase = game.view(draft.state).phase;
+    if (phase.kind !== 'curse') throw new Error('expected curse phase');
+
+    // The first option is always a vision/list curse, so it cannot alter slots.
+    const chosen = act(draft.state, { type: 'chooseCurse', curseId: phase.options[0] });
+    expect(chosen.state.maxArmor).toBe(10);
+    expect(chosen.state.slots).toBe(6);
+    expect(chosen.state.spells).toHaveLength(1);
+  });
+
+  it('describes all of them as Gain a curse', () => {
+    for (const id of ['trophy-hunter', 'boss-trophy', 'boss-aegis', 'trophy-room']) {
+      expect(ITEM_BY_ID.get(id)?.description.startsWith('Gain a curse:')).toBe(true);
+    }
+  });
+});
+
 describe('spells and foods', () => {
   it('has six spells and no Time Warp', () => {
     expect(SPELLS).toHaveLength(6);
@@ -410,6 +486,10 @@ describe('spells and foods', () => {
     expect(FOOD_BY_ID.get('inkcap')).toBeDefined();
     expect(FOOD_BY_ID.get('purge-the-d')).toBeDefined();
     expect(FOOD_BY_ID.get('purge-the-d')?.rarity).toBe('rare');
+  });
+
+  it('accepts penis in the dictionary', () => {
+    expect(CONTENT.valid.has('penis')).toBe(true);
   });
 });
 

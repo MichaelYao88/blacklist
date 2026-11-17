@@ -57,7 +57,8 @@ export type HookName =
   | 'onPuzzleSolved'
   | 'onGoldSpent'
   | 'onMaxHpChanged'
-  | 'onReveal';
+  | 'onReveal'
+  | 'onCurseGained';
 
 export type RejectReason =
   | 'wrongPhase'
@@ -179,7 +180,6 @@ export interface CurseDef {
   maxLevel?: number;
   vision?: VisionEffect[];
   timer?: boolean;
-  blacklistPerRound?: number;
   damagePerGreen?: number;
   damagePerYellow?: number;
   damageTiers?: Array<{ green: number; yellow: number }>;
@@ -339,6 +339,7 @@ export interface HookPayloads {
   onMaxHpChanged: { delta: number; maxHp: number };
   onReveal: { letter: Letter; status: 'present' | 'absent' };
   onPuzzleSolved: { index: number; total: number; elapsedMs: number };
+  onCurseGained: { curse: CurseId; stacks: number };
 }
 export type Reactors<C extends Ctx> = Partial<{
   [H in HookName]: (ctx: C, payload: HookPayloads[H]) => Effect[];
@@ -436,6 +437,8 @@ export interface HappeningDef {
   name: string;
   description: string;
   requiresCurseCount?: number;
+  /** Hidden from the event pool until a clock curse exists. */
+  requiresClock?: boolean;
   weight?: number;
   options: HappeningOptionDef[];
 }

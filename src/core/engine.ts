@@ -1470,10 +1470,9 @@ export function createCore(content: Content): Core {
     }
     rt.events.push(...hookEvents);
 
-    // The List blacklists the first N guesses of the round, where N is its
-    // stack count. Without the curse, nothing is blacklisted.
-    const listStacks = curseStacks(state, 'the-list');
-    if (listStacks > 0 && round.guesses.length <= listStacks) addBlacklist(rt, word);
+    // The List blacklists only the first guess of the round. It is one curse,
+    // not a stacking counter.
+    if (hasCurse(state, 'the-list') && round.guesses.length === 1) addBlacklist(rt, word);
 
     if (isOver(state)) return;
 
@@ -1803,7 +1802,8 @@ export function createCore(content: Content): Core {
   function openHappening(rt: Runtime): void {
     const state = rt.state;
     const pool = content.happenings.filter(
-      (happening) => (happening.requiresCurseCount ?? 0) <= state.curses.length,
+      (happening) => (happening.requiresCurseCount ?? 0) <= state.curses.length
+        && (!happening.requiresClock || hasClock(state)),
     );
     if (pool.length === 0) {
       advanceNode(rt);
@@ -2008,6 +2008,7 @@ export function createCore(content: Content): Core {
       emit(rt, { type: 'slotsChanged', slots: state.slots });
     }
     emit(rt, { type: 'curseChosen', curse: id, stacks: entry.stacks, name: def.name });
+    runHook(rt, 'onCurseGained', { curse: id, stacks: entry.stacks });
   }
 
   function chooseCurse(rt: Runtime, curseId: CurseId): void {

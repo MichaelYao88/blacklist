@@ -258,12 +258,11 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'trophy-hunter',
     name: 'Trophy Hunter',
-    description: 'Beat a boss: +1 max armor.',
+    description: 'Gain a curse: +1 max armor.',
     price: 9,
     kind: 'gear',
     on: {
-      onRoundEnd: (_ctx, p) =>
-        p.boss && p.outcome === 'solved' ? [{ type: 'maxArmor', delta: 1 }] : [],
+      onCurseGained: () => [{ type: 'maxArmor', delta: 1 }],
     },
   }),
   defineItem({
@@ -390,12 +389,11 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'boss-trophy',
     name: 'Boss Trophy',
-    description: 'Beat a boss: random spell.',
+    description: 'Gain a curse: random spell.',
     price: 10,
     kind: 'gear',
     on: {
-      onRoundEnd: (_ctx, p) =>
-        p.boss && p.outcome === 'solved' ? [{ type: 'giveSpell', spell: 'random' }] : [],
+      onCurseGained: () => [{ type: 'giveSpell', spell: 'random' }],
     },
   }),
   defineItem({
@@ -677,12 +675,11 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'boss-aegis',
     name: 'Boss Aegis',
-    description: 'Defeat a boss: +4 max armor.',
+    description: 'Gain a curse: +4 max armor.',
     price: 10,
     kind: 'gear',
     on: {
-      onRoundEnd: (_ctx, p) =>
-        p.boss && p.outcome === 'solved' ? [{ type: 'maxArmor', delta: 4 }] : [],
+      onCurseGained: () => [{ type: 'maxArmor', delta: 4 }],
     },
   }),
   defineItem({
@@ -1067,12 +1064,11 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'trophy-room',
     name: 'Trophy Room',
-    description: 'Defeat a boss: +1 item slot.',
+    description: 'Gain a curse: +1 item slot.',
     price: 10,
     kind: 'gear',
     on: {
-      onRoundEnd: (_ctx, p) =>
-        p.boss && p.outcome === 'solved' ? [{ type: 'slots', delta: 1 }] : [],
+      onCurseGained: () => [{ type: 'slots', delta: 1 }],
     },
   }),
   defineItem({

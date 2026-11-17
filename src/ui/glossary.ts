@@ -102,7 +102,7 @@ const ENTRIES: GlossaryEntry[] = [
   },
   {
     pattern: /\bPhone a Friend\b/g,
-    tip: 'Spell: a two-word catchphrase if he has one ready, otherwise one wild guess. The clock freezes for 20s.',
+    tip: 'Spell: he says a one- or two-word catchphrase.',
   },
   {
     pattern: /\bImmunity\b/g,

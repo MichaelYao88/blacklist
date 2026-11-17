@@ -42,6 +42,12 @@ const fxRoot = document.createElement('div');
 fxRoot.id = 'fx-root';
 document.body.appendChild(fxRoot);
 
+// Phone a Friend spams his chosen words behind the rest of the UI.
+const phraseRoot = document.createElement('div');
+phraseRoot.id = 'phrase-root';
+document.body.appendChild(phraseRoot);
+let phraseTimer: number | undefined;
+
 const host = new CoreHost({ core: game, store: new LocalStore() });
 
 type Screen = 'title' | 'run' | 'help' | 'stats';
@@ -112,6 +118,25 @@ function flashDamage(hpLost: number, armorSpent: number, incoming: number): void
     damageFx = null;
     render();
   }, 1200);
+}
+
+function flashFriendPhrases(words: string[]): void {
+  const unique = [...new Set(words.map((word) => word.toUpperCase()).filter(Boolean))];
+  if (unique.length === 0) return;
+  phraseRoot.innerHTML = Array.from({ length: 20 }, (_, index) => {
+    const word = unique[index % unique.length];
+    const left = 4 + Math.random() * 88;
+    const top = 6 + Math.random() * 82;
+    const rotation = -22 + Math.random() * 44;
+    const scale = 0.8 + Math.random() * 1.5;
+    const delay = Math.random() * 0.35;
+    return `<span style="left:${left.toFixed(1)}vw;top:${top.toFixed(1)}vh;--rot:${rotation.toFixed(1)}deg;--scale:${scale.toFixed(2)};animation-delay:${delay.toFixed(2)}s">${escapeHtml(word)}</span>`;
+  }).join('');
+  if (phraseTimer) window.clearTimeout(phraseTimer);
+  phraseTimer = window.setTimeout(() => {
+    phraseRoot.innerHTML = '';
+    phraseTimer = undefined;
+  }, 1700);
 }
 
 function eventKind(event: GameEvent): ChronicleLine['kind'] {
@@ -200,6 +225,11 @@ function processEvents(events: GameEvent[]): void {
       sfx.play(event.result === 'victory' ? 'win' : 'death');
     }
   }
+
+  const friendWords = events.flatMap((event) =>
+    event.type === 'guessScored' && event.by === 'friend' ? [event.word] : [],
+  );
+  if (friendWords.length > 0) flashFriendPhrases(friendWords);
 }
 
 function dispatchCommand(command: Command): GameEvent[] {
@@ -225,6 +255,7 @@ function startNewRun(): void {
   notice = null;
   paused = false;
   damageFx = null;
+  phraseRoot.innerHTML = '';
   heartbeatSecond = -1;
   processEvents(events);
   lastTick = performance.now();

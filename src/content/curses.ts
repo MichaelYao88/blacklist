@@ -181,12 +181,11 @@ export const CURSES: CurseDef[] = [
   defineCurse({
     id: 'the-list',
     name: 'The List',
-    description: 'The blacklist wakes up. Each stack adds another word per round.',
-    rules: ['The first guessed word of each round is blacklisted forever.', 'Each stack adds one more word per round.'],
+    description: 'The blacklist wakes up.',
+    rules: ['The first guessed word of each round is blacklisted forever.'],
     art: 'editor',
     tags: ['list'],
-    maxStacks: Infinity,
-    blacklistPerRound: 1,
+    maxStacks: 1,
   }),
 
   // ── shop / body / economy ───────────────────────────────────────────────

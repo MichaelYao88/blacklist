@@ -2646,6 +2646,55 @@ button {
   letter-spacing: 0.07em;
 }
 
+/* phone a friend phrase spam */
+#phrase-root {
+  position: fixed;
+  inset: 0;
+  z-index: 118;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+#phrase-root span {
+  position: absolute;
+  opacity: 0;
+  color: #fff;
+  font-family: var(--sans);
+  font-size: clamp(1.2rem, 3.6vw, 3rem);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  paint-order: stroke fill;
+  -webkit-text-stroke: 3px #050409;
+  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.7);
+  transform: translate(-50%, -50%) rotate(var(--rot)) scale(var(--scale));
+  animation: phrase-spam 1.25s ease-out forwards;
+}
+
+@keyframes phrase-spam {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(var(--rot)) scale(calc(var(--scale) * 0.6));
+  }
+  10% {
+    opacity: 1;
+  }
+  72% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(var(--rot)) scale(calc(var(--scale) * 1.18));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #phrase-root span {
+    animation-duration: 0.01ms;
+  }
+}
+
 .damage-overlay {
   position: fixed;
   inset: 0;

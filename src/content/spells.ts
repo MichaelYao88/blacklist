@@ -44,12 +44,12 @@ export const SPELLS: SpellDef[] = [
   defineSpell({
     id: 'phone-friend',
     name: 'Phone a Friend',
-    description: 'A two-word catchphrase if he has one ready, otherwise one guess. The clock freezes for 20s.',
+    description: 'He says a one- or two-word catchphrase.',
     price: 8,
     usable: 'round',
     cast: () => [
+      { type: 'addTime', ms: 5_000 },
       { type: 'friendGuesses', count: 2 },
-      { type: 'freezeTime', ms: 20_000 },
     ],
   }),
 ];

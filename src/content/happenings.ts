@@ -22,6 +22,7 @@ export const HAPPENINGS: HappeningDef[] = [
     id: 'clockmaker',
     name: 'The Clockmaker',
     description: 'A workshop full of ticking things. Some of them are wrong on purpose.',
+    requiresClock: true,
     options: [
       {
         id: 'tune',
