@@ -1482,7 +1482,7 @@ function renderHappening(phase: Extract<PhaseView, { kind: 'happening' }>): stri
             <b>${escapeHtml(option.label)}</b>
             <p>${glossaryText(option.description)}</p>
             ${happeningPreviews(def?.id, option.id)}
-            ${option.costGold ? `<span class="warn">Costs ${option.costGold} gold${option.fallbackMaxArmor ? ` · or lose ${option.fallbackMaxArmor} max armor` : option.fallbackPct ? ` · or ${Math.round(option.fallbackPct * 100)}% of your gold` : ''}</span>` : ''}
+            ${option.costGold ? `<span class="warn">Costs ${option.costGold} gold${option.fallbackPct ? ` · or ${Math.round(option.fallbackPct * 100)}% of your gold` : ''}</span>` : ''}
           </div>
           <div class="odds">
             ${option.outcomes.map((outcome) => `<span>${outcome.chancePct}% · ${escapeHtml(outcome.text)}</span>`).join('')}

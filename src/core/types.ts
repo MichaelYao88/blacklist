@@ -241,8 +241,6 @@ export interface HappeningOptionView {
   description: string;
   costGold?: number;
   fallbackPct?: number;
-  /** If the player cannot pay costGold, lose this much max armor instead. */
-  fallbackMaxArmor?: number;
   chancePct?: number;
   outcomes: HappeningOutcomeView[];
 }
@@ -256,7 +254,10 @@ export type Effect =
   | { type: 'damage'; amount: number }
   | { type: 'heal'; amount: number }
   | { type: 'healPercent'; percent: number }
+  | { type: 'healMissingPercent'; percent: number }
   | { type: 'maxHp'; delta: number }
+  | { type: 'maxHpMultiply'; factor: number }
+  | { type: 'hpMultiply'; factor: number }
   | { type: 'armor'; delta: number }
   | { type: 'refillArmor' }
   | { type: 'maxArmor'; delta: number; chancePct?: number }
@@ -437,8 +438,6 @@ export interface HappeningOptionDef {
   costGold?: number;
   /** If the player cannot pay costGold, take this fraction of their gold instead. */
   fallbackPct?: number;
-  /** If the player cannot pay costGold, lose this much max armor instead. */
-  fallbackMaxArmor?: number;
   outcomes: HappeningOutcomeDef[];
 }
 export interface HappeningDef {

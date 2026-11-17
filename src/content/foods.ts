@@ -51,13 +51,20 @@ export const FOODS: FoodDef[] = [
     ],
   }),
   defineFood({
+    id: 'leftovers',
+    name: 'Leftovers',
+    description: 'Heal 50% of missing HP. No slot.',
+    price: 2,
+    effects: [{ type: 'healMissingPercent', percent: 50 }],
+  }),
+  defineFood({
     id: 'hearty-meal',
     name: 'Hearty Meal',
-    description: '+8 max HP, heal 8. No slot.',
+    description: '+6 max HP, heal 6. No slot.',
     price: 8,
     effects: [
-      { type: 'maxHp', delta: 8 },
-      { type: 'heal', amount: 8 },
+      { type: 'maxHp', delta: 6 },
+      { type: 'heal', amount: 6 },
     ],
   }),
   defineFood({

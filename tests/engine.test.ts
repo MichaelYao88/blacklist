@@ -384,7 +384,7 @@ describe('shop curses', () => {
     expect(bought.state.items.some((item) => ITEM_BY_ID.get(item.id)?.rarity === 'rare')).toBe(true);
   });
 
-  it('the Curse Broker takes 2 max armor when you cannot pay', () => {
+  it('the Curse Broker refuses when you cannot pay', () => {
     const { state } = start();
     state.curses.push({ id: 'censor', stacks: 1 });
     state.phase = 'happening';
@@ -393,8 +393,9 @@ describe('shop curses', () => {
 
     const bought = act(state, { type: 'choose', optionId: 'relic' });
     expect(bought.state.gold).toBe(5);
-    expect(bought.state.maxArmor).toBe(0);
-    expect(bought.state.items.some((item) => ITEM_BY_ID.get(item.id)?.rarity === 'rare')).toBe(true);
+    expect(bought.state.maxArmor).toBe(2);
+    expect(bought.state.items.some((item) => ITEM_BY_ID.get(item.id)?.rarity === 'rare')).toBe(false);
+    expect(eventTypes(bought.events)).toContain('message');
   });
 
   it('the Curse Broker can remove a chosen curse', () => {
@@ -771,7 +772,7 @@ describe('new item and event batch', () => {
     expect(SPELL_BY_ID.get('restore')?.description)
       .toBe('Refill armor and clear the blacklist.');
     expect(ITEM_BY_ID.get('siphon')?.description).toContain('4 HP');
-    expect(ITEM_BY_ID.get('gourmand')?.description).toContain('Eating or casting');
+    expect(ITEM_BY_ID.get('gourmand')?.description).toContain('On spell cast or food eaten');
     expect(ITEM_BY_ID.get('pen-club')?.description).toContain('1-5 gold');
     expect(ITEM_BY_ID.get('big-belt')?.description).toContain('Every 5 eats or solves');
     expect(ITEM_BY_ID.get('miser')?.description).not.toContain('max');
@@ -796,6 +797,7 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('preserves')).toBeUndefined();
     expect(ITEM_BY_ID.get('piggy-bank')).toBeUndefined();
     expect(ITEM_BY_ID.get('blacklist-scholar')).toBeUndefined();
+    expect(ITEM_BY_ID.get('gilded-fork')).toBeUndefined();
     expect(FOOD_BY_ID.get('iron-ration')).toBeUndefined();
     expect(CURSE_BY_ID.get('monochrome')?.name).toBe('Silver SLT');
   });
@@ -915,10 +917,87 @@ describe('latest balance pass', () => {
       .toContain('+3 gold');
   });
 
+  it('prices Rabbit’s Foot at 11 and adds 2g Leftovers', () => {
+    expect(ITEM_BY_ID.get('rabbit-foot')?.price).toBe(11);
+    expect(FOOD_BY_ID.get('leftovers')?.price).toBe(2);
+    expect(FOOD_BY_ID.get('leftovers')?.effects)
+      .toContainEqual({ type: 'healMissingPercent', percent: 50 });
+  });
+
+  it('Leftovers heals half of missing HP', () => {
+    const { state } = start('leftovers');
+    state.hp = 6;
+    state.phase = 'shop';
+    state.gold = 20;
+    state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'leftovers', price: 2 }]);
+    const eaten = act(state, { type: 'buy', offerId: 'o0' });
+    expect(eaten.state.hp).toBe(11);
+  });
+
+  it('Shortcut only pays for solves in 2 guesses or fewer', () => {
+    const quick = start('shortcut-quick');
+    quick.state.items.push({ instance: 'i-short', id: 'shortcut', data: {}, equipped: true });
+    if (!quick.state.round) throw new Error('expected round');
+    setAnswer(quick.state, 'crane');
+    quick.state.round.totalGuesses = 1;
+    const two = act(quick.state, { type: 'guess', word: 'crane' });
+    expect(two.state.slots).toBe(6);
+
+    const slow = start('shortcut-slow');
+    slow.state.items.push({ instance: 'i-short', id: 'shortcut', data: {}, equipped: true });
+    if (!slow.state.round) throw new Error('expected round');
+    setAnswer(slow.state, 'crane');
+    slow.state.round.totalGuesses = 2;
+    const three = act(slow.state, { type: 'guess', word: 'crane' });
+    expect(three.state.slots).toBe(5);
+  });
+
+  it('Necronomicon procs at 13 reveals for an Omen and -3 max HP', () => {
+    const { state } = start('necronomicon');
+    state.items.push({
+      instance: 'i-nec',
+      id: 'necronomicon',
+      data: { reveals: 12 },
+      equipped: true,
+    });
+    state.spells = [{ instance: 's-omen', id: 'omen' }];
+    setAnswer(state, 'crane');
+    const cast = act(state, { type: 'castSpell', instance: 's-omen' });
+    expect(cast.state.maxHp).toBe(13);
+    expect(cast.state.spells.some((spell) => spell.id === 'omen')).toBe(true);
+  });
+
+  it('Hearty Meal gives 6 max HP and heals 6', () => {
+    const meal = FOOD_BY_ID.get('hearty-meal');
+    expect(meal?.effects).toEqual([
+      { type: 'maxHp', delta: 6 },
+      { type: 'heal', amount: 6 },
+    ]);
+  });
+
+  it('The Scales doubles max HP and halves current HP, or grants max armor', () => {
+    const grow = start('scales-grow');
+    grow.state.phase = 'happening';
+    grow.state.happening = { id: 'the-scales', options: [] };
+    const grown = act(grow.state, { type: 'choose', optionId: 'grow' });
+    expect(grown.state.maxHp).toBe(32);
+    expect(grown.state.hp).toBe(8);
+
+    const plate = start('scales-plate');
+    plate.state.phase = 'happening';
+    plate.state.happening = { id: 'the-scales', options: [] };
+    const plated = act(plate.state, { type: 'choose', optionId: 'plate' });
+    expect(plated.state.maxArmor).toBe(3);
+  });
+
   it('applies the latest prices and text', () => {
     expect(FOOD_BY_ID.get('plating')?.price).toBe(8);
     expect(ITEM_BY_ID.get('compound-interest')?.price).toBe(6);
     expect(FOOD_BY_ID.get('yin-yang')?.price).toBe(10);
+    expect(ITEM_BY_ID.get('shortcut')?.description).toContain('2 guesses or fewer');
+    expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('Every 13 reveals');
+    expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('-3 max HP');
+    expect(FOOD_BY_ID.get('hearty-meal')?.description).toBe('+6 max HP, heal 6. No slot.');
     expect(ITEM_BY_ID.get('loyalty-card')?.description).toContain('Every 7 shop purchases');
     expect(ITEM_BY_ID.get('tithe-box')?.description).toContain('10% chance');
     expect(ITEM_BY_ID.get('mimic-mouth')?.description).toContain('Once per round');

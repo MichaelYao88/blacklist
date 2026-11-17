@@ -38,7 +38,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Opening shields such as **Head Start** and **Quickdraw** make guesses in their window count as free guesses
 - Relics are very rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 107 items (88 shop items + 19 rare relics), 6 spells, 25 foods and 15 happenings
+- 106 items (88 shop items + 18 rare relics), 6 spells, 26 foods and 16 happenings
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
 - **Field Kit** reveals exactly 4 letters that are not in the word; **Doggy Bag** reveals 2 and queues another after every food
@@ -53,7 +53,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Solve gold is 8 for 3 guesses or fewer, otherwise a random 5-8
 - **The Endless Table** fires every on-eat effect 7 times or pays 7 gold
 - **Tally Lens** is guaranteed in a shop after a vision curse and shows correct/misplaced counts
-- **The Tax** halves encounter gold and is unique; **The Curse Broker** charges 12g for a relic or 15g to remove a curse, otherwise taking 2 max armor
+- **The Tax** halves encounter gold and is unique; **The Curse Broker** charges 12g for a relic or 15g to remove a curse
 - The run path rail is gone; the current level stays in the battle rail
 - Purge is an event (The Redaction) and rare foods; not a spell
 - One exact-state autosave slot. Defeat clears it. Victory clears it and updates meta stats.

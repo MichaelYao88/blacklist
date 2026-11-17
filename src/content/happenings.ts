@@ -251,9 +251,8 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'relic',
         label: 'Buy a rare relic',
-        description: '12 gold. If you cannot pay, lose 2 max armor.',
+        description: '12 gold.',
         costGold: 12,
-        fallbackMaxArmor: 2,
         outcomes: [{
           chancePct: 100,
           text: 'He slides a relic across the counter.',
@@ -263,9 +262,8 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'remove',
         label: 'Remove a curse',
-        description: '15 gold. If you cannot pay, lose 2 max armor.',
+        description: '15 gold.',
         costGold: 15,
-        fallbackMaxArmor: 2,
         outcomes: [{
           chancePct: 100,
           text: 'He uncorks one burden and lets it evaporate.',
@@ -308,6 +306,36 @@ export const HAPPENINGS: HappeningDef[] = [
         label: 'Walk away',
         description: 'Nothing happens.',
         outcomes: [{ chancePct: 100, text: 'You leave both where they lie.', effects: [] }],
+      },
+    ],
+  }),
+  defineHappening({
+    id: 'the-scales',
+    name: 'The Scales',
+    description: 'A scale with two pans. One holds what you could become; the other holds what you have.',
+    options: [
+      {
+        id: 'grow',
+        label: 'Tip the scale',
+        description: 'Double max HP. Current HP is halved.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'The pan drops. Your body stretches to fit a larger life.',
+          effects: [
+            { type: 'maxHpMultiply', factor: 2 },
+            { type: 'hpMultiply', factor: 0.5 },
+          ],
+        }],
+      },
+      {
+        id: 'plate',
+        label: 'Take the small plate',
+        description: '+1 max armor.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'A thin plate fits under your coat.',
+          effects: [{ type: 'maxArmor', delta: 1 }],
+        }],
       },
     ],
   }),

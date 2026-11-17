@@ -755,9 +755,24 @@ export function createCore(content: Content): Core {
       case 'healPercent':
         heal(rt, Math.max(1, Math.ceil(state.maxHp * (effect.percent / 100))), source);
         break;
+      case 'healMissingPercent': {
+        const missing = Math.max(0, state.maxHp - state.hp);
+        heal(rt, Math.ceil(missing * (effect.percent / 100)), source);
+        break;
+      }
       case 'maxHp':
         changeMaxHp(rt, effect.delta, source);
         break;
+      case 'maxHpMultiply': {
+        const target = Math.max(1, Math.round(state.maxHp * effect.factor));
+        changeMaxHp(rt, target - state.maxHp, source);
+        break;
+      }
+      case 'hpMultiply': {
+        state.hp = Math.max(1, Math.min(state.maxHp, Math.round(state.hp * effect.factor)));
+        emit(rt, { type: 'maxHpChanged', maxHp: state.maxHp, hp: state.hp, source });
+        break;
+      }
       case 'armor':
         changeArmor(rt, effect.delta);
         break;
@@ -1913,7 +1928,6 @@ export function createCore(content: Content): Core {
         description: option.description,
         costGold: option.costGold,
         fallbackPct: option.fallbackPct,
-        fallbackMaxArmor: option.fallbackMaxArmor,
         chancePct: option.outcomes.length === 1
           ? 100
           : option.outcomes[0]?.chancePct,
@@ -1940,12 +1954,6 @@ export function createCore(content: Content): Core {
     if (option.costGold && option.costGold > 0) {
       if (state.gold >= option.costGold) {
         spendGold(rt, option.costGold, { kind: 'happening', happening: def.id });
-      } else if (option.fallbackMaxArmor) {
-        applyEffects(
-          rt,
-          [{ type: 'maxArmor', delta: -option.fallbackMaxArmor }],
-          { kind: 'happening', happening: def.id },
-        );
       } else if (option.fallbackPct) {
         const cost = Math.max(0, Math.floor(state.gold * option.fallbackPct));
         if (cost > 0) spendGold(rt, cost, { kind: 'happening', happening: def.id });
@@ -2743,7 +2751,6 @@ export function createCore(content: Content): Core {
       // reference a definition the current content set no longer ships.
       const itemMigrations: Record<string, string> = {
         'null-lens': 'pen-club',
-        'midas-relic': 'gilded-fork',
       };
       state.items = state.items
         .map((item) => {

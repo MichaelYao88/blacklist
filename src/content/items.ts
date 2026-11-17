@@ -178,7 +178,7 @@ export const ITEMS: ItemDef[] = [
     id: 'rabbit-foot',
     name: "Rabbit's Foot",
     description: '+1 free guess per round.',
-    price: 7,
+    price: 11,
     kind: 'gear',
     on: { onRoundStart: () => [{ type: 'freeGuesses', count: 1 }] },
   }),
@@ -321,7 +321,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'gourmand',
     name: 'Gourmand',
-    description: 'Eating or casting a spell: +1 max HP.',
+    description: 'On spell cast or food eaten: +1 max HP.',
     price: 8,
     kind: 'gear',
     on: {
@@ -381,7 +381,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'necronomicon',
     name: 'Necronomicon',
-    description: 'Round start: reveal 2 letters. Every 5 reveals: +1 Omen.',
+    description: 'Round start: reveal 2 letters. Every 13 reveals: +1 Omen, -3 max HP.',
     price: 10,
     kind: 'gear',
     initial: { reveals: 0 },
@@ -389,11 +389,17 @@ export const ITEMS: ItemDef[] = [
       onRoundStart: () => [{ type: 'revealRandom', count: 2 }],
       onReveal: (ctx) => {
         const total = ctx.self.data.reveals + 1;
-        const spells = Math.floor(total / 5);
-        return [
-          { type: 'setItemData', stat: 'reveals', value: total % 5 },
-          ...Array.from({ length: spells }, () => ({ type: 'giveSpell' as const, spell: 'omen' as const })),
+        const procs = Math.floor(total / 13);
+        const effects: Effect[] = [
+          { type: 'setItemData', stat: 'reveals', value: total % 13 },
         ];
+        for (let index = 0; index < procs; index++) {
+          effects.push(
+            { type: 'giveSpell', spell: 'omen' },
+            { type: 'maxHp', delta: -3 },
+          );
+        }
+        return effects;
       },
     },
   }),
@@ -1268,11 +1274,11 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'shortcut',
     name: 'Shortcut',
-    description: 'Solve in 4 guesses or fewer: +1 item slot.',
+    description: 'Solve in 2 guesses or fewer: +1 item slot.',
     price: 12,
     kind: 'gear',
     on: {
-      onSolve: (_ctx, p) => (p.guesses <= 4 ? [{ type: 'slots', delta: 1 }] : []),
+      onSolve: (_ctx, p) => (p.guesses <= 2 ? [{ type: 'slots', delta: 1 }] : []),
     },
   }),
   defineItem({
@@ -1417,17 +1423,6 @@ export const ITEMS: ItemDef[] = [
     on: {
       onRoundStart: () => [{ type: 'addTime', ms: 20_000 }],
       onSolve: () => [{ type: 'giveSpell', spell: 'time-freeze' }],
-    },
-  }),
-  defineItem({
-    id: 'gilded-fork',
-    name: 'Gilded Fork',
-    description: 'Eating: 20% chance of a random spell.',
-    price: 20,
-    kind: 'gear',
-    rarity: 'rare',
-    on: {
-      onEat: () => [{ type: 'giveSpell', spell: 'random', chancePct: 20 }],
     },
   }),
   defineItem({
