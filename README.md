@@ -24,7 +24,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - The clock is disabled until **The Clock** curse is taken; the first stack gives 5:00
 - The Clockmaker event only appears once The Clock exists
 - **Phone a Friend** delivers a one- or two-word catchphrase, quietly adds 5 seconds, and spams his words across the screen
-- Trophy Hunter, Boss Trophy, Boss Aegis and Trophy Room now trigger on gaining a curse (“Gain a curse: …”)
+- Trophy Hunter, Boss Trophy, Boss Aegis and Trophy Room now trigger on gaining a curse ("Whenever you gain a curse: Gain …")
 - Ascension A1/A2 draft 1/2 starting curses
 - Shops with rerolls that double in price: three items, two foods and one wildcard; one item is always 50% off
 - Five item slots by default. Only equipped gear is active, and each shop has a drag-and-drop loadout

@@ -472,7 +472,7 @@ describe('curse-triggered items', () => {
 
   it('describes all of them as Gain a curse', () => {
     for (const id of ['trophy-hunter', 'boss-trophy', 'boss-aegis', 'trophy-room']) {
-      expect(ITEM_BY_ID.get(id)?.description.startsWith('Gain a curse:')).toBe(true);
+      expect(ITEM_BY_ID.get(id)?.description.startsWith('Whenever you gain a curse: Gain ')).toBe(true);
     }
   });
 });

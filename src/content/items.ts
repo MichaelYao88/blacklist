@@ -277,7 +277,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'trophy-hunter',
     name: 'Trophy Hunter',
-    description: 'Gain a curse: +1 max armor.',
+    description: 'Whenever you gain a curse: Gain 1 max armor.',
     price: 9,
     kind: 'gear',
     on: {
@@ -408,7 +408,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'boss-trophy',
     name: 'Boss Trophy',
-    description: 'Gain a curse: random spell.',
+    description: 'Whenever you gain a curse: Gain a random spell.',
     price: 10,
     kind: 'gear',
     on: {
@@ -694,7 +694,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'boss-aegis',
     name: 'Boss Aegis',
-    description: 'Gain a curse: +4 max armor.',
+    description: 'Whenever you gain a curse: Gain 4 max armor.',
     price: 10,
     kind: 'gear',
     on: {
@@ -1083,7 +1083,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'trophy-room',
     name: 'Trophy Room',
-    description: 'Gain a curse: +1 item slot.',
+    description: 'Whenever you gain a curse: Gain 1 item slot.',
     price: 10,
     kind: 'gear',
     on: {
