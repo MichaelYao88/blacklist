@@ -77,7 +77,7 @@ describe('cursed run setup', () => {
     expect(state.level).toBe(1);
     expect(state.hp).toBe(16);
     expect(state.maxHp).toBe(16);
-    expect(state.armor).toBe(2);
+    expect(state.armor).toBe(4);
     expect(state.gold).toBe(10);
     expect(state.slots).toBe(5);
     expect(state.blacklist).toEqual([]);
@@ -415,7 +415,7 @@ describe('shop curses', () => {
 
     const bought = act(state, { type: 'choose', optionId: 'relic' });
     expect(bought.state.gold).toBe(5);
-    expect(bought.state.maxArmor).toBe(2);
+    expect(bought.state.maxArmor).toBe(4);
     expect(bought.state.items.some((item) => ITEM_BY_ID.get(item.id)?.rarity === 'rare')).toBe(false);
     expect(eventTypes(bought.events)).toContain('message');
   });
@@ -480,7 +480,7 @@ describe('curse-triggered items', () => {
     state.phase = 'curse';
     const chosen = act(state, { type: 'chooseCurse', curseId: 'censor' });
     expect(chosen.state.maxHp).toBe(20);
-    expect(chosen.state.maxArmor).toBe(4);
+    expect(chosen.state.maxArmor).toBe(6);
     expect(chosen.state.slots).toBe(6);
     expect(chosen.state.spells).toHaveLength(2);
   });
@@ -597,7 +597,7 @@ describe('new item and event batch', () => {
     brace.state.items.push({ instance: 'i-brace', id: 'brace', data: {}, equipped: true });
     setAnswer(brace.state, 'crane');
     const braced = act(brace.state, { type: 'guess', word: 'crane' });
-    expect(braced.state.maxArmor).toBe(4);
+    expect(braced.state.maxArmor).toBe(6);
 
     const bloom = start('bloom');
     bloom.state.items.push({ instance: 'i-bloom', id: 'bloom', data: { hp: 5 }, equipped: true });
@@ -644,7 +644,7 @@ describe('new item and event batch', () => {
     state.gold = 100;
     state.shop = shopState([{ id: 'o0', kind: 'item', def: 'bottomless', price: 12 }]);
     const bought = act(state, { type: 'buy', offerId: 'o0' });
-    expect(bought.state.maxArmor).toBe(6);
+    expect(bought.state.maxArmor).toBe(8);
     expect(ITEM_BY_ID.get('bottomless')?.description)
       .toContain('20% chance of +1 max armor');
   });
@@ -765,20 +765,22 @@ describe('new item and event batch', () => {
     expect(solved.state.slots).toBe(6);
   });
 
-  it('Bulk Order converts its +1 armor into max armor', () => {
-    const { state } = start('bulk-order');
-    state.items.push({ instance: 'i-bulk', id: 'bulk-order', data: { _visit: -1 }, equipped: true });
+  it('Muffin Tin grants +1 max armor for each food eaten in a shop', () => {
+    const { state } = start('muffin-tin');
+    state.items.push({ instance: 'i-muffin', id: 'muffin-tin', data: {}, equipped: true });
     state.phase = 'shop';
     state.gold = 100;
     state.shop = shopState([
       { id: 'f0', kind: 'eat', def: 'snack', price: 3 },
       { id: 'f1', kind: 'eat', def: 'feast', price: 5 },
     ]);
+    const base = state.maxArmor;
     let current = state;
     current = act(current, { type: 'buy', offerId: 'f0' }).state;
     current = act(current, { type: 'buy', offerId: 'f1' }).state;
-    expect(current.maxHp).toBe(23);
-    expect(current.maxArmor).toBe(3);
+    expect(current.maxArmor).toBe(base + 2);
+    expect(ITEM_BY_ID.get('muffin-tin')?.price).toBe(2);
+    expect(ITEM_BY_ID.get('bulk-order')).toBeUndefined();
   });
 
   it('applies the tuned content text and values', () => {
@@ -790,7 +792,7 @@ describe('new item and event batch', () => {
     expect(FOOD_BY_ID.get('bitter-root')?.effects)
       .not.toContainEqual({ type: 'armor', delta: 1 });
     expect(ITEM_BY_ID.get('growth-spurt')?.description).toContain('+2 max HP');
-    expect(ITEM_BY_ID.get('bulk-order')?.description).toContain('+1 max armor');
+    expect(ITEM_BY_ID.get('muffin-tin')?.description).toContain('+1 max armor');
     expect(CURSE_BY_ID.get('porcupine')?.damagePerGreen).toBe(2);
     expect(CURSE_BY_ID.get('porcupine')?.description)
       .toBe('+2 damage on the next guess per green tile on the previous guess.');
@@ -866,7 +868,7 @@ describe('latest balance pass', () => {
     expect(solved.state.spells).toHaveLength(exactBefore);
   });
 
-  it('a hidden tile picks up the color later learned for that letter', () => {
+  it('a hidden tile stays hidden while the keyboard learns its letter', () => {
     const { state } = start('hidden-peek');
     state.curses.push({ id: 'censor', stacks: 1 });
     setAnswer(state, 'crane');
@@ -875,16 +877,12 @@ describe('latest balance pass', () => {
     const alone = game.view(first.state).phase;
     if (alone.kind !== 'round') throw new Error('expected round');
     expect(alone.board.guesses[0]?.tiles[0]).toBe('hidden');
-    expect(alone.board.guesses[0]?.peek?.[0]).toBeNull();
 
     const second = act(first.state, { type: 'guess', word: 'actor' }); // C shows yellow at slot 2
     const after = game.view(second.state).phase;
     if (after.kind !== 'round') throw new Error('expected round');
     expect(after.board.keyboard.c).toBe('present');
     expect(after.board.guesses[0]?.tiles[0]).toBe('hidden');
-    expect(after.board.guesses[0]?.peek?.[0]).toBe('present');
-    // Visible tiles never carry a peek color.
-    expect(after.board.guesses[1]?.peek?.[1]).toBeNull();
   });
 
   it('Tally Lens is guaranteed in a shop once a vision curse is active', () => {
@@ -1262,20 +1260,20 @@ describe('latest balance pass', () => {
     expect(cast.state.nextSpellDouble).toBe(false);
   });
 
-  it('Chilaquiles doubles the next sale', () => {
+  it('Chilaquiles is a 1g food that doubles the next sale', () => {
     const { state } = start('chilaquiles');
     state.phase = 'shop';
-    state.shop = shopState();
-    state.items.push(
-      { instance: 'i-chil', id: 'chilaquiles', data: {}, equipped: true },
-      { instance: 'i-glass', id: 'hourglass', data: {}, equipped: true },
-    );
+    state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'chilaquiles', price: 1 }]);
+    state.items.push({ instance: 'i-glass', id: 'hourglass', data: {}, equipped: true });
     const goldBefore = state.gold;
-    const used = act(state, { type: 'useItem', instance: 'i-chil' });
-    expect(used.state.nextSaleDouble).toBe(true);
-    const sold = act(used.state, { type: 'sell', instance: 'i-glass' });
+    const eaten = act(state, { type: 'buy', offerId: 'o0' });
+    expect(eaten.state.gold).toBe(goldBefore - 1);
+    expect(eaten.state.nextSaleDouble).toBe(true);
+    const sold = act(eaten.state, { type: 'sell', instance: 'i-glass' });
     const base = Math.floor((ITEM_BY_ID.get('hourglass')?.price ?? 2) / 2);
-    expect(sold.state.gold - goldBefore).toBe(base * 2);
+    expect(sold.state.gold - goldBefore).toBe(base * 2 - 1);
+    expect(ITEM_BY_ID.get('chilaquiles')).toBeUndefined();
+    expect(FOOD_BY_ID.get('chilaquiles')?.price).toBe(1);
   });
 
   it('re-implements Piggy Bank at 2 gold plus 2 per round held', () => {
@@ -1422,7 +1420,7 @@ describe('latest balance pass', () => {
     plate.state.phase = 'happening';
     plate.state.happening = { id: 'the-scales', options: [] };
     const plated = act(plate.state, { type: 'choose', optionId: 'plate' });
-    expect(plated.state.maxArmor).toBe(3);
+    expect(plated.state.maxArmor).toBe(5);
   });
 
   it('removes the retired item batch', () => {
@@ -1487,7 +1485,7 @@ describe('latest balance pass', () => {
     state.items.push({ instance: 'i-ward', id: 'ward-engine', data: { used: 0 }, equipped: true });
     state.spells = [{ instance: 's-imm', id: 'immunity' }];
     const cast = act(state, { type: 'castSpell', instance: 's-imm' });
-    expect(cast.state.maxArmor).toBe(4);
+    expect(cast.state.maxArmor).toBe(6);
   });
 
   it('Clean Slate only pays once per round', () => {
@@ -1496,9 +1494,9 @@ describe('latest balance pass', () => {
     setAnswer(state, 'crane');
     const first = act(state, { type: 'guess', word: 'brick' });
     const trigger = act(first.state, { type: 'guess', word: 'vamps' });
-    expect(trigger.state.maxArmor).toBe(3);
+    expect(trigger.state.maxArmor).toBe(5);
     const third = act(trigger.state, { type: 'guess', word: 'fizzy' });
-    expect(third.state.maxArmor).toBe(3);
+    expect(third.state.maxArmor).toBe(5);
   });
 
   it('Empty Armor grants Restore when the round starts with no spells', () => {
@@ -1584,11 +1582,11 @@ describe('latest balance pass', () => {
       data: { healed: 0 },
       equipped: true,
     });
-    expect(state.maxArmor).toBe(2);
+    expect(state.maxArmor).toBe(4);
     state.hp = 10;
     state.spells = [{ instance: 's-heal', id: 'heal' }];
     const cast = act(state, { type: 'castSpell', instance: 's-heal' });
-    expect(cast.state.maxArmor).toBe(3);
+    expect(cast.state.maxArmor).toBe(5);
   });
 
   it('Acquired Taste gives 4 max HP per new food', () => {

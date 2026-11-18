@@ -1128,16 +1128,12 @@ function tileRow(
   letters: string[],
   tiles?: string[],
   extraClass = '',
-  peek?: (string | null)[] | undefined,
 ): string {
   const cells = Array.from({ length: 5 }, (_, index) => {
     const letter = letters[index] ?? '';
     const status = tiles?.[index] ?? '';
-    // A hidden tile can still wear the color already learned for its letter.
-    const known = status === 'hidden' ? peek?.[index] : null;
-    const peeked = known ? `peek ${known}` : '';
     const symbol = status === 'correct' ? '✓' : status === 'present' ? '•' : status === 'hit' ? '~' : status === 'hidden' ? '?' : '';
-    return `<div class="tile ${status || 'empty'} ${peeked} ${extraClass}">
+    return `<div class="tile ${status || 'empty'} ${extraClass}">
       <span class="tile-letter">${escapeHtml(letter)}</span>
       ${symbol ? `<span class="tile-mark">${symbol}</span>` : ''}
     </div>`;
@@ -1155,7 +1151,7 @@ function renderBoard(board: BoardView): string {
       const counts = guess.counts
         ? `<div class="counts">${guess.counts.correct} in place · ${guess.counts.present} misplaced</div>`
         : '';
-      rows.push(tileRow(guess.word.split(''), guess.tiles, '', guess.peek) + counts);
+      rows.push(tileRow(guess.word.split(''), guess.tiles) + counts);
     } else if (index === guesses.length) {
       rows.push(tileRow(input.split(''), undefined, 'input'));
     } else {
@@ -1583,14 +1579,19 @@ function phasePanel(view: RunView): string {
   }
 }
 
-function renderPauseOverlay(): string {
+function renderPauseOverlay(view: RunView): string {
+  const clocked = view.curses.some((curse) => curse.id === 'clock');
+  const title = clocked ? 'The clock is stopped' : 'Nothing is moving';
+  const body = clocked
+    ? 'Take your time. Nothing moves until you come back.'
+    : 'Take a breath. The list can wait.';
   return `
   <div class="pause-overlay">
     <div class="pause-card">
       <span class="pause-icon" aria-hidden="true">⏸</span>
       <p class="panel-kicker">PAUSED</p>
-      <h2>The clock is stopped</h2>
-      <p class="muted">Take your time. Nothing moves until you come back.</p>
+      <h2>${title}</h2>
+      <p class="muted">${body}</p>
       <div class="pause-actions">
         <button class="btn primary big" data-action="unpause">RESUME</button>
         <button class="btn ghost" data-action="help">RULES</button>
@@ -1636,7 +1637,7 @@ function renderRun(view: RunView): string {
           <span class="countdown-label">READ THE LIST</span>
         </div>
       </div>` : ''}
-    ${paused && !over ? renderPauseOverlay() : ''}
+    ${paused && !over ? renderPauseOverlay(view) : ''}
   </div>`;
 }
 

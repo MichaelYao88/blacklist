@@ -2580,17 +2580,6 @@ export function createCore(content: Content): Core {
       if (!keyboard[letter] || keyboard[letter] === 'absent') keyboard[letter] = 'purged';
     }
 
-    // A hidden tile still shows the color already learned for that letter in
-    // another guess, so the grid matches the keyboard. It keeps its '?' mark
-    // because this particular tile's result was never revealed.
-    for (const shown of guesses) {
-      shown.peek = shown.tiles.map((tile, index) => {
-        if (tile !== 'hidden') return null;
-        const known = keyboard[shown.word[index]];
-        return known === 'correct' || known === 'present' || known === 'absent' ? known : null;
-      });
-    }
-
     return {
       guesses,
       freeGuessesLeft: round.freeLeft,
@@ -2853,7 +2842,7 @@ export function createCore(content: Content): Core {
     const ascension = Math.max(0, Math.min(ASCENSION_MAX, Math.floor(opts.ascension ?? 0)));
     const startingCurses = ascensionStartingCurses(ascension);
     const maxHp = 16;
-    const startArmor = 2;
+    const startArmor = 4;
     const state: RunState = {
       version: VERSION,
       seed,

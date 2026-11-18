@@ -38,7 +38,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Opening shields such as **Head Start** and **Quickdraw** make guesses in their window count as free guesses
 - Relics are very rare ordinary items, no longer boss rewards; shops roll a rare relic at 25% per item slot (about 60% of shops have one)
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 99 items (83 shop items + 16 rare relics), 6 spells, 63 foods and 16 happenings
+- 98 items (82 shop items + 16 rare relics), 6 spells, 64 foods and 16 happenings
 - New foods include **U-nagi**, **Empty Calories**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
@@ -49,6 +49,8 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Bottomless** starts at +4 max armor; eating food has a 20% chance of +1 max armor
 - **Frozen Durian** grants +1 Time Freeze every 4 foods eaten
 - **Ice Cream Sundae** is a 3g consumable: gain Time Freeze, or heal 1 and +1 max HP
+- **Muffin Tin** is a 2g item: +1 max armor for each food eaten in a shop
+- **Chilaquiles** is a 1g food that doubles the next sale
 - **Big Belt** gains +1 item slot every 5 eats or solves
 - **Pen Club** pays a random 1-5 gold for guesses starting with PEN; **Gourmand** gains +1 max HP on eat or spell cast
 - **Old McDonald** is an expensive relic: EIEIO is guessed for free at round start
@@ -101,7 +103,7 @@ Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title s
 | Thing | Value |
 |---|---|
 | Starting HP | 16 |
-| Starting armor | 2 points |
+| Starting armor | 4 points |
 | Starting item slots | 5 (only equipped gear counts; relics use one slot each) |
 | Free guesses per round | 1, plus every guess made inside a timed shield |
 | Starting gold | 10 |

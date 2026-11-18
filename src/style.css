@@ -911,30 +911,6 @@ button {
   opacity: 0.5;
 }
 
-/* A tile hidden by a vision curse keeps its dashed border and '?' mark, but
-   wears the color the player already learned for that letter elsewhere. */
-.tile.hidden.peek .tile-letter {
-  opacity: 0.85;
-}
-
-.tile.hidden.peek.correct {
-  background: linear-gradient(180deg, #4eb47b, #388a5b);
-  border-color: #64c990;
-  color: #06140c;
-}
-
-.tile.hidden.peek.present {
-  background: linear-gradient(180deg, #d7b64f, #a8872f);
-  border-color: #e4c665;
-  color: #191204;
-}
-
-.tile.hidden.peek.absent {
-  background: #201b2a;
-  border-color: #2b2438;
-  color: #776d8a;
-}
-
 .tile.input {
   border-color: #54446f;
   background: rgba(139, 107, 217, 0.07);

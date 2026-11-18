@@ -586,7 +586,7 @@ export const ITEMS: ItemDef[] = [
     id: 'waste-basket',
     name: 'Waste Basket',
     description: 'Selling an item: +1 gold, 25% chance of a spell.',
-    price: 7,
+    price: 3,
     kind: 'gear',
     on: { onSell: () => [{ type: 'gold', amount: 1 }, { type: 'giveSpell', spell: 'random', chancePct: 25 }] },
   }),
@@ -1114,24 +1114,13 @@ export const ITEMS: ItemDef[] = [
     },
   }),
   defineItem({
-    id: 'bulk-order',
-    name: 'Bulk Order',
-    description: 'Buy every food in a shop: +2 max HP and +1 max armor.',
-    price: 9,
+    id: 'muffin-tin',
+    name: 'Muffin Tin',
+    description: '+1 max armor for each food eaten in a shop.',
+    price: 2,
     kind: 'gear',
-    initial: { _visit: -1 },
     on: {
-      onPurchase: (ctx, p) => {
-        const shop = ctx.state.shop;
-        if (!shop || p.offer.kind !== 'eat') return [];
-        if (shop.foodOffers <= 0 || shop.foodsBought < shop.foodOffers) return [];
-        if (ctx.self.data._visit === shop.visit) return [];
-        return [
-          { type: 'setItemData', stat: '_visit', value: shop.visit },
-          { type: 'maxHp', delta: 2 },
-          { type: 'maxArmor', delta: 1 },
-        ];
-      },
+      onEat: (ctx) => (ctx.state.phase === 'shop' ? [{ type: 'maxArmor', delta: 1 }] : []),
     },
   }),
   defineItem({
@@ -1449,15 +1438,6 @@ export const ITEMS: ItemDef[] = [
       },
       { type: 'consumeSelf' },
     ],
-  }),
-  defineItem({
-    id: 'chilaquiles',
-    name: 'Chilaquiles',
-    description: 'Consumable. The next item you sell sells for double.',
-    price: 3,
-    kind: 'consumable',
-    slots: 0,
-    onUse: () => [{ type: 'armSaleDouble' }],
   }),
   defineItem({
     id: 'piggy-bank',

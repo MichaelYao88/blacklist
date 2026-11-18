@@ -550,6 +550,13 @@ export const FOODS: FoodDef[] = [
       { type: 'addRandomRelic' },
     ],
   }),
+  defineFood({
+    id: 'chilaquiles',
+    name: 'Chilaquiles',
+    description: 'The next item you sell sells for double. No slot.',
+    price: 1,
+    effects: [{ type: 'armSaleDouble' }],
+  }),
 ];
 
 export const FOOD_BY_ID = new Map(FOODS.map((f) => [f.id, f]));
