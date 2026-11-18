@@ -68,6 +68,7 @@ const ITEM_ICONS: Record<string, string> = {
   'growth-chart': '📊',
   'stopped-clock': '⏱️',
   'time-lattice': '🧩',
+  'frozen-durian': '🥥',
   'omen-loom': '🔮',
   'mercy-ledger': '📗',
   'ward-engine': '🔰',

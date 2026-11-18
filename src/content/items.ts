@@ -821,6 +821,27 @@ export const ITEMS: ItemDef[] = [
     },
   }),
   defineItem({
+    id: 'frozen-durian',
+    name: 'Frozen Durian',
+    description: 'Every 4 foods eaten: +1 Time Freeze.',
+    price: 8,
+    kind: 'gear',
+    initial: { eaten: 0 },
+    on: {
+      onEat: (ctx) => {
+        const total = ctx.self.data.eaten + 1;
+        const freezes = Math.floor(total / 4);
+        return [
+          { type: 'setItemData', stat: 'eaten', value: total % 4 },
+          ...Array.from({ length: freezes }, () => ({
+            type: 'giveSpell' as const,
+            spell: 'time-freeze' as const,
+          })),
+        ];
+      },
+    },
+  }),
+  defineItem({
     id: 'omen-loom',
     name: 'Omen Loom',
     description: 'Cast Omen: gain a random spell. Once per round.',

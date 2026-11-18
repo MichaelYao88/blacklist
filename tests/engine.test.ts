@@ -1675,6 +1675,43 @@ describe('latest balance pass', () => {
     expect(shopsWithRare).toBeGreaterThan(40);
   });
 
+  it('Head Start and Quickdraw do not stack their windows', () => {
+    const { state } = start('shield-stack');
+    state.items.push(
+      { instance: 'i-hs', id: 'head-start', data: {}, equipped: true },
+      { instance: 'i-qd', id: 'quickdraw', data: {}, equipped: true },
+    );
+    const next = nextRound(state);
+    expect(next.state.round?.immuneUntilMs).toBe(12_000);
+  });
+
+  it('Frozen Durian grants Time Freeze every 4 foods', () => {
+    const { state } = start('frozen-durian');
+    state.items.push({
+      instance: 'i-durian',
+      id: 'frozen-durian',
+      data: { eaten: 0 },
+      equipped: true,
+    });
+    state.phase = 'shop';
+    state.gold = 100;
+    state.shop = shopState([
+      { id: 'f0', kind: 'eat', def: 'snack', price: 3 },
+      { id: 'f1', kind: 'eat', def: 'snack', price: 3 },
+      { id: 'f2', kind: 'eat', def: 'snack', price: 3 },
+      { id: 'f3', kind: 'eat', def: 'snack', price: 3 },
+    ]);
+    let current = state;
+    for (const id of ['f0', 'f1', 'f2']) {
+      current = act(current, { type: 'buy', offerId: id }).state;
+      expect(current.spells).toHaveLength(1);
+    }
+    current = act(current, { type: 'buy', offerId: 'f3' }).state;
+    expect(current.spells).toHaveLength(2);
+    expect(current.items.find((item) => item.id === 'frozen-durian')?.data.eaten).toBe(0);
+    expect(ITEM_BY_ID.get('frozen-durian')?.price).toBe(8);
+  });
+
   it('applies the latest prices and text', () => {
     expect(FOOD_BY_ID.get('plating')?.price).toBe(3);
     expect(FOOD_BY_ID.get('plating')?.effects).toContainEqual({ type: 'maxArmor', delta: 1 });
