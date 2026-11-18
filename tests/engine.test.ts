@@ -384,6 +384,25 @@ describe('timer curses', () => {
     expect(ITEM_BY_ID.get('adrenaline')?.price).toBe(10);
   });
 
+  it('Gold Standard adds 1 gold to every gain and costs 8', () => {
+    const { state } = start('gold-standard');
+    state.items.push({ instance: 'i-gold', id: 'gold-standard', data: {}, equipped: true });
+    setAnswer(state, 'crane');
+    const solved = act(state, { type: 'guess', word: 'crane' });
+    expect(solved.state.gold).toBe(21); // 12 start + 8 solve + 1 bonus
+
+    solved.state.phase = 'shop';
+    solved.state.shop = shopState();
+    solved.state.items.push({ instance: 'i-glass', id: 'hourglass', data: {}, equipped: true });
+    const before = solved.state.gold;
+    const base = Math.floor((ITEM_BY_ID.get('hourglass')?.price ?? 2) / 2);
+    const sold = act(solved.state, { type: 'sell', instance: 'i-glass' });
+    expect(sold.state.gold).toBe(before + base + 1); // sale gold + 1 bonus
+
+    expect(ITEM_BY_ID.get('gold-standard')?.price).toBe(8);
+    expect(ITEM_BY_ID.get('gold-standard')?.description).toContain('+1 gold');
+  });
+
   it('turns Time Freeze into a free guess when there is no clock', () => {
     const { state } = start();
     setAnswer(state, 'crane');

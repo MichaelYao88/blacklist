@@ -286,6 +286,12 @@ export function createCore(content: Content): Core {
         amount *= 2;
         emit(rt, { type: 'message', text: `${def.name} doubles the gold.` });
       }
+      // Flat gain bonuses stack after any multipliers.
+      for (const item of state.items) {
+        const def = itemById.get(item.id);
+        if (!def?.goldGainBonus || !isEquipped(item, def)) continue;
+        amount += def.goldGainBonus;
+      }
     }
     const before = state.gold;
     state.gold = Math.max(0, before + amount);

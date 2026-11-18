@@ -387,6 +387,8 @@ export interface ItemDef {
   slots?: number;
   /** Chance to double any gold this item's owner gains. */
   goldDoubleChance?: number;
+  /** Extra gold added to every positive gold gain. */
+  goldGainBonus?: number;
   initial?: Record<string, number>;
   on?: Reactors<ItemCtx>;
   onAcquire?: (ctx: ItemCtx) => Effect[];

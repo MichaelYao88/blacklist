@@ -19,6 +19,7 @@ const ITEM_ICONS: Record<string, string> = {
   'grey-matter': '🧠',
   'compound-interest': '📈',
   'midas-touch': '🪙',
+  'gold-standard': '💰',
   photosynthesis: '🌿',
   siphon: '🩸',
   placebo: '💊',

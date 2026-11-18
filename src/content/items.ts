@@ -262,6 +262,14 @@ export const ITEMS: ItemDef[] = [
     goldDoubleChance: 20,
   }),
   defineItem({
+    id: 'gold-standard',
+    name: 'Gold Standard',
+    description: 'Every gold gain: +1 gold.',
+    price: 8,
+    kind: 'gear',
+    goldGainBonus: 1,
+  }),
+  defineItem({
     id: 'photosynthesis',
     name: 'Photosynthesis',
     description: 'On solve: +2 max HP and heal 20% max HP.',
