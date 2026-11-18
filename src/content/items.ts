@@ -1118,7 +1118,9 @@ export const ITEMS: ItemDef[] = [
     kind: 'gear',
     on: {
       onRoundStart: (ctx) =>
-        ctx.state.spells.length === 0 ? [{ type: 'giveSpell', spell: 'random' }] : [],
+        (ctx.roundStartSpells ?? ctx.state.spells.length) === 0
+          ? [{ type: 'giveSpell', spell: 'random' }]
+          : [],
     },
   }),
   defineItem({
@@ -1129,7 +1131,9 @@ export const ITEMS: ItemDef[] = [
     kind: 'gear',
     on: {
       onRoundStart: (ctx) =>
-        ctx.state.spells.length === 0 ? [{ type: 'giveSpell', spell: 'restore' }] : [],
+        (ctx.roundStartSpells ?? ctx.state.spells.length) === 0
+          ? [{ type: 'giveSpell', spell: 'restore' }]
+          : [],
     },
   }),
   defineItem({

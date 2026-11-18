@@ -12,6 +12,7 @@ import type {
   ItemDef,
   ItemInstance,
   ItemView,
+  ItemCtx,
   KeyboardStatus,
   Letter,
   Offer,
@@ -1164,6 +1165,7 @@ export function createCore(content: Content): Core {
   function runHook<H extends HookName>(rt: Runtime, hook: H, payload: HookPayloads[H]): void {
     const state = rt.state;
     if (rt.depth > 10 || isOver(state)) return;
+    const roundStartSpells = hook === 'onRoundStart' ? state.spells.length : undefined;
 
     const bossId = state.round?.boss;
     if (bossId) {
@@ -1184,10 +1186,10 @@ export function createCore(content: Content): Core {
       const def = itemById.get(item.id);
       if (!def || !isEquipped(item, def)) continue;
       const handler = def.on?.[hook] as
-        | ((ctx: { state: RunState; self: ItemInstance }, payload: HookPayloads[H]) => Effect[])
+        | ((ctx: ItemCtx, payload: HookPayloads[H]) => Effect[])
         | undefined;
       if (!handler) continue;
-      const effects = handler({ state, self: item }, payload);
+      const effects = handler({ state, self: item, roundStartSpells }, payload);
       if (effects.length === 0) continue;
       emit(rt, { type: 'itemTriggered', instance: item.instance, hook });
       applyEffects(rt, effects, { kind: 'item', instance: item.instance }, item.instance);

@@ -324,6 +324,8 @@ export interface Ctx {
 }
 export interface ItemCtx extends Ctx {
   readonly self: ItemInstance;
+  /** Spell count before any onRoundStart item fired. */
+  readonly roundStartSpells?: number;
 }
 
 export interface HookPayloads {

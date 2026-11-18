@@ -1623,6 +1623,27 @@ describe('latest balance pass', () => {
     expect(next.state.spells.some((spell) => spell.id === 'restore')).toBe(true);
   });
 
+  it('Empty Hand, Empty Armor and Cracked Orb all use the same round-start snapshot', () => {
+    let sawOrbProc = false;
+    for (let index = 0; index < 200 && !sawOrbProc; index++) {
+      const { state } = start(`empty-stack-${index}`);
+      state.spells = [];
+      state.items.push(
+        { instance: 'i-orb', id: 'cracked-orb', data: {}, equipped: true },
+        { instance: 'i-hand-a', id: 'empty-hand', data: {}, equipped: true },
+        { instance: 'i-hand-b', id: 'empty-hand', data: {}, equipped: true },
+        { instance: 'i-armor', id: 'empty-armor', data: {}, equipped: true },
+      );
+      const next = nextRound(state);
+      const spells = next.state.spells;
+      expect(spells.length).toBeGreaterThanOrEqual(3);
+      expect(spells.filter((spell) => spell.id === 'restore').length)
+        .toBeGreaterThanOrEqual(1);
+      if (spells.length === 4) sawOrbProc = true;
+    }
+    expect(sawOrbProc).toBe(true);
+  });
+
   it('Sundial is food that adds time and removes a free guess', () => {
     const { state } = start('sundial');
     state.curses.push({ id: 'clock', stacks: 1 });
