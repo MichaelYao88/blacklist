@@ -796,7 +796,6 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('lucky-charm')).toBeUndefined();
     expect(ITEM_BY_ID.get('second-stomach')).toBeUndefined();
     expect(ITEM_BY_ID.get('preserves')).toBeUndefined();
-    expect(ITEM_BY_ID.get('piggy-bank')).toBeUndefined();
     expect(ITEM_BY_ID.get('blacklist-scholar')).toBeUndefined();
     expect(ITEM_BY_ID.get('gilded-fork')).toBeUndefined();
     expect(ITEM_BY_ID.get('rabbit-foot')).toBeUndefined();
@@ -1014,9 +1013,9 @@ describe('latest balance pass', () => {
     expect(FOOD_BY_ID.get('empty-calories')?.effects).toContainEqual({ type: 'maxHp', delta: 9 });
     expect(FOOD_BY_ID.get('one-bo-hue')?.price).toBe(4);
     expect(FOOD_BY_ID.get('warm-bowl')?.price).toBe(4);
-    expect(FOOD_BY_ID.get('banh-mi')?.price).toBe(2);
+    expect(FOOD_BY_ID.get('banh-mi')?.price).toBe(3);
     expect(FOOD_BY_ID.get('banh-mi')?.effects)
-      .toContainEqual({ type: 'healPercent', percent: 20 });
+      .toContainEqual({ type: 'healPercent', percent: 30 });
     expect(FOOD_BY_ID.get('beshbarmak')?.price).toBe(5);
     expect(FOOD_BY_ID.get('beshbarmak')?.effects)
       .toContainEqual({ type: 'maxHpMultiply', factor: 1.05 });
@@ -1080,8 +1079,8 @@ describe('latest balance pass', () => {
     expect(FOOD_BY_ID.get('pho-dac-biet')?.effects)
       .toContainEqual({ type: 'healPercent', percent: 100 });
     expect(FOOD_BY_ID.get('xiaolongbao')?.price).toBe(5);
-    expect(FOOD_BY_ID.get('cheeseburger')?.price).toBe(4);
-    expect(FOOD_BY_ID.get('double-cheeseburger')?.price).toBe(8);
+    expect(FOOD_BY_ID.get('cheeseburger')?.price).toBe(3);
+    expect(FOOD_BY_ID.get('double-cheeseburger')?.price).toBe(4);
     expect(FOOD_BY_ID.get('pani-puri')?.price).toBe(1);
     expect(FOOD_BY_ID.get('potato-chips')?.price).toBe(1);
     expect(FOOD_BY_ID.get('hagelslag')?.price).toBe(4);
@@ -1102,6 +1101,135 @@ describe('latest balance pass', () => {
     expect(FOOD_BY_ID.get('honey-cake')?.price).toBe(6);
     expect(FOOD_BY_ID.get('vitality')?.price).toBe(8);
     expect(FOOD_BY_ID.get('yin-yang')?.name).toBe('NY Cheesecake');
+  });
+
+  it('updates Arepa, Plov, cheeseburgers and cherries', () => {
+    expect(FOOD_BY_ID.get('arepa')?.price).toBe(2);
+    expect(FOOD_BY_ID.get('arepa')?.effects)
+      .toContainEqual({ type: 'healPercent', percent: 20 });
+    expect(FOOD_BY_ID.get('plov')?.price).toBe(4);
+    expect(FOOD_BY_ID.get('plov')?.effects)
+      .toContainEqual({ type: 'healMissingPercent', percent: 40 });
+    expect(FOOD_BY_ID.get('cheeseburger')?.effects)
+      .toContainEqual({ type: 'maxHp', delta: 3 });
+    expect(FOOD_BY_ID.get('cheeseburger')?.effects)
+      .toContainEqual({ type: 'damage', amount: 3, ignoreArmor: true });
+    expect(FOOD_BY_ID.get('double-cheeseburger')?.effects)
+      .toContainEqual({ type: 'maxHp', delta: 6 });
+    expect(FOOD_BY_ID.get('cherries')?.description).toContain('gain a Heal spell');
+
+    const burger = start('cheeseburger');
+    burger.state.phase = 'shop';
+    burger.state.gold = 20;
+    burger.state.hp = 10;
+    burger.state.armor = 4;
+    burger.state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'cheeseburger', price: 3 }]);
+    const eaten = act(burger.state, { type: 'buy', offerId: 'o0' });
+    expect(eaten.state.maxHp).toBe(19);
+    expect(eaten.state.hp).toBe(7);
+    expect(eaten.state.armor).toBe(4);
+  });
+
+  it('raises The Toll to 40% per stack', () => {
+    expect(CURSE_BY_ID.get('toll')?.shopPriceAdd).toBe(0.4);
+    expect(CURSE_BY_ID.get('toll')?.description).toContain('40%');
+  });
+
+  it('Knafeh queues the previous answer for the next round', () => {
+    const { state } = start('knafeh');
+    state.lastAnswer = 'crane';
+    state.phase = 'shop';
+    state.gold = 20;
+    state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'knafeh', price: 6 }]);
+    const armorBefore = state.maxArmor;
+    const bought = act(state, { type: 'buy', offerId: 'o0' });
+    expect(bought.state.maxArmor).toBe(armorBefore + 1);
+    expect(bought.state.nextRoundGuess).toBe('crane');
+
+    bought.state.nodeIndex = 0;
+    bought.state.nodes[1] = { kind: 'round' };
+    bought.state.phase = 'shop';
+    bought.state.shop = shopState();
+    const next = act(bought.state, { type: 'continue' });
+    expect(next.state.round?.guesses[0]?.word).toBe('crane');
+    expect(next.state.round?.guesses[0]?.free).toBe(true);
+    expect(next.state.nextRoundGuess).toBeUndefined();
+  });
+
+  it('King Mushroom caps the next round at 2 damage per wrong guess', () => {
+    const { state } = start('king-mushroom');
+    state.phase = 'shop';
+    state.gold = 20;
+    state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'king-mushroom', price: 5 }]);
+    const bought = act(state, { type: 'buy', offerId: 'o0' });
+    expect(bought.state.nextRoundDamageCap).toBe(2);
+
+    bought.state.nodeIndex = 0;
+    bought.state.nodes[1] = { kind: 'round' };
+    bought.state.phase = 'shop';
+    bought.state.shop = shopState();
+    const round = act(bought.state, { type: 'continue' });
+    setAnswer(round.state, 'crane');
+    round.state.round!.baseDamage = 9;
+    round.state.round!.freeLeft = 0;
+    round.state.armor = 0;
+    const hpBefore = round.state.hp;
+    const guessed = act(round.state, { type: 'guess', word: 'slate' });
+    expect(hpBefore - guessed.state.hp).toBe(2);
+  });
+
+  it('Spell Pepper doubles the next spell', () => {
+    const { state } = start('spell-pepper');
+    state.items.push({ instance: 'i-pepper', id: 'spell-pepper', data: {}, equipped: true });
+    state.spells.push({ instance: 's-heal', id: 'heal' });
+    state.hp = 4;
+    state.phase = 'shop';
+    const used = act(state, { type: 'useItem', instance: 'i-pepper' });
+    expect(used.state.nextSpellDouble).toBe(true);
+    expect(used.state.items.some((item) => item.id === 'spell-pepper')).toBe(false);
+
+    const cast = act(used.state, { type: 'castSpell', instance: 's-heal' });
+    expect(cast.state.hp).toBe(16); // heal 8 twice
+    expect(cast.state.nextSpellDouble).toBe(false);
+  });
+
+  it('Chilaquiles doubles the next sale', () => {
+    const { state } = start('chilaquiles');
+    state.phase = 'shop';
+    state.shop = shopState();
+    state.items.push(
+      { instance: 'i-chil', id: 'chilaquiles', data: {}, equipped: true },
+      { instance: 'i-glass', id: 'hourglass', data: {}, equipped: true },
+    );
+    const goldBefore = state.gold;
+    const used = act(state, { type: 'useItem', instance: 'i-chil' });
+    expect(used.state.nextSaleDouble).toBe(true);
+    const sold = act(used.state, { type: 'sell', instance: 'i-glass' });
+    const base = Math.floor((ITEM_BY_ID.get('hourglass')?.price ?? 2) / 2);
+    expect(sold.state.gold - goldBefore).toBe(base * 2);
+  });
+
+  it('re-implements Piggy Bank at 2 gold plus 2 per round held', () => {
+    const def = ITEM_BY_ID.get('piggy-bank');
+    expect(def?.price).toBe(2);
+    const item = { instance: 'i-pig', id: 'piggy-bank', data: { held: 4 }, equipped: true };
+    expect(def?.sellValue?.({ state: start('piggy-value').state, self: item })).toBe(10);
+    expect(def?.dynamicDescription?.({ held: 4 })).toContain('10 gold');
+  });
+
+  it('Midnight Snack is vision-gated and shows counts for 2 rounds', () => {
+    const snack = FOOD_BY_ID.get('midnight-snack');
+    expect(snack?.requiresVisionCurse).toBe(1);
+    expect(snack?.effects).toContainEqual({ type: 'visionCounts', rounds: 2 });
+
+    const { state } = start('midnight-counts');
+    state.curses.push({ id: 'censor', stacks: 1 });
+    state.visionCountsRounds = 2;
+    setAnswer(state, 'crane');
+    const guessed = act(state, { type: 'guess', word: 'slate' });
+    const phase = game.view(guessed.state).phase;
+    if (phase.kind !== 'round') throw new Error('expected round');
+    expect(phase.board.guesses[0]?.counts).toBeDefined();
   });
 
   it('Pho Dac Biet heals to full and Jumbo Hot Dog trades slots for HP', () => {
@@ -1133,15 +1261,16 @@ describe('latest balance pass', () => {
     expect(bought.state.shop?.offers.some((offer) => offer.def === 'masala-dosa')).toBe(false);
   });
 
-  it('Banh Mi and Beshbarmak heal by percentage of max HP', () => {    const banh = start('banh-mi');
+  it('Banh Mi and Beshbarmak heal by percentage of max HP', () => {
+    const banh = start('banh-mi');
     banh.state.phase = 'shop';
     banh.state.gold = 20;
     banh.state.hp = 5;
-    banh.state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'banh-mi', price: 2 }]);
+    banh.state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'banh-mi', price: 3 }]);
     const eaten = act(banh.state, { type: 'buy', offerId: 'o0' });
     expect(eaten.state.maxHp).toBe(16);
-    expect(eaten.state.hp).toBe(9); // 20% of 16 max HP, rounded up
-    expect(eaten.state.gold).toBe(18);
+    expect(eaten.state.hp).toBe(10); // 30% of 16 max HP, rounded up
+    expect(eaten.state.gold).toBe(17);
 
     const besh = start('beshbarmak');
     besh.state.phase = 'shop';

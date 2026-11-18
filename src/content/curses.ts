@@ -203,12 +203,12 @@ export const CURSES: CurseDef[] = [
   defineCurse({
     id: 'toll',
     name: 'The Toll',
-    description: 'Shop prices rise by 25% per stack.',
-    rules: ['Each stack adds 25% to shop prices.'],
+    description: 'Shop prices rise by 40% per stack.',
+    rules: ['Each stack adds 40% to shop prices.'],
     art: 'censor',
     tags: ['shop', 'economy'],
     maxStacks: Infinity,
-    shopPriceAdd: 0.25,
+    shopPriceAdd: 0.4,
   }),
   defineCurse({
     id: 'clumsy',

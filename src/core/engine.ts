@@ -202,6 +202,7 @@ export function createCore(content: Content): Core {
     state: RunState,
     def: (typeof content.foods)[number],
   ): boolean => {
+    if (def.requiresVisionCurse && sightCount(state) < def.requiresVisionCurse) return false;
     if (def.effects.some(
       (effect) => effect.type === 'purgeLetter' && state.purged.includes(effect.letter),
     )) {
@@ -748,7 +749,7 @@ export function createCore(content: Content): Core {
 
     switch (effect.type) {
       case 'damage':
-        dealDamage(rt, effect.amount, source);
+        dealDamage(rt, effect.amount, source, { ignoreArmor: effect.ignoreArmor });
         break;
       case 'heal':
         heal(rt, effect.amount, source);
@@ -1100,6 +1101,21 @@ export function createCore(content: Content): Core {
         removeCurseEntry(rt, rngPick(state, state.curses).id);
         break;
       }
+      case 'queueLastAnswer':
+        if (state.lastAnswer) state.nextRoundGuess = state.lastAnswer;
+        break;
+      case 'damageCapNextRound':
+        state.nextRoundDamageCap = effect.amount;
+        break;
+      case 'visionCounts':
+        state.visionCountsRounds = Math.max(state.visionCountsRounds ?? 0, effect.rounds);
+        break;
+      case 'armSpellDouble':
+        state.nextSpellDouble = true;
+        break;
+      case 'armSaleDouble':
+        state.nextSaleDouble = true;
+        break;
       case 'awaitCurseRemoval':
         state.pendingCurseRemoval += 1;
         break;
@@ -1192,7 +1208,10 @@ export function createCore(content: Content): Core {
       const def = itemById.get(item.id);
       return def?.id === 'tally-lens' && isEquipped(item, def);
     });
-    const counts = vision.length > 0 && tally ? truthCounts(guess.truth) : undefined;
+    const snack = (state.visionCountsRounds ?? 0) > 0;
+    const counts = vision.length > 0 && (tally || snack)
+      ? truthCounts(guess.truth)
+      : undefined;
     return { word: guess.word, tiles, counts };
   }
 
@@ -1322,6 +1341,21 @@ export function createCore(content: Content): Core {
       roundNumber: state.stats.rounds + 1,
       baseDamage: round.baseDamage,
     });
+    if (isOver(state)) return;
+
+    // Knafeh queues the previous solved word for the very next round only.
+    if (state.nextRoundGuess) {
+      const word = state.nextRoundGuess;
+      state.nextRoundGuess = undefined;
+      if (
+        word.length === WORD_LENGTH
+        && !state.blacklist.includes(word)
+        && !word.split('').some((ch) => state.purged.includes(ch))
+        && !round.guesses.some((guess) => guess.word === word)
+      ) {
+        scorePlayerGuess(rt, word, 'friend');
+      }
+    }
   }
 
   function victory(rt: Runtime): void {
@@ -1395,6 +1429,11 @@ export function createCore(content: Content): Core {
     if (isOver(state)) return;
 
     state.stats.rounds++;
+    // One-shot round modifiers expire when the encounter ends.
+    if (state.nextRoundDamageCap !== undefined) state.nextRoundDamageCap = undefined;
+    if ((state.visionCountsRounds ?? 0) > 0) {
+      state.visionCountsRounds = (state.visionCountsRounds ?? 0) - 1;
+    }
     state.summary = {
       outcome,
       answer: round.answer,
@@ -1634,7 +1673,10 @@ export function createCore(content: Content): Core {
       const boss = round.boss ? bossById.get(round.boss) : undefined;
       if (!boss?.noGuessDamage) {
         round.paidGuesses++;
-        const amount = guessDamageFor(state, round);
+        const raw = guessDamageFor(state, round);
+        const amount = state.nextRoundDamageCap !== undefined
+          ? Math.min(raw, state.nextRoundDamageCap)
+          : raw;
         if (amount > 0) {
           dealDamage(
             rt,
@@ -1961,9 +2003,15 @@ export function createCore(content: Content): Core {
     const value = def.sellValue
       ? def.sellValue({ state, self: item })
       : Math.floor(def.price / 2);
+    const doubled = state.nextSaleDouble === true;
+    const paid = doubled ? value * 2 : value;
+    if (doubled) {
+      state.nextSaleDouble = false;
+      emit(rt, { type: 'message', text: 'Chilaquiles doubled the sale.' });
+    }
     const view = itemView(state, item);
     removeItem(rt, instance, 'sold');
-    changeGold(rt, value, RULES);
+    changeGold(rt, paid, RULES);
     runHook(rt, 'onSell', { item: view });
   }
 
@@ -2332,8 +2380,14 @@ export function createCore(content: Content): Core {
       return;
     }
     state.spells.splice(index, 1);
+    const doubled = state.nextSpellDouble === true;
+    if (doubled) state.nextSpellDouble = false;
     emit(rt, { type: 'spellCast', spell: spellView(spell) });
     applyEffects(rt, def.cast({ state }), { kind: 'spell', spell: def.id });
+    if (doubled && !isOver(state)) {
+      emit(rt, { type: 'message', text: 'Spell Pepper doubles the spell.' });
+      applyEffects(rt, def.cast({ state }), { kind: 'spell', spell: def.id });
+    }
     if (isOver(state)) return;
     runHook(rt, 'onSpellCast', { spell: def.id });
   }

@@ -251,7 +251,7 @@ export interface HappeningState {
 }
 
 export type Effect =
-  | { type: 'damage'; amount: number }
+  | { type: 'damage'; amount: number; ignoreArmor?: boolean }
   | { type: 'heal'; amount: number }
   | { type: 'healPercent'; percent: number }
   | { type: 'healMissingPercent'; percent: number }
@@ -302,6 +302,11 @@ export type Effect =
   | { type: 'removeRandomCurse'; chancePct?: number }
   | { type: 'rerollShop' }
   | { type: 'giveMissingSpells'; chancePct?: number }
+  | { type: 'queueLastAnswer' }
+  | { type: 'damageCapNextRound'; amount: number }
+  | { type: 'visionCounts'; rounds: number }
+  | { type: 'armSpellDouble' }
+  | { type: 'armSaleDouble' }
   | { type: 'awaitCurseRemoval' }
   | { type: 'bossData'; key: string; value: number }
   | { type: 'message'; text: string };
@@ -429,6 +434,8 @@ export interface FoodDef {
   price: number;
   rarity?: 'common' | 'rare';
   requiresClock?: boolean;
+  /** Hidden from shops/rewards until this many vision curses exist. */
+  requiresVisionCurse?: number;
   effects: Effect[];
 }
 
@@ -501,6 +508,16 @@ export interface RunState {
   purged: Letter[];
   usedAnswers: string[];
   lastAnswer?: string;
+  /** Knafeh: guess this word for free at the start of the next round. */
+  nextRoundGuess?: string;
+  /** King Mushroom: cap the next round's wrong-guess damage. */
+  nextRoundDamageCap?: number;
+  /** Midnight Snack: show correct/misplaced counts for this many rounds. */
+  visionCountsRounds?: number;
+  /** Spell Pepper: the next player-cast spell resolves twice. */
+  nextSpellDouble?: boolean;
+  /** Chilaquiles: the next sold item pays double. */
+  nextSaleDouble?: boolean;
   pendingPurge: number;
   /** Absent letters queued to reveal at the start of the next round. */
   pendingAbsent: number;

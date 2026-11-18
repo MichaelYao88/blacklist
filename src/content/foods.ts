@@ -53,9 +53,9 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'banh-mi',
     name: 'Banh Mi',
-    description: 'Heal 20% of max HP. No slot.',
-    price: 2,
-    effects: [{ type: 'healPercent', percent: 20 }],
+    description: 'Heal 30% of max HP. No slot.',
+    price: 3,
+    effects: [{ type: 'healPercent', percent: 30 }],
   }),
   defineFood({
     id: 'beshbarmak',
@@ -87,22 +87,61 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'cheeseburger',
     name: 'Cheeseburger',
-    description: '+3 max HP and heal 10% of missing HP. No slot.',
-    price: 4,
+    description: '+3 max HP, lose 3 HP. No slot.',
+    price: 3,
     effects: [
       { type: 'maxHp', delta: 3 },
-      { type: 'healMissingPercent', percent: 10 },
+      { type: 'damage', amount: 3, ignoreArmor: true },
     ],
   }),
   defineFood({
     id: 'double-cheeseburger',
     name: 'Double Cheeseburger',
-    description: '+6 max HP and heal 20% of missing HP. No slot.',
-    price: 8,
+    description: '+6 max HP, lose 6 HP. No slot.',
+    price: 4,
     effects: [
       { type: 'maxHp', delta: 6 },
-      { type: 'healMissingPercent', percent: 20 },
+      { type: 'damage', amount: 6, ignoreArmor: true },
     ],
+  }),
+  defineFood({
+    id: 'arepa',
+    name: 'Arepa',
+    description: 'Heal 20% of max HP. No slot.',
+    price: 2,
+    effects: [{ type: 'healPercent', percent: 20 }],
+  }),
+  defineFood({
+    id: 'plov',
+    name: 'Plov',
+    description: 'Heal 40% of missing HP. No slot.',
+    price: 4,
+    effects: [{ type: 'healMissingPercent', percent: 40 }],
+  }),
+  defineFood({
+    id: 'knafeh',
+    name: 'Knafeh',
+    description: '+1 max armor. Next round: the last solved answer is guessed for free. No slot.',
+    price: 6,
+    effects: [
+      { type: 'maxArmor', delta: 1 },
+      { type: 'queueLastAnswer' },
+    ],
+  }),
+  defineFood({
+    id: 'king-mushroom',
+    name: 'King Mushroom',
+    description: 'Next round: wrong guesses deal only 2 damage. No slot.',
+    price: 5,
+    effects: [{ type: 'damageCapNextRound', amount: 2 }],
+  }),
+  defineFood({
+    id: 'midnight-snack',
+    name: 'Midnight Snack',
+    description: 'Next 2 rounds: guesses show correct and misplaced counts. Only appears with a vision curse.',
+    price: 4,
+    requiresVisionCurse: 1,
+    effects: [{ type: 'visionCounts', rounds: 2 }],
   }),
   defineFood({
     id: 'die-coke',
@@ -303,7 +342,7 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'cherries',
     name: 'Cherries',
-    description: 'Heal 2 HP. 30%: Heal. No slot.',
+    description: 'Heal 2 HP. 30% chance: gain a Heal spell. No slot.',
     price: 2,
     effects: [
       { type: 'heal', amount: 2 },

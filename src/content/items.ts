@@ -1402,6 +1402,40 @@ export const ITEMS: ItemDef[] = [
     rarity: 'rare',
     doubleFood: true,
   }),
+  defineItem({
+    id: 'spell-pepper',
+    name: 'Spell Pepper',
+    description: 'Consumable. The next spell you cast casts twice.',
+    price: 3,
+    kind: 'consumable',
+    slots: 0,
+    onUse: () => [{ type: 'armSpellDouble' }],
+  }),
+  defineItem({
+    id: 'chilaquiles',
+    name: 'Chilaquiles',
+    description: 'Consumable. The next item you sell sells for double.',
+    price: 3,
+    kind: 'consumable',
+    slots: 0,
+    onUse: () => [{ type: 'armSaleDouble' }],
+  }),
+  defineItem({
+    id: 'piggy-bank',
+    name: 'Piggy Bank',
+    description: 'Sells for 2 gold. +2 more gold per round held.',
+    price: 2,
+    kind: 'gear',
+    initial: { held: 0 },
+    on: {
+      onRoundStart: (ctx) => [
+        { type: 'setItemData', stat: 'held', value: (ctx.self.data.held ?? 0) + 1 },
+      ],
+    },
+    dynamicDescription: (data) =>
+      `Sells for ${2 + 2 * (data.held ?? 0)} gold. +2 more gold per round held.`,
+    sellValue: (ctx) => 2 + 2 * (ctx.self.data.held ?? 0),
+  }),
 ];
 
 export const ITEM_BY_ID = new Map(ITEMS.map((i) => [i.id, i]));
