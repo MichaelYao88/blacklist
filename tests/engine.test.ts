@@ -1032,10 +1032,10 @@ describe('latest balance pass', () => {
     expect(FOOD_BY_ID.get('die-coke')?.price).toBe(1);
     expect(FOOD_BY_ID.get('die-coke')?.effects)
       .toContainEqual({ type: 'healDiceGold', min: 1, max: 6 });
-    expect(FOOD_BY_ID.get('overhealers-delight')?.price).toBe(6);
+    expect(FOOD_BY_ID.get('overhealers-delight')?.price).toBe(2);
     expect(FOOD_BY_ID.get('overhealers-delight')?.effects)
       .toContainEqual({ type: 'healOverflowMaxHp', amount: 8 });
-    expect(FOOD_BY_ID.get('overhealers-delicacy')?.price).toBe(12);
+    expect(FOOD_BY_ID.get('overhealers-delicacy')?.price).toBe(5);
     expect(FOOD_BY_ID.get('overhealers-delicacy')?.effects)
       .toContainEqual({ type: 'healOverflowMaxHp', amount: 12 });
     expect(FOOD_BY_ID.get('rusty-plate')?.price).toBe(2);

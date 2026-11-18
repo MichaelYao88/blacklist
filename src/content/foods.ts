@@ -61,14 +61,14 @@ export const FOODS: FoodDef[] = [
     id: 'overhealers-delight',
     name: "Overhealer's Delight",
     description: 'Heal 8 HP. Excess healing becomes max HP. No slot.',
-    price: 6,
+    price: 2,
     effects: [{ type: 'healOverflowMaxHp', amount: 8 }],
   }),
   defineFood({
     id: 'overhealers-delicacy',
     name: "Overhealer's Delicacy",
     description: 'Heal 12 HP. Excess healing becomes max HP. No slot.',
-    price: 12,
+    price: 5,
     effects: [{ type: 'healOverflowMaxHp', amount: 12 }],
   }),
   defineFood({
