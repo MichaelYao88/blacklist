@@ -1295,6 +1295,25 @@ describe('latest balance pass', () => {
     expect(eaten.state.gold).toBe(11);
   });
 
+  it('Coveted Cake trades an item slot for a random rare relic', () => {
+    const def = FOOD_BY_ID.get('coveted-cake');
+    expect(def?.price).toBe(11);
+    expect(def?.rarity).toBe('rare');
+    expect(def?.effects).toContainEqual({ type: 'slots', delta: -1 });
+    expect(def?.effects).toContainEqual({ type: 'addRandomRelic' });
+
+    const { state } = start('coveted-cake');
+    state.phase = 'shop';
+    state.gold = 20;
+    const slotsBefore = state.slots;
+    state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'coveted-cake', price: 11 }]);
+    const eaten = act(state, { type: 'buy', offerId: 'o0' });
+    expect(eaten.state.gold).toBe(9);
+    expect(eaten.state.slots).toBe(slotsBefore - 1);
+    const relic = eaten.state.items.find((item) => ITEM_BY_ID.get(item.id)?.rarity === 'rare');
+    expect(relic).toBeDefined();
+  });
+
   it('Pho Dac Biet heals to full and Jumbo Hot Dog trades slots for HP', () => {
     const pho = start('pho-dac-biet');
     pho.state.phase = 'shop';

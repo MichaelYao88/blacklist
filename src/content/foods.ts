@@ -539,6 +539,17 @@ export const FOODS: FoodDef[] = [
     price: 6,
     effects: [{ type: 'removeRandomCurse', chancePct: 10 }],
   }),
+  defineFood({
+    id: 'coveted-cake',
+    name: 'Coveted Cake',
+    description: '-1 item slot. Gain a random rare relic. No slot.',
+    price: 11,
+    rarity: 'rare',
+    effects: [
+      { type: 'slots', delta: -1 },
+      { type: 'addRandomRelic' },
+    ],
+  }),
 ];
 
 export const FOOD_BY_ID = new Map(FOODS.map((f) => [f.id, f]));
