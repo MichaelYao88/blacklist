@@ -495,7 +495,7 @@ describe('item and food batch', () => {
     expect(guess?.free).toBe(true);
     expect(next.state.hp).toBe(16);
     expect(ITEM_BY_ID.get('old-mcdonald')?.rarity).toBe('rare');
-    expect(ITEM_BY_ID.get('old-mcdonald')?.price).toBe(24);
+    expect(ITEM_BY_ID.get('old-mcdonald')?.price).toBe(30);
   });
 
   it('removes the damage cap and prices letter foods by rarity', () => {
@@ -847,25 +847,7 @@ describe('latest balance pass', () => {
     }
   });
 
-  it('Ritual Circle gives max armor and Heal restores half max HP', () => {
-    const ritual = start('ritual');
-    ritual.state.items.push({
-      instance: 'i-ritual',
-      id: 'ritual-circle',
-      data: { _mask: 0, types: 0, used: 0 },
-      equipped: true,
-    });
-    ritual.state.spells.push(
-      { instance: 's-omen', id: 'omen' },
-      { instance: 's-heal', id: 'heal' },
-      { instance: 's-immunity', id: 'immunity' },
-    );
-    let current = ritual.state;
-    for (const instance of ['s-omen', 's-heal', 's-immunity']) {
-      current = act(current, { type: 'castSpell', instance }).state;
-    }
-    expect(current.maxArmor).toBe(4);
-
+  it('Heal restores half max HP', () => {
     const heal = start('heal-half');
     heal.state.hp = 4;
     heal.state.spells.push({ instance: 's-heal', id: 'heal' });
@@ -1213,6 +1195,107 @@ describe('latest balance pass', () => {
     expect(next.state.round?.freeLeft).toBe(0);
   });
 
+  it('removes Echo Chamber, Ritual Circle and Second Wind', () => {
+    expect(ITEM_BY_ID.get('echo-chamber')).toBeUndefined();
+    expect(ITEM_BY_ID.get('ritual-circle')).toBeUndefined();
+    expect(ITEM_BY_ID.get('second-wind')).toBeUndefined();
+  });
+
+  it('uses the new rare relic prices', () => {
+    const prices: Record<string, number> = {
+      'acquired-taste': 26,
+      'chrono-anchor': 28,
+      counterweight: 26,
+      'loaded-dice': 26,
+      'loose-tongue': 24,
+      'mending-plate': 26,
+      'old-mcdonald': 30,
+      'oracle-skull': 26,
+      'phoenix-egg': 18,
+      potluck: 26,
+      quickdraw: 24,
+      'speed-dial': 28,
+      spellplate: 24,
+      'thorn-crown': 26,
+      'vowel-sigil': 24,
+      'warding-idol': 26,
+    };
+    for (const [id, price] of Object.entries(prices)) {
+      expect(ITEM_BY_ID.get(id)?.price, id).toBe(price);
+    }
+  });
+
+  it('Quickdraw uses a 12s window and pays gold inside it', () => {
+    const early = start('quickdraw-early');
+    early.state.items.push({ instance: 'i-q', id: 'quickdraw', data: {}, equipped: true });
+    const first = nextRound(early.state);
+    setAnswer(first.state, 'crane');
+    first.state.round!.freeLeft = 0;
+    first.state.round!.elapsedMs = 11_000;
+    const shielded = act(first.state, { type: 'guess', word: 'slate' });
+    expect(shielded.state.round?.guesses[0].free).toBe(true);
+    expect(shielded.state.hp).toBe(16);
+    expect(shielded.state.gold).toBe(11);
+
+    const late = start('quickdraw-late');
+    late.state.items.push({ instance: 'i-q', id: 'quickdraw', data: {}, equipped: true });
+    const second = nextRound(late.state);
+    setAnswer(second.state, 'crane');
+    second.state.round!.freeLeft = 0;
+    second.state.round!.elapsedMs = 13_000;
+    second.state.armor = 0;
+    const unshielded = act(second.state, { type: 'guess', word: 'slate' });
+    expect(unshielded.state.round?.guesses[0].free).toBe(false);
+    expect(unshielded.state.hp).toBe(13);
+  });
+
+  it('Mending Plate starts with no armor bonus and pays per 5 HP healed', () => {
+    const { state } = start('mending-plate');
+    state.items.push({
+      instance: 'i-mend',
+      id: 'mending-plate',
+      data: { healed: 0 },
+      equipped: true,
+    });
+    expect(state.maxArmor).toBe(2);
+    state.hp = 10;
+    state.spells = [{ instance: 's-heal', id: 'heal' }];
+    const cast = act(state, { type: 'castSpell', instance: 's-heal' });
+    expect(cast.state.maxArmor).toBe(3);
+  });
+
+  it('Acquired Taste gives 4 max HP per new food', () => {
+    const { state } = start('acquired-taste');
+    state.items.push({
+      instance: 'i-taste',
+      id: 'acquired-taste',
+      data: { _mask: 0, tasted: 0 },
+      equipped: true,
+    });
+    state.phase = 'shop';
+    state.gold = 40;
+    state.shop = shopState([
+      { id: 'f0', kind: 'eat', def: 'snack', price: 3 },
+      { id: 'f1', kind: 'eat', def: 'candy', price: 4 },
+    ]);
+    let current = state;
+    current = act(current, { type: 'buy', offerId: 'f0' }).state;
+    current = act(current, { type: 'buy', offerId: 'f1' }).state;
+    expect(current.maxHp).toBe(24);
+  });
+
+  it('applies the latest tweaks and text', () => {
+    expect(ITEM_BY_ID.get('vowel-tithe')?.price).toBe(6);
+    expect(ITEM_BY_ID.get('vowel-tithe')?.description).toContain('25%');
+    expect(ITEM_BY_ID.get('tithe-box')?.price).toBe(10);
+    expect(ITEM_BY_ID.get('iron-hide')?.price).toBe(6);
+    expect(ITEM_BY_ID.get('thorn-crown')?.description).toContain('30%');
+    expect(ITEM_BY_ID.get('vampire-teeth')?.description).toContain('5% max HP');
+    expect(ITEM_BY_ID.get('chrono-anchor')?.description).toContain('Taking damage: 30% chance');
+    expect(ITEM_BY_ID.get('chrono-anchor')?.on?.onSolve).toBeUndefined();
+    expect(ITEM_BY_ID.get('chrono-anchor')?.on?.onDamageTaken).toBeDefined();
+  });
+
   it('applies the latest prices and text', () => {
     expect(FOOD_BY_ID.get('plating')?.price).toBe(8);
     expect(ITEM_BY_ID.get('compound-interest')?.price).toBe(6);
@@ -1229,7 +1312,6 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('tithe-box')?.description).toContain('10% chance');
     expect(ITEM_BY_ID.get('mimic-mouth')?.description).toContain('Once per round');
     expect(ITEM_BY_ID.get('second-skin')?.description).toContain('half your max armor');
-    expect(ITEM_BY_ID.get('ritual-circle')?.description).toContain('+2 max armor');
     expect(SPELL_BY_ID.get('heal')?.description).toBe('Heal half of your max HP.');
     expect(CURSE_BY_ID.get('tax')?.description).toBe('Encounter gold is halved.');
   });

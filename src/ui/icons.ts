@@ -28,7 +28,6 @@ const ITEM_ICONS: Record<string, string> = {
   'trophy-hunter': '🏆',
   necronomicon: '📕',
   metronome: '🎵',
-  'second-wind': '🌬️',
   'black-market-ledger': '📒',
   'purge-token': '🧽',
   'boss-trophy': '🥇',
@@ -47,7 +46,6 @@ const ITEM_ICONS: Record<string, string> = {
   'nest-egg': '🪺',
   'oracle-skull': '💀',
   'thorn-crown': '👑',
-  'echo-chamber': '🕳️',
   'phoenix-egg': '🥚',
   'chrono-anchor': '⚓',
   'speed-dial': '📞',
@@ -95,7 +93,6 @@ const ITEM_ICONS: Record<string, string> = {
   'growth-spurt': '🌱',
   counterweight: '⚖️',
   'acquired-taste': '👅',
-  'ritual-circle': '🔯',
   potluck: '🥘',
 };
 

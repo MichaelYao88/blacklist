@@ -145,14 +145,14 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'quickdraw',
     name: 'Quickdraw',
-    description: 'First 10s of each round: guesses are free. Guesses in that window: +1 gold.',
-    price: 18,
+    description: 'First 12s of each round: guesses are free. Guesses in that window: +1 gold.',
+    price: 24,
     kind: 'gear',
     rarity: 'rare',
     on: {
-      onRoundStart: () => [{ type: 'timedImmunity', ms: 10_000 }],
+      onRoundStart: () => [{ type: 'timedImmunity', ms: 12_000 }],
       onGuessScored: (_ctx, p) =>
-        p.elapsedMs < 10_000 ? [{ type: 'gold', amount: 1 }] : [],
+        p.elapsedMs < 12_000 ? [{ type: 'gold', amount: 1 }] : [],
     },
   }),
   defineItem({
@@ -170,7 +170,7 @@ export const ITEMS: ItemDef[] = [
     id: 'iron-hide',
     name: 'Iron Hide',
     description: 'Every hit deals 1 less.',
-    price: 8,
+    price: 6,
     kind: 'gear',
     modifyDamage: (_ctx, amount) => Math.max(0, amount - 1),
   }),
@@ -215,7 +215,7 @@ export const ITEMS: ItemDef[] = [
     id: 'old-mcdonald',
     name: 'Old McDonald',
     description: 'Round start: EIEIO is guessed for free.',
-    price: 24,
+    price: 30,
     kind: 'gear',
     rarity: 'rare',
     on: {
@@ -271,10 +271,10 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'vampire-teeth',
     name: 'Vampire Teeth',
-    description: 'End of round: heal 2 HP.',
+    description: 'End of round: heal 5% max HP.',
     price: 7,
     kind: 'gear',
-    on: { onRoundEnd: () => [{ type: 'heal', amount: 2 }] },
+    on: { onRoundEnd: () => [{ type: 'healPercent', percent: 5 }] },
   }),
   defineItem({
     id: 'placebo',
@@ -415,19 +415,6 @@ export const ITEMS: ItemDef[] = [
     },
   }),
   defineItem({
-    id: 'second-wind',
-    name: 'Second Wind',
-    description: 'First death: revive at 50% HP. Consumed.',
-    price: 12,
-    kind: 'gear',
-    on: {
-      onDeath: (ctx) => [
-        { type: 'revive', hp: Math.ceil(ctx.state.maxHp * 0.5) },
-        { type: 'consumeSelf' },
-      ],
-    },
-  }),
-  defineItem({
     id: 'black-market-ledger',
     name: 'Black Market Ledger',
     description: 'Shop purchase: 40% chance of a random spell.',
@@ -510,7 +497,7 @@ export const ITEMS: ItemDef[] = [
     id: 'loose-tongue',
     name: 'Loose Tongue',
     description: 'Any five letters are a valid guess. Nonsense still scores.',
-    price: 18,
+    price: 24,
     kind: 'gear',
     rarity: 'rare',
     allowInvalidGuesses: true,
@@ -543,11 +530,11 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'vowel-tithe',
     name: 'Vowel Tithe',
-    description: 'Spell cast: 30% chance of another random spell.',
-    price: 9,
+    description: 'Spell cast: 25% chance of another random spell.',
+    price: 6,
     kind: 'gear',
     on: {
-      onSpellCast: () => [{ type: 'giveSpell', spell: 'random', chancePct: 30 }],
+      onSpellCast: () => [{ type: 'giveSpell', spell: 'random', chancePct: 25 }],
     },
   }),
   defineItem({
@@ -715,7 +702,7 @@ export const ITEMS: ItemDef[] = [
     id: 'spellplate',
     name: 'Spellplate',
     description: 'Cast a spell: +1 max armor.',
-    price: 18,
+    price: 24,
     kind: 'gear',
     rarity: 'rare',
     on: { onSpellCast: () => [{ type: 'maxArmor', delta: 1 }] },
@@ -723,18 +710,17 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'mending-plate',
     name: 'Mending Plate',
-    description: 'Gives +1 armor now. +1 more max armor per 4 HP healed.',
-    price: 20,
+    description: '+1 max armor per 5 HP healed.',
+    price: 26,
     kind: 'gear',
     rarity: 'rare',
     initial: { healed: 0 },
-    onAcquire: () => [{ type: 'maxArmor', delta: 1 }],
     on: {
       onHeal: (ctx, p) => {
         const total = ctx.self.data.healed + p.amount;
-        const armor = Math.floor(total / 4);
+        const armor = Math.floor(total / 5);
         return [
-          { type: 'setItemData', stat: 'healed', value: total % 4 },
+          { type: 'setItemData', stat: 'healed', value: total % 5 },
           ...Array.from({ length: armor }, () => ({ type: 'maxArmor' as const, delta: 1 })),
         ];
       },
@@ -781,7 +767,7 @@ export const ITEMS: ItemDef[] = [
     id: 'tithe-box',
     name: 'Tithe Box',
     description: 'Every time you spend gold: 10% chance of a Heal spell.',
-    price: 9,
+    price: 10,
     kind: 'gear',
     on: {
       onGoldSpent: () => [{ type: 'giveSpell', spell: 'heal', chancePct: 10 }],
@@ -1258,7 +1244,7 @@ export const ITEMS: ItemDef[] = [
     id: 'oracle-skull',
     name: 'Oracle Skull',
     description: 'First heal each round: Omen.',
-    price: 20,
+    price: 26,
     kind: 'gear',
     rarity: 'rare',
     initial: { used: 0 },
@@ -1276,39 +1262,20 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'thorn-crown',
     name: 'Thorn Crown',
-    description: 'A hit gets through: 40% chance of a random spell.',
-    price: 20,
+    description: 'A hit gets through: 30% chance of a random spell.',
+    price: 26,
     kind: 'gear',
     rarity: 'rare',
     on: {
       onDamageTaken: (_ctx, p) =>
-        p.dealt > 0 ? [{ type: 'giveSpell', spell: 'random', chancePct: 40 }] : [],
-    },
-  }),
-  defineItem({
-    id: 'echo-chamber',
-    name: 'Echo Chamber',
-    description: 'First all-absent guess of the run: random spell.',
-    price: 20,
-    kind: 'gear',
-    rarity: 'rare',
-    initial: { used: 0 },
-    on: {
-      onGuessScored: (ctx, p) => {
-        if (ctx.self.data.used) return [];
-        if (!p.guess.truth.every((tile) => tile === 'absent')) return [];
-        return [
-          { type: 'setItemData', stat: 'used', value: 1 },
-          { type: 'giveSpell', spell: 'random' },
-        ];
-      },
+        p.dealt > 0 ? [{ type: 'giveSpell', spell: 'random', chancePct: 30 }] : [],
     },
   }),
   defineItem({
     id: 'phoenix-egg',
     name: 'Phoenix Egg',
     description: 'First death: revive at 50% HP, gain Restore. Consumed.',
-    price: 24,
+    price: 18,
     kind: 'gear',
     rarity: 'rare',
     on: {
@@ -1323,7 +1290,7 @@ export const ITEMS: ItemDef[] = [
     id: 'speed-dial',
     name: 'Speed Dial',
     description: 'Round start: cast Phone a Friend.',
-    price: 22,
+    price: 28,
     kind: 'gear',
     rarity: 'rare',
     on: {
@@ -1333,21 +1300,22 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'chrono-anchor',
     name: 'Chrono Anchor',
-    description: '+20s per round. On solve: Time Freeze.',
-    price: 22,
+    description: '+20s per round. Taking damage: 30% chance of Time Freeze.',
+    price: 28,
     kind: 'gear',
     rarity: 'rare',
     requiresClock: true,
     on: {
       onRoundStart: () => [{ type: 'addTime', ms: 20_000 }],
-      onSolve: () => [{ type: 'giveSpell', spell: 'time-freeze' }],
+      onDamageTaken: () =>
+        [{ type: 'giveSpell', spell: 'time-freeze', chancePct: 30 }],
     },
   }),
   defineItem({
     id: 'vowel-sigil',
     name: 'Vowel Sigil',
     description: 'Solve under 60s: Omen.',
-    price: 18,
+    price: 24,
     kind: 'gear',
     rarity: 'rare',
     timerInterest: true,
@@ -1360,7 +1328,7 @@ export const ITEMS: ItemDef[] = [
     id: 'warding-idol',
     name: 'Warding Idol',
     description: 'Every 10 damage blocked by armor: +1 random spell.',
-    price: 20,
+    price: 26,
     kind: 'gear',
     rarity: 'rare',
     initial: { blocked: 0 },
@@ -1380,7 +1348,7 @@ export const ITEMS: ItemDef[] = [
     id: 'loaded-dice',
     name: 'Loaded Dice',
     description: 'Every guess: 25% chance to be free.',
-    price: 20,
+    price: 26,
     kind: 'gear',
     rarity: 'rare',
     on: {
@@ -1392,7 +1360,7 @@ export const ITEMS: ItemDef[] = [
     id: 'counterweight',
     name: 'Counterweight',
     description: 'Completely blocked hit: +2 gold.',
-    price: 20,
+    price: 26,
     kind: 'gear',
     rarity: 'rare',
     on: {
@@ -1405,8 +1373,8 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'acquired-taste',
     name: 'Acquired Taste',
-    description: 'Each different food you eat this run: +1 max HP.',
-    price: 20,
+    description: 'Each different food you eat this run: +4 max HP.',
+    price: 26,
     kind: 'gear',
     rarity: 'rare',
     initial: { _mask: 0, tasted: 0 },
@@ -1420,44 +1388,8 @@ export const ITEMS: ItemDef[] = [
         return [
           { type: 'setItemData', stat: '_mask', value: next },
           { type: 'setItemData', stat: 'tasted', value: popcount(next) },
-          { type: 'maxHp', delta: 1 },
+          { type: 'maxHp', delta: 4 },
         ];
-      },
-    },
-  }),
-  defineItem({
-    id: 'ritual-circle',
-    name: 'Ritual Circle',
-    description: 'Cast 3 different spell types in one round: +1 random spell, +2 max armor.',
-    price: 20,
-    kind: 'gear',
-    rarity: 'rare',
-    initial: { _mask: 0, types: 0, used: 0 },
-    on: {
-      onRoundStart: () => [
-        { type: 'setItemData', stat: '_mask', value: 0 },
-        { type: 'setItemData', stat: 'types', value: 0 },
-        { type: 'setItemData', stat: 'used', value: 0 },
-      ],
-      onSpellCast: (ctx, p) => {
-        const bit = SPELL_BITS[p.spell];
-        if (!bit) return [];
-        const mask = ctx.self.data._mask ?? 0;
-        if (mask & bit) return [];
-        const next = mask | bit;
-        const types = popcount(next);
-        const effects: Effect[] = [
-          { type: 'setItemData', stat: '_mask', value: next },
-          { type: 'setItemData', stat: 'types', value: types },
-        ];
-        if (types >= 3 && !ctx.self.data.used) {
-          effects.push(
-            { type: 'giveSpell', spell: 'random' },
-            { type: 'maxArmor', delta: 2 },
-            { type: 'setItemData', stat: 'used', value: 1 },
-          );
-        }
-        return effects;
       },
     },
   }),
@@ -1465,7 +1397,7 @@ export const ITEMS: ItemDef[] = [
     id: 'potluck',
     name: 'Potluck',
     description: 'Food you eat applies its effects twice. On-eat triggers still fire once.',
-    price: 20,
+    price: 26,
     kind: 'gear',
     rarity: 'rare',
     doubleFood: true,
