@@ -1009,6 +1009,15 @@ button {
   color: var(--gold);
 }
 
+.key.del {
+  border-color: rgba(223, 97, 90, 0.6);
+  color: #e79a95;
+}
+
+.key.del:hover {
+  border-color: #df615a;
+}
+
 .key.correct {
   background: linear-gradient(180deg, #4eb47b, #388a5b);
   border-color: #64c990;
@@ -1037,48 +1046,6 @@ button {
   color: #4b4359;
   border-color: #362d46;
   text-decoration: line-through;
-}
-
-/* ── chronicle ───────────────────────────────────────────────────────────── */
-
-.chronicle {
-  width: min(100%, 520px);
-  padding-top: 10px;
-  border-top: 1px solid var(--line);
-}
-
-.chronicle ul {
-  list-style: none;
-  margin: 6px 0 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.chronicle li {
-  display: flex;
-  gap: 6px;
-  color: var(--muted);
-  font-size: 0.7rem;
-  line-height: 1.35;
-}
-
-.chronicle li::before {
-  content: "›";
-  color: var(--faint);
-}
-
-.chronicle li.bad {
-  color: #e79a95;
-}
-
-.chronicle li.good {
-  color: #85d3a9;
-}
-
-.chronicle li.info {
-  color: var(--muted);
 }
 
 /* ── phase cards ─────────────────────────────────────────────────────────── */

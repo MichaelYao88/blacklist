@@ -18,7 +18,7 @@ import {
   SPELL_BY_ID,
 } from '../content';
 import { LocalStore, hasSave, readMeta, recordRun, recordStart } from './store';
-import { describeEvent, escapeHtml, formatTime, reasonText, roman } from './format';
+import { escapeHtml, formatTime, reasonText, roman } from './format';
 import { glossaryText } from './glossary';
 import {
   bossColor,
@@ -55,16 +55,10 @@ interface Notice {
   text: string;
   kind: 'info' | 'good' | 'bad';
 }
-interface ChronicleLine {
-  text: string;
-  kind: 'info' | 'good' | 'bad';
-}
-
 let screen: Screen = 'title';
 let input = '';
 let notice: Notice | null = null;
 let noticeTimer: number | undefined;
-let chronicle: ChronicleLine[] = [];
 let shake = false;
 let shakeTimer: number | undefined;
 let lastTick = performance.now();
@@ -138,35 +132,8 @@ function flashFriendPhrases(words: string[]): void {
   }, 1700);
 }
 
-function eventKind(event: GameEvent): ChronicleLine['kind'] {
-  if (
-    event.type === 'damageTaken' ||
-    event.type === 'timeExpired' ||
-    event.type === 'runEnded'
-  ) {
-    if (event.type === 'runEnded' && event.result === 'victory') return 'good';
-    if (event.type === 'damageTaken' && event.dealt === 0) return 'info';
-    return 'bad';
-  }
-  if (
-    event.type === 'healed' ||
-    event.type === 'goldChanged' ||
-    event.type === 'puzzleSolved' ||
-    event.type === 'rewardChosen' ||
-    event.type === 'spellGained' ||
-    event.type === 'itemAcquired'
-  ) {
-    return 'good';
-  }
-  return 'info';
-}
-
 function processEvents(events: GameEvent[]): void {
   for (const event of events) {
-    const text = describeEvent(event);
-    if (text) chronicle.unshift({ text, kind: eventKind(event) });
-    chronicle = chronicle.slice(0, 50);
-
     if (event.type === 'guessRejected') {
       notify(reasonText(event.reason), 'bad');
       sfx.play('error');
@@ -255,7 +222,6 @@ function startNewRun(): void {
   recordStart();
   screen = 'run';
   input = '';
-  chronicle = [];
   notice = null;
   paused = false;
   damageFx = null;
@@ -275,7 +241,6 @@ function resumeRun(): void {
   }
   screen = 'run';
   input = '';
-  chronicle = [{ text: 'Active run restored.', kind: 'info' }];
   notice = null;
   paused = false;
   damageFx = null;
@@ -383,7 +348,6 @@ app.addEventListener('click', (event) => {
       if (!window.confirm('Abandon this run? The save will be wiped.')) return;
       host.discard();
       screen = 'title';
-      chronicle = [];
       input = '';
       damageFx = null;
       if (damageTimer) window.clearTimeout(damageTimer);
@@ -1201,8 +1165,7 @@ function renderBoard(board: BoardView): string {
 
   return `
   <div class="board">${rows.join('')}</div>
-  ${renderKeyboard(board)}
-  ${renderChronicle()}`;
+  ${renderKeyboard(board)}`;
 }
 
 function renderKeyboard(board: BoardView): string {
@@ -1220,17 +1183,10 @@ function renderKeyboard(board: BoardView): string {
       return `<button class="key ${status} ${hinted}" data-action="key" data-letter="${letter}" title="${title}" ${status === 'purged' ? 'disabled' : ''}>${letter}</button>`;
     }).join('');
     const tail = rowIndex === 2
-      ? `<button class="key wide" data-action="del">DEL</button><button class="key wide enter" data-action="submit">ENTER</button>`
+      ? `<button class="key wide del" data-action="del" aria-label="Delete">DEL</button><button class="key wide enter" data-action="submit">ENTER</button>`
       : '';
     return `<div class="key-row">${keys}${tail}</div>`;
   }).join('')}</div>`;
-}
-
-function renderChronicle(): string {
-  if (chronicle.length === 0) {
-    return `<div class="chronicle"><span class="panel-kicker">CHRONICLE</span><p class="empty-note">The list is empty. It will not stay that way.</p></div>`;
-  }
-  return `<div class="chronicle"><span class="panel-kicker">CHRONICLE</span><ul>${chronicle.slice(0, 7).map((line) => `<li class="${line.kind}">${escapeHtml(line.text)}</li>`).join('')}</ul></div>`;
 }
 
 function renderSummary(view: RunView, phase: Extract<PhaseView, { kind: 'summary' }>): string {
