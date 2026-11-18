@@ -581,6 +581,16 @@ button {
   overflow: auto;
 }
 
+.blacklist-panel {
+  cursor: help;
+}
+
+.blacklist-panel:focus-visible {
+  outline: 1px solid var(--line-2);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
 .blacklist li {
   display: flex;
   align-items: center;

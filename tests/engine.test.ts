@@ -1571,7 +1571,7 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('tithe-box')?.price).toBe(10);
     expect(ITEM_BY_ID.get('iron-hide')?.price).toBe(6);
     expect(ITEM_BY_ID.get('thorn-crown')?.description).toContain('30%');
-    expect(ITEM_BY_ID.get('vampire-teeth')?.description).toContain('5% max HP');
+    expect(ITEM_BY_ID.get('vampire-teeth')).toBeUndefined();
     expect(ITEM_BY_ID.get('chrono-anchor')?.description).toContain('Taking damage: 30% chance');
     expect(ITEM_BY_ID.get('chrono-anchor')?.on?.onSolve).toBeUndefined();
     expect(ITEM_BY_ID.get('chrono-anchor')?.on?.onDamageTaken).toBeDefined();
@@ -1580,7 +1580,7 @@ describe('latest balance pass', () => {
   it('applies the latest prices and text', () => {
     expect(FOOD_BY_ID.get('plating')?.price).toBe(3);
     expect(FOOD_BY_ID.get('plating')?.effects).toContainEqual({ type: 'maxArmor', delta: 1 });
-    expect(ITEM_BY_ID.get('compound-interest')?.price).toBe(6);
+    expect(ITEM_BY_ID.get('compound-interest')?.price).toBe(4);
     expect(FOOD_BY_ID.get('yin-yang')?.price).toBe(10);
     expect(FOOD_BY_ID.get('bounty')?.price).toBe(4);
     expect(FOOD_BY_ID.get('bounty')?.effects).toContainEqual({ type: 'solveGold', amount: 1 });

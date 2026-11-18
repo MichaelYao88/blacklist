@@ -20,7 +20,6 @@ const ITEM_ICONS: Record<string, string> = {
   'compound-interest': '📈',
   'midas-touch': '🪙',
   photosynthesis: '🌿',
-  'vampire-teeth': '🧛',
   siphon: '🩸',
   placebo: '💊',
   gourmand: '🍽️',

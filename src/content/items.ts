@@ -242,7 +242,7 @@ export const ITEMS: ItemDef[] = [
     id: 'compound-interest',
     name: 'Compound Interest',
     description: 'On solve: gain 10% of your current gold, up to 10 gold.',
-    price: 6,
+    price: 4,
     kind: 'gear',
     on: {
       onSolve: (ctx) => [
@@ -267,14 +267,6 @@ export const ITEMS: ItemDef[] = [
     on: {
       onSolve: (ctx) => [{ type: 'heal', amount: Math.ceil(ctx.state.maxHp * 0.1) }],
     },
-  }),
-  defineItem({
-    id: 'vampire-teeth',
-    name: 'Vampire Teeth',
-    description: 'End of round: heal 5% max HP.',
-    price: 7,
-    kind: 'gear',
-    on: { onRoundEnd: () => [{ type: 'healPercent', percent: 5 }] },
   }),
   defineItem({
     id: 'placebo',

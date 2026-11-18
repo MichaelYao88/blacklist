@@ -1065,6 +1065,7 @@ function renderSidePanel(view: RunView): string {
     : `<p class="empty-note">No items yet. Shops and the Curse Broker fix that.</p>`;
   const bagged = view.items.filter((item) => !item.equipped && item.slots > 0).length;
   const hasList = view.curses.some((curse) => curse.id === 'the-list');
+  const blacklistTip = 'Blacklisted words can never be guessed again. The List adds the first guess of every round, and blacklisted words are never chosen as future answers. No limit.';
 
   const curseChips = view.curses.map((curse) => {
     const def = CURSE_BY_ID.get(curse.id);
@@ -1089,8 +1090,8 @@ function renderSidePanel(view: RunView): string {
           : `<p class="empty-note">No curses yet. The first draft comes after level 2.</p>`}
       </div>
     </section>
-    ${hasList ? `<section>
-      <div class="panel-head"><span class="panel-kicker">BLACKLIST</span><span class="count" title="No limit. Every spent word stays here.">${view.blacklist.length}</span></div>
+    ${hasList ? `<section class="blacklist-panel" tabindex="0" data-tip="${escapeHtml(blacklistTip)}" aria-label="${escapeHtml(blacklistTip)}">
+      <div class="panel-head"><span class="panel-kicker">BLACKLIST</span><span class="count">${view.blacklist.length}</span></div>
       <ol class="blacklist">${blacklist}</ol>
     </section>` : ''}
     ${(view.revealed.length || view.purged.length) ? `<section>

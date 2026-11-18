@@ -28,6 +28,13 @@ describe('blacklist HUD and Hat Trick', () => {
     expect(root.querySelector('.path')).toBeNull();
   });
 
+  it('explains the blacklist on hover', () => {
+    const panel = root.querySelector<HTMLElement>('.blacklist-panel');
+    expect(panel).not.toBeNull();
+    expect(panel?.dataset.tip).toContain('never be guessed again');
+    expect(panel?.getAttribute('tabindex')).toBe('0');
+  });
+
   it('shows the live Hat Trick payout', () => {
     const card = [...root.querySelectorAll<HTMLElement>('.item-card')]
       .find((item) => item.textContent?.includes('Hat Trick'));
