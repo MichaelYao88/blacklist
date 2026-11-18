@@ -837,7 +837,7 @@ describe('new item and event batch', () => {
     expect(current.maxArmor).toBe(base + 1);
   });
 
-  it('Bulwark pays a spell every 8 damage blocked and costs 8', () => {
+  it('Bulwark pays a spell every 10 damage blocked by armor and costs 8', () => {
     const { state } = start('bulwark');
     state.items.push({ instance: 'i-bul', id: 'bulwark', data: { blocked: 0 }, equipped: true });
     state.spells = [];
@@ -848,11 +848,13 @@ describe('new item and event batch', () => {
     let current = state;
     current = act(current, { type: 'guess', word: 'slate' }).state;
     current = act(current, { type: 'guess', word: 'brick' }).state;
-    expect(current.spells).toHaveLength(0);
     current = act(current, { type: 'guess', word: 'vamps' }).state;
+    expect(current.spells).toHaveLength(0);
+    current = act(current, { type: 'guess', word: 'fizzy' }).state;
     expect(current.spells).toHaveLength(1);
     expect(ITEM_BY_ID.get('bulwark')?.price).toBe(8);
-    expect(ITEM_BY_ID.get('bulwark')?.description).toContain('Every 8 damage blocked');
+    expect(ITEM_BY_ID.get('bulwark')?.description)
+      .toContain('Every 10 damage blocked by armor');
   });
 
   it('Guardian Angel grants Immunity after 10 HP damage taken', () => {
@@ -1677,10 +1679,9 @@ describe('latest balance pass', () => {
       potluck: 26,
       quickdraw: 24,
       'speed-dial': 28,
-      spellplate: 24,
+      spellplate: 16,
       'thorn-crown': 26,
       'vowel-sigil': 24,
-      'warding-idol': 26,
     };
     for (const [id, price] of Object.entries(prices)) {
       expect(ITEM_BY_ID.get(id)?.price, id).toBe(price);

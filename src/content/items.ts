@@ -650,17 +650,17 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'bulwark',
     name: 'Bulwark',
-    description: 'Every 8 damage blocked: +1 random spell.',
+    description: 'Every 10 damage blocked by armor: +1 random spell.',
     price: 8,
     kind: 'gear',
     initial: { blocked: 0 },
     on: {
       onDamageTaken: (ctx, p) => {
-        if (p.blocked <= 0) return [];
-        const total = ctx.self.data.blocked + p.blocked;
-        const spells = Math.floor(total / 8);
+        if (p.armorUsed <= 0) return [];
+        const total = ctx.self.data.blocked + p.armorUsed;
+        const spells = Math.floor(total / 10);
         return [
-          { type: 'setItemData', stat: 'blocked', value: total % 8 },
+          { type: 'setItemData', stat: 'blocked', value: total % 10 },
           ...Array.from({ length: spells }, () => ({ type: 'giveSpell' as const, spell: 'random' as const })),
         ];
       },
@@ -718,7 +718,7 @@ export const ITEMS: ItemDef[] = [
     id: 'spellplate',
     name: 'Spellplate',
     description: 'Cast a spell: +1 max armor.',
-    price: 24,
+    price: 16,
     kind: 'gear',
     rarity: 'rare',
     on: { onSpellCast: () => [{ type: 'maxArmor', delta: 1 }] },
@@ -1371,26 +1371,6 @@ export const ITEMS: ItemDef[] = [
     on: {
       onSolve: (_ctx, p) =>
         p.elapsedMs < 60_000 ? [{ type: 'giveSpell', spell: 'omen' }] : [],
-    },
-  }),
-  defineItem({
-    id: 'warding-idol',
-    name: 'Warding Idol',
-    description: 'Every 10 damage blocked by armor: +1 random spell.',
-    price: 26,
-    kind: 'gear',
-    rarity: 'rare',
-    initial: { blocked: 0 },
-    on: {
-      onDamageTaken: (ctx, p) => {
-        if (p.armorUsed <= 0) return [];
-        const total = ctx.self.data.blocked + p.armorUsed;
-        const spells = Math.floor(total / 10);
-        return [
-          { type: 'setItemData', stat: 'blocked', value: total % 10 },
-          ...Array.from({ length: spells }, () => ({ type: 'giveSpell' as const, spell: 'random' as const })),
-        ];
-      },
     },
   }),
   defineItem({

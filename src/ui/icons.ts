@@ -52,7 +52,6 @@ const ITEM_ICONS: Record<string, string> = {
   'chrono-anchor': '⚓',
   'speed-dial': '📞',
   'vowel-sigil': '🔮',
-  'warding-idol': '🗿',
   'loaded-dice': '🎲',
   'field-kit': '🧭',
   'pen-club': '🖊️',
