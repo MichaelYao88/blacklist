@@ -44,6 +44,7 @@ const ITEM_ICONS: Record<string, string> = {
   'vowel-tithe': '🔠',
   'second-hand': '⏲️',
   engine: '⚙️',
+  adrenaline: '⚡',
   'cracked-orb': '🔮',
   'sticky-fingers': '🖐️',
   'nest-egg': '🪺',

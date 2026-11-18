@@ -332,6 +332,39 @@ describe('timer curses', () => {
       .toContain('+2 max HP');
   });
 
+  it('Adrenaline raises max HP and armor when HP crosses below 50%', () => {
+    const { state } = start('adrenaline');
+    state.items.push({ instance: 'i-adr', id: 'adrenaline', data: { armed: 1 }, equipped: true });
+    state.hp = 11;
+    state.armor = 0;
+    state.maxArmor = 0;
+    state.round!.freeLeft = 0;
+    setAnswer(state, 'crane');
+
+    const hit = act(state, { type: 'guess', word: 'slate' }); // 3 damage -> 8 HP
+    expect(hit.state.hp).toBe(8);
+    expect(hit.state.maxHp).toBe(21);
+    expect(hit.state.maxArmor).toBe(1);
+    expect(hit.state.items.find((item) => item.id === 'adrenaline')?.data.armed).toBe(0);
+
+    const again = act(hit.state, { type: 'guess', word: 'brick' });
+    expect(again.state.maxHp).toBe(21);
+    expect(again.state.maxArmor).toBe(1);
+
+    again.state.spells = [{ instance: 's-heal', id: 'heal' }];
+    const healed = act(again.state, { type: 'castSpell', instance: 's-heal' });
+    expect(healed.state.hp).toBeGreaterThanOrEqual(10.5);
+    expect(healed.state.items.find((item) => item.id === 'adrenaline')?.data.armed).toBe(1);
+
+    healed.state.hp = 11;
+    healed.state.armor = 0;
+    const second = act(healed.state, { type: 'guess', word: 'fizzy' });
+    expect(second.state.hp).toBe(8);
+    expect(second.state.maxHp).toBe(22);
+    expect(second.state.maxArmor).toBe(2);
+    expect(ITEM_BY_ID.get('adrenaline')?.price).toBe(10);
+  });
+
   it('turns Time Freeze into a free guess when there is no clock', () => {
     const { state } = start();
     setAnswer(state, 'crane');

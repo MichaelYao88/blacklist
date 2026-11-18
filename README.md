@@ -38,7 +38,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Opening shields such as **Head Start** and **Quickdraw** make guesses in their window count as free guesses
 - Relics are very rare ordinary items, no longer boss rewards; shops roll a rare relic at 25% per item slot (about 60% of shops have one)
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 99 items (84 shop items + 15 rare relics), 6 spells, 64 foods and 16 happenings
+- 100 items (85 shop items + 15 rare relics), 6 spells, 64 foods and 16 happenings
 - New foods include **U-nagi**, **Empty Calories**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
@@ -54,6 +54,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Bulwark** is an 8g item: every 10 damage blocked by armor, +1 random spell
 - **Second Hand** and **Engine** are 8g items that cross-grant spells on cast at 80%
 - **Photosynthesis** is a 10g item: on solve, +2 max HP and heal 20% max HP
+- **Adrenaline** is a 10g item: dropping below 50% HP grants +1 max HP and +1 max armor, re-arming after healing above 50%
 - **Guardian Angel** is an 8g item: after every 10 HP damage taken, gain Immunity
 - **Immunity** blocks the next hurting guess and any guess for 4 seconds after it
 - **Big Belt** gains +1 item slot every 5 eats or solves

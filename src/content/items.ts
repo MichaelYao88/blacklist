@@ -275,6 +275,40 @@ export const ITEMS: ItemDef[] = [
     },
   }),
   defineItem({
+    id: 'adrenaline',
+    name: 'Adrenaline',
+    description: 'When HP drops below 50%: +1 max HP and +1 max armor. Re-arms after healing above 50%.',
+    price: 10,
+    kind: 'gear',
+    initial: { armed: 1 },
+    onAcquire: (ctx) => [{
+      type: 'setItemData',
+      stat: 'armed',
+      value: ctx.state.hp >= ctx.state.maxHp / 2 ? 1 : 0,
+    }],
+    on: {
+      onDamageTaken: (ctx) => {
+        if (!ctx.self.data.armed) return [];
+        if (ctx.state.hp >= ctx.state.maxHp / 2) return [];
+        return [
+          { type: 'setItemData', stat: 'armed', value: 0 },
+          { type: 'maxHp', delta: 1 },
+          { type: 'maxArmor', delta: 1 },
+        ];
+      },
+      onHeal: (ctx) => {
+        if (ctx.self.data.armed || ctx.state.hp < ctx.state.maxHp / 2) return [];
+        return [{ type: 'setItemData', stat: 'armed', value: 1 }];
+      },
+      onRoundStart: (ctx) => {
+        const armed = ctx.state.hp >= ctx.state.maxHp / 2 ? 1 : 0;
+        return ctx.self.data.armed === armed
+          ? []
+          : [{ type: 'setItemData', stat: 'armed', value: armed }];
+      },
+    },
+  }),
+  defineItem({
     id: 'placebo',
     name: 'Placebo',
     description: 'Every guess you make: heal 1 HP.',
