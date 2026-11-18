@@ -479,13 +479,13 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'fast-learner',
     name: 'Fast Learner',
-    description: 'Solve under 30s: Time Freeze.',
+    description: 'Solve in under a minute: Time Freeze.',
     price: 8,
     kind: 'gear',
     timerInterest: true,
     on: {
       onSolve: (_ctx, p) =>
-        p.elapsedMs < 30_000 ? [{ type: 'giveSpell', spell: 'time-freeze' }] : [],
+        p.elapsedMs < 60_000 ? [{ type: 'giveSpell', spell: 'time-freeze' }] : [],
     },
   }),
   defineItem({

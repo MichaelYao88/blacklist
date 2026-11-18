@@ -319,6 +319,25 @@ describe('timer curses', () => {
     expect(ITEM_BY_ID.get('early-bird')?.description).toContain('under a minute');
   });
 
+  it('Fast Learner grants Time Freeze for solves under a minute', () => {
+    const quick = start('fast-learner');
+    quick.state.items.push({ instance: 'i-fast', id: 'fast-learner', data: {}, equipped: true });
+    quick.state.spells = [];
+    setAnswer(quick.state, 'crane');
+    quick.state.round!.elapsedMs = 59_999;
+    const solved = act(quick.state, { type: 'guess', word: 'crane' });
+    expect(solved.state.spells.some((spell) => spell.id === 'time-freeze')).toBe(true);
+
+    const late = start('fast-learner-late');
+    late.state.items.push({ instance: 'i-fast-late', id: 'fast-learner', data: {}, equipped: true });
+    late.state.spells = [];
+    setAnswer(late.state, 'crane');
+    late.state.round!.elapsedMs = 60_000;
+    const missed = act(late.state, { type: 'guess', word: 'crane' });
+    expect(missed.state.spells.some((spell) => spell.id === 'time-freeze')).toBe(false);
+    expect(ITEM_BY_ID.get('fast-learner')?.description).toContain('under a minute');
+  });
+
   it('Photosynthesis grants +2 max HP and heals 20% on solve', () => {
     const { state } = start('photosynthesis');
     state.items.push({ instance: 'i-photo', id: 'photosynthesis', data: {}, equipped: true });
