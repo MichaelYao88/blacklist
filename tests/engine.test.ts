@@ -894,6 +894,48 @@ describe('new item and event batch', () => {
       .toContain('every 10 HP damage');
   });
 
+  it('Second Hand and Engine cross-grant spells at 80%', () => {
+    let secondHeal = 0;
+    let secondRestore = 0;
+    let engineFreeze = 0;
+    let engineImmunity = 0;
+
+    for (let index = 0; index < 30; index++) {
+      const handTf = start(`second-hand-tf-${index}`);
+      handTf.state.items.push({ instance: 'i-sh', id: 'second-hand', data: {}, equipped: true });
+      handTf.state.spells = [{ instance: 's-tf', id: 'time-freeze' }];
+      const afterTf = act(handTf.state, { type: 'castSpell', instance: 's-tf' });
+      if (afterTf.state.spells.some((spell) => spell.id === 'heal')) secondHeal++;
+
+      const handImm = start(`second-hand-imm-${index}`);
+      handImm.state.items.push({ instance: 'i-sh2', id: 'second-hand', data: {}, equipped: true });
+      handImm.state.spells = [{ instance: 's-imm', id: 'immunity' }];
+      const afterImm = act(handImm.state, { type: 'castSpell', instance: 's-imm' });
+      if (afterImm.state.spells.some((spell) => spell.id === 'restore')) secondRestore++;
+
+      const engineRestore = start(`engine-restore-${index}`);
+      engineRestore.state.items.push({ instance: 'i-eng', id: 'engine', data: {}, equipped: true });
+      engineRestore.state.spells = [{ instance: 's-res', id: 'restore' }];
+      const afterRestore = act(engineRestore.state, { type: 'castSpell', instance: 's-res' });
+      if (afterRestore.state.spells.some((spell) => spell.id === 'time-freeze')) engineFreeze++;
+
+      const engineHeal = start(`engine-heal-${index}`);
+      engineHeal.state.items.push({ instance: 'i-eng2', id: 'engine', data: {}, equipped: true });
+      engineHeal.state.spells = [{ instance: 's-heal', id: 'heal' }];
+      const afterHeal = act(engineHeal.state, { type: 'castSpell', instance: 's-heal' });
+      if (afterHeal.state.spells.some((spell) => spell.id === 'immunity')) engineImmunity++;
+    }
+
+    expect(secondHeal).toBeGreaterThan(0);
+    expect(secondRestore).toBeGreaterThan(0);
+    expect(engineFreeze).toBeGreaterThan(0);
+    expect(engineImmunity).toBeGreaterThan(0);
+    expect(ITEM_BY_ID.get('second-hand')?.price).toBe(8);
+    expect(ITEM_BY_ID.get('engine')?.price).toBe(8);
+    expect(ITEM_BY_ID.get('second-hand')?.description).toContain('80%');
+    expect(ITEM_BY_ID.get('engine')?.description).toContain('80%');
+  });
+
   it('Immunity blocks the next hurting guess and the next 4 seconds of guesses', () => {
     const { state } = start('immunity-window');
     state.spells = [{ instance: 's-imm', id: 'immunity' }];

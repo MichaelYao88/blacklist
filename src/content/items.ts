@@ -537,14 +537,37 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'second-hand',
     name: 'Second Hand',
-    description: 'Casting Time Freeze also grants a Heal spell.',
-    price: 9,
+    description: 'Casting Time Freeze: 80% chance to grant a Heal spell. Casting Immunity: 80% chance to grant a Restore.',
+    price: 8,
     kind: 'gear',
     on: {
-      onSpellCast: (_ctx, p) =>
-        p.spell === 'time-freeze'
-          ? [{ type: 'giveSpell', spell: 'heal' }]
-          : [],
+      onSpellCast: (_ctx, p) => {
+        if (p.spell === 'time-freeze') {
+          return [{ type: 'giveSpell', spell: 'heal', chancePct: 80 }];
+        }
+        if (p.spell === 'immunity') {
+          return [{ type: 'giveSpell', spell: 'restore', chancePct: 80 }];
+        }
+        return [];
+      },
+    },
+  }),
+  defineItem({
+    id: 'engine',
+    name: 'Engine',
+    description: 'Casting Restore: 80% chance to grant Time Freeze. Casting Heal: 80% chance to grant Immunity.',
+    price: 8,
+    kind: 'gear',
+    on: {
+      onSpellCast: (_ctx, p) => {
+        if (p.spell === 'restore') {
+          return [{ type: 'giveSpell', spell: 'time-freeze', chancePct: 80 }];
+        }
+        if (p.spell === 'heal') {
+          return [{ type: 'giveSpell', spell: 'immunity', chancePct: 80 }];
+        }
+        return [];
+      },
     },
   }),
   defineItem({
