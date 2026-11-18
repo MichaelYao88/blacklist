@@ -176,11 +176,15 @@ export function createCore(content: Content): Core {
 
   const damagePerGreen = (state: RunState): number =>
     curseDefs(state).reduce((sum, entry) => {
-      if (entry.def.damageTiers) {
-        const tier = entry.def.damageTiers[Math.min(entry.stacks, entry.def.damageTiers.length) - 1];
-        return sum + (tier?.green ?? 0);
-      }
+      if (entry.def.damageTiers) return sum;
       return sum + (entry.def.damagePerGreen ?? 0) * entry.stacks;
+    }, 0);
+
+  const damageTierGreen = (state: RunState): number =>
+    curseDefs(state).reduce((sum, entry) => {
+      if (!entry.def.damageTiers) return sum;
+      const tier = entry.def.damageTiers[Math.min(entry.stacks, entry.def.damageTiers.length) - 1];
+      return sum + (tier?.green ?? 0);
     }, 0);
 
   const damagePerYellow = (state: RunState): number =>
@@ -1472,13 +1476,20 @@ export function createCore(content: Content): Core {
   function guessDamageFor(state: RunState, round: RoundState, next = false): number {
     const boss = round.boss ? bossById.get(round.boss) : undefined;
     if (boss?.noGuessDamage) return 0;
-    const last = round.guesses.length > 0
+    const current = next ? undefined : round.guesses[round.guesses.length - 1];
+    const previous = next
       ? round.guesses[round.guesses.length - 1]
-      : undefined;
-    const counts = last ? truthCounts(last.truth) : { correct: 0, present: 0 };
+      : round.guesses[round.guesses.length - 2];
+    const currentCounts = current
+      ? truthCounts(current.truth)
+      : { correct: 0, present: 0 };
+    const previousCounts = previous
+      ? truthCounts(previous.truth)
+      : { correct: 0, present: 0 };
     const curseBonus =
-      counts.correct * damagePerGreen(state) +
-      counts.present * damagePerYellow(state);
+      currentCounts.correct * damageTierGreen(state) +
+      currentCounts.present * damagePerYellow(state) +
+      previousCounts.correct * damagePerGreen(state);
     const base = boss?.damageFor
       ? boss.damageFor(state, next ? { ...round, totalGuesses: round.totalGuesses + 1 } : round)
       : round.baseDamage;

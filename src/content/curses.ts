@@ -145,8 +145,8 @@ export const CURSES: CurseDef[] = [
   defineCurse({
     id: 'porcupine',
     name: "Porcupine's Dilemma",
-    description: 'Each green tile in your latest guess adds 2 damage.',
-    rules: ['Each green tile in the guess that just missed adds +2 damage. Stacks freely.'],
+    description: '+2 damage on the next guess per green tile on the previous guess.',
+    rules: ['Each green tile on the previous guess adds +2 damage to the next guess.', 'Stacks freely.'],
     art: 'sleeper',
     tags: ['damage'],
     maxStacks: Infinity,

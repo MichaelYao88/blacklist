@@ -240,15 +240,17 @@ describe('damage and curses', () => {
     expect(nextRound(state).state.round?.baseDamage).toBe(5);
   });
 
-  it('Porcupine counts greens in the latest guess', () => {
+  it('Porcupine damages the next guess based on previous greens', () => {
     const { state } = start('porcupine');
     state.curses.push({ id: 'porcupine', stacks: 1 });
     const next = nextRound(state);
     setAnswer(next.state, 'crane');
     next.state.round!.freeLeft = 0;
     next.state.armor = 0;
-    const guess = act(next.state, { type: 'guess', word: 'slate' });
-    expect(guess.state.hp).toBe(8);
+    const first = act(next.state, { type: 'guess', word: 'slate' });
+    expect(first.state.hp).toBe(12);
+    const second = act(first.state, { type: 'guess', word: 'pious' });
+    expect(second.state.hp).toBe(4);
   });
 
   it('Clumsy does not stack', () => {
@@ -772,6 +774,8 @@ describe('new item and event batch', () => {
     expect(ITEM_BY_ID.get('growth-spurt')?.description).toContain('+2 max HP');
     expect(ITEM_BY_ID.get('bulk-order')?.description).toContain('+1 max armor');
     expect(CURSE_BY_ID.get('porcupine')?.damagePerGreen).toBe(2);
+    expect(CURSE_BY_ID.get('porcupine')?.description)
+      .toBe('+2 damage on the next guess per green tile on the previous guess.');
     expect(CURSE_BY_ID.get('tight-slots')?.slotDelta).toBe(-2);
     expect(SPELL_BY_ID.get('restore')?.description)
       .toBe('Refill armor and clear the blacklist.');
