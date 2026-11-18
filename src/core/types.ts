@@ -26,6 +26,12 @@ export type KeyboardStatus = 'correct' | 'present' | 'absent' | 'hit' | 'purged'
 export interface PresentedGuess {
   word: string;
   tiles: TileShown[];
+  /**
+   * For hidden tiles, the color the player has already learned for that letter
+   * from other tiles. The tile still keeps its '?' mark because its own
+   * position result was never revealed. Null for visible tiles.
+   */
+  peek?: (TileTruth | null)[];
   counts?: { correct: number; present: number };
 }
 

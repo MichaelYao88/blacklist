@@ -223,12 +223,14 @@ describe('blacklist curse', () => {
 });
 
 describe('damage and curses', () => {
-  it('base damage is 3 plus curse stacks, and Heavy Hand doubles per stack', () => {
+  it('base damage is 3 plus curse stacks, and Heavy Hand adds 50% per stack', () => {
     const { state } = start();
     expect(state.round?.baseDamage).toBe(3);
     state.curses.push({ id: 'heavy-hand', stacks: 2 });
     const next = nextRound(state);
-    expect(next.state.round?.baseDamage).toBe(20);
+    expect(next.state.round?.baseDamage).toBe(11); // (3 + 2) × 1.5² = 11.25
+    expect(CURSE_BY_ID.get('heavy-hand')?.damageMultiplier).toBe(1.5);
+    expect(CURSE_BY_ID.get('heavy-hand')?.description).toContain('50%');
   });
 
   it('raises base damage by 1 for every curse stack', () => {
@@ -501,6 +503,7 @@ describe('item and food batch', () => {
   it('removes the damage cap and prices letter foods by rarity', () => {
     expect(ITEM_BY_ID.get('hard-hat')).toBeUndefined();
     expect(FOOD_BY_ID.get('x-ray')?.price).toBe(8);
+    expect(FOOD_BY_ID.get('x-ray')?.name).toBe('X-Ray Cake');
     expect(FOOD_BY_ID.get('q-tip')?.price).toBe(8);
     expect(FOOD_BY_ID.get('i-spy')?.effects)
       .toContainEqual({ type: 'revealLetter', letter: 'i' });
@@ -834,6 +837,27 @@ describe('latest balance pass', () => {
     const exactBefore = exact.state.spells.length;
     const solved = act(exact.state, { type: 'guess', word: 'crane' });
     expect(solved.state.spells).toHaveLength(exactBefore);
+  });
+
+  it('a hidden tile picks up the color later learned for that letter', () => {
+    const { state } = start('hidden-peek');
+    state.curses.push({ id: 'censor', stacks: 1 });
+    setAnswer(state, 'crane');
+
+    const first = act(state, { type: 'guess', word: 'crate' }); // C is green but the tile is hidden
+    const alone = game.view(first.state).phase;
+    if (alone.kind !== 'round') throw new Error('expected round');
+    expect(alone.board.guesses[0]?.tiles[0]).toBe('hidden');
+    expect(alone.board.guesses[0]?.peek?.[0]).toBeNull();
+
+    const second = act(first.state, { type: 'guess', word: 'actor' }); // C shows yellow at slot 2
+    const after = game.view(second.state).phase;
+    if (after.kind !== 'round') throw new Error('expected round');
+    expect(after.board.keyboard.c).toBe('present');
+    expect(after.board.guesses[0]?.tiles[0]).toBe('hidden');
+    expect(after.board.guesses[0]?.peek?.[0]).toBe('present');
+    // Visible tiles never carry a peek color.
+    expect(after.board.guesses[1]?.peek?.[1]).toBeNull();
   });
 
   it('Tally Lens is guaranteed in a shop once a vision curse is active', () => {

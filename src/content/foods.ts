@@ -456,7 +456,7 @@ export const FOODS: FoodDef[] = [
   }),
   defineFood({
     id: 'x-ray',
-    name: 'X-Ray',
+    name: 'X-Ray Cake',
     description: 'Every round: reveal whether the answer has X. No slot.',
     price: 8,
     effects: [{ type: 'revealLetter', letter: 'x' }],

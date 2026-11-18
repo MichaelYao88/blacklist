@@ -2478,11 +2478,11 @@ export function createCore(content: Content): Core {
 
     const keyboard: Partial<Record<Letter, KeyboardStatus>> = {};
     const rank: Record<string, number> = { absent: 0, hit: 1, present: 2, correct: 3 };
-    for (const guess of round.guesses) {
-      const shown = presentGuess(state, guess);
+    const guesses = round.guesses.map((guess) => presentGuess(state, guess));
+    for (const shown of guesses) {
       shown.tiles.forEach((tile, index) => {
         if (tile === 'hidden') return;
-        const letter = guess.word[index];
+        const letter = shown.word[index];
         const current = keyboard[letter];
         const nextStatus = tile as KeyboardStatus;
         if (!current || nextStatus === 'purged') {
@@ -2505,8 +2505,19 @@ export function createCore(content: Content): Core {
       if (!keyboard[letter] || keyboard[letter] === 'absent') keyboard[letter] = 'purged';
     }
 
+    // A hidden tile still shows the color already learned for that letter in
+    // another guess, so the grid matches the keyboard. It keeps its '?' mark
+    // because this particular tile's result was never revealed.
+    for (const shown of guesses) {
+      shown.peek = shown.tiles.map((tile, index) => {
+        if (tile !== 'hidden') return null;
+        const known = keyboard[shown.word[index]];
+        return known === 'correct' || known === 'present' || known === 'absent' ? known : null;
+      });
+    }
+
     return {
-      guesses: round.guesses.map((guess) => presentGuess(state, guess)),
+      guesses,
       freeGuessesLeft: round.freeLeft,
       nextGuessDamage: round.freeLeft > 0 || noGuessDamage ? 0 : rawNext,
       rawNextGuessDamage: rawNext,

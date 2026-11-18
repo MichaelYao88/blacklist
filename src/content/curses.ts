@@ -155,12 +155,12 @@ export const CURSES: CurseDef[] = [
   defineCurse({
     id: 'heavy-hand',
     name: 'Heavy Hand',
-    description: 'Encounter damage is doubled.',
-    rules: ['Each stack doubles encounter damage. Stacks freely.'],
+    description: 'Encounter damage is increased by 50%.',
+    rules: ['Each stack multiplies encounter damage by 1.5. Stacks freely.'],
     art: 'gauntlet',
     tags: ['damage'],
     maxStacks: Infinity,
-    damageMultiplier: 2,
+    damageMultiplier: 1.5,
   }),
 
   // ── clock / list ────────────────────────────────────────────────────────
