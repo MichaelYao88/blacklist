@@ -319,6 +319,19 @@ describe('timer curses', () => {
     expect(ITEM_BY_ID.get('early-bird')?.description).toContain('under a minute');
   });
 
+  it('Photosynthesis grants +2 max HP and heals 20% on solve', () => {
+    const { state } = start('photosynthesis');
+    state.items.push({ instance: 'i-photo', id: 'photosynthesis', data: {}, equipped: true });
+    state.hp = 10;
+    setAnswer(state, 'crane');
+    const solved = act(state, { type: 'guess', word: 'crane' });
+    expect(solved.state.maxHp).toBe(22);
+    expect(solved.state.hp).toBe(15);
+    expect(ITEM_BY_ID.get('photosynthesis')?.price).toBe(10);
+    expect(ITEM_BY_ID.get('photosynthesis')?.description)
+      .toContain('+2 max HP');
+  });
+
   it('turns Time Freeze into a free guess when there is no clock', () => {
     const { state } = start();
     setAnswer(state, 'crane');

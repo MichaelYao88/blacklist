@@ -264,11 +264,14 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'photosynthesis',
     name: 'Photosynthesis',
-    description: 'On solve: heal 10% max HP.',
-    price: 8,
+    description: 'On solve: +2 max HP and heal 20% max HP.',
+    price: 10,
     kind: 'gear',
     on: {
-      onSolve: (ctx) => [{ type: 'heal', amount: Math.ceil(ctx.state.maxHp * 0.1) }],
+      onSolve: () => [
+        { type: 'maxHp', delta: 2 },
+        { type: 'healPercent', percent: 20 },
+      ],
     },
   }),
   defineItem({

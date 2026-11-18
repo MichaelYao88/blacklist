@@ -53,6 +53,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Chilaquiles** is a 1g food that doubles the next sale
 - **Bulwark** is an 8g item: every 10 damage blocked by armor, +1 random spell
 - **Second Hand** and **Engine** are 8g items that cross-grant spells on cast at 80%
+- **Photosynthesis** is a 10g item: on solve, +2 max HP and heal 20% max HP
 - **Guardian Angel** is an 8g item: after every 10 HP damage taken, gain Immunity
 - **Immunity** blocks the next hurting guess and any guess for 4 seconds after it
 - **Big Belt** gains +1 item slot every 5 eats or solves
