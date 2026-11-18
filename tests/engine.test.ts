@@ -161,24 +161,42 @@ describe('vision curses and Tally Lens', () => {
     expect(view.phase.board.guesses[0].counts).toBeDefined();
   });
 
-  it('hides letters from LA, TS, RIP, D and E curses', () => {
-    const { state } = start();
-    setAnswer(state, 'crane');
-    state.curses.push({ id: 'la-curse', stacks: 1 });
-    state.curses.push({ id: 'ts-curse', stacks: 1 });
-    state.curses.push({ id: 'rip-curse', stacks: 1 });
-    state.curses.push({ id: 'without-d', stacks: 1 });
-    state.curses.push({ id: 'e-curse', stacks: 1 });
+  it('Silver STD makes S, T and D ambiguous', () => {
+    const { state } = start('silver-std');
+    setAnswer(state, 'stand');
+    state.curses.push({ id: 'monochrome', stacks: 1 });
+    const guess = act(state, { type: 'guess', word: 'staid' });
+    const view = game.view(guess.state);
+    if (view.phase.kind !== 'round') throw new Error('expected round');
+    const tiles = view.phase.board.guesses[0].tiles;
+    expect(tiles[0]).toBe('hit');
+    expect(tiles[1]).toBe('hit');
+    expect(tiles[2]).toBe('correct');
+    expect(tiles[4]).toBe('hit');
+  });
 
+  it('Hard R hides R only', () => {
+    const { state } = start('hard-r');
+    setAnswer(state, 'crane');
+    state.curses.push({ id: 'hard-r', stacks: 1 });
     const guess = act(state, { type: 'guess', word: 'trade' });
     const view = game.view(guess.state);
     if (view.phase.kind !== 'round') throw new Error('expected round');
     const tiles = view.phase.board.guesses[0].tiles;
-    expect(tiles[0]).toBe('hidden');
     expect(tiles[1]).toBe('hidden');
-    expect(tiles[2]).toBe('hidden');
-    expect(tiles[3]).toBe('hidden');
+    expect(tiles[2]).toBe('correct');
+  });
+
+  it('E Curse hides E only', () => {
+    const { state } = start('e-curse');
+    setAnswer(state, 'crane');
+    state.curses.push({ id: 'e-curse', stacks: 1 });
+    const guess = act(state, { type: 'guess', word: 'trade' });
+    const view = game.view(guess.state);
+    if (view.phase.kind !== 'round') throw new Error('expected round');
+    const tiles = view.phase.board.guesses[0].tiles;
     expect(tiles[4]).toBe('hidden');
+    expect(tiles[1]).toBe('correct');
   });
 });
 
@@ -807,7 +825,11 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('gilded-fork')).toBeUndefined();
     expect(ITEM_BY_ID.get('rabbit-foot')).toBeUndefined();
     expect(FOOD_BY_ID.get('iron-ration')).toBeDefined();
-    expect(CURSE_BY_ID.get('monochrome')?.name).toBe('Silver SLT');
+    expect(CURSE_BY_ID.get('monochrome')?.name).toBe('Silver STD');
+    expect(CURSE_BY_ID.get('monochrome')?.vision)
+      .toContainEqual({ kind: 'ambiguousLetters', letters: 'std' });
+    expect(CURSE_BY_ID.get('hard-r')?.vision)
+      .toContainEqual({ kind: 'hideLetters', letters: 'r' });
   });
 
   it('The Tax reduces gold by 40% and does not stack', () => {
