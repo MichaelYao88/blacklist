@@ -1736,6 +1736,16 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('ice-cream-sundae')?.price).toBe(3);
   });
 
+  it('Daredevil is clock-gated and shortens rounds by 25%', () => {
+    const { state } = start('daredevil');
+    state.curses.push({ id: 'clock', stacks: 1 });
+    state.items.push({ instance: 'i-dare', id: 'daredevil', data: {}, equipped: true });
+    const next = nextRound(state);
+    expect(next.state.round?.remainingMs).toBe(225_000);
+    expect(ITEM_BY_ID.get('daredevil')?.requiresClock).toBe(true);
+    expect(ITEM_BY_ID.get('daredevil')?.description).toContain('25% shorter');
+  });
+
   it('applies the latest prices and text', () => {
     expect(FOOD_BY_ID.get('plating')?.price).toBe(3);
     expect(FOOD_BY_ID.get('plating')?.effects).toContainEqual({ type: 'maxArmor', delta: 1 });

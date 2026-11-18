@@ -156,11 +156,16 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'daredevil',
     name: 'Daredevil',
-    description: 'Rounds start 20s shorter. Every guess: +1 gold.',
+    description: 'Rounds start 25% shorter. Every guess: +1 gold.',
     price: 10,
     kind: 'gear',
+    requiresClock: true,
     on: {
-      onRoundStart: () => [{ type: 'addTime', ms: -20_000 }],
+      onRoundStart: (ctx) => {
+        const remaining = ctx.state.round?.remainingMs;
+        if (remaining === null || remaining === undefined) return [];
+        return [{ type: 'addTime', ms: -Math.ceil(remaining * 0.25) }];
+      },
       onGuessScored: () => [{ type: 'gold', amount: 1 }],
     },
   }),
