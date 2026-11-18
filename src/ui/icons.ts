@@ -129,6 +129,7 @@ const FOOD_ICONS: Record<string, string> = {
   'knafeh': '🍮',
   'king-mushroom': '🍄',
   'midnight-snack': '🌙',
+  'taco-pizza-party': '🌮',
   'cheeseburger': '🍔',
   'double-cheeseburger': '🍔🍔',
   'die-coke': '🥤',

@@ -813,14 +813,27 @@ describe('latest balance pass', () => {
     expect(solved.state.gold).toBe(14);
   });
 
-  it('Mimic Mouth only triggers once per round', () => {
+  it('Mimic Mouth pays a spell for a wrong guess with 5 revealed letters, once per round', () => {
+    const def = ITEM_BY_ID.get('mimic-mouth');
+    expect(def?.price).toBe(7);
+    expect(def?.description).toContain('5 revealed letters');
+    expect(def?.description).toContain('wrong guess');
+
     const { state } = start('mimic');
     state.items.push({ instance: 'i-mimic', id: 'mimic-mouth', data: { used: 0 }, equipped: true });
     setAnswer(state, 'crane');
-    const first = act(state, { type: 'guess', word: 'crate' });
-    expect(first.state.spells).toHaveLength(2);
-    const second = act(first.state, { type: 'guess', word: 'crave' });
-    expect(second.state.spells).toHaveLength(2);
+    const spellsBefore = state.spells.length;
+    const first = act(state, { type: 'guess', word: 'nacre' }); // wrong, all five letters present
+    expect(first.state.spells).toHaveLength(spellsBefore + 1);
+    const second = act(first.state, { type: 'guess', word: 'caner' }); // wrong and five letters again
+    expect(second.state.spells).toHaveLength(spellsBefore + 1);
+
+    const exact = start('mimic-correct');
+    exact.state.items.push({ instance: 'i-mimic', id: 'mimic-mouth', data: { used: 0 }, equipped: true });
+    setAnswer(exact.state, 'crane');
+    const exactBefore = exact.state.spells.length;
+    const solved = act(exact.state, { type: 'guess', word: 'crane' });
+    expect(solved.state.spells).toHaveLength(exactBefore);
   });
 
   it('Tally Lens is guaranteed in a shop once a vision curse is active', () => {
@@ -1178,17 +1191,22 @@ describe('latest balance pass', () => {
     expect(hpBefore - guessed.state.hp).toBe(2);
   });
 
-  it('Spell Pepper doubles the next spell', () => {
-    const { state } = start('spell-pepper');
-    state.items.push({ instance: 'i-pepper', id: 'spell-pepper', data: {}, equipped: true });
-    state.spells.push({ instance: 's-heal', id: 'heal' });
-    state.hp = 4;
-    state.phase = 'shop';
-    const used = act(state, { type: 'useItem', instance: 'i-pepper' });
-    expect(used.state.nextSpellDouble).toBe(true);
-    expect(used.state.items.some((item) => item.id === 'spell-pepper')).toBe(false);
+  it('Spell Pepper arms on purchase with no USE button and doubles the next spell', () => {
+    const def = ITEM_BY_ID.get('spell-pepper');
+    expect(def?.price).toBe(3);
+    expect(def?.onUse).toBeUndefined();
 
-    const cast = act(used.state, { type: 'castSpell', instance: 's-heal' });
+    const { state } = start('spell-pepper');
+    state.phase = 'shop';
+    state.gold = 20;
+    state.hp = 4;
+    state.spells.push({ instance: 's-heal', id: 'heal' });
+    state.shop = shopState([{ id: 'o0', kind: 'item', def: 'spell-pepper', price: 3 }]);
+    const bought = act(state, { type: 'buy', offerId: 'o0' });
+    expect(bought.state.nextSpellDouble).toBe(true);
+    expect(bought.state.items.some((item) => item.id === 'spell-pepper')).toBe(false);
+
+    const cast = act(bought.state, { type: 'castSpell', instance: 's-heal' });
     expect(cast.state.hp).toBe(16); // heal 8 twice
     expect(cast.state.nextSpellDouble).toBe(false);
   });
@@ -1219,7 +1237,10 @@ describe('latest balance pass', () => {
 
   it('Midnight Snack is vision-gated and shows counts for 2 rounds', () => {
     const snack = FOOD_BY_ID.get('midnight-snack');
+    expect(snack?.price).toBe(2);
     expect(snack?.requiresVisionCurse).toBe(1);
+    expect(snack?.description).toContain('Next 2 rounds');
+    expect(snack?.description.toLowerCase()).not.toContain('vision');
     expect(snack?.effects).toContainEqual({ type: 'visionCounts', rounds: 2 });
 
     const { state } = start('midnight-counts');
@@ -1230,6 +1251,24 @@ describe('latest balance pass', () => {
     const phase = game.view(guessed.state).phase;
     if (phase.kind !== 'round') throw new Error('expected round');
     expect(phase.board.guesses[0]?.counts).toBeDefined();
+  });
+
+  it('Taco Pizza Party heals 12 and adds 1 max armor', () => {
+    const def = FOOD_BY_ID.get('taco-pizza-party');
+    expect(def?.price).toBe(9);
+    expect(def?.effects).toContainEqual({ type: 'heal', amount: 12 });
+    expect(def?.effects).toContainEqual({ type: 'maxArmor', delta: 1 });
+
+    const { state } = start('taco-pizza');
+    state.phase = 'shop';
+    state.gold = 20;
+    state.hp = 5;
+    const armorBefore = state.maxArmor;
+    state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'taco-pizza-party', price: 9 }]);
+    const eaten = act(state, { type: 'buy', offerId: 'o0' });
+    expect(eaten.state.hp).toBe(16);
+    expect(eaten.state.maxArmor).toBe(armorBefore + 1);
+    expect(eaten.state.gold).toBe(11);
   });
 
   it('Pho Dac Biet heals to full and Jumbo Hot Dog trades slots for HP', () => {

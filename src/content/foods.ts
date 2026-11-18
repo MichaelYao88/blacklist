@@ -138,10 +138,20 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'midnight-snack',
     name: 'Midnight Snack',
-    description: 'Next 2 rounds: guesses show correct and misplaced counts. Only appears with a vision curse.',
-    price: 4,
+    description: 'Next 2 rounds: guesses show correct and misplaced counts. No slot.',
+    price: 2,
     requiresVisionCurse: 1,
     effects: [{ type: 'visionCounts', rounds: 2 }],
+  }),
+  defineFood({
+    id: 'taco-pizza-party',
+    name: 'Taco Pizza Party',
+    description: 'Heal 12 HP and +1 max armor. No slot.',
+    price: 9,
+    effects: [
+      { type: 'heal', amount: 12 },
+      { type: 'maxArmor', delta: 1 },
+    ],
   }),
   defineFood({
     id: 'die-coke',

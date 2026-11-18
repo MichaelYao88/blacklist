@@ -510,15 +510,17 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'mimic-mouth',
     name: 'Mimic Mouth',
-    description: 'A guess with 4+ revealed letters: random spell. Once per round.',
-    price: 9,
+    description: 'A wrong guess with 5 revealed letters: random spell. Once per round.',
+    price: 7,
     kind: 'gear',
     initial: { used: 0 },
     on: {
       onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
       onGuessScored: (ctx, p) => {
         if (ctx.self.data.used) return [];
-        return p.guess.truth.filter((tile) => tile !== 'absent').length >= 4
+        const solved = p.guess.word === ctx.state.round?.answer;
+        if (solved) return [];
+        return p.guess.truth.filter((tile) => tile !== 'absent').length >= 5
           ? [
               { type: 'giveSpell', spell: 'random' },
               { type: 'setItemData', stat: 'used', value: 1 },
@@ -1405,11 +1407,14 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'spell-pepper',
     name: 'Spell Pepper',
-    description: 'Consumable. The next spell you cast casts twice.',
+    description: 'Buying this: the next spell you cast casts twice.',
     price: 3,
     kind: 'consumable',
     slots: 0,
-    onUse: () => [{ type: 'armSpellDouble' }],
+    onAcquire: () => [
+      { type: 'armSpellDouble' },
+      { type: 'consumeSelf' },
+    ],
   }),
   defineItem({
     id: 'chilaquiles',
