@@ -806,14 +806,15 @@ describe('latest balance pass', () => {
     expect(CURSE_BY_ID.get('monochrome')?.name).toBe('Silver SLT');
   });
 
-  it('The Tax halves gold and does not stack', () => {
+  it('The Tax reduces gold by 40% and does not stack', () => {
     expect(CURSE_BY_ID.get('tax')?.maxStacks).toBe(1);
-    expect(CURSE_BY_ID.get('tax')?.goldMult).toBe(0.5);
+    expect(CURSE_BY_ID.get('tax')?.goldMult).toBe(0.6);
     const { state } = start('tax');
     state.curses.push({ id: 'tax', stacks: 1 });
+    state.bonusSolveGold = 2;
     setAnswer(state, 'crane');
     const solved = act(state, { type: 'guess', word: 'crane' });
-    expect(solved.state.gold).toBe(14);
+    expect(solved.state.gold).toBe(16);
   });
 
   it('Mimic Mouth pays a spell for a wrong guess with 5 revealed letters, once per round', () => {
@@ -1692,7 +1693,9 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('mimic-mouth')?.description).toContain('Once per round');
     expect(ITEM_BY_ID.get('second-skin')?.description).toContain('half your max armor');
     expect(SPELL_BY_ID.get('heal')?.description).toBe('Heal half of your max HP.');
-    expect(CURSE_BY_ID.get('tax')?.description).toBe('Encounter gold is halved.');
+    expect(HAPPENING_BY_ID.get('black-market')?.options.find((option) => option.id === 'spell')?.costGold).toBe(2);
+    expect(HAPPENING_BY_ID.get('black-market')?.options.find((option) => option.id === 'armor')?.costGold).toBe(3);
+    expect(CURSE_BY_ID.get('tax')?.description).toBe('Encounter gold is reduced by 40%.');
   });
 });
 

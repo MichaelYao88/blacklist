@@ -54,7 +54,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Solve gold is 8 for 3 guesses or fewer, otherwise a random 5-8
 - **The Endless Table** fires every on-eat effect 7 times or pays 7 gold
 - **Tally Lens** is guaranteed in a shop after a vision curse and shows correct/misplaced counts
-- **The Tax** halves encounter gold and is unique; **The Curse Broker** charges 12g for a relic or 15g to remove a curse
+- **The Tax** reduces encounter gold by 40% and is unique; **The Curse Broker** charges 12g for a relic or 15g to remove a curse
 - The run path rail is gone; the current level stays in the battle rail
 - Purge is an event (The Redaction) and rare foods; not a spell
 - One exact-state autosave slot. Defeat clears it. Victory clears it and updates meta stats.
