@@ -12,7 +12,7 @@ export const FOODS: FoodDef[] = [
     id: 'gumdrop',
     name: 'Gumdrop',
     description: 'Recover 5 HP. No slot.',
-    price: 3,
+    price: 2,
     effects: [{ type: 'heal', amount: 5 }],
   }),
   defineFood({
@@ -48,6 +48,23 @@ export const FOODS: FoodDef[] = [
     effects: [
       { type: 'maxHp', delta: 2 },
       { type: 'healPercent', percent: 30 },
+    ],
+  }),
+  defineFood({
+    id: 'banh-mi',
+    name: 'Banh Mi',
+    description: 'Heal 20% of max HP. No slot.',
+    price: 2,
+    effects: [{ type: 'healPercent', percent: 20 }],
+  }),
+  defineFood({
+    id: 'beshbarmak',
+    name: 'Beshbarmak',
+    description: '+5% max HP and heal 5% of max HP. No slot.',
+    price: 5,
+    effects: [
+      { type: 'maxHpMultiply', factor: 1.05 },
+      { type: 'healPercent', percent: 5 },
     ],
   }),
   defineFood({

@@ -761,7 +761,7 @@ describe('new item and event batch', () => {
   it('applies the tuned content text and values', () => {
     expect(FOOD_BY_ID.get('gg-gum')?.effects)
       .toContainEqual({ type: 'revealLetter', letter: 'g' });
-    expect(FOOD_BY_ID.get('gumdrop')?.price).toBe(3);
+    expect(FOOD_BY_ID.get('gumdrop')?.price).toBe(2);
     expect(FOOD_BY_ID.get('bitter-root')?.effects)
       .toContainEqual({ type: 'maxArmor', delta: 1 });
     expect(FOOD_BY_ID.get('bitter-root')?.effects)
@@ -1014,6 +1014,14 @@ describe('latest balance pass', () => {
     expect(FOOD_BY_ID.get('empty-calories')?.effects).toContainEqual({ type: 'maxHp', delta: 9 });
     expect(FOOD_BY_ID.get('one-bo-hue')?.price).toBe(4);
     expect(FOOD_BY_ID.get('warm-bowl')?.price).toBe(4);
+    expect(FOOD_BY_ID.get('banh-mi')?.price).toBe(2);
+    expect(FOOD_BY_ID.get('banh-mi')?.effects)
+      .toContainEqual({ type: 'healPercent', percent: 20 });
+    expect(FOOD_BY_ID.get('beshbarmak')?.price).toBe(5);
+    expect(FOOD_BY_ID.get('beshbarmak')?.effects)
+      .toContainEqual({ type: 'maxHpMultiply', factor: 1.05 });
+    expect(FOOD_BY_ID.get('beshbarmak')?.effects)
+      .toContainEqual({ type: 'healPercent', percent: 5 });
     expect(FOOD_BY_ID.get('die-coke')?.price).toBe(1);
     expect(FOOD_BY_ID.get('die-coke')?.effects)
       .toContainEqual({ type: 'healDiceGold', min: 1, max: 6 });
@@ -1065,6 +1073,28 @@ describe('latest balance pass', () => {
     const feasted = act(delicacy.state, { type: 'buy', offerId: 'o0' });
     expect(feasted.state.maxHp).toBe(28);
     expect(feasted.state.hp).toBe(28);
+  });
+
+  it('Banh Mi and Beshbarmak heal by percentage of max HP', () => {
+    const banh = start('banh-mi');
+    banh.state.phase = 'shop';
+    banh.state.gold = 20;
+    banh.state.hp = 5;
+    banh.state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'banh-mi', price: 2 }]);
+    const eaten = act(banh.state, { type: 'buy', offerId: 'o0' });
+    expect(eaten.state.maxHp).toBe(16);
+    expect(eaten.state.hp).toBe(9); // 20% of 16 max HP, rounded up
+    expect(eaten.state.gold).toBe(18);
+
+    const besh = start('beshbarmak');
+    besh.state.phase = 'shop';
+    besh.state.gold = 20;
+    besh.state.hp = 5;
+    besh.state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'beshbarmak', price: 5 }]);
+    const feasted = act(besh.state, { type: 'buy', offerId: 'o0' });
+    expect(feasted.state.maxHp).toBe(17); // +5% max HP (16 → 17)
+    expect(feasted.state.hp).toBe(6); // heal 5% of 17, rounded up
+    expect(feasted.state.gold).toBe(15);
   });
 
   it('Packed Lunch removes a slot and bags the overflow', () => {

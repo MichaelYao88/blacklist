@@ -117,6 +117,8 @@ const FOOD_ICONS: Record<string, string> = {
   'empty-calories': '🍩',
   'one-bo-hue': '🍜',
   'warm-bowl': '🍲',
+  'banh-mi': '🥖',
+  'beshbarmak': '🥩',
   'die-coke': '🥤',
   'overhealers-delight': '🍰',
   'overhealers-delicacy': '🧁',
