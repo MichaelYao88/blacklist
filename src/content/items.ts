@@ -63,12 +63,12 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'hat-trick',
     name: 'Hat Trick',
-    description: 'Solve in 3 guesses: gain 5 gold. +2 more gold each time this triggers.',
+    description: 'Solve in 3 guesses: gain 1 gold. +2 more gold each time this triggers.',
     dynamicDescription: (data) =>
-      `Solve in 3 guesses: gain ${data.gold ?? 5} gold. +2 more gold each time this triggers.`,
+      `Solve in 3 guesses: gain ${data.gold ?? 1} gold. +2 more gold each time this triggers.`,
     price: 9,
     kind: 'gear',
-    initial: { gold: 5 },
+    initial: { gold: 1 },
     on: {
       onSolve: (ctx, p) =>
         p.guesses <= 3
@@ -92,12 +92,12 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'bloom',
     name: 'Bloom',
-    description: 'Solve in 3 guesses: +5 max HP. +1 more each time.',
+    description: 'Solve in 3 guesses: +3 max HP. +1 more each time.',
     dynamicDescription: (data) =>
-      `Solve in 3 guesses: +${data.hp ?? 5} max HP. +1 more each time.`,
-    price: 11,
+      `Solve in 3 guesses: +${data.hp ?? 3} max HP. +1 more each time.`,
+    price: 7,
     kind: 'gear',
-    initial: { hp: 5 },
+    initial: { hp: 3 },
     on: {
       onSolve: (ctx, p) =>
         p.guesses <= 3
@@ -208,22 +208,6 @@ export const ITEMS: ItemDef[] = [
           { type: 'makeGuessFree' },
           { type: 'setItemData', stat: 'used', value: 1 },
         ];
-      },
-    },
-  }),
-  defineItem({
-    id: 'deja-vu',
-    name: 'Déjà Vu',
-    description: 'Round start: last round’s answer is guessed for free.',
-    price: 9,
-    kind: 'gear',
-    on: {
-      onRoundStart: (ctx) => {
-        const answer = ctx.state.lastAnswer;
-        if (!answer) return [];
-        if (ctx.state.blacklist.includes(answer)) return [];
-        if (answer.split('').some((ch) => ctx.state.purged.includes(ch))) return [];
-        return [{ type: 'autoGuess', word: answer }];
       },
     },
   }),
@@ -364,22 +348,25 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'trophy-hunter',
     name: 'Curse Collector',
-    description: 'Whenever you gain a curse: Gain 1 max armor.',
+    description: 'Whenever you gain a curse: Gain 4 max HP and heal 4.',
     price: 9,
     kind: 'gear',
     on: {
-      onCurseGained: () => [{ type: 'maxArmor', delta: 1 }],
+      onCurseGained: () => [
+        { type: 'maxHp', delta: 4 },
+        { type: 'heal', amount: 4 },
+      ],
     },
   }),
   defineItem({
     id: 'necronomicon',
     name: 'Necronomicon',
-    description: 'Round start: reveal 2 letters. Every 13 reveals: +1 Omen, -3 max HP.',
-    price: 10,
+    description: 'Round start: reveal 2 letters not in the word. Every 13 reveals: +1 Omen, -3 max HP.',
+    price: 13,
     kind: 'gear',
     initial: { reveals: 0 },
     on: {
-      onRoundStart: () => [{ type: 'revealRandom', count: 2 }],
+      onRoundStart: () => [{ type: 'revealAbsent', count: 2 }],
       onReveal: (ctx) => {
         const total = ctx.self.data.reveals + 1;
         const procs = Math.floor(total / 13);
@@ -425,18 +412,6 @@ export const ITEMS: ItemDef[] = [
           ...(next % 4 === 0 ? [{ type: 'gold' as const, amount: 1 }] : []),
         ];
       },
-    },
-  }),
-  defineItem({
-    id: 'time-dilation',
-    name: 'Time Dilation',
-    description: 'First 10s: guesses are free. Rounds start 5s shorter.',
-    price: 8,
-    kind: 'gear',
-    on: {
-      onRoundStart: () => [{ type: 'addTime', ms: -5_000 }],
-      onGuessScored: (_ctx, p) =>
-        p.elapsedMs < 10_000 ? [{ type: 'makeGuessFree' }] : [],
     },
   }),
   defineItem({
@@ -506,14 +481,6 @@ export const ITEMS: ItemDef[] = [
     },
   }),
   defineItem({
-    id: 'feast-of-ideas',
-    name: 'Feast of Ideas',
-    description: 'Eating: random spell.',
-    price: 8,
-    kind: 'gear',
-    on: { onEat: () => [{ type: 'giveSpell', spell: 'random' }] },
-  }),
-  defineItem({
     id: 'spellhoarder',
     name: 'Spellhoarder',
     description: 'Every 3rd spell cast: +1 random spell.',
@@ -528,20 +495,6 @@ export const ITEMS: ItemDef[] = [
           ...(next % 3 === 0 ? [{ type: 'giveSpell' as const, spell: 'random' as const }] : []),
         ];
       },
-    },
-  }),
-  defineItem({
-    id: 'sundial',
-    name: 'Sundial',
-    description: '+2 minutes per round. -1 free guess per round.',
-    price: 9,
-    kind: 'gear',
-    requiresClock: true,
-    on: {
-      onRoundStart: () => [
-        { type: 'addTime', ms: 120_000 },
-        { type: 'freeGuesses', count: -1 },
-      ],
     },
   }),
   defineItem({
@@ -585,19 +538,6 @@ export const ITEMS: ItemDef[] = [
             ]
           : [];
       },
-    },
-  }),
-  defineItem({
-    id: 'dead-letter',
-    name: 'Dead Letter',
-    description: 'Timeout: two random spells.',
-    price: 8,
-    kind: 'gear',
-    on: {
-      onRoundEnd: (_ctx, p) =>
-        p.outcome === 'timeout'
-          ? [{ type: 'giveSpell', spell: 'random' }, { type: 'giveSpell', spell: 'random' }]
-          : [],
     },
   }),
   defineItem({
@@ -653,8 +593,8 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'nest-egg',
     name: 'Nest Egg',
-    description: 'On solve: +3 gold.',
-    price: 8,
+    description: 'On solve: +1 gold.',
+    price: 4,
     kind: 'gear',
     on: { onSolve: () => [{ type: 'gold', amount: 3 }] },
   }),
@@ -674,10 +614,10 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'field-kit',
     name: 'Field Kit',
-    description: 'Round start, learn 4 letters not in the word.',
+    description: 'Round start, learn 2 letters not in the word.',
     price: 10,
     kind: 'gear',
-    on: { onRoundStart: () => [{ type: 'revealAbsent', count: 4 }] },
+    on: { onRoundStart: () => [{ type: 'revealAbsent', count: 2 }] },
   }),
   defineItem({
     id: 'doggy-bag',
@@ -689,14 +629,6 @@ export const ITEMS: ItemDef[] = [
       onRoundStart: () => [{ type: 'revealAbsent', count: 2 }],
       onEat: () => [{ type: 'pendingAbsent', count: 1 }],
     },
-  }),
-  defineItem({
-    id: 'field-dressing',
-    name: 'Field Dressing',
-    description: 'Whenever a letter is revealed for you, heal 1 HP.',
-    price: 8,
-    kind: 'gear',
-    on: { onReveal: () => [{ type: 'heal', amount: 1 }] },
   }),
   defineItem({
     id: 'pen-club',
@@ -723,12 +655,12 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'trailblazer',
     name: 'Trailblazer',
-    description: 'On solve with 20+ ruled-out letters: random spell.',
-    price: 9,
+    description: 'On solve with 15+ ruled-out letters: random spell.',
+    price: 7,
     kind: 'gear',
     on: {
       onSolve: (_ctx, p) =>
-        p.ruledOut >= 20 ? [{ type: 'giveSpell', spell: 'random' }] : [],
+        p.ruledOut >= 15 ? [{ type: 'giveSpell', spell: 'random' }] : [],
     },
   }),
   defineItem({
@@ -772,11 +704,11 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'boss-aegis',
     name: 'Curse Bulwark',
-    description: 'Whenever you gain a curse: Gain 4 max armor.',
+    description: 'Whenever you gain a curse: Gain 2 max armor.',
     price: 10,
     kind: 'gear',
     on: {
-      onCurseGained: () => [{ type: 'maxArmor', delta: 4 }],
+      onCurseGained: () => [{ type: 'maxArmor', delta: 2 }],
     },
   }),
   defineItem({
@@ -859,7 +791,7 @@ export const ITEMS: ItemDef[] = [
     id: 'growth-chart',
     name: 'Growth Chart',
     description: 'Every 5 max HP gained: +1 Time Freeze.',
-    price: 9,
+    price: 6,
     kind: 'gear',
     initial: { grown: 0 },
     on: {
@@ -949,7 +881,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'ward-engine',
     name: 'Ward Engine',
-    description: 'Cast Immunity: +2 armor. Once per round.',
+    description: 'Cast Immunity: +2 max armor. Once per round.',
     price: 8,
     kind: 'gear',
     initial: { used: 0 },
@@ -958,7 +890,7 @@ export const ITEMS: ItemDef[] = [
       onSpellCast: (ctx, p) => {
         if (ctx.self.data.used || p.spell !== 'immunity') return [];
         return [
-          { type: 'armor', delta: 2 },
+          { type: 'maxArmor', delta: 2 },
           { type: 'setItemData', stat: 'used', value: 1 },
         ];
       },
@@ -990,7 +922,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'ticking-fee',
     name: 'Ticking Fee',
-    description: 'Every 20s that pass in a round: +1 gold.',
+    description: 'Every 40s that pass in a round: +1 gold.',
     price: 8,
     kind: 'gear',
     timerInterest: true,
@@ -1000,9 +932,9 @@ export const ITEMS: ItemDef[] = [
       onRoundStart: () => [{ type: 'setItemData', stat: 'ms', value: 0 }],
       onTimerTick: (ctx, p) => {
         const total = ctx.self.data.ms + p.dtMs;
-        const gold = Math.floor(total / 20_000);
+        const gold = Math.floor(total / 40_000);
         return [
-          { type: 'setItemData', stat: 'ms', value: total % 20_000 },
+          { type: 'setItemData', stat: 'ms', value: total % 40_000 },
           ...Array.from({ length: gold }, () => ({ type: 'gold' as const, amount: 1 })),
         ];
       },
@@ -1011,8 +943,8 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'second-skin',
     name: 'Second Skin',
-    description: 'First time armor hits 0 each round: heal 4, restore half your max armor.',
-    price: 9,
+    description: 'First time armor hits 0 each round: restore half your max armor.',
+    price: 6,
     kind: 'gear',
     initial: { used: 0 },
     on: {
@@ -1020,7 +952,6 @@ export const ITEMS: ItemDef[] = [
       onDamageTaken: (ctx, p) => {
         if (ctx.self.data.used || p.armorUsed <= 0 || ctx.state.armor > 0) return [];
         return [
-          { type: 'heal', amount: 4 },
           { type: 'armor', delta: Math.ceil(ctx.state.maxArmor / 2) },
           { type: 'setItemData', stat: 'used', value: 1 },
         ];
@@ -1029,7 +960,7 @@ export const ITEMS: ItemDef[] = [
   }),
   defineItem({
     id: 'double-blind',
-    name: 'Double Blind',
+    name: 'Yellow1',
     description: 'Once per round: a guess with exactly one yellow and no green is free.',
     price: 8,
     kind: 'gear',
@@ -1078,7 +1009,7 @@ export const ITEMS: ItemDef[] = [
     id: 'contrapuntal',
     name: 'Contrapuntal',
     description: 'Cast each of the six spell types once. On the last, become a random relic.',
-    price: 12,
+    price: 7,
     kind: 'gear',
     initial: { _mask: 0, types: 0 },
     on: {
@@ -1141,7 +1072,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'last-cast',
     name: 'Last Cast',
-    description: 'Cast your last spell: +1 random spell. Once per round.',
+    description: 'When you cast your only remaining spell: +1 random spell. Once per round.',
     price: 9,
     kind: 'gear',
     initial: { used: 0 },
@@ -1165,6 +1096,17 @@ export const ITEMS: ItemDef[] = [
     on: {
       onRoundStart: (ctx) =>
         ctx.state.spells.length === 0 ? [{ type: 'giveSpell', spell: 'random' }] : [],
+    },
+  }),
+  defineItem({
+    id: 'empty-armor',
+    name: 'Empty Armor',
+    description: 'Start a round with no spells: +1 Restore.',
+    price: 8,
+    kind: 'gear',
+    on: {
+      onRoundStart: (ctx) =>
+        ctx.state.spells.length === 0 ? [{ type: 'giveSpell', spell: 'restore' }] : [],
     },
   }),
   defineItem({
@@ -1192,7 +1134,7 @@ export const ITEMS: ItemDef[] = [
     id: 'solo-note',
     name: 'Solo Note',
     description: 'Once per round: a guess with one yellow and no green grants Restore.',
-    price: 9,
+    price: 7,
     kind: 'gear',
     initial: { used: 0 },
     on: {
@@ -1231,15 +1173,19 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'clean-slate',
     name: 'Clean Slate',
-    description: 'A guess sharing no letters with the previous guess: +1 max armor.',
+    description: 'Once per round: a guess sharing no letters with the previous guess: +1 max armor.',
     price: 9,
     kind: 'gear',
+    initial: { used: 0 },
     on: {
-      onGuessScored: (_ctx, p) => {
-        if (!p.previous) return [];
-        return sharedLetters(p.guess.word, p.previous.word) === 0
-          ? [{ type: 'maxArmor', delta: 1 }]
-          : [];
+      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
+      onGuessScored: (ctx, p) => {
+        if (ctx.self.data.used || !p.previous) return [];
+        if (sharedLetters(p.guess.word, p.previous.word) > 0) return [];
+        return [
+          { type: 'maxArmor', delta: 1 },
+          { type: 'setItemData', stat: 'used', value: 1 },
+        ];
       },
     },
   }),
@@ -1256,11 +1202,11 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'growth-spurt',
     name: 'Growth Spurt',
-    description: 'Solve in 4 guesses or fewer: +4 max HP.',
-    price: 10,
+    description: 'Solve in 4 guesses or fewer: +2 max HP.',
+    price: 6,
     kind: 'gear',
     on: {
-      onSolve: (_ctx, p) => (p.guesses <= 4 ? [{ type: 'maxHp', delta: 4 }] : []),
+      onSolve: (_ctx, p) => (p.guesses <= 4 ? [{ type: 'maxHp', delta: 2 }] : []),
     },
   }),
 
@@ -1286,8 +1232,8 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'plate-timer',
     name: 'Plate Timer',
-    description: 'Every 10 armor lost adds 3s to the clock.',
-    price: 9,
+    description: 'Every 10 armor lost adds 15s to the clock.',
+    price: 7,
     kind: 'gear',
     requiresClock: true,
     initial: { lost: 0 },
@@ -1298,7 +1244,7 @@ export const ITEMS: ItemDef[] = [
         const seconds = Math.floor(total / 10);
         return [
           { type: 'setItemData', stat: 'lost', value: total % 10 },
-          ...Array.from({ length: seconds }, () => ({ type: 'addTime' as const, ms: 3_000 })),
+          ...Array.from({ length: seconds }, () => ({ type: 'addTime' as const, ms: 15_000 })),
         ];
       },
     },

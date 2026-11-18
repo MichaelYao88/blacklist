@@ -875,6 +875,10 @@ export function createCore(content: Content): Core {
         emit(rt, { type: 'freeGuessesChanged', remaining: round.freeLeft, source });
         break;
       }
+      case 'freeGuessBonus':
+        state.freeGuessBonus += effect.delta;
+        emit(rt, { type: 'attributeChanged', stat: 'freeGuessBonus', value: state.freeGuessBonus });
+        break;
       case 'makeGuessFree': {
         if (effect.chancePct !== undefined && !rngChance(state, effect.chancePct)) break;
         rt.pendingFree = true;
@@ -1229,7 +1233,7 @@ export function createCore(content: Content): Core {
       answer,
       boss: boss?.id,
       guesses: [],
-      freeLeft: Math.max(0, 1 + freeGuessPenalty(state)),
+      freeLeft: Math.max(0, 1 + freeGuessPenalty(state) + state.freeGuessBonus),
       paidGuesses: 0,
       baseDamage,
       damageRamp: 0,
@@ -2693,6 +2697,7 @@ export function createCore(content: Content): Core {
       bonusTimeMs: 0,
       bonusBaseDamage: 0,
       bonusSolveGold: 0,
+      freeGuessBonus: 0,
       items: [],
       spells: [],
       blacklist: [],
@@ -2768,6 +2773,7 @@ export function createCore(content: Content): Core {
         state.slots = 5;
       }
       state.bonusSolveGold = typeof state.bonusSolveGold === 'number' ? state.bonusSolveGold : 0;
+      if (typeof state.freeGuessBonus !== 'number') state.freeGuessBonus = 0;
       if (!Array.isArray(state.curses)) state.curses = [];
       if (!Array.isArray(state.firstGuesses)) state.firstGuesses = state.blacklist.slice();
       if (typeof state.level !== 'number') {

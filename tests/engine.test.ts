@@ -457,7 +457,8 @@ describe('curse-triggered items', () => {
     state.curse = { options: ['censor'], starting: false };
     state.phase = 'curse';
     const chosen = act(state, { type: 'chooseCurse', curseId: 'censor' });
-    expect(chosen.state.maxArmor).toBe(7);
+    expect(chosen.state.maxHp).toBe(20);
+    expect(chosen.state.maxArmor).toBe(4);
     expect(chosen.state.slots).toBe(6);
     expect(chosen.state.spells).toHaveLength(2);
   });
@@ -471,14 +472,14 @@ describe('curse-triggered items', () => {
 });
 
 describe('item and food batch', () => {
-  it('Field Kit reveals 4 letters that are not in the word', () => {
+  it('Field Kit reveals 2 letters that are not in the word', () => {
     const { state } = start('field-kit');
     state.items.push({ instance: 'i-kit', id: 'field-kit', data: {}, equipped: true });
     const next = nextRound(state);
     const round = next.state.round;
     if (!round) throw new Error('expected round');
     const hints = Object.entries(round.hints);
-    expect(hints).toHaveLength(4);
+    expect(hints).toHaveLength(2);
     for (const [letter, status] of hints) {
       expect(status).toBe('absent');
       expect(round.answer).not.toContain(letter);
@@ -545,7 +546,7 @@ describe('scaling gold items', () => {
   it('describes the live payout', () => {
     const def = ITEM_BY_ID.get('hat-trick');
     expect(def?.rarity).toBeUndefined();
-    expect(def?.description).toContain('gain 5 gold');
+    expect(def?.description).toContain('gain 1 gold');
     expect(def?.dynamicDescription?.({ gold: 9 })).toContain('gain 9 gold');
   });
 });
@@ -677,11 +678,11 @@ describe('new item and event batch', () => {
 
   it('The Endless Table fires on-eat effects 7 times', () => {
     const { state } = start('endless-table');
-    state.items.push({ instance: 'i-feast', id: 'feast-of-ideas', data: {}, equipped: true });
+    state.items.push({ instance: 'i-gour', id: 'gourmand', data: {}, equipped: true });
     state.phase = 'happening';
     state.happening = { id: 'endless-table', options: [] };
     const eaten = act(state, { type: 'choose', optionId: 'eat' });
-    expect(eaten.state.spells).toHaveLength(8);
+    expect(eaten.state.maxHp).toBe(23);
   });
 
   it('Pen Club pays a random 1-5 gold', () => {
@@ -765,7 +766,7 @@ describe('new item and event batch', () => {
       .toContainEqual({ type: 'maxArmor', delta: 1 });
     expect(FOOD_BY_ID.get('bitter-root')?.effects)
       .not.toContainEqual({ type: 'armor', delta: 1 });
-    expect(ITEM_BY_ID.get('growth-spurt')?.description).toContain('+4 max HP');
+    expect(ITEM_BY_ID.get('growth-spurt')?.description).toContain('+2 max HP');
     expect(ITEM_BY_ID.get('bulk-order')?.description).toContain('+1 max armor');
     expect(CURSE_BY_ID.get('porcupine')?.damagePerGreen).toBe(2);
     expect(CURSE_BY_ID.get('tight-slots')?.slotDelta).toBe(-2);
@@ -881,7 +882,7 @@ describe('latest balance pass', () => {
     state.round!.freeLeft = 0;
     const guess = act(state, { type: 'guess', word: 'slate' });
     expect(guess.state.armor).toBe(3);
-    expect(guess.state.hp).toBe(16);
+    expect(guess.state.hp).toBe(14);
   });
 
   it('uses the normal curse pool for the first draft', () => {
@@ -1113,6 +1114,103 @@ describe('latest balance pass', () => {
     plate.state.happening = { id: 'the-scales', options: [] };
     const plated = act(plate.state, { type: 'choose', optionId: 'plate' });
     expect(plated.state.maxArmor).toBe(3);
+  });
+
+  it('removes the retired item batch', () => {
+    expect(ITEM_BY_ID.get('dead-letter')).toBeUndefined();
+    expect(ITEM_BY_ID.get('feast-of-ideas')).toBeUndefined();
+    expect(ITEM_BY_ID.get('field-dressing')).toBeUndefined();
+    expect(ITEM_BY_ID.get('time-dilation')).toBeUndefined();
+    expect(ITEM_BY_ID.get('deja-vu')).toBeUndefined();
+    expect(ITEM_BY_ID.get('sundial')).toBeUndefined();
+    expect(FOOD_BY_ID.get('sundial')).toBeDefined();
+  });
+
+  it('applies the new prices and text', () => {
+    expect(ITEM_BY_ID.get('bloom')?.price).toBe(7);
+    expect(ITEM_BY_ID.get('bloom')?.initial).toMatchObject({ hp: 3 });
+    expect(ITEM_BY_ID.get('contrapuntal')?.price).toBe(7);
+    expect(ITEM_BY_ID.get('growth-chart')?.price).toBe(6);
+    expect(ITEM_BY_ID.get('growth-spurt')?.price).toBe(6);
+    expect(ITEM_BY_ID.get('growth-spurt')?.description).toContain('+2 max HP');
+    expect(ITEM_BY_ID.get('hat-trick')?.initial).toMatchObject({ gold: 1 });
+    expect(ITEM_BY_ID.get('necronomicon')?.price).toBe(13);
+    expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('not in the word');
+    expect(ITEM_BY_ID.get('nest-egg')?.price).toBe(4);
+    expect(ITEM_BY_ID.get('nest-egg')?.description).toContain('+1 gold');
+    expect(ITEM_BY_ID.get('plate-timer')?.price).toBe(7);
+    expect(ITEM_BY_ID.get('plate-timer')?.description).toContain('15s');
+    expect(ITEM_BY_ID.get('second-skin')?.price).toBe(6);
+    expect(ITEM_BY_ID.get('second-skin')?.description).not.toContain('heal');
+    expect(ITEM_BY_ID.get('solo-note')?.price).toBe(7);
+    expect(ITEM_BY_ID.get('ticking-fee')?.description).toContain('40s');
+    expect(ITEM_BY_ID.get('trailblazer')?.price).toBe(7);
+    expect(ITEM_BY_ID.get('trailblazer')?.description).toContain('15+');
+    expect(ITEM_BY_ID.get('double-blind')?.name).toBe('Yellow1');
+    expect(ITEM_BY_ID.get('empty-armor')?.price).toBe(8);
+  });
+
+  it('Head Start makes early guesses free and late guesses paid', () => {
+    const early = start('head-start-early');
+    early.state.items.push({ instance: 'i-hs', id: 'head-start', data: {}, equipped: true });
+    const first = nextRound(early.state);
+    setAnswer(first.state, 'crane');
+    first.state.round!.freeLeft = 0;
+    first.state.round!.elapsedMs = 5_000;
+    const shielded = act(first.state, { type: 'guess', word: 'slate' });
+    expect(shielded.state.round?.guesses[0].free).toBe(true);
+    expect(shielded.state.hp).toBe(16);
+
+    const late = start('head-start-late');
+    late.state.items.push({ instance: 'i-hs', id: 'head-start', data: {}, equipped: true });
+    const second = nextRound(late.state);
+    setAnswer(second.state, 'crane');
+    second.state.round!.freeLeft = 0;
+    second.state.round!.elapsedMs = 13_000;
+    second.state.armor = 0;
+    const unshielded = act(second.state, { type: 'guess', word: 'slate' });
+    expect(unshielded.state.round?.guesses[0].free).toBe(false);
+    expect(unshielded.state.hp).toBe(13);
+  });
+
+  it('Ward Engine grants max armor', () => {
+    const { state } = start('ward-engine');
+    state.items.push({ instance: 'i-ward', id: 'ward-engine', data: { used: 0 }, equipped: true });
+    state.spells = [{ instance: 's-imm', id: 'immunity' }];
+    const cast = act(state, { type: 'castSpell', instance: 's-imm' });
+    expect(cast.state.maxArmor).toBe(4);
+  });
+
+  it('Clean Slate only pays once per round', () => {
+    const { state } = start('clean-slate');
+    state.items.push({ instance: 'i-clean', id: 'clean-slate', data: { used: 0 }, equipped: true });
+    setAnswer(state, 'crane');
+    const first = act(state, { type: 'guess', word: 'brick' });
+    const trigger = act(first.state, { type: 'guess', word: 'vamps' });
+    expect(trigger.state.maxArmor).toBe(3);
+    const third = act(trigger.state, { type: 'guess', word: 'fizzy' });
+    expect(third.state.maxArmor).toBe(3);
+  });
+
+  it('Empty Armor grants Restore when the round starts with no spells', () => {
+    const { state } = start('empty-armor');
+    state.items.push({ instance: 'i-empty', id: 'empty-armor', data: {}, equipped: true });
+    state.spells = [];
+    const next = nextRound(state);
+    expect(next.state.spells.some((spell) => spell.id === 'restore')).toBe(true);
+  });
+
+  it('Sundial is food that adds time and removes a free guess', () => {
+    const { state } = start('sundial');
+    state.curses.push({ id: 'clock', stacks: 1 });
+    state.phase = 'shop';
+    state.gold = 20;
+    state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'sundial', price: 9 }]);
+    const eaten = act(state, { type: 'buy', offerId: 'o0' });
+    expect(eaten.state.bonusTimeMs).toBe(120_000);
+    expect(eaten.state.freeGuessBonus).toBe(-1);
+    const next = nextRound(eaten.state);
+    expect(next.state.round?.freeLeft).toBe(0);
   });
 
   it('applies the latest prices and text', () => {

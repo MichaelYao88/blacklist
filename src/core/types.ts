@@ -271,6 +271,7 @@ export type Effect =
   | { type: 'freezeTime'; ms: number }
   | { type: 'freezeUntilGuess' }
   | { type: 'freeGuesses'; count: number }
+  | { type: 'freeGuessBonus'; delta: number }
   | { type: 'makeGuessFree'; chancePct?: number }
   | { type: 'immunity'; guesses: number }
   | { type: 'timedImmunity'; ms: number }
@@ -487,6 +488,8 @@ export interface RunState {
   bonusTimeMs: number;
   bonusBaseDamage: number;
   bonusSolveGold: number;
+  /** Permanent change to free guesses per round from foods such as Sundial. */
+  freeGuessBonus: number;
   items: ItemInstance[];
   spells: SpellInstance[];
   blacklist: string[];
