@@ -2664,6 +2664,14 @@ button {
   #phrase-root span {
     animation-duration: 0.01ms;
   }
+
+  .immunity-banner {
+    animation: none;
+  }
+
+  .immunity-timer i {
+    transition: none;
+  }
 }
 
 .damage-overlay {
@@ -3292,6 +3300,75 @@ button {
 
 /* pause */
 
+/* ── immunity banner ─────────────────────────────────────────────────────── */
+
+#immunity-root {
+  position: fixed;
+  top: 78px;
+  left: 50%;
+  z-index: 54;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.immunity-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 24px 12px;
+  border: 1px solid rgba(124, 212, 255, 0.55);
+  border-radius: 999px;
+  background: rgba(8, 16, 26, 0.86);
+  color: #dcf4ff;
+  font-family: var(--serif);
+  letter-spacing: 0.06em;
+  box-shadow: 0 0 26px rgba(90, 180, 255, 0.28), inset 0 0 18px rgba(90, 180, 255, 0.08);
+  animation: immunity-pop 240ms ease-out;
+}
+
+.immunity-shield {
+  font-size: 1.05rem;
+  filter: drop-shadow(0 0 6px rgba(124, 212, 255, 0.8));
+}
+
+.immunity-word {
+  font-size: 1.02rem;
+  font-weight: 600;
+  text-shadow: 0 0 12px rgba(124, 212, 255, 0.55);
+}
+
+.immunity-timer {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 4px;
+  height: 2px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.immunity-timer i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #64c8ff, #dcf4ff);
+  transition: width 1s linear, opacity 1s linear;
+}
+
+@keyframes immunity-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .pause-overlay {
   position: fixed;
   inset: 0;
@@ -3535,6 +3612,10 @@ button {
 }
 
 @media (max-width: 620px) {
+  #immunity-root {
+    top: 118px;
+  }
+
   .shell {
     padding: 10px 8px 30px;
   }

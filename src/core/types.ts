@@ -125,6 +125,8 @@ export interface RoundState {
   immuneGuesses: number;
   /** Damage is ignored while elapsedMs is below this value. */
   immuneUntilMs: number;
+  /** Guess damage is ignored while elapsedMs is below this value. */
+  guessImmuneUntilMs: number;
   damageTaken: number;
   bossState: Record<string, number>;
   gauntletIndex: number;
@@ -582,6 +584,8 @@ export interface BoardView {
   /** True while a timed immunity item is protecting the opening seconds. */
   shielded: boolean;
   shieldMsLeft: number;
+  /** Remaining time on the Immunity spell's post-hit guess shield. */
+  guessImmuneMsLeft: number;
 }
 
 export type PhaseView =

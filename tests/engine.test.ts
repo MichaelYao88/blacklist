@@ -765,9 +765,9 @@ describe('new item and event batch', () => {
     expect(solved.state.slots).toBe(6);
   });
 
-  it('Muffin Tin grants +1 max armor for each food eaten in a shop', () => {
+  it('Muffin Tin grants +1 max armor for each food eaten until you leave the shop', () => {
     const { state } = start('muffin-tin');
-    state.items.push({ instance: 'i-muffin', id: 'muffin-tin', data: {}, equipped: true });
+    state.items.push({ instance: 'i-muffin', id: 'muffin-tin', data: { visit: -1 }, equipped: true });
     state.phase = 'shop';
     state.gold = 100;
     state.shop = shopState([
@@ -780,7 +780,123 @@ describe('new item and event batch', () => {
     current = act(current, { type: 'buy', offerId: 'f1' }).state;
     expect(current.maxArmor).toBe(base + 2);
     expect(ITEM_BY_ID.get('muffin-tin')?.price).toBe(2);
+    expect(ITEM_BY_ID.get('muffin-tin')?.description)
+      .toContain('until the next time you leave a shop');
     expect(ITEM_BY_ID.get('bulk-order')).toBeUndefined();
+  });
+
+  it('Muffin Tin keeps counting after a shop reroll', () => {
+    const { state } = start('muffin-reroll');
+    state.items.push({ instance: 'i-muffin', id: 'muffin-tin', data: { visit: -1 }, equipped: true });
+    state.phase = 'shop';
+    state.gold = 100;
+    state.shop = shopState([{ id: 'f0', kind: 'eat', def: 'snack', price: 3 }]);
+    let current = act(state, { type: 'buy', offerId: 'f0' }).state;
+    const first = current.maxArmor;
+    current = act(current, { type: 'reroll' }).state;
+    current.shop!.offers = [{ id: 'f1', kind: 'eat', def: 'feast', price: 5 }];
+    current.shop!.foodOffers = 1;
+    current.shop!.foodsBought = 0;
+    current = act(current, { type: 'buy', offerId: 'f1' }).state;
+    expect(current.maxArmor).toBe(first + 1);
+    expect(current.items.find((item) => item.id === 'muffin-tin')?.data.visit)
+      .toBe(current.shop?.visit);
+  });
+
+  it('Muffin Tin stops after leaving the shop it was armed for', () => {
+    const { state } = start('muffin-leave');
+    state.items.push({ instance: 'i-muffin', id: 'muffin-tin', data: { visit: -1 }, equipped: true });
+    state.phase = 'shop';
+    state.gold = 100;
+    state.shop = shopState([{ id: 'f0', kind: 'eat', def: 'snack', price: 3 }]);
+    let current = act(state, { type: 'buy', offerId: 'f0' }).state;
+    const afterFirstShop = current.maxArmor;
+
+    current.shop = { ...shopState([{ id: 'f1', kind: 'eat', def: 'feast', price: 5 }]), visit: 7 };
+    current = act(current, { type: 'buy', offerId: 'f1' }).state;
+    expect(current.maxArmor).toBe(afterFirstShop);
+
+    current.shop = { ...shopState([{ id: 'f2', kind: 'eat', def: 'snack', price: 3 }]), visit: 8 };
+    current = act(current, { type: 'buy', offerId: 'f2' }).state;
+    expect(current.maxArmor).toBe(afterFirstShop);
+  });
+
+  it('Muffin Tin arms itself when bought in a shop', () => {
+    const { state } = start('muffin-buy');
+    state.phase = 'shop';
+    state.gold = 100;
+    state.shop = shopState([
+      { id: 'o0', kind: 'item', def: 'muffin-tin', price: 2 },
+      { id: 'f0', kind: 'eat', def: 'snack', price: 3 },
+    ]);
+    let current = act(state, { type: 'buy', offerId: 'o0' }).state;
+    const muffin = current.items.find((item) => item.id === 'muffin-tin');
+    expect(muffin?.data.visit).toBe(current.shop?.visit);
+    const base = current.maxArmor;
+    current = act(current, { type: 'buy', offerId: 'f0' }).state;
+    expect(current.maxArmor).toBe(base + 1);
+  });
+
+  it('Bulwark pays a spell every 8 damage blocked and costs 8', () => {
+    const { state } = start('bulwark');
+    state.items.push({ instance: 'i-bul', id: 'bulwark', data: { blocked: 0 }, equipped: true });
+    state.spells = [];
+    state.round!.freeLeft = 0;
+    state.armor = 20;
+    state.maxArmor = 20;
+    setAnswer(state, 'crane');
+    let current = state;
+    current = act(current, { type: 'guess', word: 'slate' }).state;
+    current = act(current, { type: 'guess', word: 'brick' }).state;
+    expect(current.spells).toHaveLength(0);
+    current = act(current, { type: 'guess', word: 'vamps' }).state;
+    expect(current.spells).toHaveLength(1);
+    expect(ITEM_BY_ID.get('bulwark')?.price).toBe(8);
+    expect(ITEM_BY_ID.get('bulwark')?.description).toContain('Every 8 damage blocked');
+  });
+
+  it('Guardian Angel grants Immunity after 10 HP damage taken', () => {
+    const { state } = start('guardian-angel');
+    state.items.push({
+      instance: 'i-angel',
+      id: 'guardian-angel',
+      data: { taken: 9 },
+      equipped: true,
+    });
+    state.round!.freeLeft = 0;
+    state.armor = 2;
+    state.maxArmor = 2;
+    setAnswer(state, 'crane');
+    const hit = act(state, { type: 'guess', word: 'slate' });
+    expect(hit.state.items.find((item) => item.id === 'guardian-angel')?.data.taken).toBe(0);
+    expect(hit.state.round?.immuneGuesses).toBe(1);
+    expect(ITEM_BY_ID.get('guardian-angel')?.price).toBe(8);
+    expect(ITEM_BY_ID.get('guardian-angel')?.description)
+      .toContain('every 10 HP damage');
+  });
+
+  it('Immunity blocks the next hurting guess and the next 4 seconds of guesses', () => {
+    const { state } = start('immunity-window');
+    state.spells = [{ instance: 's-imm', id: 'immunity' }];
+    state.round!.freeLeft = 0;
+    state.armor = 0;
+    state.maxArmor = 0;
+    setAnswer(state, 'crane');
+
+    const cast = act(state, { type: 'castSpell', instance: 's-imm' });
+    expect(cast.state.round?.immuneGuesses).toBe(1);
+
+    const first = act(cast.state, { type: 'guess', word: 'slate' });
+    expect(first.state.hp).toBe(16);
+    expect(first.state.round?.immuneGuesses).toBe(0);
+    expect(first.state.round?.guessImmuneUntilMs).toBe(4_000);
+
+    const second = act(first.state, { type: 'guess', word: 'brick' });
+    expect(second.state.hp).toBe(16);
+
+    second.state.round!.elapsedMs = 5_000;
+    const third = act(second.state, { type: 'guess', word: 'vamps' });
+    expect(third.state.hp).toBe(13);
   });
 
   it('applies the tuned content text and values', () => {

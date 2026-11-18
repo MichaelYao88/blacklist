@@ -36,7 +36,7 @@ export const SPELLS: SpellDef[] = [
   defineSpell({
     id: 'immunity',
     name: 'Immunity',
-    description: 'The next hurting guess deals no damage.',
+    description: 'The next hurting guess and any guess for 4 seconds after deal no damage.',
     price: 7,
     usable: 'round',
     cast: () => [{ type: 'immunity', guesses: 1 }],

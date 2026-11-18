@@ -580,6 +580,8 @@ export function createCore(content: Content): Core {
   interface DamageOptions {
     ignoreArmor?: boolean;
     ignoreImmunity?: boolean;
+    /** This damage comes from a guess, so the Immunity spell can block it. */
+    guess?: boolean;
     timeout?: boolean;
   }
 
@@ -608,7 +610,7 @@ export function createCore(content: Content): Core {
       return;
     }
 
-    if (round && !options.ignoreImmunity && round.elapsedMs < round.immuneUntilMs) {
+    const blocked = (): void => {
       emit(rt, {
         type: 'damageTaken',
         incoming: modified,
@@ -625,29 +627,25 @@ export function createCore(content: Content): Core {
         blocked: modified,
         source,
       });
+    };
+
+    if (round && !options.ignoreImmunity && round.elapsedMs < round.immuneUntilMs) {
+      blocked();
       return;
     }
 
-    if (round && !options.ignoreImmunity && round.immuneGuesses > 0) {
-      round.immuneGuesses--;
-      emit(rt, { type: 'immunityChanged', guessesLeft: round.immuneGuesses });
-      emit(rt, {
-        type: 'damageTaken',
-        incoming: modified,
-        armorUsed: 0,
-        blocked: modified,
-        dealt: 0,
-        hp: state.hp,
-        source,
-      });
-      runHook(rt, 'onDamageTaken', {
-        incoming: modified,
-        dealt: 0,
-        armorUsed: 0,
-        blocked: modified,
-        source,
-      });
-      return;
+    if (round && options.guess && !options.ignoreImmunity) {
+      if (round.elapsedMs < round.guessImmuneUntilMs) {
+        blocked();
+        return;
+      }
+      if (round.immuneGuesses > 0) {
+        round.immuneGuesses--;
+        round.guessImmuneUntilMs = round.elapsedMs + 4_000;
+        emit(rt, { type: 'immunityChanged', guessesLeft: round.immuneGuesses });
+        blocked();
+        return;
+      }
     }
 
     // Armor is a pool of damage reduction, not an all-or-nothing charge:
@@ -1320,6 +1318,7 @@ export function createCore(content: Content): Core {
       frozenUntilGuess: false,
       immuneGuesses: 0,
       immuneUntilMs: 0,
+      guessImmuneUntilMs: 0,
       damageTaken: 0,
       bossState: { ...(boss?.initialState ?? {}) },
       gauntletIndex: 0,
@@ -1718,6 +1717,7 @@ export function createCore(content: Content): Core {
             rt,
             amount,
             round.boss ? { kind: 'boss', boss: round.boss } : RULES,
+            { guess: true },
           );
         }
       }
@@ -2600,6 +2600,7 @@ export function createCore(content: Content): Core {
       ruledOut: ruledOutLetters(state, round).size,
       shielded: round.elapsedMs < round.immuneUntilMs,
       shieldMsLeft: Math.max(0, round.immuneUntilMs - round.elapsedMs),
+      guessImmuneMsLeft: Math.max(0, round.guessImmuneUntilMs - round.elapsedMs),
     };
   }
 
@@ -2986,6 +2987,9 @@ export function createCore(content: Content): Core {
         }
         if (typeof state.round.immuneUntilMs !== 'number') {
           state.round.immuneUntilMs = 0;
+        }
+        if (typeof state.round.guessImmuneUntilMs !== 'number') {
+          state.round.guessImmuneUntilMs = 0;
         }
         if (typeof state.round.damageRamp !== 'number') {
           state.round.damageRamp = 0;

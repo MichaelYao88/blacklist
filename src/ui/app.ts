@@ -48,6 +48,13 @@ phraseRoot.id = 'phrase-root';
 document.body.appendChild(phraseRoot);
 let phraseTimer: number | undefined;
 
+// The Immunity banner lives outside the main render tree so its timer drain is
+// not restarted by the once-per-second render.
+const immunityRoot = document.createElement('div');
+immunityRoot.id = 'immunity-root';
+document.body.appendChild(immunityRoot);
+let immunityActive = false;
+
 const host = new CoreHost({ core: game, store: new LocalStore() });
 
 type Screen = 'title' | 'run' | 'help' | 'stats';
@@ -570,6 +577,36 @@ function render(): void {
     damageRendered = damageId;
     fxRoot.innerHTML = damageOverlayHtml();
   }
+
+  renderImmunity(screen === 'run' ? view : null);
+}
+
+function renderImmunity(view: RunView | null): void {
+  const left = view && view.phase.kind === 'round'
+    ? view.phase.board.guessImmuneMsLeft
+    : 0;
+  if (left <= 0) {
+    if (immunityActive) {
+      immunityRoot.innerHTML = '';
+      immunityActive = false;
+    }
+    return;
+  }
+  if (!immunityActive) {
+    immunityRoot.innerHTML = `
+    <div class="immunity-banner" role="status" aria-live="polite">
+      <span class="immunity-shield" aria-hidden="true">🛡</span>
+      <span class="immunity-word">Immunity!</span>
+      <span class="immunity-shield" aria-hidden="true">🛡</span>
+      <span class="immunity-timer" aria-hidden="true"><i></i></span>
+    </div>`;
+    immunityActive = true;
+  }
+  const bar = immunityRoot.querySelector<HTMLElement>('.immunity-timer i');
+  if (!bar) return;
+  const ratio = Math.max(0, Math.min(1, left / 4_000));
+  bar.style.width = `${(ratio * 100).toFixed(1)}%`;
+  bar.style.opacity = `${(0.35 + ratio * 0.65).toFixed(2)}`;
 }
 
 function noticeHtml(): string {
@@ -904,7 +941,10 @@ function damageOverlayHtml(): string {
 }
 
 function guessDamageHtml(board: BoardView): string {
-  const safe = board.freeGuessesLeft > 0 || board.noGuessDamage || board.shielded;
+  const safe = board.freeGuessesLeft > 0
+    || board.noGuessDamage
+    || board.shielded
+    || board.guessImmuneMsLeft > 0;
   const value = safe ? 0 : board.rawNextGuessDamage;
   return `<div class="guess-damage ${safe ? 'safe' : ''}" title="Damage a wrong guess deals once your free guesses and shield are gone.">
     <span>WRONG GUESS</span>

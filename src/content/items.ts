@@ -650,18 +650,37 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'bulwark',
     name: 'Bulwark',
-    description: 'Every 5 damage blocked: +1 random spell.',
-    price: 10,
+    description: 'Every 8 damage blocked: +1 random spell.',
+    price: 8,
     kind: 'gear',
     initial: { blocked: 0 },
     on: {
       onDamageTaken: (ctx, p) => {
         if (p.blocked <= 0) return [];
         const total = ctx.self.data.blocked + p.blocked;
-        const spells = Math.floor(total / 5);
+        const spells = Math.floor(total / 8);
         return [
-          { type: 'setItemData', stat: 'blocked', value: total % 5 },
+          { type: 'setItemData', stat: 'blocked', value: total % 8 },
           ...Array.from({ length: spells }, () => ({ type: 'giveSpell' as const, spell: 'random' as const })),
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'guardian-angel',
+    name: 'Guardian Angel',
+    description: 'After every 10 HP damage taken: gain Immunity.',
+    price: 8,
+    kind: 'gear',
+    initial: { taken: 0 },
+    on: {
+      onDamageTaken: (ctx, p) => {
+        if (p.dealt <= 0 || !ctx.state.round) return [];
+        const total = ctx.self.data.taken + p.dealt;
+        const procs = Math.floor(total / 10);
+        return [
+          { type: 'setItemData', stat: 'taken', value: total % 10 },
+          ...Array.from({ length: procs }, () => ({ type: 'immunity' as const, guesses: 1 })),
         ];
       },
     },
@@ -1116,11 +1135,30 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'muffin-tin',
     name: 'Muffin Tin',
-    description: '+1 max armor for each food eaten in a shop.',
+    description: '+1 max armor for each food eaten until the next time you leave a shop.',
     price: 2,
     kind: 'gear',
+    initial: { visit: -1 },
+    onAcquire: (ctx) => {
+      const shop = ctx.state.shop;
+      return shop ? [{ type: 'setItemData', stat: 'visit', value: shop.visit }] : [];
+    },
     on: {
-      onEat: (ctx) => (ctx.state.phase === 'shop' ? [{ type: 'maxArmor', delta: 1 }] : []),
+      onEat: (ctx) => {
+        const shop = ctx.state.shop;
+        if (!shop || ctx.state.phase !== 'shop') return [];
+        const visit = ctx.self.data.visit;
+        if (visit === -2) return [];
+        if (visit === -1) {
+          return [
+            { type: 'setItemData', stat: 'visit', value: shop.visit },
+            { type: 'maxArmor', delta: 1 },
+          ];
+        }
+        if (visit === shop.visit) return [{ type: 'maxArmor', delta: 1 }];
+        // The shop this item was armed for is behind us. It has done its job.
+        return [{ type: 'setItemData', stat: 'visit', value: -2 }];
+      },
     },
   }),
   defineItem({
