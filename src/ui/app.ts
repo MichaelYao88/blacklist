@@ -704,7 +704,7 @@ function renderTitle(): string {
     </div>
     <p class="kicker">A WORD ROGUELIKE</p>
     <h1 class="logo">BLACK<span>LIST</span></h1>
-    <p class="tagline">The first word of every round is a word you can never say again.</p>
+    <p class="tagline">Every curse is a choice. Every word is a way through.</p>
     <div class="title-actions">
       <button class="btn primary big" data-action="new-run">NEW RUN</button>
       ${saved ? `<button class="btn big" data-action="resume">CONTINUE</button>` : ''}

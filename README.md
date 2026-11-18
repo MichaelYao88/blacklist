@@ -1,6 +1,6 @@
 # BLACKLIST
 
-A word roguelike about the words you can never say again.
+A word roguelike about the burdens you choose.
 
 A 50-level curse run. The blacklist and the clock start disabled. Every two levels you choose one of two permanent curses, and those curses become the difficulty. Levels 47–49 are curse floors, and level 50 is a final boss made of three back-to-back rounds. One active save, and defeat wipes it.
 
