@@ -1428,6 +1428,24 @@ export const ITEMS: ItemDef[] = [
     ],
   }),
   defineItem({
+    id: 'ice-cream-sundae',
+    name: 'Ice Cream Sundae',
+    description: 'Buying this: gain Time Freeze, or heal 1 and gain +1 max HP.',
+    price: 3,
+    kind: 'consumable',
+    slots: 0,
+    onAcquire: () => [
+      {
+        type: 'randomChoice',
+        options: [
+          [{ type: 'giveSpell', spell: 'time-freeze' }],
+          [{ type: 'heal', amount: 1 }, { type: 'maxHp', delta: 1 }],
+        ],
+      },
+      { type: 'consumeSelf' },
+    ],
+  }),
+  defineItem({
     id: 'chilaquiles',
     name: 'Chilaquiles',
     description: 'Consumable. The next item you sell sells for double.',

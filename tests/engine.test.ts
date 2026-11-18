@@ -1712,6 +1712,26 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('frozen-durian')?.price).toBe(8);
   });
 
+  it('Ice Cream Sundae rolls Time Freeze or heal +1 max HP', () => {
+    let freeze = 0;
+    let growth = 0;
+    for (let index = 0; index < 60; index++) {
+      const { state } = start(`sundae-${index}`);
+      state.phase = 'shop';
+      state.gold = 20;
+      state.shop = shopState([
+        { id: 'o0', kind: 'item', def: 'ice-cream-sundae', price: 3 },
+      ]);
+      const bought = act(state, { type: 'buy', offerId: 'o0' });
+      expect(bought.state.items.some((item) => item.id === 'ice-cream-sundae')).toBe(false);
+      if (bought.state.maxHp === 17) growth++;
+      if (bought.state.spells.some((spell) => spell.id === 'time-freeze')) freeze++;
+    }
+    expect(freeze).toBeGreaterThan(0);
+    expect(growth).toBeGreaterThan(0);
+    expect(ITEM_BY_ID.get('ice-cream-sundae')?.price).toBe(3);
+  });
+
   it('applies the latest prices and text', () => {
     expect(FOOD_BY_ID.get('plating')?.price).toBe(3);
     expect(FOOD_BY_ID.get('plating')?.effects).toContainEqual({ type: 'maxArmor', delta: 1 });

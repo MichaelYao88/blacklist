@@ -69,6 +69,7 @@ const ITEM_ICONS: Record<string, string> = {
   'stopped-clock': '⏱️',
   'time-lattice': '🧩',
   'frozen-durian': '🥥',
+  'ice-cream-sundae': '🍨',
   'omen-loom': '🔮',
   'mercy-ledger': '📗',
   'ward-engine': '🔰',
