@@ -299,6 +299,7 @@ export type Effect =
   | { type: 'slots'; delta: number }
   | { type: 'pendingPurge'; count: number }
   | { type: 'addCurse'; curse: CurseId }
+  | { type: 'removeRandomCurse'; chancePct?: number }
   | { type: 'awaitCurseRemoval' }
   | { type: 'bossData'; key: string; value: number }
   | { type: 'message'; text: string };

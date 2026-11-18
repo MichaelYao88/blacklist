@@ -123,10 +123,10 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'coffee',
     name: 'Coffee',
-    description: '+3s per round, permanently. No slot.',
-    price: 6,
+    description: '+5s per round, permanently. No slot.',
+    price: 2,
     requiresClock: true,
-    effects: [{ type: 'timeBonus', ms: 3_000 }],
+    effects: [{ type: 'timeBonus', ms: 5_000 }],
   }),
   defineFood({
     id: 'mystery-stew',
@@ -168,9 +168,9 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'iron-ration',
     name: 'Iron Ration',
-    description: '+3 max armor. No slot.',
-    price: 9,
-    effects: [{ type: 'maxArmor', delta: 3 }],
+    description: '+2 max armor. No slot.',
+    price: 6,
+    effects: [{ type: 'maxArmor', delta: 2 }],
   }),
   defineFood({
     id: 'honey-cake',
@@ -209,17 +209,17 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'plating',
     name: 'Plating',
-    description: '+2 max armor. No slot.',
-    price: 8,
-    effects: [{ type: 'maxArmor', delta: 2 }],
+    description: '+1 max armor. No slot.',
+    price: 3,
+    effects: [{ type: 'maxArmor', delta: 1 }],
   }),
   defineFood({
     id: 'chronos',
     name: 'Chronos',
-    description: '+10s per round. No slot.',
+    description: '+12s per round. No slot.',
     price: 8,
     requiresClock: true,
-    effects: [{ type: 'timeBonus', ms: 10_000 }],
+    effects: [{ type: 'timeBonus', ms: 12_000 }],
   }),
   defineFood({
     id: 'satchel',
@@ -315,7 +315,7 @@ export const FOODS: FoodDef[] = [
     id: 'inkcap',
     name: 'Inkcap',
     description: 'Rare. Purge one letter from all future answers. No slot.',
-    price: 14,
+    price: 16,
     rarity: 'rare',
     effects: [{ type: 'pendingPurge', count: 1 }],
   }),
@@ -323,9 +323,16 @@ export const FOODS: FoodDef[] = [
     id: 'purge-the-d',
     name: 'Purge the D',
     description: 'Very rare. Permanently purges D. No slot.',
-    price: 18,
+    price: 12,
     rarity: 'rare',
     effects: [{ type: 'purgeLetter', letter: 'd' }],
+  }),
+  defineFood({
+    id: 'snake-oil',
+    name: 'Snake Oil',
+    description: '10% chance: remove a random curse. No slot.',
+    price: 6,
+    effects: [{ type: 'removeRandomCurse', chancePct: 10 }],
   }),
 ];
 

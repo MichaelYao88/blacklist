@@ -1072,6 +1072,12 @@ export function createCore(content: Content): Core {
       case 'addCurse':
         applyCurse(rt, effect.curse);
         break;
+      case 'removeRandomCurse': {
+        if (effect.chancePct !== undefined && !rngChance(state, effect.chancePct)) break;
+        if (state.curses.length === 0) break;
+        removeCurseEntry(rt, rngPick(state, state.curses).id);
+        break;
+      }
       case 'awaitCurseRemoval':
         state.pendingCurseRemoval += 1;
         break;
@@ -2175,11 +2181,10 @@ export function createCore(content: Content): Core {
     advanceNode(rt);
   }
 
-  function removeCurse(rt: Runtime, curseId: CurseId): void {
+  function removeCurseEntry(rt: Runtime, curseId: CurseId): boolean {
     const state = rt.state;
-    if (state.pendingCurseRemoval <= 0) return;
     const index = state.curses.findIndex((curse) => curse.id === curseId);
-    if (index < 0) return;
+    if (index < 0) return false;
     const entry = state.curses[index];
     const def = curseById.get(curseId);
     entry.stacks--;
@@ -2189,8 +2194,15 @@ export function createCore(content: Content): Core {
     }
     if (entry.stacks <= 0) state.curses.splice(index, 1);
     if (curseId === 'the-list' && entry.stacks <= 0) clearBlacklist(rt);
-    state.pendingCurseRemoval--;
     emit(rt, { type: 'curseRemoved', curse: curseId, stacks: entry.stacks });
+    return true;
+  }
+
+  function removeCurse(rt: Runtime, curseId: CurseId): void {
+    const state = rt.state;
+    if (state.pendingCurseRemoval <= 0) return;
+    if (!removeCurseEntry(rt, curseId)) return;
+    state.pendingCurseRemoval--;
     if (state.pendingCurseRemoval <= 0 && state.phase === 'happening') {
       // The event remains resolved; CONTINUE advances normally.
     }

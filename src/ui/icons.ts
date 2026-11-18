@@ -143,6 +143,7 @@ const FOOD_ICONS: Record<string, string> = {
   'bitter-root': '🌿',
   inkcap: '🍄',
   'purge-the-d': '♀️',
+  'snake-oil': '🐍',
   'old-mcdonald': '🚜',
 };
 

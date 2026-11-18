@@ -901,12 +901,14 @@ describe('latest balance pass', () => {
       .toContain('+3 gold');
   });
 
-  it('adds 2g Leftovers and 9g Iron Ration', () => {
+  it('adds 2g Leftovers and 6g Iron Ration', () => {
     expect(ITEM_BY_ID.get('rabbit-foot')).toBeUndefined();
     expect(FOOD_BY_ID.get('leftovers')?.price).toBe(2);
     expect(FOOD_BY_ID.get('leftovers')?.effects)
       .toContainEqual({ type: 'healMissingPercent', percent: 50 });
-    expect(FOOD_BY_ID.get('iron-ration')?.price).toBe(9);
+    expect(FOOD_BY_ID.get('iron-ration')?.price).toBe(6);
+    expect(FOOD_BY_ID.get('iron-ration')?.effects)
+      .toContainEqual({ type: 'maxArmor', delta: 2 });
   });
 
   it('Pawn Ticket pays a spell every 2 sales and costs 4', () => {
@@ -1297,7 +1299,8 @@ describe('latest balance pass', () => {
   });
 
   it('applies the latest prices and text', () => {
-    expect(FOOD_BY_ID.get('plating')?.price).toBe(8);
+    expect(FOOD_BY_ID.get('plating')?.price).toBe(3);
+    expect(FOOD_BY_ID.get('plating')?.effects).toContainEqual({ type: 'maxArmor', delta: 1 });
     expect(ITEM_BY_ID.get('compound-interest')?.price).toBe(6);
     expect(FOOD_BY_ID.get('yin-yang')?.price).toBe(10);
     expect(FOOD_BY_ID.get('bounty')?.price).toBe(4);
@@ -1335,9 +1338,36 @@ describe('spells and foods', () => {
   });
 
   it('has rare purge foods', () => {
-    expect(FOOD_BY_ID.get('inkcap')).toBeDefined();
-    expect(FOOD_BY_ID.get('purge-the-d')).toBeDefined();
+    expect(FOOD_BY_ID.get('inkcap')?.price).toBe(16);
+    expect(FOOD_BY_ID.get('purge-the-d')?.price).toBe(12);
     expect(FOOD_BY_ID.get('purge-the-d')?.rarity).toBe('rare');
+  });
+
+  it('gives Coffee +5s for 2 gold and Chronos +12s', () => {
+    expect(FOOD_BY_ID.get('coffee')?.price).toBe(2);
+    expect(FOOD_BY_ID.get('coffee')?.effects).toContainEqual({ type: 'timeBonus', ms: 5_000 });
+    expect(FOOD_BY_ID.get('chronos')?.effects).toContainEqual({ type: 'timeBonus', ms: 12_000 });
+  });
+
+  it('Snake Oil has a 10% chance to remove a random curse', () => {
+    expect(FOOD_BY_ID.get('snake-oil')?.price).toBe(6);
+    expect(FOOD_BY_ID.get('snake-oil')?.description).toContain('10% chance');
+
+    let removed = 0;
+    const runs = 150;
+    for (let i = 0; i < runs; i++) {
+      const { state } = start(`snake-${i}`);
+      state.curses.push({ id: 'heavy-hand', stacks: 1 });
+      state.gold = 20;
+      state.phase = 'shop';
+      state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'snake-oil', price: 6 }]);
+      const bought = act(state, { type: 'buy', offerId: 'o0' });
+      expect(bought.state.gold).toBe(14);
+      if (bought.state.curses.length === 0) removed++;
+    }
+    // 10% of 150 runs is ~15; wide bounds keep the seeded run deterministic.
+    expect(removed).toBeGreaterThanOrEqual(4);
+    expect(removed).toBeLessThanOrEqual(32);
   });
 
   it('accepts penis in the dictionary', () => {
