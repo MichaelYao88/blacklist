@@ -2,12 +2,12 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { game } from '../src/game';
 
-describe('Encore bargain previews', () => {
+describe('Bargain random previews', () => {
   let root: HTMLElement;
 
   beforeAll(async () => {
     localStorage.clear();
-    const { state } = game.newRun({ seed: 'encore-preview' });
+    const { state } = game.newRun({ seed: 'bargain-preview' });
     state.phase = 'happening';
     state.happening = {
       id: 'the-bargain',
@@ -15,7 +15,7 @@ describe('Encore bargain previews', () => {
         {
           id: 'draw',
           label: 'Draw one',
-          description: '50%: Encore item. 50%: Without the D curse.',
+          description: '50%: random item. 50%: random curse.',
           outcomes: [],
         },
         {
@@ -34,19 +34,19 @@ describe('Encore bargain previews', () => {
     root.querySelector<HTMLElement>('[data-action="resume"]')!.click();
   });
 
-  it('shows hoverable item and curse previews with the item icon', () => {
+  it('shows hoverable random item and random curse previews', () => {
     const chips = [...root.querySelectorAll<HTMLElement>('.preview-chip')];
     expect(chips).toHaveLength(2);
 
-    const item = chips.find((chip) => chip.textContent?.includes('Encore'))!;
-    const curse = chips.find((chip) => chip.textContent?.includes('Without the D'))!;
+    const item = chips.find((chip) => chip.textContent?.includes('Random item'))!;
+    const curse = chips.find((chip) => chip.textContent?.includes('Random curse'))!;
     expect(item.querySelector('.preview-icon')?.textContent?.trim()).toBeTruthy();
-    expect(item.dataset.tip).toContain('last solved answer');
-    expect(curse.dataset.tip).toContain('Every D tile is hidden');
+    expect(item.dataset.tip).toContain('random available item');
+    expect(curse.dataset.tip).toContain('random eligible curse');
 
     item.dispatchEvent(new Event('pointermove', { bubbles: true }));
     const tip = document.querySelector<HTMLElement>('.kw-tooltip');
     expect(tip?.classList.contains('visible')).toBe(true);
-    expect(tip?.textContent).toContain('Encore');
+    expect(tip?.textContent).toContain('random available item');
   });
 });

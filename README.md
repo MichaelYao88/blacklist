@@ -36,9 +36,9 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Revealed letters stay marked on the keyboard and in a Revealed panel for the puzzle; random reveals lean toward letters that are not in the answer; letter-reveal foods are permanent for the run
 - Every finished encounter pays gold; solves offer coins, usually a spell, and only rarely gear or a meal
 - Opening shields such as **Head Start** and **Quickdraw** make guesses in their window count as free guesses
-- Relics are very rare ordinary items, no longer boss rewards
+- Relics are very rare ordinary items, no longer boss rewards; shops roll a rare relic at 25% per item slot (about 60% of shops have one)
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 95 items (79 shop items + 16 rare relics), 6 spells, 38 foods and 16 happenings
+- 97 items (81 shop items + 16 rare relics), 6 spells, 63 foods and 16 happenings
 - New foods include **U-nagi**, **Empty Calories**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
@@ -73,7 +73,7 @@ Not in this version: daily seeds, Ascension above A2, dordle grids, Antiwordle, 
 
 ## Music
 
-Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title screen or top bar to cycle through the eight regular tracks; the mute button is separate. **More Power** is locked to the final boss and is not available in the carousel.
+Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title screen or top bar to cycle through the seven regular tracks; the mute button is separate. **More Power** is locked to the final boss and is not available in the carousel.
 
 **Liborio Conti** — free to use, no attribution required, via [no-copyright-music.com](https://www.no-copyright-music.com/):
 
@@ -87,10 +87,6 @@ Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title s
 
 - Dark
 - Dark Synthwave
-
-**echoes_of_lumen** — via [Pixabay](https://pixabay.com/users/echoes_of_lumen-56361169/) under the Pixabay Content License:
-
-- Neon Synthwave Vibe
 
 **DELOSound** — via [Pixabay](https://pixabay.com/users/delosound-46524562/) under the Pixabay Content License:
 

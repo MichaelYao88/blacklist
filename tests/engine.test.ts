@@ -1448,7 +1448,7 @@ describe('latest balance pass', () => {
     const second = nextRound(late.state);
     setAnswer(second.state, 'crane');
     second.state.round!.freeLeft = 0;
-    second.state.round!.elapsedMs = 13_000;
+    second.state.round!.elapsedMs = 7_000;
     second.state.armor = 0;
     const unshielded = act(second.state, { type: 'guess', word: 'slate' });
     expect(unshielded.state.round?.guesses[0].free).toBe(false);
@@ -1535,7 +1535,7 @@ describe('latest balance pass', () => {
     const shielded = act(first.state, { type: 'guess', word: 'slate' });
     expect(shielded.state.round?.guesses[0].free).toBe(true);
     expect(shielded.state.hp).toBe(16);
-    expect(shielded.state.gold).toBe(11);
+    expect(shielded.state.gold).toBe(10);
 
     const late = start('quickdraw-late');
     late.state.items.push({ instance: 'i-q', id: 'quickdraw', data: {}, equipped: true });
@@ -1594,6 +1594,84 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('chrono-anchor')?.description).toContain('Taking damage: 30% chance');
     expect(ITEM_BY_ID.get('chrono-anchor')?.on?.onSolve).toBeUndefined();
     expect(ITEM_BY_ID.get('chrono-anchor')?.on?.onDamageTaken).toBeDefined();
+  });
+
+  it('Head Start is 6s and neither it nor Quickdraw is clock-gated', () => {
+    expect(ITEM_BY_ID.get('head-start')?.description).toContain('6s');
+    expect(ITEM_BY_ID.get('head-start')?.requiresClock).toBeUndefined();
+    expect(ITEM_BY_ID.get('quickdraw')?.requiresClock).toBeUndefined();
+    expect(ITEM_BY_ID.get('quickdraw')?.description).toBe('First 12s of each round: guesses are free.');
+    expect(ITEM_BY_ID.get('quickdraw')?.on?.onGuessScored).toBeUndefined();
+  });
+
+  it('refuses stale clock-gated shop and reward offers after the clock is gone', () => {
+    const shop = start('stale-shop');
+    shop.state.phase = 'shop';
+    shop.state.gold = 20;
+    shop.state.shop = shopState([
+      { id: 'o0', kind: 'item', def: 'hourglass', price: 6 },
+      { id: 'o1', kind: 'eat', def: 'coffee', price: 6 },
+    ]);
+    const item = act(shop.state, { type: 'buy', offerId: 'o0' });
+    expect(item.state.items).toHaveLength(0);
+    expect(item.state.gold).toBe(20);
+    expect(eventTypes(item.events)).toContain('shopRejected');
+    const food = act(item.state, { type: 'buy', offerId: 'o1' });
+    expect(food.state.gold).toBe(20);
+    expect(eventTypes(food.events)).toContain('shopRejected');
+
+    const reward = start('stale-reward');
+    reward.state.phase = 'reward';
+    reward.state.reward = {
+      boss: false,
+      options: [{
+        id: 'i0',
+        kind: 'item',
+        def: 'hourglass',
+        label: 'Hourglass',
+        description: '+15s per round.',
+      }],
+    };
+    const chosen = act(reward.state, { type: 'chooseReward', optionId: 'i0' });
+    expect(chosen.state.items).toHaveLength(0);
+    expect(chosen.state.phase).toBe('reward');
+  });
+
+  it('The Bargain gives a random item or random curse', () => {
+    let itemOutcomes = 0;
+    let curseOutcomes = 0;
+    const curseIds = new Set<string>();
+    for (let index = 0; index < 120; index++) {
+      const { state } = start(`bargain-${index}`);
+      state.phase = 'happening';
+      state.happening = { id: 'the-bargain', options: [] };
+      const result = act(state, { type: 'choose', optionId: 'draw' });
+      if (result.state.items.length > 0) itemOutcomes++;
+      if (result.state.curses.length > 0) {
+        curseOutcomes++;
+        curseIds.add(result.state.curses[0].id);
+      }
+    }
+    expect(itemOutcomes).toBeGreaterThan(0);
+    expect(curseOutcomes).toBeGreaterThan(0);
+    expect(curseIds.size).toBeGreaterThan(1);
+  });
+
+  it('offers rare items in shops much more often', () => {
+    let shopsWithRare = 0;
+    for (let index = 0; index < 100; index++) {
+      const { state } = start(`rare-shop-${index}`);
+      state.curses.push({ id: 'clock', stacks: 1 });
+      state.nodeIndex = 0;
+      state.nodes[1] = { kind: 'shop', level: 1 };
+      state.phase = 'shop';
+      const offers = act(state, { type: 'continue' }).state.shop?.offers ?? [];
+      if (offers.some((offer) => offer.kind === 'item'
+        && ITEM_BY_ID.get(offer.def)?.rarity === 'rare')) {
+        shopsWithRare++;
+      }
+    }
+    expect(shopsWithRare).toBeGreaterThan(40);
   });
 
   it('applies the latest prices and text', () => {

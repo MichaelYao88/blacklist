@@ -135,24 +135,22 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'head-start',
     name: 'Head Start',
-    description: 'The first 12s of each round: guesses are free.',
+    description: 'The first 6s of each round: guesses are free.',
     price: 8,
     kind: 'gear',
     on: {
-      onRoundStart: () => [{ type: 'timedImmunity', ms: 12_000 }],
+      onRoundStart: () => [{ type: 'timedImmunity', ms: 6_000 }],
     },
   }),
   defineItem({
     id: 'quickdraw',
     name: 'Quickdraw',
-    description: 'First 12s of each round: guesses are free. Guesses in that window: +1 gold.',
+    description: 'First 12s of each round: guesses are free.',
     price: 24,
     kind: 'gear',
     rarity: 'rare',
     on: {
       onRoundStart: () => [{ type: 'timedImmunity', ms: 12_000 }],
-      onGuessScored: (_ctx, p) =>
-        p.elapsedMs < 12_000 ? [{ type: 'gold', amount: 1 }] : [],
     },
   }),
   defineItem({

@@ -489,6 +489,10 @@ export function createCore(content: Content): Core {
     const state = rt.state;
     const def = itemById.get(id);
     if (!def) return false;
+    if (!itemAvailable(state, def)) {
+      emit(rt, { type: 'message', text: `${def.name} is not available yet.` });
+      return false;
+    }
     const equip = itemSlots(def) === 0 || canEquip(state, def);
     const item: ItemInstance = {
       instance: uid(state, 'i'),
@@ -1066,6 +1070,15 @@ export function createCore(content: Content): Core {
         const unowned = rare.filter((i) => !owned.has(i.id));
         const pool = unowned.length > 0 ? unowned : rare;
         if (pool.length > 0) addItem(rt, rngPick(state, pool).id);
+        break;
+      }
+      case 'addRandomCurse': {
+        const pool = eligibleCurses(state, false);
+        if (pool.length === 0) {
+          emit(rt, { type: 'message', text: 'No curse is available.' });
+          break;
+        }
+        applyCurse(rt, pickWeighted(state, pool).id);
         break;
       }
       case 'eat':
@@ -1781,6 +1794,21 @@ export function createCore(content: Content): Core {
     const option = reward.options.find((o) => o.id === optionId);
     if (!option) return;
 
+    if (option.kind === 'item' && option.def) {
+      const def = itemById.get(option.def);
+      if (!def || !itemAvailable(state, def)) {
+        emit(rt, { type: 'message', text: 'That item is no longer available.' });
+        return;
+      }
+    }
+    if (option.kind === 'eat' && option.def) {
+      const def = foodById.get(option.def);
+      if (!def || !foodAvailable(state, def)) {
+        emit(rt, { type: 'message', text: 'That food is no longer available.' });
+        return;
+      }
+    }
+
     if (option.kind === 'gold') {
       changeGold(rt, option.amount ?? 0, RULES);
     } else if (option.kind === 'spell' && option.def) {
@@ -1842,7 +1870,7 @@ export function createCore(content: Content): Core {
     };
     const pickRandomItem = (): boolean => {
       let pool = commonItems.filter((item) => usedCount(`item:${item.id}`) < 2);
-      if (rareItems.length > 0 && rngChance(state, 10)) {
+      if (rareItems.length > 0 && rngChance(state, 25)) {
         pool = rareItems.filter((item) => usedCount(`item:${item.id}`) < 2);
       }
       if (pool.length === 0) return false;
@@ -1944,6 +1972,20 @@ export function createCore(content: Content): Core {
       ? firstPurchaseDiscount(state)
       : 0;
     const price = Math.max(1, offer.price - discount);
+    if (
+      offer.kind === 'item'
+      && (!itemById.get(offer.def) || !itemAvailable(state, itemById.get(offer.def)!))
+    ) {
+      emit(rt, { type: 'shopRejected', offerId, reason: 'That item is no longer available.' });
+      return;
+    }
+    if (
+      offer.kind === 'eat'
+      && (!foodById.get(offer.def) || !foodAvailable(state, foodById.get(offer.def)!))
+    ) {
+      emit(rt, { type: 'shopRejected', offerId, reason: 'That food is no longer available.' });
+      return;
+    }
     if (state.gold < price) {
       emit(rt, { type: 'shopRejected', offerId, reason: 'Not enough gold.' });
       return;

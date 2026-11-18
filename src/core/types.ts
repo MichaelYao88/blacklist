@@ -300,6 +300,7 @@ export type Effect =
   | { type: 'addItem'; item: ItemId }
   | { type: 'addRandomItem' }
   | { type: 'addRandomRelic' }
+  | { type: 'addRandomCurse' }
   | { type: 'eat'; food: string }
   | { type: 'eatRandom' }
   | { type: 'slots'; delta: number }

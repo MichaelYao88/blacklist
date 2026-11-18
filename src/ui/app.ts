@@ -1461,17 +1461,12 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
 
 function happeningPreviews(happeningId: string | undefined, optionId: string): string {
   if (happeningId !== 'the-bargain' || optionId !== 'draw') return '';
-  const item = ITEM_BY_ID.get('encore');
-  const curse = CURSE_BY_ID.get('without-d');
-  if (!item || !curse) return '';
-  const itemTip = `${item.name}\n${item.description}`;
-  const curseTip = `${curse.name}\n${curse.rules.join('\n')}`;
   return `<div class="preview-row">
-    <span class="preview-chip" tabindex="0" data-tip="${escapeHtml(itemTip)}">
-      <span class="preview-icon" aria-hidden="true">${itemIcon('encore')}</span>${escapeHtml(item.name)}
+    <span class="preview-chip" tabindex="0" data-tip="One random available item.">
+      <span class="preview-icon" aria-hidden="true">🎁</span>Random item
     </span>
-    <span class="preview-chip curse" tabindex="0" data-tip="${escapeHtml(curseTip)}">
-      <span class="preview-icon" aria-hidden="true">✦</span>${escapeHtml(curse.name)}
+    <span class="preview-chip curse" tabindex="0" data-tip="One random eligible curse.">
+      <span class="preview-icon" aria-hidden="true">✦</span>Random curse
     </span>
   </div>`;
 }

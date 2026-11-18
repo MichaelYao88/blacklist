@@ -5,7 +5,6 @@ import upbeatDrums from '../assets/audio/upbeat-drums.mp3?url';
 import dangerous from '../assets/audio/dangerous.mp3?url';
 import dark from '../assets/audio/dark.mp3?url';
 import darkSynthwave from '../assets/audio/dark-synthwave.mp3?url';
-import neonSynthwaveVibe from '../assets/audio/neon-synthwave-vibe.mp3?url';
 import synthwaveRetro80s from '../assets/audio/synthwave-retro-80s.mp3?url';
 
 export type MusicTrack =
@@ -16,7 +15,6 @@ export type MusicTrack =
   | 'dangerous'
   | 'dark'
   | 'dark-synthwave'
-  | 'neon-synthwave-vibe'
   | 'synthwave-retro-80s';
 
 export interface MusicTrackInfo {
@@ -33,7 +31,6 @@ export const MUSIC_TRACKS: MusicTrackInfo[] = [
   { id: 'dangerous', name: 'Dangerous', src: dangerous },
   { id: 'dark', name: 'Dark · Sub_Clair', src: dark },
   { id: 'dark-synthwave', name: 'Dark Synthwave · Sub_Clair', src: darkSynthwave },
-  { id: 'neon-synthwave-vibe', name: 'Neon Synthwave Vibe · echoes_of_lumen', src: neonSynthwaveVibe },
   { id: 'synthwave-retro-80s', name: 'Synthwave Retro 80s · DELOSound', src: synthwaveRetro80s },
 ];
 
