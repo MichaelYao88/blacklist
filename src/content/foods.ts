@@ -16,6 +16,94 @@ export const FOODS: FoodDef[] = [
     effects: [{ type: 'heal', amount: 5 }],
   }),
   defineFood({
+    id: 'only-u',
+    name: 'U-nagi',
+    description: 'Every round: U is revealed. No slot.',
+    price: 8,
+    effects: [{ type: 'revealLetter', letter: 'u' }],
+  }),
+  defineFood({
+    id: 'empty-calories',
+    name: 'Empty Calories',
+    description: '+9 max HP. No slot.',
+    price: 6,
+    effects: [{ type: 'maxHp', delta: 9 }],
+  }),
+  defineFood({
+    id: 'one-bo-hue',
+    name: 'One Bo Hue',
+    description: 'Heal 1, +1 max HP and +1 max armor. No slot.',
+    price: 4,
+    effects: [
+      { type: 'heal', amount: 1 },
+      { type: 'maxHp', delta: 1 },
+      { type: 'maxArmor', delta: 1 },
+    ],
+  }),
+  defineFood({
+    id: 'warm-bowl',
+    name: 'Warm Bowl',
+    description: '+2 max HP and heal 30% of max HP. No slot.',
+    price: 4,
+    effects: [
+      { type: 'maxHp', delta: 2 },
+      { type: 'healPercent', percent: 30 },
+    ],
+  }),
+  defineFood({
+    id: 'die-coke',
+    name: 'Die Coke',
+    description: 'Heal 1-6 HP. Excess healing becomes gold. No slot.',
+    price: 1,
+    effects: [{ type: 'healDiceGold', min: 1, max: 6 }],
+  }),
+  defineFood({
+    id: 'overhealers-delight',
+    name: "Overhealer's Delight",
+    description: 'Heal 8 HP. Excess healing becomes max HP. No slot.',
+    price: 6,
+    effects: [{ type: 'healOverflowMaxHp', amount: 8 }],
+  }),
+  defineFood({
+    id: 'overhealers-delicacy',
+    name: "Overhealer's Delicacy",
+    description: 'Heal 12 HP. Excess healing becomes max HP. No slot.',
+    price: 12,
+    effects: [{ type: 'healOverflowMaxHp', amount: 12 }],
+  }),
+  defineFood({
+    id: 'rusty-plate',
+    name: 'Rusty Plate',
+    description: '-1 max HP, +1 max armor. No slot.',
+    price: 2,
+    effects: [
+      { type: 'maxHp', delta: -1 },
+      { type: 'maxArmor', delta: 1 },
+    ],
+  }),
+  defineFood({
+    id: 'spring-tonic',
+    name: 'Spring Tonic',
+    description: '-1 max armor, +8 max HP, heal 8. No slot.',
+    price: 1,
+    effects: [
+      { type: 'maxArmor', delta: -1 },
+      { type: 'maxHp', delta: 8 },
+      { type: 'heal', amount: 8 },
+    ],
+  }),
+  defineFood({
+    id: 'packed-lunch',
+    name: 'Packed Lunch',
+    description: '-1 item slot, +6 max armor, +7 max HP. No slot.',
+    price: 3,
+    effects: [
+      { type: 'slots', delta: -1 },
+      { type: 'maxArmor', delta: 6 },
+      { type: 'maxHp', delta: 7 },
+    ],
+  }),
+  defineFood({
     id: 'feast',
     name: 'Feast',
     description: '+5 max HP, heal 5. No slot.',
@@ -60,11 +148,11 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'hearty-meal',
     name: 'Hearty Meal',
-    description: '+6 max HP, heal 6. No slot.',
+    description: '+5 max HP, heal 5. No slot.',
     price: 8,
     effects: [
-      { type: 'maxHp', delta: 6 },
-      { type: 'heal', amount: 6 },
+      { type: 'maxHp', delta: 5 },
+      { type: 'heal', amount: 5 },
     ],
   }),
   defineFood({
@@ -175,7 +263,7 @@ export const FOODS: FoodDef[] = [
     id: 'gg-gum',
     name: 'GG Gum',
     description: 'Every round: G is revealed. No slot.',
-    price: 8,
+    price: 9,
     effects: [{ type: 'revealLetter', letter: 'g' }],
   }),
   defineFood({

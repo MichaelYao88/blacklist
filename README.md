@@ -38,7 +38,8 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Opening shields such as **Head Start** and **Quickdraw** make guesses in their window count as free guesses
 - Relics are very rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 105 items (87 shop items + 18 rare relics), 6 spells, 27 foods and 16 happenings
+- 103 items (85 shop items + 18 rare relics), 6 spells, 37 foods and 16 happenings
+- New foods include **U-nagi**, **Empty Calories**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
 - **Field Kit** reveals exactly 4 letters that are not in the word; **Doggy Bag** reveals 2 and queues another after every food

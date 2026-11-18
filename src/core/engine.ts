@@ -297,8 +297,8 @@ export function createCore(content: Content): Core {
     return true;
   }
 
-  function heal(rt: Runtime, amount: number, source: Source): void {
-    if (amount <= 0) return;
+  function heal(rt: Runtime, amount: number, source: Source): number {
+    if (amount <= 0) return 0;
     const state = rt.state;
     const before = state.hp;
     const adjusted = Math.max(1, Math.round(amount * healMultiplier(state)));
@@ -308,6 +308,7 @@ export function createCore(content: Content): Core {
       emit(rt, { type: 'healed', amount: applied, hp: state.hp, source });
       runHook(rt, 'onHeal', { amount: applied, hp: state.hp });
     }
+    return applied;
   }
 
   function changeMaxHp(rt: Runtime, delta: number, source: Source): void {
@@ -760,6 +761,31 @@ export function createCore(content: Content): Core {
         heal(rt, Math.ceil(missing * (effect.percent / 100)), source);
         break;
       }
+      case 'healDiceGold': {
+        const rolled = rngInt(state, effect.max - effect.min + 1) + effect.min;
+        const adjusted = Math.max(1, Math.round(rolled * healMultiplier(state)));
+        const applied = heal(rt, rolled, source);
+        const excess = Math.max(0, adjusted - applied);
+        if (excess > 0) changeGold(rt, excess, source);
+        break;
+      }
+      case 'healOverflowMaxHp': {
+        const adjusted = Math.max(1, Math.round(effect.amount * healMultiplier(state)));
+        const before = state.hp;
+        state.hp = Math.min(state.maxHp, state.hp + adjusted);
+        const applied = state.hp - before;
+        if (applied > 0) {
+          emit(rt, { type: 'healed', amount: applied, hp: state.hp, source });
+          runHook(rt, 'onHeal', { amount: applied, hp: state.hp });
+        }
+        const excess = Math.max(0, adjusted - applied);
+        if (excess > 0) {
+          changeMaxHp(rt, excess, source);
+          state.hp = Math.min(state.maxHp, state.hp + excess);
+          emit(rt, { type: 'healed', amount: excess, hp: state.hp, source });
+        }
+        break;
+      }
       case 'maxHp':
         changeMaxHp(rt, effect.delta, source);
         break;
@@ -1026,6 +1052,15 @@ export function createCore(content: Content): Core {
       case 'slots':
         state.slots = Math.max(0, state.slots + effect.delta);
         emit(rt, { type: 'slotsChanged', slots: state.slots });
+        if (effect.delta < 0) {
+          const dropped = enforceSlotCapacity(state);
+          if (dropped.length > 0) {
+            emit(rt, {
+              type: 'message',
+              text: `Slots tightened. Moved to the bag: ${dropped.join(', ')}.`,
+            });
+          }
+        }
         break;
       case 'pendingPurge':
         state.pendingPurge += effect.count;

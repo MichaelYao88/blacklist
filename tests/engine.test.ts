@@ -775,7 +775,7 @@ describe('new item and event batch', () => {
     expect(ITEM_BY_ID.get('gourmand')?.description).toContain('On spell cast or food eaten');
     expect(ITEM_BY_ID.get('pen-club')?.description).toContain('1-5 gold');
     expect(ITEM_BY_ID.get('big-belt')?.description).toContain('Every 5 eats or solves');
-    expect(ITEM_BY_ID.get('miser')?.description).not.toContain('max');
+    expect(ITEM_BY_ID.get('miser')).toBeUndefined();
     expect(ITEM_BY_ID.get('plate-timer')?.requiresClock).toBe(true);
     expect(ITEM_BY_ID.get('solo-note')?.description)
       .toContain('one yellow and no green');
@@ -1014,12 +1014,90 @@ describe('latest balance pass', () => {
     expect(cast.state.spells.some((spell) => spell.id === 'omen')).toBe(true);
   });
 
-  it('Hearty Meal gives 6 max HP and heals 6', () => {
+  it('Hearty Meal gives 5 max HP and heals 5', () => {
     const meal = FOOD_BY_ID.get('hearty-meal');
     expect(meal?.effects).toEqual([
-      { type: 'maxHp', delta: 6 },
-      { type: 'heal', amount: 6 },
+      { type: 'maxHp', delta: 5 },
+      { type: 'heal', amount: 5 },
     ]);
+  });
+
+  it('adds the new food batch and prices', () => {
+    expect(FOOD_BY_ID.get('only-u')?.name).toBe('U-nagi');
+    expect(FOOD_BY_ID.get('only-u')?.effects).toContainEqual({ type: 'revealLetter', letter: 'u' });
+    expect(FOOD_BY_ID.get('empty-calories')?.price).toBe(6);
+    expect(FOOD_BY_ID.get('empty-calories')?.effects).toContainEqual({ type: 'maxHp', delta: 9 });
+    expect(FOOD_BY_ID.get('one-bo-hue')?.price).toBe(4);
+    expect(FOOD_BY_ID.get('warm-bowl')?.price).toBe(4);
+    expect(FOOD_BY_ID.get('die-coke')?.price).toBe(1);
+    expect(FOOD_BY_ID.get('die-coke')?.effects)
+      .toContainEqual({ type: 'healDiceGold', min: 1, max: 6 });
+    expect(FOOD_BY_ID.get('overhealers-delight')?.price).toBe(6);
+    expect(FOOD_BY_ID.get('overhealers-delight')?.effects)
+      .toContainEqual({ type: 'healOverflowMaxHp', amount: 8 });
+    expect(FOOD_BY_ID.get('overhealers-delicacy')?.price).toBe(12);
+    expect(FOOD_BY_ID.get('overhealers-delicacy')?.effects)
+      .toContainEqual({ type: 'healOverflowMaxHp', amount: 12 });
+    expect(FOOD_BY_ID.get('rusty-plate')?.price).toBe(2);
+    expect(FOOD_BY_ID.get('spring-tonic')?.price).toBe(1);
+    expect(FOOD_BY_ID.get('packed-lunch')?.price).toBe(3);
+    expect(FOOD_BY_ID.get('packed-lunch')?.effects).toContainEqual({ type: 'slots', delta: -1 });
+    expect(ITEM_BY_ID.get('bookend')?.price).toBe(7);
+    expect(FOOD_BY_ID.get('gg-gum')?.price).toBe(9);
+    expect(ITEM_BY_ID.get('overachiever')).toBeUndefined();
+    expect(ITEM_BY_ID.get('miser')).toBeUndefined();
+    expect(ITEM_BY_ID.get('old-mcdonald')).toBeDefined();
+  });
+
+  it('Die Coke turns excess healing into gold', () => {
+    const { state } = start('die-coke');
+    state.phase = 'shop';
+    state.gold = 10;
+    state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'die-coke', price: 1 }]);
+    const eaten = act(state, { type: 'buy', offerId: 'o0' });
+    expect(eaten.state.hp).toBe(16);
+    expect(eaten.state.gold).toBeGreaterThanOrEqual(10);
+    expect(eaten.state.gold).toBeLessThanOrEqual(15);
+  });
+
+  it('Overhealer foods turn excess healing into max HP', () => {
+    const delight = start('overhealers-delight');
+    delight.state.phase = 'shop';
+    delight.state.gold = 20;
+    delight.state.shop = shopState([
+      { id: 'o0', kind: 'eat', def: 'overhealers-delight', price: 6 },
+    ]);
+    const eaten = act(delight.state, { type: 'buy', offerId: 'o0' });
+    expect(eaten.state.maxHp).toBe(24);
+    expect(eaten.state.hp).toBe(24);
+
+    const delicacy = start('overhealers-delicacy');
+    delicacy.state.phase = 'shop';
+    delicacy.state.gold = 20;
+    delicacy.state.shop = shopState([
+      { id: 'o0', kind: 'eat', def: 'overhealers-delicacy', price: 12 },
+    ]);
+    const feasted = act(delicacy.state, { type: 'buy', offerId: 'o0' });
+    expect(feasted.state.maxHp).toBe(28);
+    expect(feasted.state.hp).toBe(28);
+  });
+
+  it('Packed Lunch removes a slot and bags the overflow', () => {
+    const { state } = start('packed-lunch');
+    for (let index = 0; index < 5; index++) {
+      state.items.push({
+        instance: `i-hour-${index}`,
+        id: 'hourglass',
+        data: {},
+        equipped: true,
+      });
+    }
+    state.phase = 'shop';
+    state.gold = 10;
+    state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'packed-lunch', price: 3 }]);
+    const eaten = act(state, { type: 'buy', offerId: 'o0' });
+    expect(eaten.state.slots).toBe(4);
+    expect(eaten.state.items.filter((item) => item.equipped)).toHaveLength(4);
   });
 
   it('The Scales doubles max HP and halves current HP, or grants max armor', () => {
@@ -1048,7 +1126,7 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('shortcut')?.description).toContain('2 guesses or fewer');
     expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('Every 13 reveals');
     expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('-3 max HP');
-    expect(FOOD_BY_ID.get('hearty-meal')?.description).toBe('+6 max HP, heal 6. No slot.');
+    expect(FOOD_BY_ID.get('hearty-meal')?.description).toBe('+5 max HP, heal 5. No slot.');
     expect(ITEM_BY_ID.get('loyalty-card')?.description).toContain('Every 7 shop purchases');
     expect(ITEM_BY_ID.get('tithe-box')?.description).toContain('10% chance');
     expect(ITEM_BY_ID.get('mimic-mouth')?.description).toContain('Once per round');

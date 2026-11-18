@@ -428,14 +428,6 @@ export const ITEMS: ItemDef[] = [
     },
   }),
   defineItem({
-    id: 'overachiever',
-    name: 'Overachiever',
-    description: 'On solve: +1 gold per guess this round.',
-    price: 7,
-    kind: 'gear',
-    on: { onSolve: (_ctx, p) => [{ type: 'gold', amount: p.guesses }] },
-  }),
-  defineItem({
     id: 'time-dilation',
     name: 'Time Dilation',
     description: 'First 10s: guesses are free. Rounds start 5s shorter.',
@@ -1075,19 +1067,6 @@ export const ITEMS: ItemDef[] = [
     },
   }),
   defineItem({
-    id: 'miser',
-    name: 'Miser',
-    description: 'End of round: +1 gold per 10 gold held.',
-    price: 9,
-    kind: 'gear',
-    on: {
-      onRoundEnd: (ctx) => {
-        const amount = Math.floor(ctx.state.gold / 10);
-        return amount > 0 ? [{ type: 'gold', amount }] : [];
-      },
-    },
-  }),
-  defineItem({
     id: 'coupon-book',
     name: 'Coupon Book',
     description: 'The first purchase in each shop costs 2 less.',
@@ -1152,7 +1131,7 @@ export const ITEMS: ItemDef[] = [
     id: 'bookend',
     name: 'Bookend',
     description: 'Guess a word starting and ending with the same letter: +3 gold.',
-    price: 8,
+    price: 7,
     kind: 'gear',
     on: {
       onGuessScored: (_ctx, p) =>
