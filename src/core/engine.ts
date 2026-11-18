@@ -1085,6 +1085,18 @@ export function createCore(content: Content): Core {
         applyCurse(rt, pickWeighted(state, pool).id);
         break;
       }
+      case 'addPreviewItem': {
+        const item = state.happening?.previewItem;
+        if (item) addItem(rt, item);
+        else emit(rt, { type: 'message', text: 'No item is available.' });
+        break;
+      }
+      case 'addPreviewCurse': {
+        const curse = state.happening?.previewCurse;
+        if (curse) applyCurse(rt, curse);
+        else emit(rt, { type: 'message', text: 'No curse is available.' });
+        break;
+      }
       case 'eat':
         eatFood(rt, effect.food);
         break;
@@ -2102,6 +2114,16 @@ export function createCore(content: Content): Core {
         outcomes: option.outcomes.map((o) => ({ chancePct: o.chancePct, text: o.text })),
       })),
     };
+    if (def.id === 'the-bargain') {
+      const items = content.items.filter(
+        (item) => item.rarity !== 'rare' && itemAvailable(state, item),
+      );
+      const curses = eligibleCurses(state, false);
+      state.happening.previewItem = items.length > 0 ? rngPick(state, items).id : undefined;
+      state.happening.previewCurse = curses.length > 0
+        ? pickWeighted(state, curses).id
+        : undefined;
+    }
     state.phase = 'happening';
     emit(rt, {
       type: 'happeningOffered',
@@ -2649,6 +2671,8 @@ export function createCore(content: Content): Core {
           kind: 'happening',
           happening: state.happening?.id ?? '',
           options: clone(state.happening?.options ?? []),
+          previewItem: state.happening?.previewItem,
+          previewCurse: state.happening?.previewCurse,
           resolved: state.happening?.resolved,
         };
         break;

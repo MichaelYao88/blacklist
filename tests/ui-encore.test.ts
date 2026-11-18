@@ -11,11 +11,13 @@ describe('Bargain random previews', () => {
     state.phase = 'happening';
     state.happening = {
       id: 'the-bargain',
+      previewItem: 'encore',
+      previewCurse: 'without-d',
       options: [
         {
           id: 'draw',
           label: 'Draw one',
-          description: '50%: random item. 50%: random curse.',
+          description: '60%: random item. 40%: random curse.',
           outcomes: [],
         },
         {
@@ -34,19 +36,21 @@ describe('Bargain random previews', () => {
     root.querySelector<HTMLElement>('[data-action="resume"]')!.click();
   });
 
-  it('shows hoverable random item and random curse previews', () => {
+  it('shows the previewed item and curse with odds', () => {
     const chips = [...root.querySelectorAll<HTMLElement>('.preview-chip')];
     expect(chips).toHaveLength(2);
 
-    const item = chips.find((chip) => chip.textContent?.includes('Random item'))!;
-    const curse = chips.find((chip) => chip.textContent?.includes('Random curse'))!;
+    const item = chips.find((chip) => chip.textContent?.includes('Encore'))!;
+    const curse = chips.find((chip) => chip.textContent?.includes('Without the D'))!;
+    expect(item.textContent).toContain('60%');
+    expect(curse.textContent).toContain('40%');
     expect(item.querySelector('.preview-icon')?.textContent?.trim()).toBeTruthy();
-    expect(item.dataset.tip).toContain('random available item');
-    expect(curse.dataset.tip).toContain('random eligible curse');
+    expect(item.dataset.tip).toContain('last solved answer');
+    expect(curse.dataset.tip).toContain('Every D tile is hidden');
 
     item.dispatchEvent(new Event('pointermove', { bubbles: true }));
     const tip = document.querySelector<HTMLElement>('.kw-tooltip');
     expect(tip?.classList.contains('visible')).toBe(true);
-    expect(tip?.textContent).toContain('random available item');
+    expect(tip?.textContent).toContain('Encore');
   });
 });

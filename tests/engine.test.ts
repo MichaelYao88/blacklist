@@ -1642,24 +1642,48 @@ describe('latest balance pass', () => {
     expect(chosen.state.phase).toBe('reward');
   });
 
-  it('The Bargain gives a random item or random curse', () => {
+  it('The Bargain grants its previewed item or curse with 60/40 odds', () => {
     let itemOutcomes = 0;
     let curseOutcomes = 0;
-    const curseIds = new Set<string>();
     for (let index = 0; index < 120; index++) {
       const { state } = start(`bargain-${index}`);
       state.phase = 'happening';
-      state.happening = { id: 'the-bargain', options: [] };
+      state.happening = {
+        id: 'the-bargain',
+        options: [],
+        previewItem: 'encore',
+        previewCurse: 'without-d',
+      };
       const result = act(state, { type: 'choose', optionId: 'draw' });
-      if (result.state.items.length > 0) itemOutcomes++;
+      if (result.state.items.length > 0) {
+        itemOutcomes++;
+        expect(result.state.items[0].id).toBe('encore');
+      }
       if (result.state.curses.length > 0) {
         curseOutcomes++;
-        curseIds.add(result.state.curses[0].id);
+        expect(result.state.curses[0].id).toBe('without-d');
       }
     }
+    expect(itemOutcomes).toBeGreaterThan(curseOutcomes);
     expect(itemOutcomes).toBeGreaterThan(0);
     expect(curseOutcomes).toBeGreaterThan(0);
-    expect(curseIds.size).toBeGreaterThan(1);
+  });
+
+  it('The Bargain previews vary per event', () => {
+    const items = new Set<string>();
+    const curses = new Set<string>();
+    for (let index = 0; index < 200 && (items.size < 2 || curses.size < 2); index++) {
+      const { state } = start(`bargain-open-${index}`);
+      state.nodeIndex = 0;
+      state.nodes[1] = { kind: 'happening', level: 1 };
+      state.phase = 'shop';
+      const opened = act(state, { type: 'continue' }).state;
+      if (opened.happening?.id !== 'the-bargain') continue;
+      if (opened.happening.previewItem) items.add(opened.happening.previewItem);
+      if (opened.happening.previewCurse) curses.add(opened.happening.previewCurse);
+    }
+    expect(items.size).toBeGreaterThan(1);
+    expect(curses.size).toBeGreaterThan(1);
   });
 
   it('offers rare items in shops much more often', () => {

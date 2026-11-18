@@ -287,17 +287,17 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'draw',
         label: 'Draw one',
-        description: '50%: random item. 50%: random curse.',
+        description: '60%: random item. 40%: random curse.',
         outcomes: [
           {
-            chancePct: 50,
+            chancePct: 60,
             text: 'Something small and useful is on the table.',
-            effects: [{ type: 'addRandomItem' }],
+            effects: [{ type: 'addPreviewItem' }],
           },
           {
-            chancePct: 50,
+            chancePct: 40,
             text: 'Something permanent and unpleasant is on the table.',
-            effects: [{ type: 'addRandomCurse' }],
+            effects: [{ type: 'addPreviewCurse' }],
           },
         ],
       },

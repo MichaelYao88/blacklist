@@ -1463,14 +1463,23 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
   </div>`;
 }
 
-function happeningPreviews(happeningId: string | undefined, optionId: string): string {
-  if (happeningId !== 'the-bargain' || optionId !== 'draw') return '';
+function happeningPreviews(
+  phase: Extract<PhaseView, { kind: 'happening' }>,
+  optionId: string,
+): string {
+  if (phase.happening !== 'the-bargain' || optionId !== 'draw') return '';
+  const item = phase.previewItem ? ITEM_BY_ID.get(phase.previewItem) : undefined;
+  const curse = phase.previewCurse ? CURSE_BY_ID.get(phase.previewCurse) : undefined;
+  const itemTip = item ? `${item.name}\n${item.description}` : 'One random available item.';
+  const curseTip = curse ? `${curse.name}\n${curse.rules.join('\n')}` : 'One random eligible curse.';
   return `<div class="preview-row">
-    <span class="preview-chip" tabindex="0" data-tip="One random available item.">
-      <span class="preview-icon" aria-hidden="true">🎁</span>Random item
+    <span class="preview-chip" tabindex="0" data-tip="${escapeHtml(itemTip)}">
+      <span class="preview-icon" aria-hidden="true">${item ? itemIcon(item.id) : '🎁'}</span>
+      60% · ${escapeHtml(item?.name ?? 'Random item')}
     </span>
-    <span class="preview-chip curse" tabindex="0" data-tip="One random eligible curse.">
-      <span class="preview-icon" aria-hidden="true">✦</span>Random curse
+    <span class="preview-chip curse" tabindex="0" data-tip="${escapeHtml(curseTip)}">
+      <span class="preview-icon" aria-hidden="true">✦</span>
+      40% · ${escapeHtml(curse?.name ?? 'Random curse')}
     </span>
   </div>`;
 }
@@ -1489,7 +1498,7 @@ function renderHappening(phase: Extract<PhaseView, { kind: 'happening' }>): stri
           <div>
             <b>${escapeHtml(option.label)}</b>
             <p>${glossaryText(option.description)}</p>
-            ${happeningPreviews(def?.id, option.id)}
+            ${happeningPreviews(phase, option.id)}
             ${option.costGold ? `<span class="warn">Costs ${option.costGold} gold${option.fallbackPct ? ` · or ${Math.round(option.fallbackPct * 100)}% of your gold` : ''}</span>` : ''}
           </div>
           <div class="odds">

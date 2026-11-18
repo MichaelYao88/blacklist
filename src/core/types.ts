@@ -253,6 +253,9 @@ export interface HappeningOptionView {
 export interface HappeningState {
   id: HappeningId;
   options: HappeningOptionView[];
+  /** Pre-rolled previews for events such as The Bargain. */
+  previewItem?: ItemId;
+  previewCurse?: CurseId;
   resolved?: { option: string; success: boolean; text: string };
 }
 
@@ -301,6 +304,8 @@ export type Effect =
   | { type: 'addRandomItem' }
   | { type: 'addRandomRelic' }
   | { type: 'addRandomCurse' }
+  | { type: 'addPreviewItem' }
+  | { type: 'addPreviewCurse' }
   | { type: 'eat'; food: string }
   | { type: 'eatRandom' }
   | { type: 'slots'; delta: number }
@@ -606,6 +611,8 @@ export type PhaseView =
       kind: 'happening';
       happening: HappeningId;
       options: HappeningOptionView[];
+      previewItem?: ItemId;
+      previewCurse?: CurseId;
       resolved?: { option: string; success: boolean; text: string };
     }
   | {
