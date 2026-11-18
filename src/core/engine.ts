@@ -971,6 +971,28 @@ export function createCore(content: Content): Core {
         if (id) addSpell(rt, id);
         break;
       }
+      case 'giveMissingSpells': {
+        const owned = new Set(state.spells.map((spell) => spell.id));
+        for (const spell of content.spells) {
+          if (owned.has(spell.id)) continue;
+          if (effect.chancePct !== undefined && !rngChance(state, effect.chancePct)) continue;
+          addSpell(rt, spell.id);
+        }
+        break;
+      }
+      case 'rerollShop': {
+        const shop = state.shop;
+        if (!shop || state.phase !== 'shop') break;
+        shop.offers = generateOffers(rt);
+        shop.foodOffers = shop.offers.filter((offer) => offer.kind === 'eat').length;
+        shop.foodsBought = 0;
+        emit(rt, {
+          type: 'shopRerolled',
+          offers: clone(shop.offers),
+          rerollCost: shop.rerollCost,
+        });
+        break;
+      }
       case 'castSpell':
         castSpellById(rt, effect.spell);
         break;

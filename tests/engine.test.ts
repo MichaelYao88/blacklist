@@ -1025,7 +1025,7 @@ describe('latest balance pass', () => {
     expect(FOOD_BY_ID.get('die-coke')?.price).toBe(1);
     expect(FOOD_BY_ID.get('die-coke')?.effects)
       .toContainEqual({ type: 'healDiceGold', min: 1, max: 6 });
-    expect(FOOD_BY_ID.get('overhealers-delight')?.price).toBe(2);
+    expect(FOOD_BY_ID.get('overhealers-delight')?.price).toBe(3);
     expect(FOOD_BY_ID.get('overhealers-delight')?.effects)
       .toContainEqual({ type: 'healOverflowMaxHp', amount: 8 });
     expect(FOOD_BY_ID.get('overhealers-delicacy')?.price).toBe(5);
@@ -1075,8 +1075,65 @@ describe('latest balance pass', () => {
     expect(feasted.state.hp).toBe(28);
   });
 
-  it('Banh Mi and Beshbarmak heal by percentage of max HP', () => {
-    const banh = start('banh-mi');
+  it('sells the newest meal batch', () => {
+    expect(FOOD_BY_ID.get('pho-dac-biet')?.price).toBe(6);
+    expect(FOOD_BY_ID.get('pho-dac-biet')?.effects)
+      .toContainEqual({ type: 'healPercent', percent: 100 });
+    expect(FOOD_BY_ID.get('xiaolongbao')?.price).toBe(5);
+    expect(FOOD_BY_ID.get('cheeseburger')?.price).toBe(4);
+    expect(FOOD_BY_ID.get('double-cheeseburger')?.price).toBe(8);
+    expect(FOOD_BY_ID.get('pani-puri')?.price).toBe(1);
+    expect(FOOD_BY_ID.get('potato-chips')?.price).toBe(1);
+    expect(FOOD_BY_ID.get('hagelslag')?.price).toBe(4);
+    expect(FOOD_BY_ID.get('masala-dosa')?.price).toBe(3);
+    expect(FOOD_BY_ID.get('cyrniki')?.price).toBe(4);
+    expect(FOOD_BY_ID.get('menemen')?.price).toBe(4);
+    expect(FOOD_BY_ID.get('big-eggplant')?.price).toBe(4);
+    expect(FOOD_BY_ID.get('jumbo-hot-dog')?.price).toBe(3);
+    expect(FOOD_BY_ID.get('juicy-peach')?.price).toBe(4);
+    expect(FOOD_BY_ID.get('cherries')?.price).toBe(2);
+    expect(FOOD_BY_ID.get('satchel')?.price).toBe(12);
+    expect(FOOD_BY_ID.get('satchel')?.rarity).toBe('rare');
+    expect(FOOD_BY_ID.get('o-toro')?.price).toBe(15);
+    expect(FOOD_BY_ID.get('o-toro')?.effects)
+      .toContainEqual({ type: 'revealLetter', letter: 'o' });
+    expect(FOOD_BY_ID.get('i-spy')?.price).toBe(12);
+    expect(FOOD_BY_ID.get('reveal-the-d')?.price).toBe(11);
+    expect(FOOD_BY_ID.get('honey-cake')?.price).toBe(6);
+    expect(FOOD_BY_ID.get('vitality')?.price).toBe(8);
+    expect(FOOD_BY_ID.get('yin-yang')?.name).toBe('NY Cheesecake');
+  });
+
+  it('Pho Dac Biet heals to full and Jumbo Hot Dog trades slots for HP', () => {
+    const pho = start('pho-dac-biet');
+    pho.state.phase = 'shop';
+    pho.state.gold = 20;
+    pho.state.hp = 3;
+    pho.state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'pho-dac-biet', price: 6 }]);
+    const healed = act(pho.state, { type: 'buy', offerId: 'o0' });
+    expect(healed.state.hp).toBe(healed.state.maxHp);
+
+    const dog = start('jumbo-hot-dog');
+    dog.state.phase = 'shop';
+    dog.state.gold = 20;
+    dog.state.slots = 5;
+    dog.state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'jumbo-hot-dog', price: 3 }]);
+    const eaten = act(dog.state, { type: 'buy', offerId: 'o0' });
+    expect(eaten.state.slots).toBe(6);
+    expect(eaten.state.maxHp).toBe(6); // 16 - 10
+  });
+
+  it('Masala Dosa rerolls the shop offers', () => {
+    const dosa = start('masala-dosa');
+    dosa.state.phase = 'shop';
+    dosa.state.gold = 20;
+    dosa.state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'masala-dosa', price: 3 }]);
+    const bought = act(dosa.state, { type: 'buy', offerId: 'o0' });
+    expect(bought.events.some((event) => event.type === 'shopRerolled')).toBe(true);
+    expect(bought.state.shop?.offers.some((offer) => offer.def === 'masala-dosa')).toBe(false);
+  });
+
+  it('Banh Mi and Beshbarmak heal by percentage of max HP', () => {    const banh = start('banh-mi');
     banh.state.phase = 'shop';
     banh.state.gold = 20;
     banh.state.hp = 5;

@@ -68,6 +68,43 @@ export const FOODS: FoodDef[] = [
     ],
   }),
   defineFood({
+    id: 'pho-dac-biet',
+    name: 'Pho Dac Biet',
+    description: 'Heal to full HP. No slot.',
+    price: 6,
+    effects: [{ type: 'healPercent', percent: 100 }],
+  }),
+  defineFood({
+    id: 'xiaolongbao',
+    name: 'Xiaolongbao',
+    description: '+2 max HP and heal 20% of max HP. No slot.',
+    price: 5,
+    effects: [
+      { type: 'maxHp', delta: 2 },
+      { type: 'healPercent', percent: 20 },
+    ],
+  }),
+  defineFood({
+    id: 'cheeseburger',
+    name: 'Cheeseburger',
+    description: '+3 max HP and heal 10% of missing HP. No slot.',
+    price: 4,
+    effects: [
+      { type: 'maxHp', delta: 3 },
+      { type: 'healMissingPercent', percent: 10 },
+    ],
+  }),
+  defineFood({
+    id: 'double-cheeseburger',
+    name: 'Double Cheeseburger',
+    description: '+6 max HP and heal 20% of missing HP. No slot.',
+    price: 8,
+    effects: [
+      { type: 'maxHp', delta: 6 },
+      { type: 'healMissingPercent', percent: 20 },
+    ],
+  }),
+  defineFood({
     id: 'die-coke',
     name: 'Die Coke',
     description: 'Heal 1-6 HP. Excess healing becomes gold. No slot.',
@@ -78,7 +115,7 @@ export const FOODS: FoodDef[] = [
     id: 'overhealers-delight',
     name: "Overhealer's Delight",
     description: 'Heal 8 HP. Excess healing becomes max HP. No slot.',
-    price: 2,
+    price: 3,
     effects: [{ type: 'healOverflowMaxHp', amount: 8 }],
   }),
   defineFood({
@@ -138,6 +175,36 @@ export const FOODS: FoodDef[] = [
     effects: [{ type: 'giveSpell', spell: 'random' }],
   }),
   defineFood({
+    id: 'menemen',
+    name: 'Menemen',
+    description: '20% chance of each spell you don\'t have. No slot.',
+    price: 4,
+    effects: [{ type: 'giveMissingSpells', chancePct: 20 }],
+  }),
+  defineFood({
+    id: 'cyrniki',
+    name: 'Cyrniki',
+    description: '50%: a spell. 50%: reroll the shop. No slot.',
+    price: 4,
+    effects: [{
+      type: 'randomChoice',
+      options: [
+        [{ type: 'giveSpell', spell: 'random' }],
+        [{ type: 'rerollShop' }],
+      ],
+    }],
+  }),
+  defineFood({
+    id: 'masala-dosa',
+    name: 'Masala Dosa',
+    description: 'Heal 10% of max HP, reroll the shop. No slot.',
+    price: 3,
+    effects: [
+      { type: 'healPercent', percent: 10 },
+      { type: 'rerollShop' },
+    ],
+  }),
+  defineFood({
     id: 'coffee',
     name: 'Coffee',
     description: '+5s per round, permanently. No slot.',
@@ -161,6 +228,30 @@ export const FOODS: FoodDef[] = [
     description: 'Heal 50% of missing HP. No slot.',
     price: 2,
     effects: [{ type: 'healMissingPercent', percent: 50 }],
+  }),
+  defineFood({
+    id: 'pani-puri',
+    name: 'Pani Puri',
+    description: 'Heal 15% of missing HP. No slot.',
+    price: 1,
+    effects: [{ type: 'healMissingPercent', percent: 15 }],
+  }),
+  defineFood({
+    id: 'hagelslag',
+    name: 'Hagelslag',
+    description: '+1 max HP and heal 10% of missing HP. No slot.',
+    price: 4,
+    effects: [
+      { type: 'maxHp', delta: 1 },
+      { type: 'healMissingPercent', percent: 10 },
+    ],
+  }),
+  defineFood({
+    id: 'potato-chips',
+    name: 'Potato Chips',
+    description: '+1 max HP. No slot.',
+    price: 1,
+    effects: [{ type: 'maxHp', delta: 1 }],
   }),
   defineFood({
     id: 'hearty-meal',
@@ -193,10 +284,30 @@ export const FOODS: FoodDef[] = [
     id: 'honey-cake',
     name: 'Honey Cake',
     description: 'Heal 6 HP and gain Omen. No slot.',
-    price: 5,
+    price: 6,
     effects: [
       { type: 'heal', amount: 6 },
       { type: 'giveSpell', spell: 'omen' },
+    ],
+  }),
+  defineFood({
+    id: 'juicy-peach',
+    name: 'Juicy Peach',
+    description: 'Heal 2 HP. 50%: Restore. No slot.',
+    price: 4,
+    effects: [
+      { type: 'heal', amount: 2 },
+      { type: 'giveSpell', spell: 'restore', chancePct: 50 },
+    ],
+  }),
+  defineFood({
+    id: 'cherries',
+    name: 'Cherries',
+    description: 'Heal 2 HP. 30%: Heal. No slot.',
+    price: 2,
+    effects: [
+      { type: 'heal', amount: 2 },
+      { type: 'giveSpell', spell: 'heal', chancePct: 30 },
     ],
   }),
   defineFood({
@@ -217,7 +328,7 @@ export const FOODS: FoodDef[] = [
     id: 'vitality',
     name: 'Vitality',
     description: '+8 max HP, heal 8. No slot.',
-    price: 6,
+    price: 8,
     effects: [
       { type: 'maxHp', delta: 8 },
       { type: 'heal', amount: 8 },
@@ -242,8 +353,29 @@ export const FOODS: FoodDef[] = [
     id: 'satchel',
     name: 'Satchel',
     description: '+1 slot. No slot.',
-    price: 10,
+    price: 12,
+    rarity: 'rare',
     effects: [{ type: 'slots', delta: 1 }],
+  }),
+  defineFood({
+    id: 'big-eggplant',
+    name: 'Big Eggplant',
+    description: '+1 item slot, -1 max armor. No slot.',
+    price: 4,
+    effects: [
+      { type: 'slots', delta: 1 },
+      { type: 'maxArmor', delta: -1 },
+    ],
+  }),
+  defineFood({
+    id: 'jumbo-hot-dog',
+    name: 'Jumbo Hot Dog',
+    description: '+1 item slot, -10 max HP. No slot.',
+    price: 3,
+    effects: [
+      { type: 'slots', delta: 1 },
+      { type: 'maxHp', delta: -10 },
+    ],
   }),
   defineFood({
     id: 'sundial',
@@ -298,19 +430,26 @@ export const FOODS: FoodDef[] = [
     id: 'i-spy',
     name: 'I-Spy',
     description: 'Every round: I is revealed. No slot.',
-    price: 7,
+    price: 12,
     effects: [{ type: 'revealLetter', letter: 'i' }],
   }),
   defineFood({
     id: 'reveal-the-d',
     name: 'Reveal the D',
     description: 'Every round: D is revealed. No slot.',
-    price: 6,
+    price: 11,
     effects: [{ type: 'revealLetter', letter: 'd' }],
   }),
   defineFood({
+    id: 'o-toro',
+    name: 'O-Toro',
+    description: 'Every round: reveal whether the answer has O. No slot.',
+    price: 15,
+    effects: [{ type: 'revealLetter', letter: 'o' }],
+  }),
+  defineFood({
     id: 'yin-yang',
-    name: 'Yin Yang',
+    name: 'NY Cheesecake',
     description: 'Every round: Y and N are revealed. No slot.',
     price: 10,
     effects: [
