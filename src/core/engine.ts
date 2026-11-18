@@ -2844,7 +2844,7 @@ export function createCore(content: Content): Core {
     const seed = String(opts.seed || 'blacklist');
     const ascension = Math.max(0, Math.min(ASCENSION_MAX, Math.floor(opts.ascension ?? 0)));
     const startingCurses = ascensionStartingCurses(ascension);
-    const maxHp = 16;
+    const maxHp = 20;
     const startArmor = 4;
     const state: RunState = {
       version: VERSION,
@@ -2860,7 +2860,7 @@ export function createCore(content: Content): Core {
       maxHp,
       armor: startArmor,
       maxArmor: startArmor,
-      gold: 10,
+      gold: 12,
       slots: 5,
       bonusTimeMs: 0,
       bonusBaseDamage: 0,

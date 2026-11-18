@@ -105,11 +105,11 @@ Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title s
 
 | Thing | Value |
 |---|---|
-| Starting HP | 16 |
+| Starting HP | 20 |
 | Starting armor | 4 points |
 | Starting item slots | 5 (only equipped gear counts; relics use one slot each) |
 | Free guesses per round | 1, plus every guess made inside a timed shield |
-| Starting gold | 10 |
+| Starting gold | 12 |
 | Starting spells | 1 random spell |
 | Blacklist | disabled until The List curse; unlimited once active |
 | Normal timer | none until The Clock curse |
