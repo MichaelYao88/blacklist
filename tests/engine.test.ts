@@ -302,6 +302,23 @@ describe('timer curses', () => {
     expect(view.phase.board.timerMode).toBe('countup');
   });
 
+  it('Early Bird pays for solves under a minute', () => {
+    const quick = start('early-bird-quick');
+    quick.state.items.push({ instance: 'i-early', id: 'early-bird', data: { gold: 2 }, equipped: true });
+    setAnswer(quick.state, 'crane');
+    quick.state.round!.elapsedMs = 59_999;
+    const solved = act(quick.state, { type: 'guess', word: 'crane' });
+
+    const late = start('early-bird-late');
+    late.state.items.push({ instance: 'i-early-late', id: 'early-bird', data: { gold: 2 }, equipped: true });
+    setAnswer(late.state, 'crane');
+    late.state.round!.elapsedMs = 60_000;
+    const missed = act(late.state, { type: 'guess', word: 'crane' });
+
+    expect(solved.state.gold).toBe(missed.state.gold + 2);
+    expect(ITEM_BY_ID.get('early-bird')?.description).toContain('under a minute');
+  });
+
   it('turns Time Freeze into a free guess when there is no clock', () => {
     const { state } = start();
     setAnswer(state, 'crane');

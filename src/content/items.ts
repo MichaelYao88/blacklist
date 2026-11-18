@@ -45,14 +45,14 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'early-bird',
     name: 'Early Bird',
-    description: 'Solve under 30s: gain 2 gold. +1 more gold each time this triggers.',
+    description: 'Solve in under a minute: gain 2 gold. +1 more gold each time this triggers.',
     price: 6,
     kind: 'gear',
     timerInterest: true,
     initial: { gold: 2 },
     on: {
       onSolve: (ctx, p) =>
-        p.elapsedMs < 30_000
+        p.elapsedMs < 60_000
           ? [
               { type: 'gold', amount: ctx.self.data.gold },
               { type: 'grow', stat: 'gold', by: 1 },
