@@ -1186,7 +1186,7 @@ export function createCore(content: Content): Core {
         state.nextSpellDouble = true;
         break;
       case 'armSaleDouble':
-        state.nextSaleDouble = true;
+        state.nextSaleDoubles = (state.nextSaleDoubles ?? 0) + 2;
         break;
       case 'awaitCurseRemoval':
         state.pendingCurseRemoval += 1;
@@ -2162,10 +2162,11 @@ export function createCore(content: Content): Core {
     const value = def.sellValue
       ? def.sellValue({ state, self: item })
       : Math.floor(def.price / 2);
-    const doubled = state.nextSaleDouble === true;
+    const doublesLeft = state.nextSaleDoubles ?? 0;
+    const doubled = doublesLeft > 0;
     const paid = doubled ? value * 2 : value;
     if (doubled) {
-      state.nextSaleDouble = false;
+      state.nextSaleDoubles = doublesLeft - 1;
       emit(rt, { type: 'message', text: 'Chilaquiles doubled the sale.' });
     }
     const view = itemView(state, item);
@@ -3113,6 +3114,9 @@ export function createCore(content: Content): Core {
       }
       state.pendingReveals = [];
       delete (state as RunState & { blacklistCapacity?: number }).blacklistCapacity;
+      const legacySaleDouble = (state as RunState & { nextSaleDouble?: boolean }).nextSaleDouble;
+      if (legacySaleDouble === true && !state.nextSaleDoubles) state.nextSaleDoubles = 1;
+      delete (state as RunState & { nextSaleDouble?: boolean }).nextSaleDouble;
       // Retired item ids are remapped or dropped so an old save can never
       // reference a definition the current content set no longer ships.
       const itemMigrations: Record<string, string> = {

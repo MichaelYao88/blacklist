@@ -547,8 +547,8 @@ export interface RunState {
   visionCountsRounds?: number;
   /** Spell Pepper: the next player-cast spell resolves twice. */
   nextSpellDouble?: boolean;
-  /** Chilaquiles: the next sold item pays double. */
-  nextSaleDouble?: boolean;
+  /** Chilaquiles: the number of upcoming sold items that pay double. */
+  nextSaleDoubles?: number;
   pendingPurge: number;
   /** Absent letters queued to reveal at the start of the next round. */
   pendingAbsent: number;

@@ -578,8 +578,8 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'chilaquiles',
     name: 'Chilaquiles',
-    description: 'The next item you sell sells for double. No slot.',
-    price: 1,
+    description: 'The next two items you sell sell for double. No slot.',
+    price: 2,
     effects: [{ type: 'armSaleDouble' }],
   }),
   defineFood({

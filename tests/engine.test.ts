@@ -2043,20 +2043,25 @@ describe('latest balance pass', () => {
     expect(cast.state.nextSpellDouble).toBe(false);
   });
 
-  it('Chilaquiles is a 1g food that doubles the next sale', () => {
+  it('Chilaquiles is a 2g food that doubles the next two sales', () => {
     const { state } = start('chilaquiles');
     state.phase = 'shop';
-    state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'chilaquiles', price: 1 }]);
+    state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'chilaquiles', price: 2 }]);
     state.items.push({ instance: 'i-glass', id: 'hourglass', data: {}, equipped: true });
+    state.items.push({ instance: 'i-glass-2', id: 'hourglass', data: {}, equipped: true });
     const goldBefore = state.gold;
     const eaten = act(state, { type: 'buy', offerId: 'o0' });
-    expect(eaten.state.gold).toBe(goldBefore - 1);
-    expect(eaten.state.nextSaleDouble).toBe(true);
+    expect(eaten.state.gold).toBe(goldBefore - 2);
+    expect(eaten.state.nextSaleDoubles).toBe(2);
     const sold = act(eaten.state, { type: 'sell', instance: 'i-glass' });
     const base = Math.floor((ITEM_BY_ID.get('hourglass')?.price ?? 2) / 2);
-    expect(sold.state.gold - goldBefore).toBe(base * 2 - 1);
+    expect(sold.state.gold - goldBefore).toBe(base * 2 - 2);
+    expect(sold.state.nextSaleDoubles).toBe(1);
+    const soldAgain = act(sold.state, { type: 'sell', instance: 'i-glass-2' });
+    expect(soldAgain.state.gold - goldBefore).toBe(base * 4 - 2);
+    expect(soldAgain.state.nextSaleDoubles).toBe(0);
     expect(ITEM_BY_ID.get('chilaquiles')).toBeUndefined();
-    expect(FOOD_BY_ID.get('chilaquiles')?.price).toBe(1);
+    expect(FOOD_BY_ID.get('chilaquiles')?.price).toBe(2);
   });
 
   it('re-implements Piggy Bank at 2 gold plus 2 per round held', () => {

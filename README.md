@@ -56,7 +56,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Frozen Durian** grants +1 Time Freeze every 4 foods eaten
 - **Ice Cream Sundae** is a 3g consumable: gain Time Freeze, or heal 1 and +1 max HP
 - **Muffin Tin** is a 2g food: in that shop, each food eaten gives +1 max armor per Muffin Tin eaten, including itself; the armor is permanent and the counting stops when you leave
-- **Chilaquiles** is a 1g food that doubles the next sale
+- **Chilaquiles** is a 2g food that doubles the next two sales
 - **Spell Pepper** is a 3g food that doubles your next spell
 - Every shop node offers a choice: visit the shop, or rest at the inn to heal to full HP and move on
 - **Hearty Stew** is a 5g food that grants 1-2 casts of Heal; **Hagelslag** gives +3 max HP and heals 20% of missing HP
