@@ -33,6 +33,7 @@ import runnerAttack from '../assets/sprites/runner-attack.png';
 import orcWalk from '../assets/sprites/orc-walk.png';
 import orcAttack from '../assets/sprites/orc-attack.png';
 import orcDeath from '../assets/sprites/orc-death.png';
+import runnerDeath from '../assets/sprites/runner-death.png';
 import { sfx } from './audio';
 import { music } from './music';
 import { ASCENSION_MAX, ascensionSummary } from '../core/ascension';
@@ -92,10 +93,13 @@ let arenaAttack: ArenaAttack | null = null;
 let arenaAttackTimer: number | undefined;
 let nextArenaAttacker: 'player' | 'enemy' = 'enemy';
 let orcDeathStartedAt: number | null = null;
+let orcDeathTimer: number | undefined;
+let playerDeathStartedAt: number | null = null;
 const WALK_MS = 1_000;
 const ATTACK_MS = 800;
 const ATTACK_CLEAR_MS = 900;
 const DEATH_MS = 700;
+const KILL_MS = 560;
 const spritesStartedAt = performance.now();
 let countdownUntil = 0;
 const COUNTDOWN_MS = 2_400;
@@ -134,9 +138,9 @@ function flashDamage(hpLost: number, armorSpent: number, incoming: number): void
   }, 1200);
 }
 
-function triggerArenaAttack(forceOrc = false): void {
-  const who = forceOrc ? 'enemy' : nextArenaAttacker;
-  if (!forceOrc) nextArenaAttacker = who === 'enemy' ? 'player' : 'enemy';
+function triggerArenaAttack(force?: 'player' | 'enemy'): void {
+  const who = force ?? nextArenaAttacker;
+  if (!force) nextArenaAttacker = who === 'enemy' ? 'player' : 'enemy';
   arenaAttack = { who, startedAt: performance.now() };
   if (arenaAttackTimer) window.clearTimeout(arenaAttackTimer);
   arenaAttackTimer = window.setTimeout(() => {
@@ -172,6 +176,8 @@ function flashFriendPhrases(words: string[], callout?: string): void {
 
 function processEvents(events: GameEvent[]): void {
   let playerGuessed = false;
+  let playerFreeGuess = false;
+  let solvedByPlayer = false;
   let playerDied = false;
   for (const event of events) {
     if (event.type === 'guessRejected') {
@@ -200,6 +206,8 @@ function processEvents(events: GameEvent[]): void {
     }
     if (event.type === 'guessScored' && event.by === 'player') {
       playerGuessed = true;
+      if (event.free) playerFreeGuess = true;
+      if (event.solved) solvedByPlayer = true;
     }
     if (event.type === 'healed') sfx.play('coin');
     if (event.type === 'timeExpired') {
@@ -214,6 +222,10 @@ function processEvents(events: GameEvent[]): void {
       countdownUntil = performance.now() + COUNTDOWN_MS;
       heartbeatSecond = -1;
       orcDeathStartedAt = null;
+      if (orcDeathTimer) {
+        window.clearTimeout(orcDeathTimer);
+        orcDeathTimer = undefined;
+      }
       arenaAttack = null;
       if (arenaAttackTimer) {
         window.clearTimeout(arenaAttackTimer);
@@ -223,14 +235,35 @@ function processEvents(events: GameEvent[]): void {
     }
     if (event.type === 'roundEnded') {
       if (event.outcome === 'solved') {
-        orcDeathStartedAt = performance.now();
+        if (orcDeathTimer) window.clearTimeout(orcDeathTimer);
+        const dropOrc = () => {
+          orcDeathTimer = undefined;
+          orcDeathStartedAt = performance.now();
+          render();
+        };
+        // The winning blow is the Runner's. Let the swing land before the Orc
+        // starts its death frames; otherwise kill it right away.
+        if (solvedByPlayer) {
+          orcDeathTimer = window.setTimeout(dropOrc, KILL_MS);
+        } else {
+          dropOrc();
+        }
       } else {
         orcDeathStartedAt = null;
       }
     }
     if (event.type === 'rewardChosen' || event.type === 'offerBought') sfx.play('buy');
     if (event.type === 'runEnded') {
-      if (event.result === 'defeat') playerDied = true;
+      if (event.result === 'defeat') {
+        playerDied = true;
+        playerDeathStartedAt = performance.now();
+      } else {
+        playerDeathStartedAt = null;
+      }
+      if (orcDeathTimer) {
+        window.clearTimeout(orcDeathTimer);
+        orcDeathTimer = undefined;
+      }
       const view = host.view();
       const finalState = host.current;
       recordRun({
@@ -251,9 +284,9 @@ function processEvents(events: GameEvent[]): void {
   }
 
   if (playerDied) {
-    triggerArenaAttack(true);
+    triggerArenaAttack('enemy');
   } else if (playerGuessed) {
-    triggerArenaAttack(false);
+    triggerArenaAttack(playerFreeGuess || solvedByPlayer ? 'player' : undefined);
   }
 
   const phoneFriend = events.some(
@@ -301,6 +334,9 @@ function startNewRun(): void {
   arenaAttackTimer = undefined;
   nextArenaAttacker = 'enemy';
   orcDeathStartedAt = null;
+  if (orcDeathTimer) window.clearTimeout(orcDeathTimer);
+  orcDeathTimer = undefined;
+  playerDeathStartedAt = null;
   phraseRoot.innerHTML = '';
   heartbeatSecond = -1;
   processEvents(events);
@@ -325,6 +361,9 @@ function resumeRun(): void {
   arenaAttackTimer = undefined;
   nextArenaAttacker = 'enemy';
   orcDeathStartedAt = null;
+  if (orcDeathTimer) window.clearTimeout(orcDeathTimer);
+  orcDeathTimer = undefined;
+  playerDeathStartedAt = null;
   heartbeatSecond = -1;
   countdownUntil = 0;
   music.resume();
@@ -644,7 +683,8 @@ function render(): void {
   app!.insertAdjacentHTML('beforeend', noticeHtml());
 
   const damageId = damageFx?.id ?? 0;
-  if (screen !== 'run') {
+  const overRun = screen === 'run' && view?.phase.kind === 'over';
+  if (screen !== 'run' || overRun) {
     if (fxRoot.innerHTML) fxRoot.innerHTML = '';
     damageRendered = 0;
   } else if (damageId !== damageRendered) {
@@ -1628,8 +1668,16 @@ function renderOver(phase: Extract<PhaseView, { kind: 'over' }>): string {
         ${missed || `<b>${escapeHtml(phase.answer.toUpperCase())}</b>`}
       </div>`
     : '';
+  const deathElapsed = playerDeathStartedAt === null ? DEATH_MS : performance.now() - playerDeathStartedAt;
+  const deathDelay = -Math.max(0, Math.min(deathElapsed, DEATH_MS));
+  const defeatFighter = victory
+    ? ''
+    : `<div class="over-fighter" aria-hidden="true">
+        <i class="character-sprite runner dead" style="--death:url('${runnerDeath}');--death-delay:${deathDelay}ms"></i>
+      </div>`;
   return `
   <div class="over-screen ${victory ? 'victory' : 'defeat'}">
+    ${defeatFighter}
     <p class="kicker">RUN OVER</p>
     <h1>${victory ? 'THE LIST IS YOURS' : 'THE LIST CLOSES'}</h1>
     <p class="tagline">${victory

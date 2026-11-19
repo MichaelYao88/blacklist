@@ -1699,6 +1699,13 @@ button {
   text-align: center;
 }
 
+.over-fighter {
+  width: 150px;
+  margin: 0 auto 18px;
+  opacity: 0.95;
+  filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 26px rgba(223, 97, 90, 0.18));
+}
+
 .over-screen h1 {
   margin: 10px 0;
   font-family: var(--serif);
