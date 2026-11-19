@@ -2207,10 +2207,14 @@ export function createCore(content: Content): Core {
   function curseWeight(state: RunState, def: CurseDef): number {
     let weight = def.weight ?? 1;
     // The signature blacklist and the first timer curse are the headline
-    // burdens. They get one boosted stretch before their first appearance,
-    // then settle into the normal pool.
-    if (def.id === 'the-list' && curseStacks(state, 'the-list') === 0) weight *= 3;
-    if (def.id === 'clock' && curseStacks(state, 'clock') < 2) weight *= 3;
+    // burdens. They get one boosted stretch before their first draft
+    // appearance, then settle into the normal pool.
+    if (
+      (def.id === 'the-list' || def.id === 'clock')
+      && !state.seenCurses.includes(def.id)
+    ) {
+      weight *= 3;
+    }
     return weight;
   }
 
@@ -2245,6 +2249,9 @@ export function createCore(content: Content): Core {
       const chosen = pickWeighted(state, pool);
       picks.push(chosen.id);
       pool.splice(pool.indexOf(chosen), 1);
+    }
+    for (const id of picks) {
+      if (!state.seenCurses.includes(id)) state.seenCurses.push(id);
     }
     return picks;
   }
@@ -2288,6 +2295,7 @@ export function createCore(content: Content): Core {
     const state = rt.state;
     const def = curseById.get(id);
     if (!def) return;
+    if (!state.seenCurses.includes(id)) state.seenCurses.push(id);
     let entry = state.curses.find((curse) => curse.id === id);
     if (entry && entry.stacks >= def.maxStacks) return;
     if (!entry) {
@@ -2898,6 +2906,7 @@ export function createCore(content: Content): Core {
       pendingReveals: [],
       permanentReveals: [],
       curses: [],
+      seenCurses: [],
       pendingStartingCurses: startingCurses,
       pendingCurseRemoval: 0,
       phase: 'round',
@@ -2964,6 +2973,10 @@ export function createCore(content: Content): Core {
       state.bonusSolveGold = typeof state.bonusSolveGold === 'number' ? state.bonusSolveGold : 0;
       if (typeof state.freeGuessBonus !== 'number') state.freeGuessBonus = 0;
       if (!Array.isArray(state.curses)) state.curses = [];
+      if (!Array.isArray(state.seenCurses)) state.seenCurses = [];
+      for (const curse of state.curses) {
+        if (!state.seenCurses.includes(curse.id)) state.seenCurses.push(curse.id);
+      }
       if (!Array.isArray(state.firstGuesses)) state.firstGuesses = state.blacklist.slice();
       if (typeof state.level !== 'number') {
         state.level = state.nodes[state.nodeIndex]?.level ?? 1;

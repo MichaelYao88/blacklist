@@ -16,7 +16,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - A 50-level curse run: no bosses until level 50, no starting clock, no starting blacklist
 - Round loop: `round → 40% event → shop`, then `round → 40% event → curse`
 - Curse drafts offer 3 choices after every 2 levels; levels 47-49 are curse floors
-- Curse drafts draw from the weighted pool; The List gets a 3x boost until taken, and The Clock gets one for its first two copies
+- Curse drafts draw from the weighted pool; The List and The Clock get a 3x weight until they first appear in a draft, then normal
 - Hover or focus a curse in the HUD to read its rules
 - 50 is the final boss: three rounds back-to-back with no intermission
 - Base encounter damage is **3 + the total number of curse stacks**; Heavy Hand multiplies it by **1.4 per stack**

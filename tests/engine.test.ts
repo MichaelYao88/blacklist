@@ -133,6 +133,18 @@ describe('curse drafting', () => {
     expect(chosen.state.phase).not.toBe('curse');
   });
 
+  it('marks curses as seen when they appear in a draft', () => {
+    const { state } = start('seen-curses');
+    const curseIndex = nodeAt(state, (node) => node.kind === 'curse');
+    state.nodeIndex = curseIndex - 1;
+    state.phase = 'shop';
+    state.shop = shopState();
+    const result = act(state, { type: 'continue' }).state;
+    const phase = game.view(result).phase;
+    if (phase.kind !== 'curse') throw new Error('expected curse phase');
+    expect([...result.seenCurses].sort()).toEqual([...phase.options].sort());
+  });
+
   it('can draft starting curses until Ascension is paid', () => {
     const first = start('starting-curses', 2);
     const phase = game.view(first.state).phase;

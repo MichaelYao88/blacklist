@@ -542,6 +542,8 @@ export interface RunState {
   /** Letters that are re-revealed for every round for the rest of the run. */
   permanentReveals: Letter[];
   curses: CurseStack[];
+  /** Curse ids that have appeared in a draft, whether taken or not. */
+  seenCurses: CurseId[];
   pendingStartingCurses: number;
   pendingCurseRemoval: number;
   phase: PhaseKind;
