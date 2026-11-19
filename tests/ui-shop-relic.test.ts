@@ -12,7 +12,7 @@ describe('shop relic labelling', () => {
     state.gold = 100;
     state.shop = {
       offers: [
-        { id: 'o0', kind: 'item', def: 'old-mcdonald', price: 30 },
+        { id: 'o0', kind: 'item', def: 'quickdraw', price: 24 },
         { id: 'o1', kind: 'item', def: 'bloom', price: 7 },
       ],
       rerollCost: 2,
@@ -34,7 +34,7 @@ describe('shop relic labelling', () => {
     const relic = root.querySelector<HTMLElement>('.offer-card.rare');
     expect(relic).not.toBeNull();
     expect(relic?.querySelector('.tag')?.textContent?.trim()).toBe('RELIC');
-    expect(relic?.textContent).toContain('Old McDonald');
+    expect(relic?.textContent).toContain('Quickdraw');
 
     const common = [...root.querySelectorAll<HTMLElement>('.offer-card')]
       .find((card) => card.textContent?.includes('Bloom'));

@@ -404,13 +404,13 @@ export const HAPPENINGS: HappeningDef[] = [
       },
       {
         id: 'remove',
-        label: 'Remove a curse',
+        label: 'Remove a random curse',
         description: '15 gold.',
         costGold: 15,
         outcomes: [{
           chancePct: 100,
           text: 'He uncorks one burden and lets it evaporate.',
-          effects: [{ type: 'awaitCurseRemoval' }],
+          effects: [{ type: 'removeRandomCurse' }],
         }],
       },
       {

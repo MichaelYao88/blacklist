@@ -28,10 +28,14 @@ export const SPELLS: SpellDef[] = [
   defineSpell({
     id: 'restore',
     name: 'Restore',
-    description: 'Refill armor and clear the blacklist.',
+    description: 'Refill armor, clear the blacklist, and ignore vision curses for the rest of the round.',
     price: 6,
     usable: 'any',
-    cast: () => [{ type: 'clearBlacklist' }, { type: 'refillArmor' }],
+    cast: () => [
+      { type: 'clearBlacklist' },
+      { type: 'refillArmor' },
+      { type: 'disableVisionThisRound' },
+    ],
   }),
   defineSpell({
     id: 'immunity',

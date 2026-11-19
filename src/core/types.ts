@@ -149,6 +149,8 @@ export interface RoundState {
   hints: Partial<Record<Letter, 'present' | 'absent'>>;
   /** Letters seen present/correct in an earlier gauntlet puzzle. */
   seenPresent?: string[];
+  /** Restore: vision curses are ignored for the rest of this round. */
+  visionDisabled?: boolean;
 }
 
 export interface SummaryState {
@@ -205,6 +207,8 @@ export interface CurseDef {
   shopPriceAdd?: number;
   freeGuessDelta?: number;
   armorRefillMult?: number;
+  /** Multiplies max armor when this curse is gained. */
+  maxArmorMult?: number;
   healMult?: number;
   slotDelta?: number;
   maxHpMult?: number;
@@ -307,7 +311,9 @@ export type Effect =
   | { type: 'clearBlacklist' }
   | { type: 'randomChoice'; options: Effect[][] }
   | { type: 'giveSpell'; spell: SpellId | 'random'; chancePct?: number }
-  | { type: 'castSpell'; spell: SpellId }
+  | { type: 'castSpell'; spell: SpellId | 'random'; chancePct?: number }
+  | { type: 'randomGuesses'; count: number; chancePct?: number; excludeLetters?: string }
+  | { type: 'disableVisionThisRound' }
   | { type: 'friendGuesses'; count: number }
   | { type: 'autoGuess'; word: string }
   | { type: 'eatBurst'; count: number }
@@ -400,8 +406,10 @@ export interface ItemDef {
   dynamicDescription?: (data: Record<string, number>) => string;
   price: number;
   kind: ItemKind;
-  /** Rare relics are boss prizes. They consume an item slot like any other gear. */
+  /** Rare relics are very rare finds. They consume an item slot like any other gear. */
   rarity?: 'common' | 'uncommon' | 'rare';
+  /** Multiplies how often this item is chosen inside its rarity tier. */
+  appearanceWeight?: number;
   /** Only one copy can be offered while the player already owns it. */
   unique?: boolean;
   /** Allows guesses that are not in the dictionary. */
@@ -469,6 +477,10 @@ export interface FoodDef {
   description: string;
   price: number;
   rarity?: 'common' | 'uncommon' | 'rare';
+  /** Multiplies how often this food is chosen inside its rarity tier. */
+  appearanceWeight?: number;
+  /** Once eaten, this food never appears again this run. */
+  unique?: boolean;
   requiresClock?: boolean;
   /** Hidden from shops/rewards until this many vision curses exist. */
   requiresVisionCurse?: number;
@@ -510,6 +522,8 @@ export interface Content {
   answers: readonly string[];
   valid: ReadonlySet<string>;
   hardAnswers: readonly string[];
+  /** Five-letter words that are unusually hard for non-native speakers. */
+  nonnative: readonly string[];
   friendWords: readonly string[];
   /** Curated two-word catchphrases the Phone a Friend guy can deliver. */
   friendPhrases: readonly (readonly [string, string])[];
@@ -539,6 +553,8 @@ export interface RunState {
   items: ItemInstance[];
   spells: SpellInstance[];
   blacklist: string[];
+  /** Foods already eaten this run, used by unique foods. */
+  eatenFoods: string[];
   /** First guess of every round this run, used to seed The List when taken. */
   firstGuesses: string[];
   purged: Letter[];
@@ -767,7 +783,7 @@ export type GameEvent =
   | { type: 'itemDataChanged'; instance: InstanceId; stat: string; value: number }
   | { type: 'slotsChanged'; slots: number }
   | { type: 'spellGained'; spell: SpellView }
-  | { type: 'spellCast'; spell: SpellView }
+  | { type: 'spellCast'; spell: SpellView; auto?: boolean }
   | { type: 'spellRejected'; instance: InstanceId; reason: string }
   | { type: 'shopOpened'; offers: Offer[]; rerollCost: number }
   | { type: 'shopRerolled'; offers: Offer[]; rerollCost: number }

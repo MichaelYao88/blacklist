@@ -58,6 +58,49 @@ procRoot.setAttribute('aria-live', 'polite');
 document.body.appendChild(procRoot);
 let phraseTimer: number | undefined;
 
+const spellRoot = document.createElement('div');
+spellRoot.id = 'spell-root';
+spellRoot.setAttribute('aria-live', 'polite');
+document.body.appendChild(spellRoot);
+interface SpellPopup {
+  id: number;
+  name: string;
+  icon: string;
+  auto: boolean;
+}
+let spellPopups: SpellPopup[] = [];
+let spellPopupSeq = 0;
+const spellPopupTimers = new Map<number, number>();
+
+function showSpellPopup(spellId: string, auto: boolean): void {
+  const def = SPELL_BY_ID.get(spellId);
+  const popup: SpellPopup = {
+    id: ++spellPopupSeq,
+    name: def?.name ?? spellId,
+    icon: spellIcon(spellId),
+    auto,
+  };
+  spellPopups.push(popup);
+  renderSpellPopups();
+  const timer = window.setTimeout(() => {
+    spellPopups = spellPopups.filter((entry) => entry.id !== popup.id);
+    spellPopupTimers.delete(popup.id);
+    renderSpellPopups();
+  }, 1_150);
+  spellPopupTimers.set(popup.id, timer);
+}
+
+function renderSpellPopups(): void {
+  spellRoot.innerHTML = spellPopups.length === 0
+    ? ''
+    : `<div class="spell-popup-stack">${spellPopups.map((popup) => `
+      <div class="spell-popup ${popup.auto ? 'auto' : ''}">
+        <span class="spell-popup-icon" aria-hidden="true">${popup.icon}</span>
+        <span class="spell-popup-name">${escapeHtml(popup.name)}</span>
+        <span class="spell-popup-tag">${popup.auto ? 'AUTOCAST' : 'CAST'}</span>
+      </div>`).join('')}</div>`;
+}
+
 // The Immunity banner lives outside the main render tree so its timer drain is
 // not restarted by the once-per-second render.
 const immunityRoot = document.createElement('div');
@@ -244,6 +287,13 @@ function clearProcFeed(): void {
   renderProcFeed();
 }
 
+function clearSpellPopups(): void {
+  for (const timer of spellPopupTimers.values()) window.clearTimeout(timer);
+  spellPopupTimers.clear();
+  spellPopups = [];
+  renderSpellPopups();
+}
+
 function processEvents(events: GameEvent[]): void {
   let playerGuessed = false;
   let playerFreeGuess = false;
@@ -263,6 +313,7 @@ function processEvents(events: GameEvent[]): void {
       sfx.play('error');
     }
     if (event.type === 'message') notify(event.text, 'info');
+    if (event.type === 'spellCast') showSpellPopup(event.spell.id, Boolean(event.auto));
     if (event.type === 'itemProc') showProc(event.item, event.text);
     if (event.type === 'happeningResolved') notify(event.text, event.success ? 'good' : 'bad');
     if (event.type === 'damageTaken') {
@@ -410,6 +461,7 @@ function startNewRun(): void {
   playerDeathStartedAt = null;
   phraseRoot.innerHTML = '';
   clearProcFeed();
+  clearSpellPopups();
   heartbeatSecond = -1;
   processEvents(events);
   lastTick = performance.now();
@@ -437,6 +489,7 @@ function resumeRun(): void {
   orcDeathTimer = undefined;
   playerDeathStartedAt = null;
   clearProcFeed();
+  clearSpellPopups();
   heartbeatSecond = -1;
   countdownUntil = 0;
   music.resume();

@@ -229,9 +229,9 @@ export const ITEMS: ItemDef[] = [
     id: 'old-mcdonald',
     name: 'Old McDonald',
     description: 'Round start: EIEIO is guessed for free.',
-    price: 30,
+    price: 10,
     kind: 'gear',
-    rarity: 'rare',
+    rarity: 'uncommon',
     on: {
       onRoundStart: () => [{ type: 'autoGuess', word: 'eieio' }],
     },
@@ -242,6 +242,8 @@ export const ITEMS: ItemDef[] = [
     description: 'Round start: the last solved answer is guessed for free.',
     price: 11,
     kind: 'gear',
+    appearanceWeight: 3,
+    unique: true,
     on: {
       onRoundStart: (ctx) => {
         const answer = ctx.state.lastAnswer;
@@ -341,10 +343,13 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'siphon',
     name: 'Siphon',
-    description: 'Casting a spell heals 4 HP.',
+    description: 'Casting a spell that isn\'t Heal: 40% chance to cast Heal.',
     price: 8,
     kind: 'gear',
-    on: { onSpellCast: () => [{ type: 'heal', amount: 4 }] },
+    on: {
+      onSpellCast: (_ctx, p) =>
+        p.spell === 'heal' ? [] : [{ type: 'castSpell', spell: 'heal', chancePct: 40 }],
+    },
   }),
   defineItem({
     id: 'gourmand',
@@ -426,7 +431,7 @@ export const ITEMS: ItemDef[] = [
         ];
         for (let index = 0; index < procs; index++) {
           effects.push(
-            { type: 'giveSpell', spell: 'omen' },
+            { type: 'castSpell', spell: 'omen' },
             { type: 'maxHp', delta: -3 },
           );
         }
@@ -522,7 +527,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'spellhoarder',
     name: 'Panacea Pouch',
-    description: 'Every 3rd spell cast: gain a Heal spell.',
+    description: 'Every 3rd spell cast: cast Heal.',
     price: 9,
     kind: 'gear',
     initial: { casts: 0 },
@@ -531,7 +536,7 @@ export const ITEMS: ItemDef[] = [
         const next = ctx.self.data.casts + 1;
         return [
           { type: 'grow', stat: 'casts', by: 1 },
-          ...(next % 3 === 0 ? [{ type: 'giveSpell' as const, spell: 'heal' as const }] : []),
+          ...(next % 3 === 0 ? [{ type: 'castSpell' as const, spell: 'heal' as const }] : []),
         ];
       },
     },
@@ -539,11 +544,21 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'glass-cannon',
     name: 'Glass Cannon',
-    description: '+1 free guess per round. −10 max HP when acquired.',
+    description: 'After your first guess each round: autoguess a random word. −10 max HP when acquired.',
     price: 9,
     kind: 'gear',
+    initial: { used: 0 },
     onAcquire: () => [{ type: 'maxHp', delta: -10 }],
-    on: { onRoundStart: () => [{ type: 'freeGuesses', count: 1 }] },
+    on: {
+      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
+      onGuessScored: (ctx, p) => {
+        if (ctx.self.data.used || p.guess.by !== 'player') return [];
+        return [
+          { type: 'randomGuesses', count: 1 },
+          { type: 'setItemData', stat: 'used', value: 1 },
+        ];
+      },
+    },
   }),
   defineItem({
     id: 'loose-tongue',
@@ -562,7 +577,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'mimic-mouth',
     name: 'Mimic Mouth',
-    description: 'A wrong guess with 5 revealed letters: random spell. Once per round.',
+    description: 'A wrong guess with 5 revealed letters: cast a random spell. Once per round.',
     price: 7,
     kind: 'gear',
     initial: { used: 0 },
@@ -574,7 +589,7 @@ export const ITEMS: ItemDef[] = [
         if (solved) return [];
         return p.guess.truth.filter((tile) => tile !== 'absent').length >= 5
           ? [
-              { type: 'giveSpell', spell: 'random' },
+              { type: 'castSpell', spell: 'random' },
               { type: 'setItemData', stat: 'used', value: 1 },
             ]
           : [];
@@ -584,26 +599,26 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'vowel-tithe',
     name: 'Vowel Tithe',
-    description: 'Spell cast: 25% chance to grant Omen.',
+    description: 'Spell cast: 25% chance to cast Omen.',
     price: 8,
     kind: 'gear',
     on: {
-      onSpellCast: () => [{ type: 'giveSpell', spell: 'omen', chancePct: 25 }],
+      onSpellCast: () => [{ type: 'castSpell', spell: 'omen', chancePct: 25 }],
     },
   }),
   defineItem({
     id: 'second-hand',
     name: 'Second Hand',
-    description: 'Casting Time Freeze: 80% chance to grant a Heal spell. Casting Immunity: 80% chance to grant a Restore.',
+    description: 'Casting Time Freeze: 80% chance to cast Heal. Casting Immunity: 80% chance to cast Restore.',
     price: 8,
     kind: 'gear',
     on: {
       onSpellCast: (_ctx, p) => {
         if (p.spell === 'time-freeze') {
-          return [{ type: 'giveSpell', spell: 'heal', chancePct: 80 }];
+          return [{ type: 'castSpell', spell: 'heal', chancePct: 80 }];
         }
         if (p.spell === 'immunity') {
-          return [{ type: 'giveSpell', spell: 'restore', chancePct: 80 }];
+          return [{ type: 'castSpell', spell: 'restore', chancePct: 80 }];
         }
         return [];
       },
@@ -612,16 +627,16 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'engine',
     name: 'Engine',
-    description: 'Casting Restore: 80% chance to grant Time Freeze. Casting Heal: 80% chance to grant Immunity.',
+    description: 'Casting Restore: 80% chance to cast Time Freeze. Casting Heal: 80% chance to cast Immunity.',
     price: 8,
     kind: 'gear',
     on: {
       onSpellCast: (_ctx, p) => {
         if (p.spell === 'restore') {
-          return [{ type: 'giveSpell', spell: 'time-freeze', chancePct: 80 }];
+          return [{ type: 'castSpell', spell: 'time-freeze', chancePct: 80 }];
         }
         if (p.spell === 'heal') {
-          return [{ type: 'giveSpell', spell: 'immunity', chancePct: 80 }];
+          return [{ type: 'castSpell', spell: 'immunity', chancePct: 80 }];
         }
         return [];
       },
@@ -630,11 +645,11 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'cracked-orb',
     name: 'Cracked Orb',
-    description: 'Each round: 25% chance to start with a random spell.',
+    description: 'Each round: 25% chance to cast a random spell.',
     price: 9,
     kind: 'gear',
     on: {
-      onRoundStart: () => [{ type: 'giveSpell', spell: 'random', chancePct: 25 }],
+      onRoundStart: () => [{ type: 'castSpell', spell: 'random', chancePct: 25 }],
     },
   }),
   defineItem({
@@ -741,7 +756,7 @@ export const ITEMS: ItemDef[] = [
         const spells = Math.floor(total / 10);
         return [
           { type: 'setItemData', stat: 'blocked', value: total % 10 },
-          ...Array.from({ length: spells }, () => ({ type: 'giveSpell' as const, spell: 'random' as const })),
+          ...Array.from({ length: spells }, () => ({ type: 'castSpell' as const, spell: 'random' as const })),
         ];
       },
     },
@@ -825,20 +840,11 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'harvest-charm',
     name: 'Harvest Charm',
-    description: 'Round start, equal odds: +5 max HP, heal 5% max HP, or gain Restore.',
+    description: 'Round start: autoguess a random word.',
     price: 9,
     kind: 'gear',
     on: {
-      onRoundStart: () => [
-        {
-          type: 'randomChoice',
-          options: [
-            [{ type: 'maxHp', delta: 5 }],
-            [{ type: 'healPercent', percent: 5 }],
-            [{ type: 'giveSpell', spell: 'restore' }],
-          ],
-        },
-      ],
+      onRoundStart: () => [{ type: 'randomGuesses', count: 1 }],
     },
   }),
   defineItem({
@@ -909,7 +915,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'time-lattice',
     name: 'Time Lattice',
-    description: 'Cast Time Freeze: gain Restore. Once per round.',
+    description: 'Cast Time Freeze: cast Restore. Once per round.',
     price: 8,
     kind: 'gear',
     initial: { used: 0 },
@@ -918,7 +924,7 @@ export const ITEMS: ItemDef[] = [
       onSpellCast: (ctx, p) => {
         if (ctx.self.data.used || p.spell !== 'time-freeze') return [];
         return [
-          { type: 'giveSpell', spell: 'restore' },
+          { type: 'castSpell', spell: 'restore' },
           { type: 'setItemData', stat: 'used', value: 1 },
         ];
       },
@@ -948,7 +954,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'omen-loom',
     name: 'Omen Loom',
-    description: 'Cast Omen: gain a random spell. Once per round.',
+    description: 'Cast Omen: cast a random spell. Once per round.',
     price: 9,
     kind: 'gear',
     initial: { used: 0 },
@@ -957,7 +963,7 @@ export const ITEMS: ItemDef[] = [
       onSpellCast: (ctx, p) => {
         if (ctx.self.data.used || p.spell !== 'omen') return [];
         return [
-          { type: 'giveSpell', spell: 'random' },
+          { type: 'castSpell', spell: 'random' },
           { type: 'setItemData', stat: 'used', value: 1 },
         ];
       },
@@ -1175,7 +1181,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'last-cast',
     name: 'Last Cast',
-    description: 'When you cast your only remaining spell: +1 random spell. Once per round.',
+    description: 'When you cast your only remaining spell: cast a random spell. Once per round.',
     price: 9,
     kind: 'gear',
     initial: { used: 0 },
@@ -1184,7 +1190,7 @@ export const ITEMS: ItemDef[] = [
       onSpellCast: (ctx) => {
         if (ctx.self.data.used || ctx.state.spells.length > 0) return [];
         return [
-          { type: 'giveSpell', spell: 'random' },
+          { type: 'castSpell', spell: 'random' },
           { type: 'setItemData', stat: 'used', value: 1 },
         ];
       },
@@ -1193,13 +1199,13 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'empty-hand',
     name: 'Empty Hand',
-    description: 'Start a round with no spells: +1 random spell.',
+    description: 'Start a round with no spells: cast a random spell.',
     price: 9,
     kind: 'gear',
     on: {
       onRoundStart: (ctx) =>
         (ctx.roundStartSpells ?? ctx.state.spells.length) === 0
-          ? [{ type: 'giveSpell', spell: 'random' }]
+          ? [{ type: 'castSpell', spell: 'random' }]
           : [],
     },
   }),
@@ -1219,7 +1225,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'solo-note',
     name: 'Solo Note',
-    description: 'Once per round: a guess with one yellow and no green grants Restore.',
+    description: 'Once per round: a guess with one yellow and no green casts Restore.',
     price: 7,
     kind: 'gear',
     initial: { used: 0 },
@@ -1230,7 +1236,7 @@ export const ITEMS: ItemDef[] = [
         const counts = truthCounts(p.guess.truth);
         if (counts.correct !== 0 || counts.present !== 1) return [];
         return [
-          { type: 'giveSpell', spell: 'restore' },
+          { type: 'castSpell', spell: 'restore' },
           { type: 'setItemData', stat: 'used', value: 1 },
         ];
       },
@@ -1240,20 +1246,177 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'off-road',
     name: 'Off-Road',
-    description: 'Once per round: a guess sharing no letters with the previous guess grants Restore.',
+    description: 'Once per round: a guess sharing no letters with the previous guess casts a random spell.',
     price: 9,
     kind: 'gear',
     initial: { used: 0 },
     on: {
       onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
       onGuessScored: (ctx, p) => {
-        if (ctx.self.data.used || !p.previous) return [];
+        if (ctx.self.data.used || !p.previous || p.guess.by !== 'player') return [];
         if (sharedLetters(p.guess.word, p.previous.word) > 0) return [];
         return [
-          { type: 'giveSpell', spell: 'restore' },
+          { type: 'castSpell', spell: 'random' },
           { type: 'setItemData', stat: 'used', value: 1 },
         ];
       },
+    },
+  }),
+  defineItem({
+    id: 'detour',
+    name: 'Detour',
+    description: 'Once per round: a guess sharing no letters with the previous guess autoguesses a random word.',
+    price: 7,
+    kind: 'gear',
+    initial: { used: 0 },
+    on: {
+      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
+      onGuessScored: (ctx, p) => {
+        if (ctx.self.data.used || !p.previous || p.guess.by !== 'player') return [];
+        if (sharedLetters(p.guess.word, p.previous.word) > 0) return [];
+        return [
+          { type: 'randomGuesses', count: 1 },
+          { type: 'setItemData', stat: 'used', value: 1 },
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'dark-echo',
+    name: 'Dark Echo',
+    description: 'First player guess each round: autoguess a word sharing no letters with it.',
+    price: 11,
+    kind: 'gear',
+    rarity: 'uncommon',
+    initial: { used: 0 },
+    on: {
+      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
+      onGuessScored: (ctx, p) => {
+        if (ctx.self.data.used || p.guess.by !== 'player') return [];
+        if (p.guess.word === ctx.state.round?.answer) return [];
+        return [
+          { type: 'randomGuesses', count: 1, excludeLetters: p.guess.word },
+          { type: 'setItemData', stat: 'used', value: 1 },
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'black-eye',
+    name: 'Black Eye',
+    description: 'A hit gets through: 30% chance to autoguess a random word.',
+    price: 10,
+    kind: 'gear',
+    on: {
+      onDamageTaken: (_ctx, p) =>
+        p.dealt > 0 ? [{ type: 'randomGuesses', count: 1, chancePct: 30 }] : [],
+    },
+  }),
+  defineItem({
+    id: 'palindrome',
+    name: 'Palindrome',
+    description: 'Once per round: a guess whose first and last letters match autoguesses a random word.',
+    price: 6,
+    kind: 'gear',
+    initial: { used: 0 },
+    on: {
+      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
+      onGuessScored: (ctx, p) => {
+        if (ctx.self.data.used || p.guess.by !== 'player') return [];
+        if (p.guess.word[0] !== p.guess.word[4]) return [];
+        return [
+          { type: 'randomGuesses', count: 1 },
+          { type: 'setItemData', stat: 'used', value: 1 },
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'crisis-15',
+    name: 'Crisis 15',
+    description: 'Guess a word ending in IS: autoguess a random word.',
+    price: 5,
+    kind: 'gear',
+    on: {
+      onGuessScored: (_ctx, p) =>
+        p.guess.by === 'player' && p.guess.word.endsWith('is')
+          ? [{ type: 'randomGuesses', count: 1 }]
+          : [],
+    },
+  }),
+  defineItem({
+    id: 'shellshock',
+    name: 'Shellshock',
+    description: 'Armor is depleted: autoguess a random word.',
+    price: 6,
+    kind: 'gear',
+    on: {
+      onDamageTaken: (ctx, p) =>
+        p.armorUsed > 0 && ctx.state.armor === 0
+          ? [{ type: 'randomGuesses', count: 1 }]
+          : [],
+    },
+  }),
+  defineItem({
+    id: 'echo-chamber',
+    name: 'Echo Chamber',
+    description: 'Every 2 spells cast: autoguess a random word.',
+    price: 8,
+    kind: 'gear',
+    initial: { casts: 0 },
+    on: {
+      onSpellCast: (ctx) => {
+        const next = ctx.self.data.casts + 1;
+        return [
+          { type: 'grow', stat: 'casts', by: 1 },
+          ...(next % 2 === 0 ? [{ type: 'randomGuesses' as const, count: 1 }] : []),
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'panic-button',
+    name: 'Panic Button',
+    description: 'HP drops below half in a round: cast Phone a Friend. Once per round.',
+    price: 8,
+    kind: 'gear',
+    initial: { used: 0 },
+    on: {
+      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
+      onDamageTaken: (ctx) => {
+        if (ctx.self.data.used || ctx.state.phase !== 'round' || ctx.state.hp <= 0) return [];
+        if (ctx.state.hp * 2 >= ctx.state.maxHp) return [];
+        return [
+          { type: 'setItemData', stat: 'used', value: 1 },
+          { type: 'castSpell', spell: 'phone-friend' },
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'wild-magic',
+    name: 'Wild Magic',
+    description: 'Spell cast: 25% chance to cast a random spell and 25% chance to autoguess a random word.',
+    price: 9,
+    kind: 'gear',
+    on: {
+      onSpellCast: () => [
+        { type: 'castSpell', spell: 'random', chancePct: 25 },
+        { type: 'randomGuesses', count: 1, chancePct: 25 },
+      ],
+    },
+  }),
+  defineItem({
+    id: 'empty-mouth',
+    name: 'Empty Mouth',
+    description: 'Start a round with no spells: autoguess a random word.',
+    price: 8,
+    kind: 'gear',
+    on: {
+      onRoundStart: (ctx) =>
+        (ctx.roundStartSpells ?? ctx.state.spells.length) === 0
+          ? [{ type: 'randomGuesses', count: 1 }]
+          : [],
     },
   }),
   defineItem({
@@ -1354,7 +1517,7 @@ export const ITEMS: ItemDef[] = [
       onHeal: (ctx, p) => {
         if (ctx.self.data.used || p.amount <= 0) return [];
         return [
-          { type: 'giveSpell', spell: 'omen' },
+          { type: 'castSpell', spell: 'omen' },
           { type: 'setItemData', stat: 'used', value: 1 },
         ];
       },
@@ -1363,13 +1526,13 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'thorn-crown',
     name: 'Thorn Crown',
-    description: 'A hit gets through: 30% chance of a random spell.',
-    price: 26,
+    description: 'A hit gets through: 30% chance to cast a random spell.',
+    price: 14,
     kind: 'gear',
-    rarity: 'rare',
+    rarity: 'uncommon',
     on: {
       onDamageTaken: (_ctx, p) =>
-        p.dealt > 0 ? [{ type: 'giveSpell', spell: 'random', chancePct: 30 }] : [],
+        p.dealt > 0 ? [{ type: 'castSpell', spell: 'random', chancePct: 30 }] : [],
     },
   }),
   defineItem({
@@ -1382,7 +1545,7 @@ export const ITEMS: ItemDef[] = [
     on: {
       onDeath: (ctx) => [
         { type: 'revive', hp: Math.ceil(ctx.state.maxHp * 0.5) },
-        { type: 'giveSpell', spell: 'restore' },
+        { type: 'castSpell', spell: 'restore' },
         { type: 'consumeSelf' },
       ],
     },
@@ -1401,15 +1564,15 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'chrono-anchor',
     name: 'Chrono Anchor',
-    description: '+20s per round. Taking damage: 30% chance of Time Freeze.',
+    description: '+20s per round. Taking damage: 30% chance to cast Time Freeze.',
     price: 28,
     kind: 'gear',
-    rarity: 'rare',
+    rarity: 'uncommon',
     requiresClock: true,
     on: {
       onRoundStart: () => [{ type: 'addTime', ms: 20_000 }],
       onDamageTaken: () =>
-        [{ type: 'giveSpell', spell: 'time-freeze', chancePct: 30 }],
+        [{ type: 'castSpell', spell: 'time-freeze', chancePct: 30 }],
     },
   }),
   defineItem({
@@ -1441,9 +1604,9 @@ export const ITEMS: ItemDef[] = [
     id: 'counterweight',
     name: 'Counterweight',
     description: 'Completely blocked hit: +2 gold.',
-    price: 26,
+    price: 10,
     kind: 'gear',
-    rarity: 'rare',
+    rarity: 'uncommon',
     on: {
       onDamageTaken: (_ctx, p) => {
         if (p.dealt > 0 || p.blocked <= 0) return [];
@@ -1482,24 +1645,6 @@ export const ITEMS: ItemDef[] = [
     kind: 'gear',
     rarity: 'rare',
     doubleFood: true,
-  }),
-  defineItem({
-    id: 'ice-cream-sundae',
-    name: 'Ice Cream Sundae',
-    description: 'Buying this: gain Time Freeze, or heal 1 and gain +1 max HP.',
-    price: 3,
-    kind: 'consumable',
-    slots: 0,
-    onAcquire: () => [
-      {
-        type: 'randomChoice',
-        options: [
-          [{ type: 'giveSpell', spell: 'time-freeze' }],
-          [{ type: 'heal', amount: 1 }, { type: 'maxHp', delta: 1 }],
-        ],
-      },
-      { type: 'consumeSelf' },
-    ],
   }),
   defineItem({
     id: 'piggy-bank',

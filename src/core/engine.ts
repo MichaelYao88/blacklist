@@ -197,6 +197,7 @@ export function createCore(content: Content): Core {
     state: RunState,
     def: (typeof content.foods)[number],
   ): boolean => {
+    if (def.unique && state.eatenFoods.includes(def.id)) return false;
     if (def.requiresVisionCurse && sightCount(state) < def.requiresVisionCurse) return false;
     if (def.effects.some(
       (effect) => effect.type === 'purgeLetter' && state.purged.includes(effect.letter),
@@ -642,6 +643,9 @@ export function createCore(content: Content): Core {
     const state = rt.state;
     const def = foodById.get(id);
     if (!def) return;
+    if (def.unique && !state.eatenFoods.includes(def.id)) {
+      state.eatenFoods.push(def.id);
+    }
     const hasPotluck = state.items.some((item) => {
       const itemDef = itemById.get(item.id);
       return Boolean(itemDef?.doubleFood) && isEquipped(item, itemDef);
@@ -1112,8 +1116,23 @@ export function createCore(content: Content): Core {
         });
         break;
       }
-      case 'castSpell':
-        castSpellById(rt, effect.spell);
+      case 'castSpell': {
+        if (effect.chancePct !== undefined && !rngChance(state, effect.chancePct)) break;
+        const id = effect.spell === 'random'
+          ? (content.spells.length > 0 ? rngPick(state, content.spells).id : null)
+          : effect.spell;
+        if (id) castSpellById(rt, id);
+        break;
+      }
+      case 'randomGuesses':
+        if (effect.chancePct !== undefined && !rngChance(state, effect.chancePct)) break;
+        playRandomGuesses(rt, effect.count, effect.excludeLetters);
+        break;
+      case 'disableVisionThisRound':
+        if (state.round && !state.round.visionDisabled) {
+          state.round.visionDisabled = true;
+          emit(rt, { type: 'message', text: 'Vision curses fade for the rest of the round.' });
+        }
         break;
       case 'friendGuesses':
         playFriendGuesses(rt, effect.count);
@@ -1514,7 +1533,7 @@ export function createCore(content: Content): Core {
       return boss.present({ state }, guess);
     }
 
-    const vision = guess.unobscured
+    const vision = guess.unobscured || state.round?.visionDisabled
       ? []
       : curseDefs(state).filter((entry) => entry.def.tags.includes('vision'));
     let tiles = guess.truth.slice() as Array<'correct' | 'present' | 'absent' | 'hit' | 'hidden'>;
@@ -1954,6 +1973,38 @@ export function createCore(content: Content): Core {
     }
   }
 
+  function playRandomGuesses(rt: Runtime, count: number, excludeLetters?: string): void {
+    const state = rt.state;
+    const round = state.round;
+    if (!round || state.phase !== 'round') return;
+    const blocked = new Set(
+      (excludeLetters ?? '').toLowerCase().split('').filter(Boolean),
+    );
+    const used = (): Set<string> => new Set(round.guesses.map((guess) => guess.word));
+    const available = (word: string, taken: Set<string>): boolean => {
+      const w = word.toLowerCase();
+      return (
+        w.length === WORD_LENGTH
+        && !taken.has(w)
+        && !state.blacklist.includes(w)
+        && !w.split('').some((ch) => state.purged.includes(ch))
+        && !w.split('').some((ch) => blocked.has(ch))
+      );
+    };
+
+    for (let index = 0; index < count; index++) {
+      if (state.phase !== 'round') break;
+      const taken = used();
+      let pool = content.nonnative.filter((word) => available(word, taken));
+      if (pool.length === 0 && blocked.size === 0) {
+        pool = content.answers.filter((word) => available(word, taken));
+      }
+      if (pool.length === 0) break;
+      const word = rngPick(state, pool);
+      scorePlayerGuess(rt, word, 'friend');
+    }
+  }
+
   function scorePlayerGuess(rt: Runtime, raw: string, by: 'player' | 'friend'): void {
     const state = rt.state;
     const round = state.round;
@@ -2078,6 +2129,45 @@ export function createCore(content: Content): Core {
 
   // ── reward / shop / happening ────────────────────────────────────────────
 
+  type RarityTier = 'common' | 'uncommon' | 'rare';
+  interface RarityWeighted {
+    rarity?: RarityTier;
+    appearanceWeight?: number;
+  }
+
+  function weightedPick<T extends { appearanceWeight?: number }>(
+    state: RunState,
+    pool: T[],
+  ): T {
+    const total = pool.reduce((sum, def) => sum + (def.appearanceWeight ?? 1), 0);
+    let roll = rngNext(state) * total;
+    for (const def of pool) {
+      roll -= def.appearanceWeight ?? 1;
+      if (roll <= 0) return def;
+    }
+    return pool[pool.length - 1];
+  }
+
+  /**
+   * 40%: rare or lower, 30%: uncommon or lower, 30%: common.
+   * A missing tier falls through to the next lower tier.
+   */
+  function pickByRarity<T extends RarityWeighted>(
+    state: RunState,
+    pools: { common: T[]; uncommon: T[]; rare: T[] },
+  ): T | undefined {
+    const roll = rngNext(state) * 100;
+    const order = roll < 40
+      ? [pools.rare, pools.uncommon, pools.common]
+      : roll < 70
+        ? [pools.uncommon, pools.common, pools.rare]
+        : [pools.common, pools.uncommon, pools.rare];
+    for (const pool of order) {
+      if (pool.length > 0) return weightedPick(state, pool);
+    }
+    return undefined;
+  }
+
   function makeRewards(rt: Runtime): RewardOption[] {
     const state = rt.state;
     const options: RewardOption[] = [];
@@ -2107,18 +2197,21 @@ export function createCore(content: Content): Core {
         description: spell.description,
       });
     } else if (foods.length > 0) {
-      const rollRare = rareFoods.length > 0 && rngChance(state, 10);
-      const rollUncommon = uncommonFoods.length > 0 && rngChance(state, 20);
-      const pool = rollRare ? rareFoods : rollUncommon ? uncommonFoods : commonFoods;
-      const food = rngPick(state, pool.length > 0 ? pool : foods);
-      options.push({
-        id: `eat:${food.id}`,
-        kind: 'eat',
-        def: food.id,
-        rarity: food.rarity,
-        label: food.name,
-        description: food.description,
+      const food = pickByRarity(state, {
+        common: commonFoods,
+        uncommon: uncommonFoods,
+        rare: rareFoods,
       });
+      if (food) {
+        options.push({
+          id: `eat:${food.id}`,
+          kind: 'eat',
+          def: food.id,
+          rarity: food.rarity,
+          label: food.name,
+          description: food.description,
+        });
+      }
     }
 
     if (rngChance(state, 8)) {
@@ -2140,11 +2233,8 @@ export function createCore(content: Content): Core {
           && itemAvailable(state, item)
           && !owned.has(item.id),
       );
-      const rollRare = rare.length > 0 && rngChance(state, 12);
-      const rollUncommon = uncommon.length > 0 && rngChance(state, 25);
-      const pool = rollRare ? rare : rollUncommon ? uncommon : common;
-      if (pool.length > 0) {
-        const item = rngPick(state, pool);
+      const item = pickByRarity(state, { common, uncommon, rare });
+      if (item) {
         options.push({
           id: `item:${item.id}`,
           kind: 'item',
@@ -2266,36 +2356,33 @@ export function createCore(content: Content): Core {
       picked.push({ kind: 'spell', def: spell.id, price: shopPrice(state, 4) });
     };
     const pickRandomItem = (): boolean => {
-      let pool = commonItems.filter(
-        (item) => usedCount(`item:${item.id}`) < (item.unique ? 1 : 2),
-      );
-      if (rareItems.length > 0 && rngChance(state, 25)) {
-        const rarePool = rareItems.filter((item) => usedCount(`item:${item.id}`) < 1);
-        if (rarePool.length > 0) pool = rarePool;
-      } else if (uncommonItems.length > 0 && rngChance(state, 40)) {
-        pool = uncommonItems.filter(
+      const item = pickByRarity(state, {
+        common: commonItems.filter(
           (item) => usedCount(`item:${item.id}`) < (item.unique ? 1 : 2),
-        );
-      }
-      if (pool.length === 0) return false;
-      pickItem(rngPick(state, pool));
+        ),
+        uncommon: uncommonItems.filter(
+          (item) => usedCount(`item:${item.id}`) < (item.unique ? 1 : 2),
+        ),
+        rare: rareItems.filter((item) => usedCount(`item:${item.id}`) < 1),
+      });
+      if (!item) return false;
+      pickItem(item);
       return true;
     };
     const pickRandomFood = (): boolean => {
       const eligible = (food: (typeof content.foods)[number]): boolean => {
-        const unique = food.effects.some(
+        const unique = food.unique || food.effects.some(
           (effect) => effect.type === 'purgeLetter' || effect.type === 'purgeRandomLetter',
         );
         return usedCount(`eat:${food.id}`) < (unique ? 1 : 2);
       };
-      let pool = commonFoods.filter(eligible);
-      if (rareFoods.length > 0 && rngChance(state, 10)) {
-        pool = rareFoods.filter(eligible);
-      } else if (uncommonFoods.length > 0 && rngChance(state, 20)) {
-        pool = uncommonFoods.filter(eligible);
-      }
-      if (pool.length === 0) return false;
-      pickFood(rngPick(state, pool));
+      const food = pickByRarity(state, {
+        common: commonFoods.filter(eligible),
+        uncommon: uncommonFoods.filter(eligible),
+        rare: rareFoods.filter(eligible),
+      });
+      if (!food) return false;
+      pickFood(food);
       return true;
     };
 
@@ -2639,7 +2726,7 @@ export function createCore(content: Content): Core {
   function pickCurseOptions(state: RunState, starting: boolean): CurseId[] {
     const pool = eligibleCurses(state, starting).slice();
     const picks: CurseId[] = [];
-    while (picks.length < 3 && pool.length > 0) {
+    while (picks.length < 2 && pool.length > 0) {
       const chosen = pickWeighted(state, pool);
       picks.push(chosen.id);
       pool.splice(pool.indexOf(chosen), 1);
@@ -2717,6 +2804,11 @@ export function createCore(content: Content): Core {
           text: `Slots tightened. Moved to the bag: ${dropped.join(', ')}.`,
         });
       }
+    }
+    if (def.maxArmorMult) {
+      state.maxArmor = Math.max(0, Math.floor(state.maxArmor * def.maxArmorMult));
+      state.armor = Math.min(state.armor, state.maxArmor);
+      emit(rt, { type: 'armorChanged', armor: state.armor, max: state.maxArmor });
     }
     if (def.id === 'the-list') {
       const before = state.blacklist.length;
@@ -2870,8 +2962,9 @@ export function createCore(content: Content): Core {
     const state = rt.state;
     const def = spellById.get(id);
     if (!def) return;
+    if (rt.depth > 12) return;
     if (def.usable === 'round' && (state.phase !== 'round' || !state.round)) return;
-    emit(rt, { type: 'spellCast', spell: { instance: uid(state, 's'), id: def.id } });
+    emit(rt, { type: 'spellCast', spell: { instance: uid(state, 's'), id: def.id }, auto: true });
     applyEffects(rt, def.cast({ state }), { kind: 'spell', spell: def.id });
     if (isOver(state)) return;
     runHook(rt, 'onSpellCast', { spell: def.id });
@@ -3342,6 +3435,7 @@ export function createCore(content: Content): Core {
       items: [],
       spells: [],
       blacklist: [],
+      eatenFoods: [],
       firstGuesses: [],
       purged: [],
       usedAnswers: [],
@@ -3421,6 +3515,7 @@ export function createCore(content: Content): Core {
       for (const curse of state.curses) {
         if (!state.seenCurses.includes(curse.id)) state.seenCurses.push(curse.id);
       }
+      if (!Array.isArray(state.eatenFoods)) state.eatenFoods = [];
       if (!Array.isArray(state.firstGuesses)) state.firstGuesses = state.blacklist.slice();
       if (typeof state.level !== 'number') {
         state.level = state.nodes[state.nodeIndex]?.level ?? 1;

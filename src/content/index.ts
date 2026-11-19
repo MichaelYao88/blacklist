@@ -2,6 +2,7 @@ import type { Content } from '../core/types';
 import answers from '../data/answers.json';
 import validWords from '../data/valid.json';
 import hardAnswers from '../data/hard.json';
+import nonnativeWords from '../data/nonnative.json';
 import { FRIEND_PHRASES, FRIEND_WORDS } from '../data/friends';
 import { ITEMS, ITEM_BY_ID } from './items';
 import { SPELLS, SPELL_BY_ID } from './spells';
@@ -20,6 +21,7 @@ export const CONTENT: Content = {
   answers,
   valid: new Set(validWords as string[]),
   hardAnswers,
+  nonnative: nonnativeWords,
   friendWords: FRIEND_WORDS,
   friendPhrases: FRIEND_PHRASES,
 };

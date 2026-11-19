@@ -34,36 +34,37 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Five item slots by default. Only equipped gear is active, and each shop has a drag-and-drop loadout
 - **Loose Tongue**, a rare relic that lets you guess five-letter nonsense for free-form probes
 - Spells stack by type and come from food, item triggers and the shop wildcard slot
-- **Restore** clears the blacklist and refills armor; **Contrapuntal** turns into a random relic if you cast all six spell types
+- **Restore** clears the blacklist, refills armor, and ignores vision curses for the rest of the round; **Contrapuntal** turns into a random relic if you cast all six spell types
 - Happenings with visible odds and persistent consequences
 - Short item, spell and offer text with hover tooltips for keywords like armor, reveal, ruled out, free guesses, blacklist, relic and timeout
 - Revealed letters stay marked on the keyboard and in a Revealed panel for the puzzle; random reveals lean toward letters that are not in the answer; letter-reveal foods are permanent for the run
 - Vision-hidden letters show the hatched hidden key on the keyboard; reveals and rule-outs take priority over that layer
 - Every finished encounter pays gold; solves offer coins, usually a spell, and only rarely gear or a meal
 - Opening shields such as **Head Start** and **Quickdraw** make guesses in their window count as free guesses
-- Relics you currently own will not appear again in shops or rewards. They are very rare ordinary items, no longer boss rewards; shops roll a rare relic at 25% per item slot (about 60% of shops have one)
+- Rarity is rolled per slot: 40% rare tier, 30% uncommon tier, 30% common tier. A missing tier falls through to the next lower one, and the pick inside the tier is uniform
+- Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 100 items (86 shop items + 14 rare relics), 6 spells, 68 foods and 25 happenings
+- 109 items (99 shop items + 10 rare relics), 6 spells, 78 foods and 25 happenings
 - New foods include **U-nagi**, **Empty Calories**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
 - **Field Kit** reveals exactly 4 letters that are not in the word; **Doggy Bag** reveals 2 and queues another after every food
-- Letter foods cover B, G, X, Q, I, D, and Y+N; a letter food stops appearing once all its letters are permanently revealed
+- Letter foods cover B, C, D, E, F, G, H, I, J, K, L, O, P, Q, T, U, W, X, and Y+N; each is unique and stops appearing once all its letters are permanently revealed
 - New solve rewards: **Brace** (+2 max armor), **Bloom** (+5 max HP, +1 per trigger), **Patch Kit** (heal 30% of max HP +1)
 - **Four-Leaf Clover** has a 20% chance of a random spell when you eat or cast
 - **Bottomless** grants +4 max armor while equipped and loses it when unequipped; eating food has a 20% chance of +1 max armor
 - **Nest Egg** pays 3 gold whenever a shop opens
 - **Frozen Durian** grants +1 Time Freeze every 4 foods eaten
-- **Ice Cream Sundae** is a 3g consumable: gain Time Freeze, or heal 1 and +1 max HP
 - **Muffin Tin** is a 2g food: in that shop, each food eaten gives +1 max armor per Muffin Tin eaten, including itself; the armor is permanent and the counting stops when you leave
 - **Chilaquiles** is a 2g food that doubles the next two sales
 - **Spell Pepper** is a 3g food that doubles your next spell
 - Every shop node offers a choice: visit the shop, or rest at the inn to heal to full HP and move on
 - **Hearty Stew** is a 5g food that grants 1-2 casts of Heal; **Hagelslag** gives +3 max HP and heals 20% of missing HP
-- **Bulwark** is an 8g item: every 10 damage blocked by armor, +1 random spell
-- **Second Hand** and **Engine** are 8g items that cross-grant spells on cast at 80%
-- **Panacea Pouch** (formerly Spellhoarder) is a 9g item: every 3rd spell cast grants a Heal spell
-- **Vowel Tithe** is an 8g item: each spell cast has a 25% chance to grant Omen
+- **Bulwark** is an 8g item: every 10 damage blocked by armor, cast a random spell
+- **Second Hand** and **Engine** are 8g items that cross-cast spells on cast at 80%
+- **Panacea Pouch** (formerly Spellhoarder) is a 9g item: every 3rd spell cast casts Heal
+- **Vowel Tithe** is an 8g item: each spell cast has a 25% chance to cast Omen
+- **Wild Magic** is a 9g item: each spell cast has a 25% chance to cast a random spell and a 25% chance to autoguess a random word
 - **Acquired Taste** is an 11g uncommon item: each different food you eat this run gives +4 max HP
 - Item triggers show a compact proc pop-up with the actual result (for example **Grey Matter** arming a free guess or **Grey Market** paying gold)
 - **Grey Market** is a 7g item: every all-grey guess pays 1 gold, whether you made it or an ally did; an all-dark guess that pays nothing hides a letter
@@ -75,18 +76,23 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Immunity** blocks the next hurting guess and any guess for 4 seconds after it
 - **Big Belt** gains +1 item slot every 5 eats or solves
 - **Pen Club** pays a random 1-5 gold for guesses starting with PEN; **Gourmand** gains +1 max HP on eat or spell cast
-- **Old McDonald** is an expensive relic: EIEIO is guessed for free at round start
+- **Old McDonald** is a 10g uncommon item: EIEIO is guessed for free at round start
 - Shops can show up to 2 copies of the same entry; sell rows are hoverable
 - Solve gold is 8/7/6/5/4 for solves in 1/2/3/4/5+ guesses
 - **The Endless Table** fires every on-eat effect 7 times or pays 7 gold
 - **Tally Lens** is guaranteed in a shop after a vision curse and shows correct/misplaced counts; **Tally** is never offered while you already own one
+- **Encore** is unique and appears three times as often as an average common item; **Poppy Seeds** gets the same appearance boost
+- **Harvest Charm**, **Empty Mouth**, **Detour**, **Dark Echo**, **Black Eye**, **Palindrome**, **Crisis 15**, **Shellshock**, **Echo Chamber**, **Panic Button**, and **Wild Magic** are the new autoguess/autocast items
+- Random guesses pull from a 200-word pool chosen for non-native speakers; **Dark Echo** avoids letters from your first guess
+- **The Naked Curse** halves your max armor; curse drafts now offer two choices
+- Every spell cast plays an animated pop-up, including item autocasts
 - **Cyrniki** is a 5g food: heal 50% of missing HP, then 50% a spell / 50% a shop reroll
-- **The Tax** reduces encounter gold by 40% and is unique; **The Sleeper** adds +2 damage per revealed letter in your first player guess, per stack; **The Curse Broker** charges 12g for a relic or 15g to remove a curse; **The Confessional** sells 45/75/100% random curse removal for 5/10/15g
+- **The Tax** reduces encounter gold by 40% and is unique; **The Sleeper** adds +2 damage per revealed letter in your first player guess, per stack; **The Curse Broker** charges 12g for a relic or 15g to remove a random curse; **The Confessional** sells 45/75/100% random curse removal for 5/10/15g
 - **The Detour** offers a slot, a shop, or both for 7 HP; **The Crossroads** offers a shop or a Heal plus Time Freeze; **The Trade** trades gold for a slot, a slot for gold, or two Heal spells
 - The Runner and Orc idle in their walk loops; free guesses and the winning guess play the Runner's attack, other guesses alternate Orc → Runner, a fatal guess is always the Orc, and the Orc collapses from the winning blow and stays down until the next round starts
 - Defeat drops the Runner into their death animation on the run-over screen
 - The run path rail is gone; the current level stays in the battle rail
-- Purge is an event (The Redaction) and rare foods; its rest option triggers an eat and a 10% random curse removal
+- Purge is an event (The Redaction) and foods (Poppy Seeds, Inkcap, Purge the D); its rest option triggers an eat and a 10% random curse removal
 - One exact-state autosave slot. Defeat clears it. Victory clears it and updates meta stats.
 - A **STATS** page tracks run history (last 50 runs), win rate, best level, average solve time, favorite items and curses, play time, gold and damage totals
 - The top bar shows gold and area; the current level lives in the battle rail, not a level counter
@@ -149,7 +155,7 @@ The Runner (Soldier) and Orc sprites are from **Tiny RPG Character Asset Pack 01
 | Solve gold | `8/7/6/5/4` for solves in 1/2/3/4/5+ guesses, plus `solveGoldBonus` (Midas Touch can double any gain) |
 | Timeout gold | `1`; a death pays nothing |
 | Solve reward | a flat 5 gold plus a spell (65%) or food (35%); gear is an 8% find |
-| Relic source | very rare shop/reward finds and the Curse Broker; owned relics never appear again |
+| Relic source | rare-tier shop/reward finds and the Curse Broker; owned relics never appear again |
 | Shop reroll | starts at 1 gold, doubles after each use |
 
 ### Ascension

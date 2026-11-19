@@ -257,6 +257,16 @@ export const CURSES: CurseDef[] = [
     armorRefillMult: 0.5,
   }),
   defineCurse({
+    id: 'naked',
+    name: 'The Naked Curse',
+    description: 'Lose half of your max armor.',
+    rules: ['Your max armor is halved when this curse is gained.'],
+    art: 'gauntlet',
+    tags: ['body'],
+    maxStacks: 1,
+    maxArmorMult: 0.5,
+  }),
+  defineCurse({
     id: 'slow-mending',
     name: 'Slow Mending',
     description: 'Healing is halved per stack.',
