@@ -345,6 +345,7 @@ export const FOODS: FoodDef[] = [
     name: 'Iron Ration',
     description: '+2 max armor. No slot.',
     price: 6,
+    rarity: 'uncommon',
     effects: [{ type: 'maxArmor', delta: 2 }],
   }),
   defineFood({
@@ -546,7 +547,7 @@ export const FOODS: FoodDef[] = [
     id: 'purge-the-d',
     name: 'Purge the D',
     description: 'Uncommon. Permanently purges D. No slot.',
-    price: 11,
+    price: 8,
     rarity: 'uncommon',
     effects: [{ type: 'purgeLetter', letter: 'd' }],
   }),

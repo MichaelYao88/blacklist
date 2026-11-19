@@ -1750,6 +1750,7 @@ describe('latest balance pass', () => {
     expect(FOOD_BY_ID.get('leftovers')?.effects)
       .toContainEqual({ type: 'healMissingPercent', percent: 50 });
     expect(FOOD_BY_ID.get('iron-ration')?.price).toBe(6);
+    expect(FOOD_BY_ID.get('iron-ration')?.rarity).toBe('uncommon');
     expect(FOOD_BY_ID.get('iron-ration')?.effects)
       .toContainEqual({ type: 'maxArmor', delta: 2 });
   });
@@ -2720,7 +2721,7 @@ describe('spells and foods', () => {
 
   it('has uncommon and rare purge foods', () => {
     expect(FOOD_BY_ID.get('inkcap')?.price).toBe(16);
-    expect(FOOD_BY_ID.get('purge-the-d')?.price).toBe(11);
+    expect(FOOD_BY_ID.get('purge-the-d')?.price).toBe(8);
     expect(FOOD_BY_ID.get('purge-the-d')?.rarity).toBe('uncommon');
     expect(FOOD_BY_ID.get('poppy-seeds')?.price).toBe(4);
     expect(FOOD_BY_ID.get('poppy-seeds')?.effects)
