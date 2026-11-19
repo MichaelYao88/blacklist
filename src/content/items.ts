@@ -880,7 +880,7 @@ export const ITEMS: ItemDef[] = [
     id: 'stopped-clock',
     name: 'Stopped Clock',
     description: 'Cast Time Freeze: +5 max HP. Once per round.',
-    price: 9,
+    price: 6,
     kind: 'gear',
     initial: { used: 0 },
     on: {

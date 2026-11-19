@@ -24,10 +24,11 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - The blacklist is disabled and hidden until **The List** curse is taken; The List is a single curse, never stacks, and arrives stocked with the first guess from every earlier round
 - The clock is disabled until **The Clock** curse is taken; the first stack gives 5:00
 - The Clockmaker event only appears once The Clock exists
-- **Phone a Friend** delivers a one- or two-word catchphrase, quietly adds 5 seconds, and spams his words across the screen; sometimes he shouts **Pizza Pzazz 🍕✨**
+- **Phone a Friend** delivers a one- or two-word catchphrase, quietly adds 5 seconds, and spams his words across the screen; sometimes he shouts **Pizza Pzazz 🍕✨** instead of the words
 - Curse Collector, Witch Charm, Curse Bulwark and Reliquary trigger on gaining a curse ("Whenever you gain a curse: Gain …")
 - Ascension A1/A2 draft 1/2 starting curses
 - Shops with rerolls that double in price: three items, two foods and one wildcard; one item is always 50% off
+- Every spell offered in a shop costs 4g
 - Five item slots by default. Only equipped gear is active, and each shop has a drag-and-drop loadout
 - **Loose Tongue**, a rare relic that lets you guess five-letter nonsense for free-form probes
 - Spells stack by type and come from food, item triggers and the shop wildcard slot
@@ -55,6 +56,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Bulwark** is an 8g item: every 10 damage blocked by armor, +1 random spell
 - **Second Hand** and **Engine** are 8g items that cross-grant spells on cast at 80%
 - **Photosynthesis** is a 10g item: on solve, +2 max HP and heal 20% max HP
+- **Stopped Clock** is a 6g item: casting Time Freeze grants +5 max HP, once per round
 - **Adrenaline** is a 10g item: dropping below 50% HP grants +1 max HP and +1 max armor, re-arming after healing above 50%
 - **Gold Standard** is an 8g item: every gold gain gives +1 more gold
 - **Guardian Angel** is an 8g item: after every 10 HP damage taken, gain Immunity

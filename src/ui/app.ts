@@ -215,8 +215,10 @@ function processEvents(events: GameEvent[]): void {
   const friendSaid = phoneFriend
     ? events.flatMap((event) => (event.type === 'friendSaid' ? [event.text] : []))
     : [];
-  if (friendWords.length > 0 || friendSaid.length > 0) {
-    flashFriendPhrases(friendWords, friendSaid[0]);
+  if (friendSaid.length > 0) {
+    flashFriendPhrases([], friendSaid[0]);
+  } else if (friendWords.length > 0) {
+    flashFriendPhrases(friendWords);
   }
 }
 

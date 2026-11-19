@@ -1910,7 +1910,7 @@ export function createCore(content: Content): Core {
     };
     const pickSpell = (spell: (typeof content.spells)[number]): void => {
       markUsed(`spell:${spell.id}`);
-      picked.push({ kind: 'spell', def: spell.id, price: shopPrice(state, spell.price) });
+      picked.push({ kind: 'spell', def: spell.id, price: shopPrice(state, 4) });
     };
     const pickRandomItem = (): boolean => {
       let pool = commonItems.filter((item) => usedCount(`item:${item.id}`) < 2);

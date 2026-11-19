@@ -20,17 +20,23 @@ describe('Phone a Friend phrase FX', () => {
     root.querySelector<HTMLElement>('[data-action="resume"]')!.click();
   });
 
-  it('spams the friend words in white with a black outline', () => {
+  it('spams the friend words or shows the Pizza Pzazz callout', () => {
     const cast = root.querySelector<HTMLElement>('[data-action="cast"][data-id="s-phone"]');
     expect(cast).not.toBeNull();
     cast!.click();
 
-    const spans = [...document.querySelectorAll<HTMLElement>('#phrase-root span')];
-    expect(spans).toHaveLength(20);
-    for (const span of spans) {
-      expect(span.textContent).toMatch(/^[A-Z]{5}$/);
+    const callout = document.querySelector<HTMLElement>('#phrase-root .phrase-callout');
+    if (callout) {
+      expect(callout.textContent).toContain('Pizza Pzazz');
+      expect(document.querySelectorAll('#phrase-root span')).toHaveLength(0);
+    } else {
+      const spans = [...document.querySelectorAll<HTMLElement>('#phrase-root span')];
+      expect(spans).toHaveLength(20);
+      for (const span of spans) {
+        expect(span.textContent).toMatch(/^[A-Z]{5}$/);
+      }
+      expect(new Set(spans.map((span) => span.textContent)).size).toBeGreaterThan(0);
     }
-    expect(new Set(spans.map((span) => span.textContent)).size).toBeGreaterThan(0);
     expect(document.querySelector('#phrase-root')?.textContent?.length).toBeGreaterThan(0);
   });
 });

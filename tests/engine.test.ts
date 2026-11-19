@@ -2139,6 +2139,25 @@ describe('latest balance pass', () => {
     expect(shopsWithRare).toBeGreaterThan(40);
   });
 
+  it('prices every shop spell at 4 gold', () => {
+    let spells = 0;
+    for (let index = 0; index < 60; index++) {
+      const { state } = start(`spell-price-${index}`);
+      state.nodeIndex = 0;
+      state.nodes[1] = { kind: 'shop', level: 1 };
+      state.phase = 'shop';
+      const offers = act(state, { type: 'continue' }).state.shop?.offers ?? [];
+      for (const offer of offers) {
+        if (offer.kind === 'spell') {
+          spells++;
+          expect(offer.price).toBe(4);
+        }
+      }
+    }
+    expect(spells).toBeGreaterThan(0);
+    expect(ITEM_BY_ID.get('stopped-clock')?.price).toBe(6);
+  });
+
   it('Head Start and Quickdraw do not stack their windows', () => {
     const { state } = start('shield-stack');
     state.items.push(
