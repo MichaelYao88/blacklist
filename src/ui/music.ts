@@ -5,6 +5,11 @@ import dangerous from '../assets/audio/dangerous.mp3?url';
 import dark from '../assets/audio/dark.mp3?url';
 import darkSynthwave from '../assets/audio/dark-synthwave.mp3?url';
 import synthwaveRetro80s from '../assets/audio/synthwave-retro-80s.mp3?url';
+import goldenGun from '../assets/audio/golden-gun.mp3?url';
+import darkElectronic from '../assets/audio/dark-electronic.mp3?url';
+import darkTrap from '../assets/audio/dark-trap.mp3?url';
+import trapInstrumental from '../assets/audio/trap-instrumental.mp3?url';
+import trapBeat from '../assets/audio/trap-beat.mp3?url';
 
 export type MusicTrack =
   | 'more-power'
@@ -13,7 +18,12 @@ export type MusicTrack =
   | 'dangerous'
   | 'dark'
   | 'dark-synthwave'
-  | 'synthwave-retro-80s';
+  | 'synthwave-retro-80s'
+  | 'golden-gun'
+  | 'dark-electronic'
+  | 'dark-trap'
+  | 'trap-instrumental'
+  | 'trap-beat';
 
 export interface MusicTrackInfo {
   id: MusicTrack;
@@ -29,6 +39,11 @@ export const MUSIC_TRACKS: MusicTrackInfo[] = [
   { id: 'dark', name: 'Dark · Sub_Clair', src: dark },
   { id: 'dark-synthwave', name: 'Dark Synthwave · Sub_Clair', src: darkSynthwave },
   { id: 'synthwave-retro-80s', name: 'Synthwave Retro 80s · DELOSound', src: synthwaveRetro80s },
+  { id: 'golden-gun', name: 'Golden Gun · SlimeyFox', src: goldenGun },
+  { id: 'dark-electronic', name: 'Dark Electronic · alex-morgan', src: darkElectronic },
+  { id: 'dark-trap', name: 'Dark Trap · APALONBeats', src: darkTrap },
+  { id: 'trap-instrumental', name: 'Trap Instrumental · Sub_Clair', src: trapInstrumental },
+  { id: 'trap-beat', name: 'Trap Beat · JonasBlakewood', src: trapBeat },
 ];
 
 const TRACK_BY_ID = new Map(MUSIC_TRACKS.map((track) => [track.id, track]));

@@ -8,6 +8,11 @@ describe('run music', () => {
     expect(ids).not.toContain('neon-synthwave-vibe');
     expect(ids).not.toContain('upbeat-drums');
     expect(ids).toContain('synthwave-retro-80s');
+    expect(ids).toContain('golden-gun');
+    expect(ids).toContain('dark-electronic');
+    expect(ids).toContain('dark-trap');
+    expect(ids).toContain('trap-instrumental');
+    expect(ids).toContain('trap-beat');
     expect(MUSIC_TRACKS.find((track) => track.id === 'synthwave-retro-80s')?.name)
       .toContain('DELOSound');
   });
