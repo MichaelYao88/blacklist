@@ -34,10 +34,11 @@ export type Source =
   | { kind: 'item'; instance: InstanceId }
   | { kind: 'spell'; spell: SpellId }
   | { kind: 'boss'; boss: BossId }
-  | { kind: 'happening'; happening: HappeningId };
+  | { kind: 'happening'; happening: HappeningId }
+  | { kind: 'inn' };
 
 export type NodeKind = 'round' | 'boss' | 'shop' | 'happening' | 'curse';
-export type PhaseKind = 'round' | 'summary' | 'reward' | 'shop' | 'happening' | 'bossIntro' | 'curse' | 'over';
+export type PhaseKind = 'round' | 'summary' | 'reward' | 'shop' | 'shopChoice' | 'happening' | 'bossIntro' | 'curse' | 'over';
 export type CurseTag = 'vision' | 'damage' | 'clock' | 'list' | 'shop' | 'body' | 'economy' | 'rule';
 export type ItemKind = 'gear' | 'consumable';
 export type OfferKind = 'item' | 'spell' | 'eat';
@@ -634,6 +635,7 @@ export type PhaseView =
   | { kind: 'reward'; options: RewardOption[]; boss: boolean; chosen?: string }
   | { kind: 'bossIntro'; boss: BossId }
   | { kind: 'curse'; options: CurseId[]; starting: boolean }
+  | { kind: 'shopChoice'; heal: number }
   | { kind: 'shop'; offers: Offer[]; rerollCost: number; purchases: number }
   | {
       kind: 'happening';

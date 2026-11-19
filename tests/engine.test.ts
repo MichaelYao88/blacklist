@@ -61,6 +61,13 @@ function nextRound(state: RunState): StepResult {
   return act(state, { type: 'continue' });
 }
 
+/** Advance into a shop node and take the shop option. */
+function enterShop(state: RunState): StepResult {
+  const arrived = act(state, { type: 'continue' });
+  if (arrived.state.phase !== 'shopChoice') return arrived;
+  return act(arrived.state, { type: 'choose', optionId: 'shop' });
+}
+
 /** Force the next node to be a happening and resolve it. */
 function nextHappening(state: RunState): StepResult {
   state.nodeIndex = 0;
@@ -665,7 +672,7 @@ describe('shop curses', () => {
     state.nodeIndex = 0;
     state.nodes[1] = { kind: 'shop', level: 1 };
     state.phase = 'shop';
-    const control = act(state, { type: 'continue' });
+    const control = enterShop(state);
     const controlOffers = control.state.shop?.offers ?? [];
 
     const cursed = start('sparse-seed');
@@ -673,7 +680,7 @@ describe('shop curses', () => {
     cursed.state.nodeIndex = 0;
     cursed.state.nodes[1] = { kind: 'shop', level: 1 };
     cursed.state.phase = 'shop';
-    const sparse = act(cursed.state, { type: 'continue' });
+    const sparse = enterShop(cursed.state);
     const sparseOffers = sparse.state.shop?.offers ?? [];
 
     expect(sparseOffers.filter((offer) => offer.kind === 'item').length)
@@ -698,7 +705,7 @@ describe('shop curses', () => {
       state.nodeIndex = 0;
       state.nodes[1] = { kind: 'shop', level: 1 };
       state.phase = 'shop';
-      const result = act(state, { type: 'continue' });
+      const result = enterShop(state);
       for (const offer of result.state.shop?.offers ?? []) {
         if (offer.kind === 'item' && gatedItems.has(offer.def)) sawGatedItem = true;
         if (offer.kind === 'eat' && FOOD_BY_ID.get(offer.def)?.requiresClock) sawGatedFood = true;
@@ -714,7 +721,7 @@ describe('shop curses', () => {
       state.nodeIndex = 0;
       state.nodes[1] = { kind: 'shop', level: 1 };
       state.phase = 'shop';
-      const result = act(state, { type: 'continue' });
+      const result = enterShop(state);
       if ((result.state.shop?.offers ?? []).some(
         (offer) => offer.kind === 'item' && gatedItems.has(offer.def),
       )) {
@@ -916,6 +923,42 @@ describe('shop curses', () => {
     expect(chosen.state.shop?.offers.length).toBeGreaterThan(0);
   });
 
+  it('offers a shop or an inn when entering a shop node', () => {
+    const { state } = start('shop-or-inn');
+    state.nodeIndex = 0;
+    state.nodes[1] = { kind: 'shop', level: 1 };
+    state.phase = 'shop';
+    const arrived = act(state, { type: 'continue' });
+    expect(arrived.state.phase).toBe('shopChoice');
+    expect(arrived.state.shop).toBeUndefined();
+  });
+
+  it('heals to full at the inn and skips the shop', () => {
+    const { state } = start('inn-heal');
+    state.nodeIndex = 0;
+    state.nodes[1] = { kind: 'shop', level: 1 };
+    state.phase = 'shop';
+    state.hp = 3;
+    const arrived = act(state, { type: 'continue' });
+    const rested = act(arrived.state, { type: 'choose', optionId: 'inn' });
+    expect(rested.state.hp).toBe(rested.state.maxHp);
+    expect(rested.state.shop).toBeUndefined();
+    expect(rested.state.phase).not.toBe('shop');
+  });
+
+  it('opens the shop with rerolls starting at 1 gold', () => {
+    const { state } = start('reroll-cost');
+    state.nodeIndex = 0;
+    state.nodes[1] = { kind: 'shop', level: 1 };
+    state.phase = 'shop';
+    const entered = enterShop(state).state;
+    expect(entered.phase).toBe('shop');
+    expect(entered.shop?.rerollCost).toBe(1);
+    entered.gold = 10;
+    const rerolled = act(entered, { type: 'reroll' });
+    expect(rerolled.state.shop?.rerollCost).toBe(2);
+  });
+
   it('Nest Egg pays 3 gold when a shop opens', () => {
     const { state } = start('nest-egg');
     state.items.push({ instance: 'i-nest', id: 'nest-egg', data: {}, equipped: true });
@@ -923,7 +966,7 @@ describe('shop curses', () => {
     state.nodes[1] = { kind: 'shop', level: 1 };
     state.phase = 'shop';
     state.shop = shopState();
-    const result = act(state, { type: 'continue' });
+    const result = enterShop(state);
     expect(result.state.gold).toBe(15);
   });
 
@@ -1184,7 +1227,7 @@ describe('new item and event batch', () => {
       state.nodeIndex = 0;
       state.nodes[1] = { kind: 'shop', level: 1 };
       state.phase = 'shop';
-      const shop = act(state, { type: 'continue' }).state.shop;
+      const shop = enterShop(state).state.shop;
       expect(shop?.offers.some((offer) => offer.def === 'gg-gum')).toBe(false);
     }
   });
@@ -1214,7 +1257,7 @@ describe('new item and event batch', () => {
       state.nodeIndex = 0;
       state.nodes[1] = { kind: 'shop', level: 1 };
       state.phase = 'shop';
-      const shop = act(state, { type: 'continue' }).state.shop;
+      const shop = enterShop(state).state.shop;
       const counts = new Map<string, number>();
       for (const offer of shop?.offers ?? []) {
         const key = `${offer.kind}:${offer.def}`;
@@ -1354,13 +1397,16 @@ describe('new item and event batch', () => {
     const base = state.maxArmor;
     const eaten = act(state, { type: 'chooseReward', optionId: 'eat:muffin-tin' });
     expect(eaten.state.maxArmor).toBe(base + 1); // the tin's own armor
-    expect(eaten.state.phase).toBe('shop');
-    expect(eaten.state.muffinStacks).toBe(1);
-    expect(eaten.state.pendingMuffinStacks).toBe(0);
+    expect(eaten.state.phase).toBe('shopChoice');
+    expect(eaten.state.pendingMuffinStacks).toBe(1);
 
-    eaten.state.gold = 100;
-    eaten.state.shop!.offers = [{ id: 'f0', kind: 'eat', def: 'snack', price: 3 }];
-    const fed = act(eaten.state, { type: 'buy', offerId: 'f0' });
+    const entered = act(eaten.state, { type: 'choose', optionId: 'shop' });
+    expect(entered.state.phase).toBe('shop');
+    expect(entered.state.muffinStacks).toBe(1);
+    expect(entered.state.pendingMuffinStacks).toBe(0);
+    entered.state.gold = 100;
+    entered.state.shop!.offers = [{ id: 'f0', kind: 'eat', def: 'snack', price: 3 }];
+    const fed = act(entered.state, { type: 'buy', offerId: 'f0' });
     expect(fed.state.maxArmor).toBe(base + 2);
   });
 
@@ -1608,7 +1654,7 @@ describe('latest balance pass', () => {
     state.nodeIndex = 0;
     state.nodes[1] = { kind: 'shop', level: 1 };
     state.phase = 'shop';
-    const shop = act(state, { type: 'continue' }).state.shop;
+    const shop = enterShop(state).state.shop;
     expect(shop?.offers.some((offer) => offer.kind === 'item' && offer.def === 'tally-lens'))
       .toBe(true);
   });
@@ -1620,7 +1666,7 @@ describe('latest balance pass', () => {
       state.nodeIndex = 0;
       state.nodes[1] = { kind: 'shop', level: 1 };
       state.phase = 'shop';
-      const shop = act(state, { type: 'continue' }).state.shop;
+      const shop = enterShop(state).state.shop;
       expect(shop?.offers.some((offer) => offer.def === 'purge-the-d')).toBe(false);
     }
   });
@@ -1976,20 +2022,19 @@ describe('latest balance pass', () => {
     expect(hpBefore - guessed.state.hp).toBe(2);
   });
 
-  it('Spell Pepper arms on purchase with no USE button and doubles the next spell', () => {
-    const def = ITEM_BY_ID.get('spell-pepper');
+  it('Spell Pepper is a 3g food that doubles the next spell', () => {
+    const def = FOOD_BY_ID.get('spell-pepper');
     expect(def?.price).toBe(3);
-    expect(def?.onUse).toBeUndefined();
+    expect(ITEM_BY_ID.has('spell-pepper')).toBe(false);
 
     const { state } = start('spell-pepper');
     state.phase = 'shop';
     state.gold = 20;
     state.hp = 4;
     state.spells.push({ instance: 's-heal', id: 'heal' });
-    state.shop = shopState([{ id: 'o0', kind: 'item', def: 'spell-pepper', price: 3 }]);
+    state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'spell-pepper', price: 3 }]);
     const bought = act(state, { type: 'buy', offerId: 'o0' });
     expect(bought.state.nextSpellDouble).toBe(true);
-    expect(bought.state.items.some((item) => item.id === 'spell-pepper')).toBe(false);
 
     const cast = act(bought.state, { type: 'castSpell', instance: 's-heal' });
     expect(cast.state.hp).toBe(20); // heal 8 twice
@@ -2470,7 +2515,7 @@ describe('latest balance pass', () => {
       state.nodeIndex = 0;
       state.nodes[1] = { kind: 'shop', level: 1 };
       state.phase = 'shop';
-      const offers = act(state, { type: 'continue' }).state.shop?.offers ?? [];
+      const offers = enterShop(state).state.shop?.offers ?? [];
       if (offers.some((offer) => offer.kind === 'item'
         && ITEM_BY_ID.get(offer.def)?.rarity === 'rare')) {
         shopsWithRare++;
@@ -2486,7 +2531,7 @@ describe('latest balance pass', () => {
       state.nodeIndex = 0;
       state.nodes[1] = { kind: 'shop', level: 1 };
       state.phase = 'shop';
-      const offers = act(state, { type: 'continue' }).state.shop?.offers ?? [];
+      const offers = enterShop(state).state.shop?.offers ?? [];
       for (const offer of offers) {
         if (offer.kind === 'spell') {
           spells++;
@@ -2666,6 +2711,8 @@ describe('full cursed loop', () => {
         result = act(state, { type: 'continue' });
       } else if (state.phase === 'reward') {
         result = act(state, { type: 'chooseReward', optionId: state.reward?.options[0]?.id ?? 'gold' });
+      } else if (state.phase === 'shopChoice') {
+        result = act(state, { type: 'choose', optionId: 'shop' });
       } else if (state.phase === 'shop') {
         result = act(state, { type: 'continue' });
       } else if (state.phase === 'happening') {

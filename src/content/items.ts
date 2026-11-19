@@ -1471,18 +1471,6 @@ export const ITEMS: ItemDef[] = [
     doubleFood: true,
   }),
   defineItem({
-    id: 'spell-pepper',
-    name: 'Spell Pepper',
-    description: 'Buying this: the next spell you cast casts twice.',
-    price: 3,
-    kind: 'consumable',
-    slots: 0,
-    onAcquire: () => [
-      { type: 'armSpellDouble' },
-      { type: 'consumeSelf' },
-    ],
-  }),
-  defineItem({
     id: 'ice-cream-sundae',
     name: 'Ice Cream Sundae',
     description: 'Buying this: gain Time Freeze, or heal 1 and gain +1 max HP.',

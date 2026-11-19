@@ -582,6 +582,13 @@ export const FOODS: FoodDef[] = [
     price: 1,
     effects: [{ type: 'armSaleDouble' }],
   }),
+  defineFood({
+    id: 'spell-pepper',
+    name: 'Spell Pepper',
+    description: 'The next spell you cast casts twice. No slot.',
+    price: 3,
+    effects: [{ type: 'armSpellDouble' }],
+  }),
 ];
 
 export const FOOD_BY_ID = new Map(FOODS.map((f) => [f.id, f]));

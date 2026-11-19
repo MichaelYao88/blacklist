@@ -2030,7 +2030,7 @@ export function createCore(content: Content): Core {
     const offers = generateOffers(rt);
     state.shop = {
       offers,
-      rerollCost: shopPrice(state, 2),
+      rerollCost: shopPrice(state, 1),
       rerolls: 0,
       purchases: 0,
       visit: state.nodeIndex,
@@ -2052,6 +2052,28 @@ export function createCore(content: Content): Core {
       rerollCost: state.shop.rerollCost,
     });
     runHook(rt, 'onShopOpen', { offers: state.shop.offers });
+  }
+
+  /** A shop node lets the player shop or rest at the inn instead. */
+  function chooseShopOrInn(rt: Runtime, optionId: string): void {
+    const state = rt.state;
+    if (state.phase !== 'shopChoice') return;
+    if (optionId === 'inn') {
+      const before = state.hp;
+      state.hp = state.maxHp;
+      const applied = state.hp - before;
+      if (applied > 0) {
+        emit(rt, { type: 'healed', amount: applied, hp: state.hp, source: { kind: 'inn' } });
+        runHook(rt, 'onHeal', { amount: applied, hp: state.hp });
+      }
+      emit(rt, {
+        type: 'message',
+        text: applied > 0 ? 'The inn restores you to full health.' : 'The inn has nothing left to mend.',
+      });
+      advanceNode(rt);
+      return;
+    }
+    if (optionId === 'shop') openShop(rt);
   }
 
   function buy(rt: Runtime, offerId: string): void {
@@ -2467,7 +2489,9 @@ export function createCore(content: Content): Core {
     if (node.kind === 'round' || node.kind === 'boss') {
       startRound(rt);
     } else if (node.kind === 'shop') {
-      openShop(rt);
+      state.shop = undefined;
+      state.phase = 'shopChoice';
+      return;
     } else {
       openHappening(rt);
     }
@@ -2494,6 +2518,10 @@ export function createCore(content: Content): Core {
     if (state.phase === 'summary') {
       if (state.summary?.rewardPending) openReward(rt);
       else advanceNode(rt);
+      return;
+    }
+    if (state.phase === 'shopChoice') {
+      emit(rt, { type: 'message', text: 'Choose the shop or the inn.' });
       return;
     }
     if (state.phase === 'shop') {
@@ -2770,11 +2798,14 @@ export function createCore(content: Content): Core {
           starting: state.curse?.starting ?? false,
         };
         break;
+      case 'shopChoice':
+        phase = { kind: 'shopChoice', heal: Math.max(0, state.maxHp - state.hp) };
+        break;
       case 'shop':
         phase = {
           kind: 'shop',
           offers: clone(state.shop?.offers ?? []),
-          rerollCost: state.shop?.rerollCost ?? 2,
+          rerollCost: state.shop?.rerollCost ?? 1,
           purchases: state.shop?.purchases ?? 0,
         };
         break;
@@ -2915,7 +2946,8 @@ export function createCore(content: Content): Core {
         unequipItem(rt, cmd.instance);
         break;
       case 'choose':
-        chooseHappening(rt, cmd.optionId);
+        if (rt.state.phase === 'shopChoice') chooseShopOrInn(rt, cmd.optionId);
+        else chooseHappening(rt, cmd.optionId);
         break;
       case 'chooseReward':
         chooseReward(rt, cmd.optionId);

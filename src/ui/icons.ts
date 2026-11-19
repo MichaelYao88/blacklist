@@ -177,6 +177,7 @@ const FOOD_ICONS: Record<string, string> = {
   'purge-the-d': '♀️',
   'snake-oil': '🐍',
   'old-mcdonald': '🚜',
+  'spell-pepper': '🌶️',
 };
 
 const BOSS_SIGILS: Record<string, string> = {

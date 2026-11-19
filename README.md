@@ -29,7 +29,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Within-X solve items count **player guesses only**; solve gold still uses total guesses
 - Curse Collector, Witch Charm, Curse Bulwark and Reliquary trigger on gaining a curse ("Whenever you gain a curse: Gain …")
 - Ascension A1/A2 draft 1/2 starting curses
-- Shops with rerolls that double in price: three items, two foods and one wildcard; one item is always 50% off
+- Shops with rerolls that start at 1g and double in price: three items, two foods and one wildcard; one item is always 50% off
 - Every spell offered in a shop costs 4g
 - Five item slots by default. Only equipped gear is active, and each shop has a drag-and-drop loadout
 - **Loose Tongue**, a rare relic that lets you guess five-letter nonsense for free-form probes
@@ -43,7 +43,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Opening shields such as **Head Start** and **Quickdraw** make guesses in their window count as free guesses
 - Relics are very rare ordinary items, no longer boss rewards; shops roll a rare relic at 25% per item slot (about 60% of shops have one)
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 100 items (85 shop items + 15 rare relics), 6 spells, 66 foods and 25 happenings
+- 99 items (84 shop items + 15 rare relics), 6 spells, 67 foods and 25 happenings
 - New foods include **U-nagi**, **Empty Calories**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
@@ -57,6 +57,8 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Ice Cream Sundae** is a 3g consumable: gain Time Freeze, or heal 1 and +1 max HP
 - **Muffin Tin** is a 2g food: in that shop, each food eaten gives +1 max armor per Muffin Tin eaten, including itself; the armor is permanent and the counting stops when you leave
 - **Chilaquiles** is a 1g food that doubles the next sale
+- **Spell Pepper** is a 3g food that doubles your next spell
+- Every shop node offers a choice: visit the shop, or rest at the inn to heal to full HP and move on
 - **Hearty Stew** is a 5g food that grants 1-2 casts of Heal; **Hagelslag** gives +3 max HP and heals 20% of missing HP
 - **Bulwark** is an 8g item: every 10 damage blocked by armor, +1 random spell
 - **Second Hand** and **Engine** are 8g items that cross-grant spells on cast at 80%
@@ -143,7 +145,7 @@ The Runner (Soldier) and Orc sprites are from **Tiny RPG Character Asset Pack 01
 | Timeout gold | `1`; a death pays nothing |
 | Solve reward | a flat 5 gold plus a spell (65%) or food (35%); gear is an 8% find |
 | Relic source | very rare shop/reward finds and the Curse Broker |
-| Shop reroll | starts at 2 gold, doubles after each use |
+| Shop reroll | starts at 1 gold, doubles after each use |
 
 ### Ascension
 

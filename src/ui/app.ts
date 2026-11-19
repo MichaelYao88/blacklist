@@ -1027,11 +1027,13 @@ function phaseLabel(view: RunView): string {
           ? 'BOSS'
           : phase.kind === 'curse'
             ? 'CURSE'
-            : phase.kind === 'shop'
-              ? 'SHOP'
-              : phase.kind === 'happening'
-                ? 'INTERRUPTION'
-                : 'THE LIST';
+            : phase.kind === 'shopChoice'
+              ? 'SHOP OR INN'
+              : phase.kind === 'shop'
+                ? 'SHOP'
+                : phase.kind === 'happening'
+                  ? 'INTERRUPTION'
+                  : 'THE LIST';
 }
 
 function damageOverlayHtml(): string {
@@ -1488,6 +1490,31 @@ function renderCurseRemovalModal(view: RunView): string {
   </div>`;
 }
 
+function renderShopChoice(phase: Extract<PhaseView, { kind: 'shopChoice' }>): string {
+  const rest = phase.heal > 0
+    ? `Recover ${phase.heal} HP and leave at full health. The shop closes.`
+    : 'You are already at full health. Resting moves on.';
+  return `
+  <div class="phase-card shop-choice">
+    <p class="panel-kicker">A LIGHT IN THE ROAD</p>
+    <h2>Shop or rest?</h2>
+    <p class="muted">A merchant has set out a stall beside an inn. You only have time for one.</p>
+    <div class="shop-choice-grid">
+      <button class="shop-choice-card" data-action="choose" data-id="shop">
+        <span class="choice-glyph" aria-hidden="true">🛒</span>
+        <b>Shop</b>
+        <span>Spend gold on items, food, and spells. Rerolls start at 1g.</span>
+      </button>
+      <button class="shop-choice-card" data-action="choose" data-id="inn">
+        <span class="choice-glyph" aria-hidden="true">🛏️</span>
+        <b>Inn</b>
+        <span>${rest}</span>
+      </button>
+    </div>
+    <p class="hint">The inn heals you to full. The shop does not.</p>
+  </div>`;
+}
+
 function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>): string {
   const coupon = phase.purchases === 0
     ? view.items.reduce((max, item) => {
@@ -1760,6 +1787,8 @@ function phasePanel(view: RunView): string {
       return renderCurse(phase);
     case 'shop':
       return renderShop(view, phase);
+    case 'shopChoice':
+      return renderShopChoice(phase);
     case 'happening':
       return renderHappening(phase);
     case 'over':
