@@ -1053,6 +1053,25 @@ describe('item and food batch', () => {
     }
   });
 
+  it('Omen never reveals a letter already seen yellow or green', () => {
+    const { state } = start('omen-skip-known');
+    state.round!.answer = 'crane';
+    state.round!.freeLeft = 0;
+    const guessed = act(state, { type: 'guess', word: 'slate' });
+    const present = new Set(
+      guessed.state.round!.guesses.flatMap((guess) =>
+        guess.truth.flatMap((tile, i) =>
+          tile === 'correct' || tile === 'present' ? [guess.word[i]] : []),
+      ),
+    );
+    expect([...present].sort()).toEqual(['a', 'e']);
+    guessed.state.spells = [{ instance: 's-omen', id: 'omen' }];
+    const cast = act(guessed.state, { type: 'castSpell', instance: 's-omen' });
+    const hint = Object.keys(cast.state.round!.hints ?? {})[0];
+    expect(present.has(hint)).toBe(false);
+    expect(['c', 'r', 'n']).toContain(hint);
+  });
+
   it('Old McDonald makes a free EIEIO guess at round start', () => {
     const { state } = start('old-mcdonald');
     state.items.push({ instance: 'i-mac', id: 'old-mcdonald', data: {}, equipped: true });
@@ -2805,6 +2824,33 @@ describe('final boss', () => {
     const won = act(result.state, { type: 'continue' });
     expect(won.state.phase).toBe('over');
     expect(won.state.over?.result).toBe('victory');
+  });
+
+  it('resets hints and skips letters seen in an earlier gauntlet puzzle', () => {
+    const { state } = start('omen-gauntlet');
+    const bossIndex = nodeAt(state, (node) => node.kind === 'boss');
+    state.nodeIndex = bossIndex - 1;
+    state.phase = 'shop';
+    state.shop = shopState();
+    let result = act(state, { type: 'continue' });
+    result = act(result.state, { type: 'continue' });
+    expect(result.state.round?.gauntletTotal).toBe(3);
+    result.state.round!.answer = 'crane';
+    result.state.round!.freeLeft = 0;
+    result.state.round!.hints.q = 'absent';
+    result = act(result.state, { type: 'guess', word: 'slate' }); // a and e are yellow
+    result = act(result.state, { type: 'guess', word: 'crane' }); // solve puzzle 1
+    expect(result.state.round!.gauntletIndex).toBe(1);
+    expect(result.state.round!.guesses).toHaveLength(0);
+    expect(result.state.round!.hints).toEqual({});
+    expect(result.state.round!.seenPresent).toEqual(expect.arrayContaining(['a', 'e']));
+
+    result.state.round!.answer = 'trace';
+    result.state.spells = [{ instance: 's-omen', id: 'omen' }];
+    const cast = act(result.state, { type: 'castSpell', instance: 's-omen' });
+    const hint = Object.keys(cast.state.round!.hints ?? {})[0];
+    expect(['a', 'e']).not.toContain(hint);
+    expect(['t', 'r', 'c']).toContain(hint);
   });
 });
 

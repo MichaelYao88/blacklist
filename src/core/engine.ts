@@ -966,9 +966,14 @@ export function createCore(content: Content): Core {
         for (const [letter, status] of Object.entries(round.hints ?? {})) {
           if (status === 'present') known.add(letter);
         }
+        // In the final boss gauntlet the board resets between words. Do not
+        // spend an Omen re-revealing a letter the player already saw yellow.
+        for (const letter of round.seenPresent ?? []) known.add(letter);
         const letters = round.answer.split('').filter((ch) => !known.has(ch));
         if (letters.length > 0) {
           hintLetter(rt, rngPick(state, letters), 'present');
+        } else {
+          emit(rt, { type: 'message', text: 'Omen finds nothing new.' });
         }
         break;
       }
@@ -1608,7 +1613,20 @@ export function createCore(content: Content): Core {
       });
       round.gauntletIndex++;
       round.gauntletAnswers.push(round.answer);
+      const seen = new Set<string>(round.seenPresent ?? []);
+      for (const guess of round.guesses) {
+        guess.truth.forEach((tile, i) => {
+          if (tile === 'correct' || tile === 'present') seen.add(guess.word[i]);
+        });
+      }
+      for (const [letter, status] of Object.entries(round.hints ?? {})) {
+        if (status === 'present') seen.add(letter);
+      }
+      round.seenPresent = [...seen];
       round.guesses = [];
+      // Hints describe the answer that was just solved. They must not carry
+      // over and claim letters are in the next word.
+      round.hints = {};
       round.paidGuesses = 0;
       round.damageTaken = 0;
       round.frozenUntilGuess = false;

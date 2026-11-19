@@ -147,6 +147,8 @@ export interface RoundState {
   lockedSpells: SpellId[];
   /** Persistent keyboard information from Omen and reveal items. */
   hints: Partial<Record<Letter, 'present' | 'absent'>>;
+  /** Letters seen present/correct in an earlier gauntlet puzzle. */
+  seenPresent?: string[];
 }
 
 export interface SummaryState {
