@@ -597,7 +597,7 @@ export interface BoardView {
   freeGuessesLeft: number;
   nextGuessDamage: number;
   rawNextGuessDamage: number;
-  /** Damage taken if the clock runs out: 2x the guess hit + 30% max HP. */
+  /** Damage taken if the clock runs out: 10 + 2 per curse stack. */
   timeoutDamage: number;
   remainingMs: number | null;
   timerStartMs: number | null;

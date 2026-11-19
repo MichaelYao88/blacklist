@@ -599,6 +599,36 @@ export const HAPPENINGS: HappeningDef[] = [
     ],
   }),
   defineHappening({
+    id: 'red-ledger',
+    name: 'The Red Ledger',
+    description: 'A ledger open to two entries. One is written in green ink, the other in red.',
+    options: [
+      {
+        id: 'heal',
+        label: 'Take the green entry',
+        description: 'Gain a Heal spell.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'The green ink spreads into your hands and closes over them.',
+          effects: [{ type: 'giveSpell', spell: 'heal' }],
+        }],
+      },
+      {
+        id: 'gold',
+        label: 'Take the red entry',
+        description: 'Lose 6 HP: gain 6 gold.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'The red ink takes its price, and the ledger pays in coins.',
+          effects: [
+            { type: 'damage', amount: 6, ignoreArmor: true },
+            { type: 'gold', amount: 6 },
+          ],
+        }],
+      },
+    ],
+  }),
+  defineHappening({
     id: 'endless-table',
     name: 'The Endless Table',
     description: 'Dishes keep arriving. Nobody is eating.',

@@ -417,6 +417,22 @@ describe('timer curses', () => {
     expect(second.state.round?.remainingMs).toBe(240_000);
   });
 
+  it('timeout damage is 10 plus 2 per curse stack', () => {
+    const { state } = start('timeout-damage');
+    state.curses.push({ id: 'clock', stacks: 1 });
+    state.curses.push({ id: 'heavy-hand', stacks: 2 });
+    const started = nextRound(state);
+    const view = game.view(started.state);
+    if (view.phase.kind !== 'round') throw new Error('expected round');
+    expect(view.phase.board.timeoutDamage).toBe(16);
+
+    const hp = started.state.hp;
+    started.state.round!.remainingMs = 1;
+    const timedOut = act(started.state, { type: 'tick', dtMs: 2_000 });
+    expect(timedOut.state.hp).toBe(hp - 16);
+    expect(timedOut.state.phase).toBe('summary');
+  });
+
   it('shows count-up time when a timer-interest item is equipped', () => {
     const { state } = start();
     state.items.push({ instance: 'i-early', id: 'early-bird', data: {}, equipped: true });
@@ -842,6 +858,25 @@ describe('shop curses', () => {
     expect(coin?.options.find((option) => option.id === 'slot')?.costGold).toBe(6);
     expect(coin?.options.find((option) => option.id === 'slot')?.outcomes[0].effects)
       .toEqual([{ type: 'slots', delta: 1 }]);
+
+    const ledger = HAPPENING_BY_ID.get('red-ledger');
+    expect(ledger?.options.find((option) => option.id === 'heal')?.outcomes[0].effects)
+      .toEqual([{ type: 'giveSpell', spell: 'heal' }]);
+    expect(ledger?.options.find((option) => option.id === 'gold')?.outcomes[0].effects)
+      .toEqual([
+        { type: 'damage', amount: 6, ignoreArmor: true },
+        { type: 'gold', amount: 6 },
+      ]);
+  });
+
+  it('The Red Ledger pays a Heal spell or trades 6 HP for 6 gold', () => {
+    const { state } = start('red-ledger');
+    state.hp = 15;
+    state.phase = 'happening';
+    state.happening = { id: 'red-ledger', options: [] };
+    const paid = act(state, { type: 'choose', optionId: 'gold' });
+    expect(paid.state.hp).toBe(9);
+    expect(paid.state.gold).toBe(18);
   });
 
   it('The Coin Box charges 1 gold for two Heals or 6 gold for a slot', () => {

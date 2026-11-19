@@ -1559,11 +1559,9 @@ export function createCore(content: Content): Core {
     return Math.max(0, Math.round(base + curseBonus));
   }
 
-  function timeoutDamageFor(state: RunState, round: RoundState): number {
-    return (
-      2 * (guessDamageFor(state, round, true) + round.damageRamp) +
-      Math.ceil(state.maxHp * 0.3)
-    );
+  function timeoutDamageFor(state: RunState): number {
+    const curseTotal = state.curses.reduce((sum, entry) => sum + entry.stacks, 0);
+    return 10 + 2 * curseTotal;
   }
 
   function expireRound(rt: Runtime): void {
@@ -1572,7 +1570,7 @@ export function createCore(content: Content): Core {
     if (!round || state.phase !== 'round') return;
     round.remainingMs = 0;
     emit(rt, { type: 'timeExpired' });
-    dealDamage(rt, timeoutDamageFor(state, round), RULES, {
+    dealDamage(rt, timeoutDamageFor(state), RULES, {
       ignoreArmor: true,
       ignoreImmunity: true,
       timeout: true,
@@ -2650,7 +2648,7 @@ export function createCore(content: Content): Core {
     // damageFor describes the hit a wrong guess takes at the round's current
     // progress, so preview the next guess by stepping the counter forward.
     const rawNext = guessDamageFor(state, round, true);
-    const timeoutDamage = timeoutDamageFor(state, round);
+    const timeoutDamage = timeoutDamageFor(state);
     const noGuessDamage = Boolean(boss?.noGuessDamage);
     const timerInterest = state.items.some((item) => {
       const def = itemById.get(item.id);

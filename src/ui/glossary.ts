@@ -66,15 +66,15 @@ const ENTRIES: GlossaryEntry[] = [
   },
   {
     pattern: /\btimeouts?\b/gi,
-    tip: 'The clock reached zero. You take 2× the guess hit + 30% of max HP, ignoring armor, and the round ends.',
+    tip: 'The clock reached zero. You take 10 damage + 2 per curse stack, ignoring armor, and the round ends.',
   },
   {
     pattern: /\bclock\b/gi,
-    tip: 'The MASSIVE DAMAGE IN countdown. At zero you take 2× the guess hit + 30% of max HP.',
+    tip: 'The MASSIVE DAMAGE IN countdown. At zero you take 10 damage + 2 per curse stack.',
   },
   {
     pattern: /\btimer\b/gi,
-    tip: 'The MASSIVE DAMAGE IN countdown. At zero you take 2× the guess hit + 30% of max HP.',
+    tip: 'The MASSIVE DAMAGE IN countdown. At zero you take 10 damage + 2 per curse stack.',
   },
   {
     pattern: /\bHP\b/gi,
