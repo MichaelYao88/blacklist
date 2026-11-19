@@ -2549,24 +2549,26 @@ describe('latest balance pass', () => {
     expect(current.items.find((item) => item.id === 'scattershot')?.data.used).toBe(1);
   });
 
-  it('Yellow1 autoguesses on one yellow and no green', () => {
+  it('Yellow1 autoguesses on one yellow and no green without a round limit', () => {
     const { state } = start('yellow1-auto');
-    state.items.push({ instance: 'i-yellow', id: 'double-blind', data: { used: 0 }, equipped: true });
+    state.items.push({ instance: 'i-yellow', id: 'double-blind', data: {}, equipped: true });
     state.round!.answer = 'crane';
     state.round!.freeLeft = 0;
     const guessed = act(state, { type: 'guess', word: 'roost' });
     expect(guessed.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
-    expect(guessed.state.items.find((item) => item.id === 'double-blind')?.data.used).toBe(1);
+    expect(ITEM_BY_ID.get('double-blind')?.initial).toBeUndefined();
+    expect(ITEM_BY_ID.get('double-blind')?.on?.onRoundStart).toBeUndefined();
   });
 
-  it('Green1 autoguesses on one green and no yellow', () => {
+  it('Green1 autoguesses on one green and no yellow without a round limit', () => {
     const { state } = start('green1-auto');
-    state.items.push({ instance: 'i-green', id: 'green1', data: { used: 0 }, equipped: true });
+    state.items.push({ instance: 'i-green', id: 'green1', data: {}, equipped: true });
     state.round!.answer = 'crane';
     state.round!.freeLeft = 0;
     const guessed = act(state, { type: 'guess', word: 'climb' });
     expect(guessed.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
-    expect(guessed.state.items.find((item) => item.id === 'green1')?.data.used).toBe(1);
+    expect(ITEM_BY_ID.get('green1')?.initial).toBeUndefined();
+    expect(ITEM_BY_ID.get('green1')?.on?.onRoundStart).toBeUndefined();
     expect(ITEM_BY_ID.get('green1')?.price).toBe(ITEM_BY_ID.get('double-blind')?.price);
   });
 
@@ -3255,6 +3257,60 @@ describe('autocast and random-guess batch', () => {
     expect(ITEM_BY_ID.get('dark-echo')?.price).toBe(11);
     expect(ITEM_BY_ID.get('wild-magic')?.price).toBe(9);
     expect(ITEM_BY_ID.get('panic-button')?.price).toBe(8);
+  });
+});
+
+describe('round-start autoguess foods', () => {
+  it('Tally counts non-player guesses', () => {
+    const { state } = start('tally-friend');
+    state.items.push(
+      { instance: 'i-tally', id: 'tally', data: { guesses: 0 }, equipped: true },
+      { instance: 'i-mac', id: 'old-mcdonald', data: {}, equipped: true },
+    );
+    const next = nextRound(state);
+    expect(next.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
+    expect(next.state.items.find((item) => item.id === 'tally')?.data.guesses)
+      .toBeGreaterThanOrEqual(1);
+  });
+
+  it('Fortune Cookie queues one autoguess for the next round', () => {
+    const { state } = start('fortune-cookie');
+    state.phase = 'shop';
+    state.gold = 10;
+    state.shop = shopState([{ id: 'f0', kind: 'eat', def: 'fortune-cookie', price: 1 }]);
+    const bought = act(state, { type: 'buy', offerId: 'f0' });
+    expect(bought.state.nextRoundRandomGuesses).toBe(1);
+    const next = nextRound(bought.state);
+    expect(next.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
+    expect(next.state.nextRoundRandomGuesses).toBe(0);
+
+    expect(FOOD_BY_ID.get('fortune-cookie')?.price).toBe(1);
+    expect(FOOD_BY_ID.get('fortune-cookie')?.appearanceWeight).toBe(5);
+    expect(FOOD_BY_ID.get('fortune-cookie')?.effects)
+      .toContainEqual({ type: 'queueRandomGuesses', count: 1 });
+  });
+
+  it("Oracle's Banquet autoguesses at the start of every round", () => {
+    const { state } = start('oracles-banquet');
+    state.phase = 'shop';
+    state.gold = 30;
+    state.shop = shopState([{ id: 'f0', kind: 'eat', def: 'oracles-banquet', price: 18 }]);
+    const bought = act(state, { type: 'buy', offerId: 'f0' });
+    expect(bought.state.permanentRandomGuesses).toBe(1);
+
+    const first = nextRound(bought.state);
+    expect(first.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
+    expect(first.state.permanentRandomGuesses).toBe(1);
+
+    const second = nextRound(first.state);
+    expect(second.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
+    expect(second.state.permanentRandomGuesses).toBe(1);
+
+    expect(FOOD_BY_ID.get('oracles-banquet')?.price).toBe(18);
+    expect(FOOD_BY_ID.get('oracles-banquet')?.rarity).toBe('rare');
+    expect(FOOD_BY_ID.get('oracles-banquet')?.unique).toBe(true);
+    expect(FOOD_BY_ID.get('oracles-banquet')?.effects)
+      .toContainEqual({ type: 'permanentRandomGuesses', count: 1 });
   });
 });
 

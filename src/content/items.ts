@@ -1055,40 +1055,28 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'double-blind',
     name: 'Yellow1',
-    description: 'Once per round: a guess with exactly one yellow and no green autoguesses a random word.',
+    description: 'A guess with exactly one yellow and no green autoguesses a random word.',
     price: 8,
     kind: 'gear',
-    initial: { used: 0 },
     on: {
-      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
-      onGuessScored: (ctx, p) => {
-        if (ctx.self.data.used) return [];
+      onGuessScored: (_ctx, p) => {
         const counts = truthCounts(p.guess.truth);
         if (counts.correct !== 0 || counts.present !== 1) return [];
-        return [
-          { type: 'randomGuesses', count: 1 },
-          { type: 'setItemData', stat: 'used', value: 1 },
-        ];
+        return [{ type: 'randomGuesses', count: 1 }];
       },
     },
   }),
   defineItem({
     id: 'green1',
     name: 'Green1',
-    description: 'Once per round: a guess with exactly one green and no yellow autoguesses a random word.',
+    description: 'A guess with exactly one green and no yellow autoguesses a random word.',
     price: 8,
     kind: 'gear',
-    initial: { used: 0 },
     on: {
-      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
-      onGuessScored: (ctx, p) => {
-        if (ctx.self.data.used) return [];
+      onGuessScored: (_ctx, p) => {
         const counts = truthCounts(p.guess.truth);
         if (counts.correct !== 1 || counts.present !== 0) return [];
-        return [
-          { type: 'randomGuesses', count: 1 },
-          { type: 'setItemData', stat: 'used', value: 1 },
-        ];
+        return [{ type: 'randomGuesses', count: 1 }];
       },
     },
   }),

@@ -44,7 +44,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Rarity rolls are quality floors, not exclusive tiers: 40% rare floor pulls from the entire pool, 30% uncommon floor pulls from uncommon + common, and 30% common floor pulls from common only. A missing floor falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 108 items (99 shop items + 9 rare relics), 6 spells, 78 foods and 25 happenings
+- 108 items (99 shop items + 9 rare relics), 6 spells, 80 foods and 25 happenings
 - New foods include **U-nagi**, **Empty Calories**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
@@ -63,7 +63,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Bulwark** is an 8g item: every 10 damage blocked by armor, cast a random spell
 - **Ricochet** is a 7g item: every 10 armor lost, autoguess a random word
 - **Scattershot** autoguesses once per round after a guess sharing no letters with the previous guess
-- **Yellow1** autoguesses once per round on exactly one yellow and no green; **Green1** does the same for exactly one green and no yellow
+- **Yellow1** autoguesses on exactly one yellow and no green; **Green1** does the same for exactly one green and no yellow. Neither has a round limit
 - **Deadline** grants +1 free guess as soon as the clock drops below 30s each round
 - **Second Hand** and **Engine** are 8g items that cross-cast spells on cast at 80%
 - **Panacea Pouch** (formerly Spellhoarder) is a 9g item: every 3rd spell cast casts Heal
@@ -86,6 +86,9 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **The Endless Table** fires every on-eat effect 7 times or pays 7 gold
 - **Tally Lens** is an uncommon item with a 3× appearance weight while a vision curse is active; it is no longer guaranteed in a shop and shows correct/misplaced counts. **Tally** is never offered while you already own one
 - **Encore** is unique and appears three times as often as an average common item; **Poppy Seeds** gets the same appearance boost
+- **Fortune Cookie** is a 1g food with a hidden 5× appearance weight: it queues one autoguess for the next round
+- **Oracle's Banquet** is an 18g rare unique food: it permanently autoguesses at the start of every round
+- **Tally** counts every guess, including ally and autoguesses
 - **Harvest Charm**, **Empty Mouth**, **Detour**, **Dark Echo**, **Black Eye**, **Palindrome**, **Crisis 15**, **Shellshock**, **Echo Chamber**, **Panic Button**, and **Wild Magic** are the new autoguess/autocast items
 - Random guesses pull from a 200-word pool chosen for non-native speakers; **Dark Echo** avoids letters from your first guess
 - **The Naked Curse** halves your max armor; curse drafts now offer two choices

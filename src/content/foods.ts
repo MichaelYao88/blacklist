@@ -139,6 +139,23 @@ export const FOODS: FoodDef[] = [
     ],
   }),
   defineFood({
+    id: 'fortune-cookie',
+    name: 'Fortune Cookie',
+    description: 'Next round: autoguess a random word. No slot.',
+    price: 1,
+    appearanceWeight: 5,
+    effects: [{ type: 'queueRandomGuesses', count: 1 }],
+  }),
+  defineFood({
+    id: 'oracles-banquet',
+    name: "Oracle's Banquet",
+    description: 'Each round: autoguess a random word. No slot.',
+    price: 18,
+    rarity: 'rare',
+    unique: true,
+    effects: [{ type: 'permanentRandomGuesses', count: 1 }],
+  }),
+  defineFood({
     id: 'king-mushroom',
     name: 'King Mushroom',
     description: 'Next round: wrong guesses deal only 2 damage. No slot.',

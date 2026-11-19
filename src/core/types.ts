@@ -313,6 +313,8 @@ export type Effect =
   | { type: 'giveSpell'; spell: SpellId | 'random'; chancePct?: number }
   | { type: 'castSpell'; spell: SpellId | 'random'; chancePct?: number }
   | { type: 'randomGuesses'; count: number; chancePct?: number; excludeLetters?: string }
+  | { type: 'queueRandomGuesses'; count: number }
+  | { type: 'permanentRandomGuesses'; count: number }
   | { type: 'disableVisionThisRound' }
   | { type: 'friendGuesses'; count: number }
   | { type: 'autoGuess'; word: string }
@@ -562,6 +564,10 @@ export interface RunState {
   lastAnswer?: string;
   /** Knafeh: guess this word for free at the start of the next round. */
   nextRoundGuess?: string;
+  /** Fortune Cookie: autoguesses queued for the next round. */
+  nextRoundRandomGuesses: number;
+  /** Oracle's Banquet: autoguesses at the start of every round. */
+  permanentRandomGuesses: number;
   /** King Mushroom: cap the next round's wrong-guess damage. */
   nextRoundDamageCap?: number;
   /** Midnight Snack: show correct/misplaced counts for this many rounds. */

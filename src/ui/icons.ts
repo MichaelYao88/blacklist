@@ -189,6 +189,8 @@ const FOOD_ICONS: Record<string, string> = {
   'old-mcdonald': '🚜',
   'spell-pepper': '🌶️',
   kase: '🧀',
+  'fortune-cookie': '🥠',
+  'oracles-banquet': '🍽️',
   'e-fu-noodles': '🍜',
   't-bone': '🥩',
   'j-ello': '🍮',

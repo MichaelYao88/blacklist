@@ -1128,6 +1128,12 @@ export function createCore(content: Content): Core {
         if (effect.chancePct !== undefined && !rngChance(state, effect.chancePct)) break;
         playRandomGuesses(rt, effect.count, effect.excludeLetters);
         break;
+      case 'queueRandomGuesses':
+        state.nextRoundRandomGuesses += effect.count;
+        break;
+      case 'permanentRandomGuesses':
+        state.permanentRandomGuesses += effect.count;
+        break;
       case 'disableVisionThisRound':
         if (state.round && !state.round.visionDisabled) {
           state.round.visionDisabled = true;
@@ -1310,6 +1316,8 @@ export function createCore(content: Content): Core {
     nextSpellDouble: boolean;
     nextSaleDoubles: number;
     nextRoundGuess?: string;
+    nextRoundRandomGuesses: number;
+    permanentRandomGuesses: number;
     bonusTimeMs: number;
     remainingMs: number | null;
     immuneGuesses: number;
@@ -1355,6 +1363,8 @@ export function createCore(content: Content): Core {
       nextSpellDouble: state.nextSpellDouble === true,
       nextSaleDoubles: state.nextSaleDoubles ?? 0,
       nextRoundGuess: state.nextRoundGuess,
+      nextRoundRandomGuesses: state.nextRoundRandomGuesses,
+      permanentRandomGuesses: state.permanentRandomGuesses,
       bonusTimeMs: state.bonusTimeMs,
       remainingMs: round?.remainingMs ?? null,
       immuneGuesses: round?.immuneGuesses ?? 0,
@@ -1445,6 +1455,13 @@ export function createCore(content: Content): Core {
     const sales = (state.nextSaleDoubles ?? 0) - before.nextSaleDoubles;
     if (sales > 0) parts.push(`next sale${sales === 1 ? '' : 's'} doubled`);
     if (!before.nextRoundGuess && state.nextRoundGuess) parts.push('next round auto-guess');
+    const queuedGuesses = state.nextRoundRandomGuesses - before.nextRoundRandomGuesses;
+    if (queuedGuesses > 0) {
+      parts.push(`next round autoguess${queuedGuesses === 1 ? '' : 'es'}`);
+    }
+    if (state.permanentRandomGuesses > before.permanentRandomGuesses) {
+      parts.push('round-start autoguess for good');
+    }
     if (state.bonusTimeMs > before.bonusTimeMs) {
       parts.push(`+${Math.round((state.bonusTimeMs - before.bonusTimeMs) / 1_000)}s next round`);
     }
@@ -1717,6 +1734,17 @@ export function createCore(content: Content): Core {
       ) {
         scorePlayerGuess(rt, word, 'friend');
       }
+    }
+
+    // Oracle's Banquet autoguesses at the start of every round; Fortune
+    // Cookie queues one guess for the next round only.
+    if (state.permanentRandomGuesses > 0) {
+      playRandomGuesses(rt, state.permanentRandomGuesses);
+    }
+    if (state.nextRoundRandomGuesses > 0) {
+      const count = state.nextRoundRandomGuesses;
+      state.nextRoundRandomGuesses = 0;
+      playRandomGuesses(rt, count);
     }
   }
 
@@ -3432,6 +3460,8 @@ export function createCore(content: Content): Core {
       pendingAbsent: 0,
       pendingReveals: [],
       permanentReveals: [],
+      nextRoundRandomGuesses: 0,
+      permanentRandomGuesses: 0,
       curses: [],
       seenCurses: [],
       pendingStartingCurses: startingCurses,
@@ -3505,6 +3535,8 @@ export function createCore(content: Content): Core {
         if (!state.seenCurses.includes(curse.id)) state.seenCurses.push(curse.id);
       }
       if (!Array.isArray(state.eatenFoods)) state.eatenFoods = [];
+      if (typeof state.nextRoundRandomGuesses !== 'number') state.nextRoundRandomGuesses = 0;
+      if (typeof state.permanentRandomGuesses !== 'number') state.permanentRandomGuesses = 0;
       if (!Array.isArray(state.firstGuesses)) state.firstGuesses = state.blacklist.slice();
       if (typeof state.level !== 'number') {
         state.level = state.nodes[state.nodeIndex]?.level ?? 1;
