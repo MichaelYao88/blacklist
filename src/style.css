@@ -2499,11 +2499,13 @@ button {
   display: block;
   width: 100%;
   aspect-ratio: 1;
-  background-image: var(--idle);
-  background-size: 600% 100%;
+  background-image: var(--walk);
+  background-size: 800% 100%;
   background-position: 0 0;
   background-repeat: no-repeat;
   image-rendering: pixelated;
+  animation: sprite-walk 1000ms steps(7) infinite;
+  animation-delay: var(--walk-delay, 0ms);
   filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.55));
 }
 
@@ -2513,7 +2515,18 @@ button {
 
 .character-sprite.attacking {
   background-image: var(--attack);
-  animation: sprite-attack 380ms steps(6) 1 both;
+  background-size: 600% 100%;
+  animation: sprite-attack 800ms steps(5) 1 both;
+  animation-delay: var(--attack-delay, 0ms);
+}
+
+@keyframes sprite-walk {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 100% 0;
+  }
 }
 
 @keyframes sprite-attack {

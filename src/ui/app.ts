@@ -28,9 +28,9 @@ import {
   itemIcon,
   spellIcon,
 } from './icons';
-import runnerIdle from '../assets/sprites/runner-idle.png';
+import runnerWalk from '../assets/sprites/runner-walk.png';
 import runnerAttack from '../assets/sprites/runner-attack.png';
-import orcIdle from '../assets/sprites/orc-idle.png';
+import orcWalk from '../assets/sprites/orc-walk.png';
 import orcAttack from '../assets/sprites/orc-attack.png';
 import { sfx } from './audio';
 import { music } from './music';
@@ -86,9 +86,13 @@ let damageFx: DamageFx | null = null;
 let damageTimer: number | undefined;
 let damageSeq = 0;
 let damageRendered = 0;
-type ArenaAttack = { who: 'player' | 'enemy' };
+type ArenaAttack = { who: 'player' | 'enemy'; startedAt: number };
 let arenaAttack: ArenaAttack | null = null;
 let arenaAttackTimer: number | undefined;
+const WALK_MS = 1_000;
+const ATTACK_MS = 800;
+const ATTACK_CLEAR_MS = 900;
+const spritesStartedAt = performance.now();
 let countdownUntil = 0;
 const COUNTDOWN_MS = 2_400;
 let selectedAscension = 0;
@@ -126,14 +130,15 @@ function flashDamage(hpLost: number, armorSpent: number, incoming: number): void
   }, 1200);
 }
 
-function triggerArenaAttack(): void {
-  arenaAttack = { who: Math.random() < 0.5 ? 'player' : 'enemy' };
+function triggerArenaAttack(forcePlayer: boolean): void {
+  const who = forcePlayer ? 'player' : Math.random() < 0.9 ? 'enemy' : 'player';
+  arenaAttack = { who, startedAt: performance.now() };
   if (arenaAttackTimer) window.clearTimeout(arenaAttackTimer);
   arenaAttackTimer = window.setTimeout(() => {
     arenaAttack = null;
     arenaAttackTimer = undefined;
     render();
-  }, 520);
+  }, ATTACK_CLEAR_MS);
 }
 
 function flashFriendPhrases(words: string[], callout?: string): void {
@@ -186,7 +191,7 @@ function processEvents(events: GameEvent[]): void {
       }
     }
     if (event.type === 'guessScored' && event.by === 'player') {
-      triggerArenaAttack();
+      triggerArenaAttack(event.free || event.solved);
     }
     if (event.type === 'healed') sfx.play('coin');
     if (event.type === 'timeExpired') {
@@ -1032,8 +1037,12 @@ function renderBattleRail(view: RunView, bossId?: string): string {
   const low = view.hp <= view.maxHp * 0.3;
   const hit = Boolean(damageFx && damageFx.hpLost > 0 && performance.now() - damageFx.at < 600);
   const enemyIsOrc = view.act === 0 && !bossId;
-  const playerAttacking = arenaAttack?.who === 'player';
-  const enemyAttacking = arenaAttack?.who === 'enemy';
+  const now = performance.now();
+  const walkDelay = -((now - spritesStartedAt) % WALK_MS);
+  const attackElapsed = arenaAttack ? Math.max(0, now - arenaAttack.startedAt) : 0;
+  const attackActive = Boolean(arenaAttack && attackElapsed < ATTACK_MS);
+  const playerAttacking = attackActive && arenaAttack?.who === 'player';
+  const enemyAttacking = attackActive && arenaAttack?.who === 'enemy';
   const facts = board
     ? [
         `<span class="fact">FREE ${board.freeGuessesLeft}</span>`,
@@ -1061,7 +1070,7 @@ function renderBattleRail(view: RunView, bossId?: string): string {
               class="character-sprite runner ${playerAttacking ? 'attacking' : ''}"
               role="img"
               aria-label="The Runner"
-              style="--idle:url('${runnerIdle}');--attack:url('${runnerAttack}')"
+              style="--walk:url('${runnerWalk}');--attack:url('${runnerAttack}');--walk-delay:${walkDelay}ms;--attack-delay:-${attackElapsed}ms"
             ></i>
           </div>
           <span class="mini-label">YOU</span>
@@ -1077,7 +1086,7 @@ function renderBattleRail(view: RunView, bossId?: string): string {
                   class="character-sprite orc ${enemyAttacking ? 'attacking' : ''}"
                   role="img"
                   aria-label="The Orc"
-                  style="--idle:url('${orcIdle}');--attack:url('${orcAttack}')"
+                  style="--walk:url('${orcWalk}');--attack:url('${orcAttack}');--walk-delay:${walkDelay}ms;--attack-delay:-${attackElapsed}ms"
                 ></i>`
               : enemySprite(bossId)}
           </div>

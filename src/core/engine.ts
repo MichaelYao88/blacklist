@@ -1704,6 +1704,7 @@ export function createCore(content: Content): Core {
     rt.pendingFreeSource = undefined;
 
     const presented = presentGuess(state, guess);
+    const solved = word === round.answer;
     emit(rt, {
       type: 'guessScored',
       by,
@@ -1711,6 +1712,7 @@ export function createCore(content: Content): Core {
       guess: presented,
       free: guess.free,
       word,
+      solved,
     });
     if (madeFree) {
       emit(rt, {
@@ -1733,7 +1735,6 @@ export function createCore(content: Content): Core {
 
     // A correct guess never hurts you. A wrong paid guess takes the fixed
     // encounter hit plus any curse scaling from eligible letters.
-    const solved = word === round.answer;
     if (!solved && !guess.free && by === 'player') {
       const boss = round.boss ? bossById.get(round.boss) : undefined;
       if (!boss?.noGuessDamage) {

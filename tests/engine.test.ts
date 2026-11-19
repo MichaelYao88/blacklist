@@ -596,6 +596,15 @@ describe('timer curses', () => {
     expect(recast.state.spells.some((spell) => spell.instance === 's-imm2')).toBe(false);
   });
 
+  it('marks the winning guess on the guessScored event', () => {
+    const { state } = start('solved-event');
+    setAnswer(state, 'crane');
+    const missed = act(state, { type: 'guess', word: 'slate' });
+    const solved = act(missed.state, { type: 'guess', word: 'crane' });
+    const scored = solved.events.filter((event) => event.type === 'guessScored');
+    expect(scored.at(-1)?.solved).toBe(true);
+  });
+
   it('makes Phone a Friend add five seconds instead of freezing the clock', () => {
     const { state } = start();
     state.curses.push({ id: 'clock', stacks: 1 });

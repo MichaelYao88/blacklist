@@ -716,6 +716,7 @@ export type GameEvent =
       guess: PresentedGuess;
       free: boolean;
       word: string;
+      solved: boolean;
     }
   | { type: 'guessMadeFree'; index: number; source: Source }
   | { type: 'friendSaid'; text: string }
