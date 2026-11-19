@@ -206,18 +206,69 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'one',
         label: 'Erase one letter',
-        description: '6 gold: purge one letter.',
-        costGold: 6,
+        description: '5 gold: purge one letter.',
+        costGold: 5,
         outcomes: [{ chancePct: 100, text: 'The letter is gone. So is every word that needed it.', effects: [{ type: 'pendingPurge', count: 1 }] }],
       },
       {
         id: 'two',
         label: 'Erase two letters',
-        description: '14 gold: purge two letters.',
-        costGold: 14,
+        description: '10 gold: purge two letters.',
+        costGold: 10,
         outcomes: [{ chancePct: 100, text: 'Two letters disappear under the fluid.', effects: [{ type: 'pendingPurge', count: 2 }] }],
       },
+      {
+        id: 'rest',
+        label: 'Rest and let your gear work',
+        description: 'Trigger one eat. 10% chance to remove a random curse.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'You rest. Something in your pack shifts, and a burden may slip away.',
+          effects: [
+            { type: 'eatBurst', count: 1 },
+            { type: 'removeRandomCurse', chancePct: 10 },
+          ],
+        }],
+      },
       { id: 'leave', label: 'Leave the paperwork', description: 'Nothing happens.', outcomes: [{ chancePct: 100, text: 'The clerk stamps something and forgets you.', effects: [] }] },
+    ],
+  }),
+  defineHappening({
+    id: 'confessional',
+    name: 'The Confessional',
+    description: 'A quiet booth with three prices and one promise: maybe.',
+    requiresCurseCount: 1,
+    options: [
+      {
+        id: 'small',
+        label: 'Small offering',
+        description: '5 gold: 45% chance to remove a random curse.',
+        costGold: 5,
+        outcomes: [
+          { chancePct: 45, text: 'A weight lifts. One curse is gone.', effects: [{ type: 'removeRandomCurse' }] },
+          { chancePct: 55, text: 'The booth stays silent. Nothing is removed.', effects: [] },
+        ],
+      },
+      {
+        id: 'large',
+        label: 'Large offering',
+        description: '10 gold: 75% chance to remove a random curse.',
+        costGold: 10,
+        outcomes: [
+          { chancePct: 75, text: 'The burden breaks. One curse is gone.', effects: [{ type: 'removeRandomCurse' }] },
+          { chancePct: 25, text: 'The booth takes the gold and offers nothing.', effects: [] },
+        ],
+      },
+      {
+        id: 'everything',
+        label: 'Everything you have',
+        description: '15 gold: remove a random curse.',
+        costGold: 15,
+        outcomes: [
+          { chancePct: 100, text: 'The burden breaks. One curse is gone.', effects: [{ type: 'removeRandomCurse' }] },
+        ],
+      },
+      { id: 'leave', label: 'Walk away', description: 'Nothing happens.', outcomes: [{ chancePct: 100, text: 'You leave the booth empty-handed.', effects: [] }] },
     ],
   }),
   defineHappening({

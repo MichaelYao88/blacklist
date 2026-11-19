@@ -120,18 +120,23 @@ function flashDamage(hpLost: number, armorSpent: number, incoming: number): void
   }, 1200);
 }
 
-function flashFriendPhrases(words: string[]): void {
+function flashFriendPhrases(words: string[], callout?: string): void {
   const unique = [...new Set(words.map((word) => word.toUpperCase()).filter(Boolean))];
-  if (unique.length === 0) return;
-  phraseRoot.innerHTML = Array.from({ length: 20 }, (_, index) => {
-    const word = unique[index % unique.length];
-    const left = 4 + Math.random() * 88;
-    const top = 6 + Math.random() * 82;
-    const rotation = -22 + Math.random() * 44;
-    const scale = 0.8 + Math.random() * 1.5;
-    const delay = Math.random() * 0.35;
-    return `<span style="left:${left.toFixed(1)}vw;top:${top.toFixed(1)}vh;--rot:${rotation.toFixed(1)}deg;--scale:${scale.toFixed(2)};animation-delay:${delay.toFixed(2)}s">${escapeHtml(word)}</span>`;
-  }).join('');
+  if (unique.length === 0 && !callout) return;
+  const spans = unique.length > 0
+    ? Array.from({ length: 20 }, (_, index) => {
+        const word = unique[index % unique.length];
+        const left = 4 + Math.random() * 88;
+        const top = 6 + Math.random() * 82;
+        const rotation = -22 + Math.random() * 44;
+        const scale = 0.8 + Math.random() * 1.5;
+        const delay = Math.random() * 0.35;
+        return `<span style="left:${left.toFixed(1)}vw;top:${top.toFixed(1)}vh;--rot:${rotation.toFixed(1)}deg;--scale:${scale.toFixed(2)};animation-delay:${delay.toFixed(2)}s">${escapeHtml(word)}</span>`;
+      }).join('')
+    : '';
+  phraseRoot.innerHTML = (callout
+    ? `<div class="phrase-callout">${escapeHtml(callout)}</div>`
+    : '') + spans;
   if (phraseTimer) window.clearTimeout(phraseTimer);
   phraseTimer = window.setTimeout(() => {
     phraseRoot.innerHTML = '';
@@ -207,7 +212,12 @@ function processEvents(events: GameEvent[]): void {
         event.type === 'guessScored' && event.by === 'friend' ? [event.word] : [],
       )
     : [];
-  if (friendWords.length > 0) flashFriendPhrases(friendWords);
+  const friendSaid = phoneFriend
+    ? events.flatMap((event) => (event.type === 'friendSaid' ? [event.text] : []))
+    : [];
+  if (friendWords.length > 0 || friendSaid.length > 0) {
+    flashFriendPhrases(friendWords, friendSaid[0]);
+  }
 }
 
 function dispatchCommand(command: Command): GameEvent[] {
@@ -1308,7 +1318,7 @@ function renderCurse(phase: Extract<PhaseView, { kind: 'curse' }>): string {
   <div class="phase-card curse-draft">
     <p class="panel-kicker">${phase.starting ? 'STARTING CURSE' : 'CURSE DRAFT'}</p>
     <h2>Choose a burden</h2>
-    <p class="muted">Both curses affect every future encounter. You must take one.</p>
+    <p class="muted">Every curse here affects every future encounter. You must take one.</p>
     <div class="curse-grid">
       ${phase.options.map((id) => {
         const def = CURSE_BY_ID.get(id);

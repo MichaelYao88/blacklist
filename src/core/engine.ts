@@ -869,8 +869,9 @@ export function createCore(content: Content): Core {
         if (!round) break;
         if (round.remainingMs === null) {
           round.freeLeft += 1;
+          round.nextFreeUnobscured = true;
           emit(rt, { type: 'freeGuessesChanged', remaining: round.freeLeft, source });
-          emit(rt, { type: 'message', text: 'No clock. The next guess is free instead.' });
+          emit(rt, { type: 'message', text: 'No clock. The next guess is free and unobscured.' });
           break;
         }
         round.frozenUntilGuess = true;
@@ -1212,7 +1213,9 @@ export function createCore(content: Content): Core {
       return boss.present({ state }, guess);
     }
 
-    const vision = curseDefs(state).filter((entry) => entry.def.tags.includes('vision'));
+    const vision = guess.unobscured
+      ? []
+      : curseDefs(state).filter((entry) => entry.def.tags.includes('vision'));
     let tiles = guess.truth.slice() as Array<'correct' | 'present' | 'absent' | 'hit' | 'hidden'>;
     for (const entry of vision) {
       for (const effect of entry.def.vision ?? []) {
@@ -1324,6 +1327,7 @@ export function createCore(content: Content): Core {
       timerStartMs: timerStart,
       frozenMs: 0,
       frozenUntilGuess: false,
+      nextFreeUnobscured: false,
       immuneGuesses: 0,
       immuneUntilMs: 0,
       guessImmuneUntilMs: 0,
@@ -1597,6 +1601,9 @@ export function createCore(content: Content): Core {
     // A two-word call only ever delivers one of the friend's curated
     // catchphrases. He never improvises a pair from the random word bucket.
     if (count >= 2) {
+      if (rngChance(state, 25)) {
+        emit(rt, { type: 'friendSaid', text: 'Pizza Pzazz 🍕✨' });
+      }
       const taken = used();
       const phrases = content.friendPhrases.filter(
         ([first, second]) => available(first, taken) && available(second, taken),
@@ -1645,7 +1652,12 @@ export function createCore(content: Content): Core {
 
     const shieldedFree = by === 'player' && round.elapsedMs < round.immuneUntilMs;
     const naturalFree = by === 'friend' || round.freeLeft > 0;
-    if (by === 'player' && naturalFree && !shieldedFree) round.freeLeft--;
+    const consumesFree = by === 'player' && naturalFree && !shieldedFree;
+    const unobscured = consumesFree && round.nextFreeUnobscured;
+    if (consumesFree) {
+      round.freeLeft--;
+      if (round.nextFreeUnobscured) round.nextFreeUnobscured = false;
+    }
 
     const truth = scoreGuess(round.answer, word);
     const guess: ScoredGuess = {
@@ -1654,6 +1666,7 @@ export function createCore(content: Content): Core {
       index: round.totalGuesses,
       free: naturalFree || shieldedFree,
       by,
+      unobscured,
     };
 
     round.totalGuesses++;
@@ -2193,9 +2206,11 @@ export function createCore(content: Content): Core {
 
   function curseWeight(state: RunState, def: CurseDef): number {
     let weight = def.weight ?? 1;
-    if (state.level <= 12 && ['la-curse', 'ts-curse', 'rip-curse'].includes(def.id)) {
-      weight *= 2;
-    }
+    // The signature blacklist and the first timer curse are the headline
+    // burdens. They get one boosted stretch before their first appearance,
+    // then settle into the normal pool.
+    if (def.id === 'the-list' && curseStacks(state, 'the-list') === 0) weight *= 3;
+    if (def.id === 'clock' && curseStacks(state, 'clock') < 2) weight *= 3;
     return weight;
   }
 
@@ -2226,7 +2241,7 @@ export function createCore(content: Content): Core {
   function pickCurseOptions(state: RunState, starting: boolean): CurseId[] {
     const pool = eligibleCurses(state, starting).slice();
     const picks: CurseId[] = [];
-    while (picks.length < 2 && pool.length > 0) {
+    while (picks.length < 3 && pool.length > 0) {
       const chosen = pickWeighted(state, pool);
       picks.push(chosen.id);
       pool.splice(pool.indexOf(chosen), 1);
@@ -2998,6 +3013,9 @@ export function createCore(content: Content): Core {
         }
         if (typeof state.round.guessImmuneUntilMs !== 'number') {
           state.round.guessImmuneUntilMs = 0;
+        }
+        if (typeof state.round.nextFreeUnobscured !== 'boolean') {
+          state.round.nextFreeUnobscured = false;
         }
         if (typeof state.round.damageRamp !== 'number') {
           state.round.damageRamp = 0;

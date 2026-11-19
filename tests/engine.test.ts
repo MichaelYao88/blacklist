@@ -109,13 +109,13 @@ describe('cursed run setup', () => {
     expect(two.state.pendingStartingCurses).toBe(2);
     const view = game.view(two.state);
     if (view.phase.kind === 'curse') {
-      expect(view.phase.options).toHaveLength(2);
+      expect(view.phase.options).toHaveLength(3);
     }
   });
 });
 
 describe('curse drafting', () => {
-  it('offers two curses on a curse node and applies the chosen one', () => {
+  it('offers three curses on a curse node and applies the chosen one', () => {
     const { state } = start();
     const curseIndex = nodeAt(state, (node) => node.kind === 'curse');
     state.nodeIndex = curseIndex - 1;
@@ -126,7 +126,7 @@ describe('curse drafting', () => {
     expect(draft.state.phase).toBe('curse');
     const phase = game.view(draft.state).phase;
     if (phase.kind !== 'curse') throw new Error('expected curse phase');
-    expect(phase.options).toHaveLength(2);
+    expect(phase.options).toHaveLength(3);
 
     const chosen = act(draft.state, { type: 'chooseCurse', curseId: phase.options[0] });
     expect(chosen.state.curses).toHaveLength(1);
@@ -198,6 +198,61 @@ describe('vision curses and Tally Lens', () => {
     expect(tiles[4]).toBe('hidden');
     expect(tiles[1]).toBe('correct');
   });
+
+  it('Take the L hides L only', () => {
+    const { state } = start('take-the-l');
+    setAnswer(state, 'crane');
+    state.curses.push({ id: 'la-curse', stacks: 1 });
+    const guess = act(state, { type: 'guess', word: 'salad' });
+    const view = game.view(guess.state);
+    if (view.phase.kind !== 'round') throw new Error('expected round');
+    const tiles = view.phase.board.guesses[0].tiles;
+    expect(tiles[2]).toBe('hidden');
+    expect(tiles[1]).toBe('present');
+    expect(tiles[3]).toBe('absent');
+  });
+
+  it('A-Aron hides A only', () => {
+    const { state } = start('a-aron');
+    setAnswer(state, 'crane');
+    state.curses.push({ id: 'a-curse', stacks: 1 });
+    const guess = act(state, { type: 'guess', word: 'salad' });
+    const view = game.view(guess.state);
+    if (view.phase.kind !== 'round') throw new Error('expected round');
+    const tiles = view.phase.board.guesses[0].tiles;
+    expect(tiles[1]).toBe('hidden');
+    expect(tiles[3]).toBe('hidden');
+    expect(tiles[2]).toBe('absent');
+  });
+
+  it('IP Theft hides I and P only', () => {
+    const { state } = start('ip-theft');
+    setAnswer(state, 'crane');
+    state.curses.push({ id: 'ip-theft', stacks: 1 });
+    const guess = act(state, { type: 'guess', word: 'prize' });
+    const view = game.view(guess.state);
+    if (view.phase.kind !== 'round') throw new Error('expected round');
+    const tiles = view.phase.board.guesses[0].tiles;
+    expect(tiles[0]).toBe('hidden');
+    expect(tiles[2]).toBe('hidden');
+    expect(tiles[1]).toBe('correct');
+    expect(tiles[3]).toBe('absent');
+    expect(tiles[4]).toBe('correct');
+  });
+
+  it('RIP Curse makes R, I and P silver', () => {
+    const { state } = start('rip-silver');
+    setAnswer(state, 'prize');
+    state.curses.push({ id: 'rip-curse', stacks: 1 });
+    const guess = act(state, { type: 'guess', word: 'pious' });
+    const view = game.view(guess.state);
+    if (view.phase.kind !== 'round') throw new Error('expected round');
+    const tiles = view.phase.board.guesses[0].tiles;
+    expect(tiles[0]).toBe('hit');
+    expect(tiles[1]).toBe('hit');
+    expect(CURSE_BY_ID.get('rip-curse')?.vision)
+      .toContainEqual({ kind: 'ambiguousLetters', letters: 'rip' });
+  });
 });
 
 describe('blacklist curse', () => {
@@ -241,14 +296,14 @@ describe('blacklist curse', () => {
 });
 
 describe('damage and curses', () => {
-  it('base damage is 3 plus curse stacks, and Heavy Hand adds 50% per stack', () => {
+  it('base damage is 3 plus curse stacks, and Heavy Hand adds 40% per stack', () => {
     const { state } = start();
     expect(state.round?.baseDamage).toBe(3);
     state.curses.push({ id: 'heavy-hand', stacks: 2 });
     const next = nextRound(state);
-    expect(next.state.round?.baseDamage).toBe(11); // (3 + 2) × 1.5² = 11.25
-    expect(CURSE_BY_ID.get('heavy-hand')?.damageMultiplier).toBe(1.5);
-    expect(CURSE_BY_ID.get('heavy-hand')?.description).toContain('50%');
+    expect(next.state.round?.baseDamage).toBe(10); // (3 + 2) × 1.4² = 9.8
+    expect(CURSE_BY_ID.get('heavy-hand')?.damageMultiplier).toBe(1.4);
+    expect(CURSE_BY_ID.get('heavy-hand')?.description).toContain('40%');
   });
 
   it('raises base damage by 1 for every curse stack', () => {
@@ -403,17 +458,29 @@ describe('timer curses', () => {
     expect(ITEM_BY_ID.get('gold-standard')?.description).toContain('+1 gold');
   });
 
-  it('turns Time Freeze into a free guess when there is no clock', () => {
-    const { state } = start();
+  it('turns Time Freeze into an unobscured free guess when there is no clock', () => {
+    const { state } = start('time-freeze-unobscured');
     setAnswer(state, 'crane');
+    state.curses.push({ id: 'censor', stacks: 1 });
     state.round!.freeLeft = 0;
     state.armor = 0;
     state.spells.push({ instance: 's-freeze', id: 'time-freeze' });
     const cast = act(state, { type: 'castSpell', instance: 's-freeze' });
     expect(cast.state.round?.frozenUntilGuess).toBe(false);
+    expect(cast.state.round?.nextFreeUnobscured).toBe(true);
+
     const guess = act(cast.state, { type: 'guess', word: 'tiger' });
     expect(guess.state.hp).toBe(20);
     expect(guess.state.round?.guesses.at(-1)?.free).toBe(true);
+    expect(guess.state.round?.nextFreeUnobscured).toBe(false);
+    const view = game.view(guess.state).phase;
+    if (view.kind !== 'round') throw new Error('expected round');
+    expect(view.board.guesses[0].tiles[0]).not.toBe('hidden');
+
+    const next = act(guess.state, { type: 'guess', word: 'slate' });
+    const after = game.view(next.state).phase;
+    if (after.kind !== 'round') throw new Error('expected round');
+    expect(after.board.guesses[1].tiles[0]).toBe('hidden');
   });
 
   it('makes Phone a Friend add five seconds instead of freezing the clock', () => {
@@ -427,6 +494,23 @@ describe('timer curses', () => {
     expect(cast.state.round?.frozenMs).toBe(0);
     expect(cast.state.round?.frozenUntilGuess).toBe(false);
     expect(cast.state.round?.remainingMs).toBe(305_000);
+  });
+
+  it('sometimes has the friend say Pizza Pzazz', () => {
+    let seen = false;
+    for (let index = 0; index < 40 && !seen; index++) {
+      const { state } = start(`pizza-pzazz-${index}`);
+      state.curses.push({ id: 'clock', stacks: 1 });
+      const next = nextRound(state);
+      next.state.spells.push({ instance: 's-phone', id: 'phone-friend' });
+      if (!next.state.round) throw new Error('expected round');
+      next.state.round.answer = 'zzzzz';
+      const cast = act(next.state, { type: 'castSpell', instance: 's-phone' });
+      if (cast.events.some(
+        (event) => event.type === 'friendSaid' && event.text === 'Pizza Pzazz 🍕✨',
+      )) seen = true;
+    }
+    expect(seen).toBe(true);
   });
 });
 
@@ -534,6 +618,45 @@ describe('shop curses', () => {
     const removed = act(bought.state, { type: 'removeCurse', curseId: 'censor' });
     expect(removed.state.curses).toEqual([]);
     expect(removed.state.pendingCurseRemoval).toBe(0);
+  });
+
+  it('The Redaction costs 5/10 and its rest option triggers an eat', () => {
+    const redaction = HAPPENING_BY_ID.get('redaction');
+    expect(redaction?.options.find((option) => option.id === 'one')?.costGold).toBe(5);
+    expect(redaction?.options.find((option) => option.id === 'two')?.costGold).toBe(10);
+    const rest = redaction?.options.find((option) => option.id === 'rest');
+    expect(rest?.outcomes[0].effects).toContainEqual({ type: 'eatBurst', count: 1 });
+    expect(rest?.outcomes[0].effects)
+      .toContainEqual({ type: 'removeRandomCurse', chancePct: 10 });
+
+    const { state } = start('redaction-rest');
+    state.items.push({ instance: 'i-gour', id: 'gourmand', data: {}, equipped: true });
+    state.phase = 'happening';
+    state.happening = { id: 'redaction', options: [] };
+    const rested = act(state, { type: 'choose', optionId: 'rest' });
+    expect(rested.state.maxHp).toBe(21);
+  });
+
+  it('The Confessional sells 45/75/100% curse removal at 5/10/15 gold', () => {
+    const event = HAPPENING_BY_ID.get('confessional');
+    expect(event?.options.find((option) => option.id === 'small')?.costGold).toBe(5);
+    expect(event?.options.find((option) => option.id === 'small')?.outcomes[0].chancePct)
+      .toBe(45);
+    expect(event?.options.find((option) => option.id === 'large')?.costGold).toBe(10);
+    expect(event?.options.find((option) => option.id === 'large')?.outcomes[0].chancePct)
+      .toBe(75);
+    expect(event?.options.find((option) => option.id === 'everything')?.costGold).toBe(15);
+    expect(event?.options.find((option) => option.id === 'everything')?.outcomes[0].chancePct)
+      .toBe(100);
+
+    const { state } = start('confessional');
+    state.curses.push({ id: 'censor', stacks: 1 });
+    state.phase = 'happening';
+    state.happening = { id: 'confessional', options: [] };
+    state.gold = 20;
+    const paid = act(state, { type: 'choose', optionId: 'everything' });
+    expect(paid.state.gold).toBe(5);
+    expect(paid.state.curses).toEqual([]);
   });
 
   it('The Chained blocks selling', () => {
@@ -2103,7 +2226,7 @@ describe('spells and foods', () => {
 
   it('uses the new Time Freeze text', () => {
     expect(SPELL_BY_ID.get('time-freeze')?.description)
-      .toBe('The next guess is free. Freeze any timers until you make the guess.');
+      .toBe('Freeze the clock until your next guess. Without a clock: the next guess is free and unobscured.');
   });
 
   it('prices Pen Club at 15 gold for a 1-5 gold payout', () => {

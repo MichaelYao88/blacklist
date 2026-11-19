@@ -105,6 +105,8 @@ export interface ScoredGuess {
   index: number;
   free: boolean;
   by: 'player' | 'friend';
+  /** The free guess from Time Freeze ignores vision curses. */
+  unobscured?: boolean;
 }
 
 export interface RoundState {
@@ -122,6 +124,8 @@ export interface RoundState {
   /** null when the run has no clock curse. */
   frozenMs: number;
   frozenUntilGuess: boolean;
+  /** The next free guess granted by Time Freeze ignores vision curses. */
+  nextFreeUnobscured: boolean;
   immuneGuesses: number;
   /** Damage is ignored while elapsedMs is below this value. */
   immuneUntilMs: number;
@@ -701,6 +705,7 @@ export type GameEvent =
       word: string;
     }
   | { type: 'guessMadeFree'; index: number; source: Source }
+  | { type: 'friendSaid'; text: string }
   | { type: 'blacklistChanged'; list: string[]; added?: string }
   | { type: 'keyboardHint'; letter: Letter; status: 'present' | 'absent' }
   | { type: 'letterPurged'; letter: Letter }

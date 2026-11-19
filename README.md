@@ -2,7 +2,7 @@
 
 A word roguelike about the burdens you choose.
 
-A 50-level curse run. The blacklist and the clock start disabled. Every two levels you choose one of two permanent curses, and those curses become the difficulty. Levels 47–49 are curse floors, and level 50 is a final boss made of three back-to-back rounds. One active save, and defeat wipes it.
+A 50-level curse run. The blacklist and the clock start disabled. Every two levels you choose one of three permanent curses, and those curses become the difficulty. Levels 47-49 are curse floors, and level 50 is a final boss made of three back-to-back rounds. One active save, and defeat wipes it.
 
 **Play:** https://michaelayao88.github.io/blacklist/
 
@@ -15,15 +15,16 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Wordle-style scoring with duplicate-letter handling
 - A 50-level curse run: no bosses until level 50, no starting clock, no starting blacklist
 - Round loop: `round → 40% event → shop`, then `round → 40% event → curse`
-- Curse drafts offer 2 choices after every 2 levels; levels 47-49 are curse floors
-- Curse drafts draw from the normal weighted pool; there is no special first-draft rule
+- Curse drafts offer 3 choices after every 2 levels; levels 47-49 are curse floors
+- Curse drafts draw from the weighted pool; The List gets a 3x boost until taken, and The Clock gets one for its first two copies
 - Hover or focus a curse in the HUD to read its rules
 - 50 is the final boss: three rounds back-to-back with no intermission
-- Base encounter damage is **3 + the total number of curse stacks**; Heavy Hand still multiplies it
+- Base encounter damage is **3 + the total number of curse stacks**; Heavy Hand multiplies it by **1.4 per stack**
+- Vision curses include **Take the L** (L hidden), **A-Aron, where are you?** (A hidden), **IP Theft** (I and P hidden), **Hard R** (R hidden), and a silver **RIP Curse**
 - The blacklist is disabled and hidden until **The List** curse is taken; The List is a single curse, never stacks, and arrives stocked with the first guess from every earlier round
 - The clock is disabled until **The Clock** curse is taken; the first stack gives 5:00
 - The Clockmaker event only appears once The Clock exists
-- **Phone a Friend** delivers a one- or two-word catchphrase, quietly adds 5 seconds, and spams his words across the screen
+- **Phone a Friend** delivers a one- or two-word catchphrase, quietly adds 5 seconds, and spams his words across the screen; sometimes he shouts **Pizza Pzazz 🍕✨**
 - Curse Collector, Witch Charm, Curse Bulwark and Reliquary trigger on gaining a curse ("Whenever you gain a curse: Gain …")
 - Ascension A1/A2 draft 1/2 starting curses
 - Shops with rerolls that double in price: three items, two foods and one wildcard; one item is always 50% off
@@ -38,7 +39,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Opening shields such as **Head Start** and **Quickdraw** make guesses in their window count as free guesses
 - Relics are very rare ordinary items, no longer boss rewards; shops roll a rare relic at 25% per item slot (about 60% of shops have one)
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 101 items (86 shop items + 15 rare relics), 6 spells, 64 foods and 16 happenings
+- 101 items (86 shop items + 15 rare relics), 6 spells, 64 foods and 17 happenings
 - New foods include **U-nagi**, **Empty Calories**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
@@ -65,9 +66,9 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Solve gold is 8 for 3 guesses or fewer, otherwise a random 5-8
 - **The Endless Table** fires every on-eat effect 7 times or pays 7 gold
 - **Tally Lens** is guaranteed in a shop after a vision curse and shows correct/misplaced counts
-- **The Tax** reduces encounter gold by 40% and is unique; **The Curse Broker** charges 12g for a relic or 15g to remove a curse
+- **The Tax** reduces encounter gold by 40% and is unique; **The Curse Broker** charges 12g for a relic or 15g to remove a curse; **The Confessional** sells 45/75/100% random curse removal for 5/10/15g
 - The run path rail is gone; the current level stays in the battle rail
-- Purge is an event (The Redaction) and rare foods; not a spell
+- Purge is an event (The Redaction) and rare foods; its rest option triggers an eat and a 10% random curse removal
 - One exact-state autosave slot. Defeat clears it. Victory clears it and updates meta stats.
 - A **STATS** page tracks run history (last 50 runs), win rate, best level, average solve time, favorite items and curses, play time, gold and damage totals
 - The top bar shows gold and area; the current level lives in the battle rail, not a level counter
