@@ -32,6 +32,7 @@ import runnerWalk from '../assets/sprites/runner-walk.png';
 import runnerAttack from '../assets/sprites/runner-attack.png';
 import orcWalk from '../assets/sprites/orc-walk.png';
 import orcAttack from '../assets/sprites/orc-attack.png';
+import orcDeath from '../assets/sprites/orc-death.png';
 import { sfx } from './audio';
 import { music } from './music';
 import { ASCENSION_MAX, ascensionSummary } from '../core/ascension';
@@ -89,9 +90,12 @@ let damageRendered = 0;
 type ArenaAttack = { who: 'player' | 'enemy'; startedAt: number };
 let arenaAttack: ArenaAttack | null = null;
 let arenaAttackTimer: number | undefined;
+let nextArenaAttacker: 'player' | 'enemy' = 'enemy';
+let orcDeathStartedAt: number | null = null;
 const WALK_MS = 1_000;
 const ATTACK_MS = 800;
 const ATTACK_CLEAR_MS = 900;
+const DEATH_MS = 700;
 const spritesStartedAt = performance.now();
 let countdownUntil = 0;
 const COUNTDOWN_MS = 2_400;
@@ -130,8 +134,9 @@ function flashDamage(hpLost: number, armorSpent: number, incoming: number): void
   }, 1200);
 }
 
-function triggerArenaAttack(forcePlayer: boolean): void {
-  const who = forcePlayer ? 'player' : Math.random() < 0.9 ? 'enemy' : 'player';
+function triggerArenaAttack(forceOrc = false): void {
+  const who = forceOrc ? 'enemy' : nextArenaAttacker;
+  if (!forceOrc) nextArenaAttacker = who === 'enemy' ? 'player' : 'enemy';
   arenaAttack = { who, startedAt: performance.now() };
   if (arenaAttackTimer) window.clearTimeout(arenaAttackTimer);
   arenaAttackTimer = window.setTimeout(() => {
@@ -166,6 +171,8 @@ function flashFriendPhrases(words: string[], callout?: string): void {
 }
 
 function processEvents(events: GameEvent[]): void {
+  let playerGuessed = false;
+  let playerDied = false;
   for (const event of events) {
     if (event.type === 'guessRejected') {
       notify(reasonText(event.reason), 'bad');
@@ -182,6 +189,7 @@ function processEvents(events: GameEvent[]): void {
     if (event.type === 'message') notify(event.text, 'info');
     if (event.type === 'happeningResolved') notify(event.text, event.success ? 'good' : 'bad');
     if (event.type === 'damageTaken') {
+      if (event.hp <= 0) playerDied = true;
       if (event.dealt > 0 || event.armorUsed > 0) {
         flashDamage(event.dealt, event.armorUsed, event.incoming);
         sfx.play(event.dealt > 0 ? 'hit' : 'armor');
@@ -191,7 +199,7 @@ function processEvents(events: GameEvent[]): void {
       }
     }
     if (event.type === 'guessScored' && event.by === 'player') {
-      triggerArenaAttack(event.free || event.solved);
+      playerGuessed = true;
     }
     if (event.type === 'healed') sfx.play('coin');
     if (event.type === 'timeExpired') {
@@ -205,10 +213,24 @@ function processEvents(events: GameEvent[]): void {
     if (event.type === 'roundStarted') {
       countdownUntil = performance.now() + COUNTDOWN_MS;
       heartbeatSecond = -1;
+      orcDeathStartedAt = null;
+      arenaAttack = null;
+      if (arenaAttackTimer) {
+        window.clearTimeout(arenaAttackTimer);
+        arenaAttackTimer = undefined;
+      }
       sfx.play('tick');
+    }
+    if (event.type === 'roundEnded') {
+      if (event.outcome === 'solved') {
+        orcDeathStartedAt = performance.now();
+      } else {
+        orcDeathStartedAt = null;
+      }
     }
     if (event.type === 'rewardChosen' || event.type === 'offerBought') sfx.play('buy');
     if (event.type === 'runEnded') {
+      if (event.result === 'defeat') playerDied = true;
       const view = host.view();
       const finalState = host.current;
       recordRun({
@@ -226,6 +248,12 @@ function processEvents(events: GameEvent[]): void {
       );
       sfx.play(event.result === 'victory' ? 'win' : 'death');
     }
+  }
+
+  if (playerDied) {
+    triggerArenaAttack(true);
+  } else if (playerGuessed) {
+    triggerArenaAttack(false);
   }
 
   const phoneFriend = events.some(
@@ -271,6 +299,8 @@ function startNewRun(): void {
   arenaAttack = null;
   if (arenaAttackTimer) window.clearTimeout(arenaAttackTimer);
   arenaAttackTimer = undefined;
+  nextArenaAttacker = 'enemy';
+  orcDeathStartedAt = null;
   phraseRoot.innerHTML = '';
   heartbeatSecond = -1;
   processEvents(events);
@@ -293,6 +323,8 @@ function resumeRun(): void {
   arenaAttack = null;
   if (arenaAttackTimer) window.clearTimeout(arenaAttackTimer);
   arenaAttackTimer = undefined;
+  nextArenaAttacker = 'enemy';
+  orcDeathStartedAt = null;
   heartbeatSecond = -1;
   countdownUntil = 0;
   music.resume();
@@ -1042,7 +1074,10 @@ function renderBattleRail(view: RunView, bossId?: string): string {
   const attackElapsed = arenaAttack ? Math.max(0, now - arenaAttack.startedAt) : 0;
   const attackActive = Boolean(arenaAttack && attackElapsed < ATTACK_MS);
   const playerAttacking = attackActive && arenaAttack?.who === 'player';
-  const enemyAttacking = attackActive && arenaAttack?.who === 'enemy';
+  const orcDead = enemyIsOrc && orcDeathStartedAt !== null;
+  const orcDeathElapsed = orcDead ? Math.max(0, now - (orcDeathStartedAt ?? now)) : 0;
+  const orcDeathDelay = -Math.min(orcDeathElapsed, DEATH_MS - 1);
+  const enemyAttacking = attackActive && arenaAttack?.who === 'enemy' && !orcDead;
   const facts = board
     ? [
         `<span class="fact">FREE ${board.freeGuessesLeft}</span>`,
@@ -1083,10 +1118,10 @@ function renderBattleRail(view: RunView, bossId?: string): string {
           <div class="sprite enemy-sprite">
             ${enemyIsOrc
               ? `<i
-                  class="character-sprite orc ${enemyAttacking ? 'attacking' : ''}"
+                  class="character-sprite orc ${orcDead ? 'dead' : enemyAttacking ? 'attacking' : ''}"
                   role="img"
                   aria-label="The Orc"
-                  style="--walk:url('${orcWalk}');--attack:url('${orcAttack}');--walk-delay:${walkDelay}ms;--attack-delay:-${attackElapsed}ms"
+                  style="--walk:url('${orcWalk}');--attack:url('${orcAttack}');--death:url('${orcDeath}');--walk-delay:${walkDelay}ms;--attack-delay:-${attackElapsed}ms;--death-delay:${orcDeathDelay}ms"
                 ></i>`
               : enemySprite(bossId)}
           </div>

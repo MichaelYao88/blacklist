@@ -2529,6 +2529,22 @@ button {
   }
 }
 
+.character-sprite.dead {
+  background-image: var(--death);
+  background-size: 400% 100%;
+  animation: sprite-death 700ms steps(3) 1 both;
+  animation-delay: var(--death-delay, 0ms);
+}
+
+@keyframes sprite-death {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 100% 0;
+  }
+}
+
 @keyframes sprite-attack {
   from {
     background-position: 0 0;
