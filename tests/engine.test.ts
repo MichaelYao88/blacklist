@@ -2635,8 +2635,8 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('mimic-mouth')?.description).toContain('Once per round');
     expect(ITEM_BY_ID.get('second-skin')?.description).toContain('half your max armor');
     expect(SPELL_BY_ID.get('heal')?.description).toBe('Heal half of your max HP.');
-    expect(HAPPENING_BY_ID.get('black-market')?.options.find((option) => option.id === 'spell')?.costGold).toBe(2);
-    expect(HAPPENING_BY_ID.get('black-market')?.options.find((option) => option.id === 'armor')?.costGold).toBe(3);
+    expect(HAPPENING_BY_ID.get('black-market')?.options.find((option) => option.id === 'spell')?.costGold).toBe(1);
+    expect(HAPPENING_BY_ID.get('black-market')?.options.find((option) => option.id === 'armor')?.costGold).toBe(5);
     expect(CURSE_BY_ID.get('tax')?.description).toBe('Encounter gold is reduced by 40%.');
   });
 });
