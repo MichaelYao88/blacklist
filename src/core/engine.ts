@@ -570,18 +570,18 @@ export function createCore(content: Content): Core {
   }
 
   /**
-   * Muffin Tin: arm the current shop. Every food eaten from here until the
-   * shop is left adds +1 max armor, all of which is removed on leaving.
+   * Muffin Tin: arm the current shop. Each tin eaten this visit adds a stack;
+   * every food eaten adds +1 max armor per stack. The armor is permanent, but
+   * the counting stops when the shop is left.
    */
   function armMuffinTin(rt: Runtime): void {
     const state = rt.state;
     const shop = state.shop;
     if (!shop || state.phase !== 'shop') return;
-    if (state.muffinShopVisit === shop.visit) return;
-    const grant = shop.foodsEaten ?? 0;
-    state.muffinShopVisit = shop.visit;
-    state.muffinTempArmor = grant;
-    changeMaxArmor(rt, grant);
+    if (state.muffinShopVisit !== shop.visit) {
+      state.muffinShopVisit = shop.visit;
+      state.muffinStacks = 0;
+    }
   }
 
   function eatFood(rt: Runtime, id: string): void {
@@ -598,9 +598,17 @@ export function createCore(content: Content): Core {
     if (shop && state.phase === 'shop') {
       shop.foodsEaten = (shop.foodsEaten ?? 0) + 1;
       if (state.muffinShopVisit === shop.visit) {
-        state.muffinTempArmor = (state.muffinTempArmor ?? 0) + 1;
-        changeMaxArmor(rt, 1);
+        if (def.id === 'muffin-tin') {
+          state.muffinStacks = (state.muffinStacks ?? 0) + 1;
+        }
+        const stacks = state.muffinStacks ?? 0;
+        if (stacks > 0) changeMaxArmor(rt, stacks);
       }
+    } else if (def.id === 'muffin-tin') {
+      // Eaten outside a shop: its own armor applies now and the stack waits
+      // for the next shop, where it counts food until that shop is left.
+      state.pendingMuffinStacks = (state.pendingMuffinStacks ?? 0) + 1;
+      changeMaxArmor(rt, state.pendingMuffinStacks);
     }
     runHook(rt, 'onEat', { food: def.id });
   }
@@ -2033,6 +2041,13 @@ export function createCore(content: Content): Core {
       foodsEaten: 0,
     };
     state.phase = 'shop';
+    const pendingMuffin = state.pendingMuffinStacks ?? 0;
+    if (pendingMuffin > 0) {
+      state.muffinShopVisit = state.shop.visit;
+      state.muffinStacks = pendingMuffin;
+      state.pendingMuffinStacks = 0;
+      emit(rt, { type: 'message', text: 'The Muffin Tin is ready for this shop.' });
+    }
     emit(rt, {
       type: 'shopOpened',
       offers: clone(state.shop.offers),
@@ -2484,13 +2499,12 @@ export function createCore(content: Content): Core {
       return;
     }
     if (state.phase === 'shop') {
-      const temp = state.muffinTempArmor ?? 0;
-      if (temp > 0) {
-        changeMaxArmor(rt, -temp);
-        state.muffinTempArmor = 0;
-        state.muffinShopVisit = undefined;
-        emit(rt, { type: 'message', text: 'The Muffin Tin armor wears off as you leave.' });
+      if ((state.muffinStacks ?? 0) > 0) {
+        emit(rt, { type: 'message', text: 'The Muffin Tin stops counting. Its armor stays.' });
       }
+      state.muffinStacks = 0;
+      state.muffinShopVisit = undefined;
+      state.pendingMuffinStacks = 0;
       advanceNode(rt);
       return;
     }
@@ -2928,7 +2942,7 @@ export function createCore(content: Content): Core {
     const nodes: RunNode[] = [];
     const addRound = (level: number): void => {
       nodes.push({ kind: 'round', level });
-      if (rngChance(state, 49)) nodes.push({ kind: 'happening', level });
+      if (rngChance(state, 55)) nodes.push({ kind: 'happening', level });
     };
 
     for (let level = 1; level <= 45; level++) {

@@ -571,7 +571,7 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'muffin-tin',
     name: 'Muffin Tin',
-    description: 'This shop: +1 max armor for each food you eat, including this one. Wears off when you leave. No slot.',
+    description: 'This shop: each food you eat gives +1 max armor per Muffin Tin eaten, including this one. Eaten outside a shop, it arms the next one. Armor is permanent. No slot.',
     price: 2,
     effects: [{ type: 'muffinArmor' }],
   }),

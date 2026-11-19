@@ -568,10 +568,12 @@ export interface RunState {
   reward?: RewardState;
   shop?: ShopState;
   happening?: HappeningState;
-  /** Muffin Tin: max armor granted for this shop visit, removed when leaving. */
-  muffinTempArmor?: number;
-  /** Muffin Tin: the shop visit that granted the temporary armor. */
+  /** Muffin Tin: number of tins eaten this shop visit, one armor per food per tin. */
+  muffinStacks?: number;
+  /** Muffin Tin: the shop visit its food-per-armor effect belongs to. */
   muffinShopVisit?: number;
+  /** Muffin Tin tins eaten outside a shop, armed for the next shop visited. */
+  pendingMuffinStacks?: number;
   over?: { result: 'victory' | 'defeat'; answer?: string; answers?: string[] };
   stats: RunStats;
 }

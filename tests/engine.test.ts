@@ -831,6 +831,27 @@ describe('shop curses', () => {
       .toEqual([{ type: 'maxHp', delta: 6 }]);
     expect(door?.options.find((option) => option.id === 'shop')?.outcomes[0].effects)
       .toEqual([{ type: 'openShop' }]);
+
+    const coin = HAPPENING_BY_ID.get('coin-box');
+    expect(coin?.options.find((option) => option.id === 'heal')?.costGold).toBe(1);
+    expect(coin?.options.find((option) => option.id === 'heal')?.outcomes[0].effects)
+      .toEqual([
+        { type: 'giveSpell', spell: 'heal' },
+        { type: 'giveSpell', spell: 'heal' },
+      ]);
+    expect(coin?.options.find((option) => option.id === 'slot')?.costGold).toBe(6);
+    expect(coin?.options.find((option) => option.id === 'slot')?.outcomes[0].effects)
+      .toEqual([{ type: 'slots', delta: 1 }]);
+  });
+
+  it('The Coin Box charges 1 gold for two Heals or 6 gold for a slot', () => {
+    const { state } = start('coin-box');
+    state.gold = 10;
+    state.phase = 'happening';
+    state.happening = { id: 'coin-box', options: [] };
+    const bought = act(state, { type: 'choose', optionId: 'slot' });
+    expect(bought.state.gold).toBe(4);
+    expect(bought.state.slots).toBe(6);
   });
 
   it('resolves the Sanctuary heal and the Stone Door shop', () => {
@@ -1237,7 +1258,7 @@ describe('new item and event batch', () => {
     expect(solved.state.slots).toBe(6);
   });
 
-  it('Muffin Tin is a 2g food that grants temporary armor per food eaten this shop', () => {
+  it('Muffin Tin is a 2g food that grants permanent armor for food eaten this shop', () => {
     expect(FOOD_BY_ID.get('muffin-tin')?.price).toBe(2);
     expect(ITEM_BY_ID.get('muffin-tin')).toBeUndefined();
     expect(ITEM_BY_ID.get('bulk-order')).toBeUndefined();
@@ -1253,14 +1274,59 @@ describe('new item and event batch', () => {
     const base = state.maxArmor;
     let current = act(state, { type: 'buy', offerId: 'f0' }).state;
     current = act(current, { type: 'buy', offerId: 'f1' }).state;
-    expect(current.maxArmor).toBe(base + 2); // the snack already eaten, plus itself
+    expect(current.maxArmor).toBe(base + 1); // the tin itself
     current = act(current, { type: 'buy', offerId: 'f2' }).state;
-    expect(current.maxArmor).toBe(base + 3);
+    expect(current.maxArmor).toBe(base + 2);
 
     current.nodeIndex = 0;
     current.nodes[1] = { kind: 'shop', level: 1 };
     const left = act(current, { type: 'continue' });
-    expect(left.state.maxArmor).toBe(base);
+    expect(left.state.maxArmor).toBe(base + 2); // armor persists after leaving
+  });
+
+  it('Muffin Tin stacks with an additional tin', () => {
+    const { state } = start('muffin-stack');
+    state.phase = 'shop';
+    state.gold = 100;
+    state.shop = shopState([
+      { id: 'f0', kind: 'eat', def: 'muffin-tin', price: 2 },
+      { id: 'f1', kind: 'eat', def: 'muffin-tin', price: 2 },
+      { id: 'f2', kind: 'eat', def: 'feast', price: 5 },
+    ]);
+    const base = state.maxArmor;
+    let current = act(state, { type: 'buy', offerId: 'f0' }).state;
+    expect(current.maxArmor).toBe(base + 1);
+    current = act(current, { type: 'buy', offerId: 'f1' }).state;
+    expect(current.maxArmor).toBe(base + 3); // the second tin counts twice
+    current = act(current, { type: 'buy', offerId: 'f2' }).state;
+    expect(current.maxArmor).toBe(base + 5); // one food with two tins
+  });
+
+  it('Muffin Tin eaten outside a shop arms the next shop', () => {
+    const { state } = start('muffin-outside');
+    state.nodes[1] = { kind: 'shop', level: 1 };
+    state.phase = 'reward';
+    state.reward = {
+      options: [{
+        id: 'eat:muffin-tin',
+        kind: 'eat',
+        def: 'muffin-tin',
+        label: 'Muffin Tin',
+        description: '',
+      }],
+      boss: false,
+    };
+    const base = state.maxArmor;
+    const eaten = act(state, { type: 'chooseReward', optionId: 'eat:muffin-tin' });
+    expect(eaten.state.maxArmor).toBe(base + 1); // the tin's own armor
+    expect(eaten.state.phase).toBe('shop');
+    expect(eaten.state.muffinStacks).toBe(1);
+    expect(eaten.state.pendingMuffinStacks).toBe(0);
+
+    eaten.state.gold = 100;
+    eaten.state.shop!.offers = [{ id: 'f0', kind: 'eat', def: 'snack', price: 3 }];
+    const fed = act(eaten.state, { type: 'buy', offerId: 'f0' });
+    expect(fed.state.maxArmor).toBe(base + 2);
   });
 
   it('Muffin Tin keeps counting across a shop reroll', () => {

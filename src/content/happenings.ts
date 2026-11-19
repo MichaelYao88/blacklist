@@ -567,6 +567,38 @@ export const HAPPENINGS: HappeningDef[] = [
     ],
   }),
   defineHappening({
+    id: 'coin-box',
+    name: 'The Coin Box',
+    description: 'A locked box with two prices scratched into the lid.',
+    options: [
+      {
+        id: 'heal',
+        label: 'Buy the poultices',
+        description: '1 gold: two Heal spells.',
+        costGold: 1,
+        outcomes: [{
+          chancePct: 100,
+          text: 'The box opens on two warm paper packets.',
+          effects: [
+            { type: 'giveSpell', spell: 'heal' },
+            { type: 'giveSpell', spell: 'heal' },
+          ],
+        }],
+      },
+      {
+        id: 'slot',
+        label: 'Buy the pocket',
+        description: '6 gold: +1 item slot.',
+        costGold: 6,
+        outcomes: [{
+          chancePct: 100,
+          text: 'The box opens on a folded pocket with room to spare.',
+          effects: [{ type: 'slots', delta: 1 }],
+        }],
+      },
+    ],
+  }),
+  defineHappening({
     id: 'endless-table',
     name: 'The Endless Table',
     description: 'Dishes keep arriving. Nobody is eating.',
