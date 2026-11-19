@@ -193,14 +193,6 @@ export function createCore(content: Content): Core {
     return true;
   };
 
-  const isRelic = (def: ItemDef): boolean => def.rarity === 'rare';
-  const hasSeenRelic = (state: RunState, id: string): boolean =>
-    (state.seenRelics ?? []).includes(id);
-  const markRelicSeen = (state: RunState, id: string): void => {
-    if (!state.seenRelics) state.seenRelics = [];
-    if (!state.seenRelics.includes(id)) state.seenRelics.push(id);
-  };
-
   const foodAvailable = (
     state: RunState,
     def: (typeof content.foods)[number],
@@ -523,7 +515,6 @@ export function createCore(content: Content): Core {
       emit(rt, { type: 'message', text: `${def.name} is not available yet.` });
       return false;
     }
-    if (isRelic(def)) markRelicSeen(state, def.id);
     const equip = itemSlots(def) === 0 || canEquip(state, def);
     const item: ItemInstance = {
       instance: uid(state, 'i'),
@@ -1157,9 +1148,9 @@ export function createCore(content: Content): Core {
         const rare = content.items.filter(
           (i) => i.rarity === 'rare' && itemAvailable(state, i),
         );
-        const pool = rare.filter((i) => !owned.has(i.id) && !hasSeenRelic(state, i.id));
+        const pool = rare.filter((i) => !owned.has(i.id));
         if (pool.length > 0) addItem(rt, rngPick(state, pool).id);
-        else emit(rt, { type: 'message', text: 'No unseen relic remains.' });
+        else emit(rt, { type: 'message', text: 'You already own every relic.' });
         break;
       }
       case 'addRandomCurse': {
@@ -1906,15 +1897,13 @@ export function createCore(content: Content): Core {
       const rare = content.items.filter(
         (item) => item.rarity === 'rare'
           && itemAvailable(state, item)
-          && !hasSeenRelic(state, item.id)
-          && (item.kind !== 'gear' || !owned.has(item.id)),
+          && !owned.has(item.id),
       );
       const rollRare = rare.length > 0 && rngChance(state, 12);
       const rollUncommon = uncommon.length > 0 && rngChance(state, 25);
       const pool = rollRare ? rare : rollUncommon ? uncommon : common;
       if (pool.length > 0) {
         const item = rngPick(state, pool);
-        if (isRelic(item)) markRelicSeen(state, item.id);
         options.push({
           id: `item:${item.id}`,
           kind: 'item',
@@ -1983,13 +1972,14 @@ export function createCore(content: Content): Core {
 
   function generateOffers(rt: Runtime): Offer[] {
     const state = rt.state;
+    const owned = new Set(state.items.map((item) => item.id));
     const availableItems = content.items.filter((item) => itemAvailable(state, item));
     const commonItems = availableItems.filter(
       (item) => item.rarity === undefined || item.rarity === 'common',
     );
     const uncommonItems = availableItems.filter((item) => item.rarity === 'uncommon');
     const rareItems = availableItems.filter(
-      (item) => item.rarity === 'rare' && !hasSeenRelic(state, item.id),
+      (item) => item.rarity === 'rare' && !owned.has(item.id),
     );
     const availableFoods = content.foods.filter((food) => foodAvailable(state, food));
     const commonFoods = availableFoods.filter(
@@ -2014,7 +2004,6 @@ export function createCore(content: Content): Core {
 
     const pickItem = (item: ItemDef, sale = false): void => {
       markUsed(`item:${item.id}`);
-      if (isRelic(item)) markRelicSeen(state, item.id);
       const base = sale ? Math.max(1, Math.floor(item.price / 2)) : item.price;
       picked.push({
         kind: 'item',
@@ -2035,9 +2024,7 @@ export function createCore(content: Content): Core {
     const pickRandomItem = (): boolean => {
       let pool = commonItems.filter((item) => usedCount(`item:${item.id}`) < 2);
       if (rareItems.length > 0 && rngChance(state, 25)) {
-        const rarePool = rareItems.filter(
-          (item) => !hasSeenRelic(state, item.id) && usedCount(`item:${item.id}`) < 1,
-        );
+        const rarePool = rareItems.filter((item) => usedCount(`item:${item.id}`) < 1);
         if (rarePool.length > 0) pool = rarePool;
       } else if (uncommonItems.length > 0 && rngChance(state, 40)) {
         pool = uncommonItems.filter((item) => usedCount(`item:${item.id}`) < 2);
@@ -3105,7 +3092,6 @@ export function createCore(content: Content): Core {
       bonusSolveGold: 0,
       freeGuessBonus: 0,
       items: [],
-      seenRelics: [],
       spells: [],
       blacklist: [],
       firstGuesses: [],
@@ -3216,16 +3202,6 @@ export function createCore(content: Content): Core {
         .filter((item) => itemById.has(item.id));
       for (const item of state.items) {
         if (typeof item.equipped !== 'boolean') item.equipped = true;
-      }
-      // Older saves do not track seen relics. Seed the list with owned relics
-      // so a resumed run cannot meet the same relic again.
-      state.seenRelics = (Array.isArray(state.seenRelics) ? state.seenRelics : [])
-        .filter((id) => itemById.has(id));
-      for (const item of state.items) {
-        const def = itemById.get(item.id);
-        if (def?.rarity === 'rare' && !state.seenRelics.includes(item.id)) {
-          state.seenRelics.push(item.id);
-        }
       }
       // A save that predates relic slots can be over capacity. Unequip the
       // overflow rather than leaving a loadout the UI cannot represent.

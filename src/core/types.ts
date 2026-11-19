@@ -535,8 +535,6 @@ export interface RunState {
   /** Permanent change to free guesses per round from foods such as Sundial. */
   freeGuessBonus: number;
   items: ItemInstance[];
-  /** Rare relics seen in a shop or reward, or owned, this run. */
-  seenRelics?: ItemId[];
   spells: SpellInstance[];
   blacklist: string[];
   /** First guess of every round this run, used to seed The List when taken. */
