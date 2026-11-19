@@ -26,9 +26,12 @@ import {
   enemySprite,
   foodIcon,
   itemIcon,
-  playerSprite,
   spellIcon,
 } from './icons';
+import runnerIdle from '../assets/sprites/runner-idle.png';
+import runnerAttack from '../assets/sprites/runner-attack.png';
+import orcIdle from '../assets/sprites/orc-idle.png';
+import orcAttack from '../assets/sprites/orc-attack.png';
 import { sfx } from './audio';
 import { music } from './music';
 import { ASCENSION_MAX, ascensionSummary } from '../core/ascension';
@@ -83,6 +86,9 @@ let damageFx: DamageFx | null = null;
 let damageTimer: number | undefined;
 let damageSeq = 0;
 let damageRendered = 0;
+type ArenaAttack = { who: 'player' | 'enemy' };
+let arenaAttack: ArenaAttack | null = null;
+let arenaAttackTimer: number | undefined;
 let countdownUntil = 0;
 const COUNTDOWN_MS = 2_400;
 let selectedAscension = 0;
@@ -118,6 +124,16 @@ function flashDamage(hpLost: number, armorSpent: number, incoming: number): void
     damageFx = null;
     render();
   }, 1200);
+}
+
+function triggerArenaAttack(): void {
+  arenaAttack = { who: Math.random() < 0.5 ? 'player' : 'enemy' };
+  if (arenaAttackTimer) window.clearTimeout(arenaAttackTimer);
+  arenaAttackTimer = window.setTimeout(() => {
+    arenaAttack = null;
+    arenaAttackTimer = undefined;
+    render();
+  }, 520);
 }
 
 function flashFriendPhrases(words: string[], callout?: string): void {
@@ -168,6 +184,9 @@ function processEvents(events: GameEvent[]): void {
         flashDamage(0, 0, event.incoming);
         sfx.play('block');
       }
+    }
+    if (event.type === 'guessScored' && event.by === 'player') {
+      triggerArenaAttack();
     }
     if (event.type === 'healed') sfx.play('coin');
     if (event.type === 'timeExpired') {
@@ -244,6 +263,9 @@ function startNewRun(): void {
   notice = null;
   paused = false;
   damageFx = null;
+  arenaAttack = null;
+  if (arenaAttackTimer) window.clearTimeout(arenaAttackTimer);
+  arenaAttackTimer = undefined;
   phraseRoot.innerHTML = '';
   heartbeatSecond = -1;
   processEvents(events);
@@ -263,6 +285,9 @@ function resumeRun(): void {
   notice = null;
   paused = false;
   damageFx = null;
+  arenaAttack = null;
+  if (arenaAttackTimer) window.clearTimeout(arenaAttackTimer);
+  arenaAttackTimer = undefined;
   heartbeatSecond = -1;
   countdownUntil = 0;
   music.resume();
@@ -895,7 +920,7 @@ function renderTopbar(view: RunView): string {
 }
 
 const ACT_ENEMIES = [
-  { name: 'The Gate Warden', line: 'It keeps the names that got this far.' },
+  { name: 'The Orc', line: 'It keeps the names that got this far.' },
   { name: 'The Hollow Choir', line: 'Every voice wants a different word.' },
   { name: 'The Ash Revenant', line: 'It remembers everything you already tried.' },
   { name: 'The Pale Auditor', line: 'It is counting what you have left.' },
@@ -1006,6 +1031,9 @@ function renderBattleRail(view: RunView, bossId?: string): string {
   const armorPct = Math.max(0, Math.min(100, (view.armor / Math.max(1, view.maxArmor)) * 100));
   const low = view.hp <= view.maxHp * 0.3;
   const hit = Boolean(damageFx && damageFx.hpLost > 0 && performance.now() - damageFx.at < 600);
+  const enemyIsOrc = view.act === 0 && !bossId;
+  const playerAttacking = arenaAttack?.who === 'player';
+  const enemyAttacking = arenaAttack?.who === 'enemy';
   const facts = board
     ? [
         `<span class="fact">FREE ${board.freeGuessesLeft}</span>`,
@@ -1028,15 +1056,31 @@ function renderBattleRail(view: RunView, bossId?: string): string {
       ${bossStateChips(stateEntries)}
       <div class="mini-stage">
         <div class="mini-side player-side">
-          <div class="sprite player-sprite">${playerSprite(pct / 100, hit)}</div>
+          <div class="sprite player-sprite">
+            <i
+              class="character-sprite runner ${playerAttacking ? 'attacking' : ''}"
+              role="img"
+              aria-label="The Runner"
+              style="--idle:url('${runnerIdle}');--attack:url('${runnerAttack}')"
+            ></i>
+          </div>
           <span class="mini-label">YOU</span>
         </div>
         <div class="mini-center">
           <span class="mini-phase">${phaseLabel(view)}</span>
           <div class="mini-vs"><span>VS</span></div>
         </div>
-        <div class="mini-side enemy-side ${hit ? 'attacking' : ''}">
-          <div class="sprite enemy-sprite">${enemySprite(bossId)}</div>
+        <div class="mini-side enemy-side ${(hit || (enemyAttacking && !enemyIsOrc)) ? 'attacking' : ''}">
+          <div class="sprite enemy-sprite">
+            ${enemyIsOrc
+              ? `<i
+                  class="character-sprite orc ${enemyAttacking ? 'attacking' : ''}"
+                  role="img"
+                  aria-label="The Orc"
+                  style="--idle:url('${orcIdle}');--attack:url('${orcAttack}')"
+                ></i>`
+              : enemySprite(bossId)}
+          </div>
           <span class="mini-label">${enemy.boss ? 'BOSS' : 'FOE'}</span>
         </div>
       </div>

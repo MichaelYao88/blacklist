@@ -111,6 +111,10 @@ Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title s
 
 - Synthwave Retro 80s
 
+## Sprites
+
+The Runner (Soldier) and Orc sprites are from **Tiny RPG Character Asset Pack 01** by [Zerie](https://zerie.itch.io/tiny-rpg-character-asset-pack), used under the pack's free asset license. They are included only as part of this game and may not be extracted or redistributed as standalone assets.
+
 ---
 
 ## Run rules
