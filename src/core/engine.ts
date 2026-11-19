@@ -484,6 +484,27 @@ export function createCore(content: Content): Core {
     return true;
   }
 
+  function purgeRandomLetter(rt: Runtime): boolean {
+    const state = rt.state;
+    const liveRound = state.phase === 'round' ? state.round : undefined;
+    const blocked = new Set<string>(state.purged);
+    if (liveRound) {
+      for (const letter of liveRound.answer) blocked.add(letter);
+    }
+    const candidates = ALPHABET.filter((letter) => {
+      if (blocked.has(letter)) return false;
+      const remaining = content.answers.filter(
+        (word) => !word.includes(letter) && !word.split('').some((c) => state.purged.includes(c)),
+      );
+      return remaining.length >= 80;
+    });
+    if (candidates.length === 0) {
+      emit(rt, { type: 'message', text: 'No letter can be purged right now.' });
+      return false;
+    }
+    return purgeLetterNow(rt, rngPick(state, candidates));
+  }
+
   // ── items / spells ───────────────────────────────────────────────────────
 
   function addItem(rt: Runtime, id: string): boolean {
@@ -1009,6 +1030,9 @@ export function createCore(content: Content): Core {
         break;
       case 'purgeLetter':
         purgeLetterNow(rt, effect.letter);
+        break;
+      case 'purgeRandomLetter':
+        purgeRandomLetter(rt);
         break;
       case 'clearBlacklist':
         clearBlacklist(rt);
@@ -1829,7 +1853,8 @@ export function createCore(content: Content): Core {
     });
 
     const foods = content.foods.filter((food) => foodAvailable(state, food));
-    const commonFoods = foods.filter((food) => food.rarity !== 'rare');
+    const commonFoods = foods.filter((food) => food.rarity === undefined || food.rarity === 'common');
+    const uncommonFoods = foods.filter((food) => food.rarity === 'uncommon');
     const rareFoods = foods.filter((food) => food.rarity === 'rare');
     const wantSpell = content.spells.length > 0
       && (foods.length === 0 || rngChance(state, 65));
@@ -1843,12 +1868,15 @@ export function createCore(content: Content): Core {
         description: spell.description,
       });
     } else if (foods.length > 0) {
-      const pool = rareFoods.length > 0 && rngChance(state, 10) ? rareFoods : commonFoods;
+      const rollRare = rareFoods.length > 0 && rngChance(state, 10);
+      const rollUncommon = uncommonFoods.length > 0 && rngChance(state, 20);
+      const pool = rollRare ? rareFoods : rollUncommon ? uncommonFoods : commonFoods;
       const food = rngPick(state, pool.length > 0 ? pool : foods);
       options.push({
         id: `eat:${food.id}`,
         kind: 'eat',
         def: food.id,
+        rarity: food.rarity,
         label: food.name,
         description: food.description,
       });
@@ -1857,7 +1885,12 @@ export function createCore(content: Content): Core {
     if (rngChance(state, 8)) {
       const owned = new Set(state.items.map((item) => item.id));
       const common = content.items.filter(
-        (item) => item.rarity !== 'rare'
+        (item) => (item.rarity === undefined || item.rarity === 'common')
+          && itemAvailable(state, item)
+          && (item.kind !== 'gear' || !owned.has(item.id)),
+      );
+      const uncommon = content.items.filter(
+        (item) => item.rarity === 'uncommon'
           && itemAvailable(state, item)
           && (item.kind !== 'gear' || !owned.has(item.id)),
       );
@@ -1866,7 +1899,9 @@ export function createCore(content: Content): Core {
           && itemAvailable(state, item)
           && (item.kind !== 'gear' || !owned.has(item.id)),
       );
-      const pool = rare.length > 0 && rngChance(state, 12) ? rare : common;
+      const rollRare = rare.length > 0 && rngChance(state, 12);
+      const rollUncommon = uncommon.length > 0 && rngChance(state, 25);
+      const pool = rollRare ? rare : rollUncommon ? uncommon : common;
       if (pool.length > 0) {
         const item = rngPick(state, pool);
         options.push({
@@ -1938,10 +1973,16 @@ export function createCore(content: Content): Core {
   function generateOffers(rt: Runtime): Offer[] {
     const state = rt.state;
     const availableItems = content.items.filter((item) => itemAvailable(state, item));
-    const commonItems = availableItems.filter((item) => item.rarity !== 'rare');
+    const commonItems = availableItems.filter(
+      (item) => item.rarity === undefined || item.rarity === 'common',
+    );
+    const uncommonItems = availableItems.filter((item) => item.rarity === 'uncommon');
     const rareItems = availableItems.filter((item) => item.rarity === 'rare');
     const availableFoods = content.foods.filter((food) => foodAvailable(state, food));
-    const commonFoods = availableFoods.filter((food) => food.rarity !== 'rare');
+    const commonFoods = availableFoods.filter(
+      (food) => food.rarity === undefined || food.rarity === 'common',
+    );
+    const uncommonFoods = availableFoods.filter((food) => food.rarity === 'uncommon');
     const rareFoods = availableFoods.filter((food) => food.rarity === 'rare');
     const itemTarget = Math.max(0, 3 + shopItemDelta(state));
     const foodTarget = Math.max(0, 2 + shopFoodDelta(state));
@@ -1981,21 +2022,25 @@ export function createCore(content: Content): Core {
       let pool = commonItems.filter((item) => usedCount(`item:${item.id}`) < 2);
       if (rareItems.length > 0 && rngChance(state, 25)) {
         pool = rareItems.filter((item) => usedCount(`item:${item.id}`) < 2);
+      } else if (uncommonItems.length > 0 && rngChance(state, 40)) {
+        pool = uncommonItems.filter((item) => usedCount(`item:${item.id}`) < 2);
       }
       if (pool.length === 0) return false;
       pickItem(rngPick(state, pool));
       return true;
     };
     const pickRandomFood = (): boolean => {
-      let pool = commonFoods.filter((food) => {
-        const unique = food.effects.some((effect) => effect.type === 'purgeLetter');
+      const eligible = (food: (typeof content.foods)[number]): boolean => {
+        const unique = food.effects.some(
+          (effect) => effect.type === 'purgeLetter' || effect.type === 'purgeRandomLetter',
+        );
         return usedCount(`eat:${food.id}`) < (unique ? 1 : 2);
-      });
+      };
+      let pool = commonFoods.filter(eligible);
       if (rareFoods.length > 0 && rngChance(state, 10)) {
-        pool = rareFoods.filter((food) => {
-          const unique = food.effects.some((effect) => effect.type === 'purgeLetter');
-          return usedCount(`eat:${food.id}`) < (unique ? 1 : 2);
-        });
+        pool = rareFoods.filter(eligible);
+      } else if (uncommonFoods.length > 0 && rngChance(state, 20)) {
+        pool = uncommonFoods.filter(eligible);
       }
       if (pool.length === 0) return false;
       pickFood(rngPick(state, pool));

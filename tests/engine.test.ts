@@ -2718,10 +2718,23 @@ describe('spells and foods', () => {
     expect(pen?.description).toContain('1-5 gold');
   });
 
-  it('has rare purge foods', () => {
+  it('has uncommon and rare purge foods', () => {
     expect(FOOD_BY_ID.get('inkcap')?.price).toBe(16);
-    expect(FOOD_BY_ID.get('purge-the-d')?.price).toBe(12);
-    expect(FOOD_BY_ID.get('purge-the-d')?.rarity).toBe('rare');
+    expect(FOOD_BY_ID.get('purge-the-d')?.price).toBe(11);
+    expect(FOOD_BY_ID.get('purge-the-d')?.rarity).toBe('uncommon');
+    expect(FOOD_BY_ID.get('poppy-seeds')?.price).toBe(4);
+    expect(FOOD_BY_ID.get('poppy-seeds')?.effects)
+      .toContainEqual({ type: 'purgeRandomLetter' });
+  });
+
+  it('Poppy Seeds purges one random letter', () => {
+    const { state } = start('poppy-seeds');
+    state.phase = 'shop';
+    state.gold = 10;
+    state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'poppy-seeds', price: 4 }]);
+    const eaten = act(state, { type: 'buy', offerId: 'o0' });
+    expect(eaten.state.gold).toBe(6);
+    expect(eaten.state.purged).toHaveLength(1);
   });
 
   it('gives Coffee +5s for 2 gold and Chronos +12s', () => {

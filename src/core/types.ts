@@ -167,7 +167,7 @@ export interface RewardOption {
   kind: 'gold' | 'spell' | 'item' | 'eat';
   def?: string;
   amount?: number;
-  rarity?: 'common' | 'rare';
+  rarity?: 'common' | 'uncommon' | 'rare';
   label: string;
   description: string;
 }
@@ -303,6 +303,7 @@ export type Effect =
   | { type: 'revealAbsent'; count: number }
   | { type: 'pendingAbsent'; count: number }
   | { type: 'purgeLetter'; letter: Letter }
+  | { type: 'purgeRandomLetter' }
   | { type: 'clearBlacklist' }
   | { type: 'randomChoice'; options: Effect[][] }
   | { type: 'giveSpell'; spell: SpellId | 'random'; chancePct?: number }
@@ -400,7 +401,7 @@ export interface ItemDef {
   price: number;
   kind: ItemKind;
   /** Rare relics are boss prizes. They consume an item slot like any other gear. */
-  rarity?: 'common' | 'rare';
+  rarity?: 'common' | 'uncommon' | 'rare';
   /** Allows guesses that are not in the dictionary. */
   allowInvalidGuesses?: boolean;
   slots?: number;
@@ -465,7 +466,7 @@ export interface FoodDef {
   name: string;
   description: string;
   price: number;
-  rarity?: 'common' | 'rare';
+  rarity?: 'common' | 'uncommon' | 'rare';
   requiresClock?: boolean;
   /** Hidden from shops/rewards until this many vision curses exist. */
   requiresVisionCurse?: number;

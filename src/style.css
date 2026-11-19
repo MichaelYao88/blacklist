@@ -1563,6 +1563,18 @@ button {
   border-color: rgba(231, 184, 90, 0.55);
 }
 
+.offer-card.uncommon {
+  border-color: rgba(88, 180, 198, 0.45);
+  background:
+    radial-gradient(200px 90px at 50% 0%, rgba(88, 180, 198, 0.12), transparent 70%),
+    rgba(255, 255, 255, 0.017);
+}
+
+.offer-card.uncommon .tag {
+  color: var(--cyan);
+  border-color: rgba(88, 180, 198, 0.5);
+}
+
 .offer-card.sale .tag {
   color: var(--gold);
   border-color: rgba(231, 184, 90, 0.5);
@@ -3620,6 +3632,18 @@ button {
   border-color: rgba(231, 184, 90, 0.4);
 }
 
+.item-card.uncommon {
+  border-color: rgba(88, 180, 198, 0.3);
+  background:
+    linear-gradient(180deg, rgba(88, 180, 198, 0.06), transparent 65%),
+    rgba(255, 255, 255, 0.015);
+}
+
+.item-card.uncommon .tag {
+  color: var(--cyan);
+  border-color: rgba(88, 180, 198, 0.4);
+}
+
 .offer-top {
   display: flex;
   align-items: center;
@@ -3653,6 +3677,23 @@ button {
 .reward-card.rare:hover {
   border-color: var(--gold-soft);
   box-shadow: 0 0 34px -14px rgba(231, 184, 90, 0.7);
+}
+
+.reward-card.uncommon {
+  border-color: rgba(88, 180, 198, 0.45);
+  background:
+    radial-gradient(180px 120px at 50% 0%, rgba(88, 180, 198, 0.13), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012));
+}
+
+.reward-card.uncommon .tag {
+  color: var(--cyan);
+  border-color: rgba(88, 180, 198, 0.5);
+}
+
+.reward-card.uncommon:hover {
+  border-color: var(--cyan);
+  box-shadow: 0 0 34px -14px rgba(88, 180, 198, 0.6);
 }
 
 .boss-reward h2 {

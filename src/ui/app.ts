@@ -1271,11 +1271,16 @@ function renderItem(view: RunView, item: ItemView): string {
     ? 'BAG'
     : def?.rarity === 'rare'
       ? 'RELIC'
-      : def?.kind === 'consumable'
-        ? 'USE'
-        : 'GEAR';
+      : def?.rarity === 'uncommon'
+        ? 'UNCOMMON'
+        : def?.kind === 'consumable'
+          ? 'USE'
+          : 'GEAR';
+  const rarityClass = def?.rarity === 'rare'
+    ? 'rare'
+    : def?.rarity === 'uncommon' ? 'uncommon' : '';
   return `
-  <article class="item-card ${def?.rarity === 'rare' ? 'rare' : ''} ${!item.equipped && item.slots > 0 ? 'in-bag' : ''}" data-tip="${escapeHtml(description)}">
+  <article class="item-card ${rarityClass} ${!item.equipped && item.slots > 0 ? 'in-bag' : ''}" data-tip="${escapeHtml(description)}">
     <div class="item-top">
       <span class="item-emoji" aria-hidden="true">${itemIcon(item.id)}</span>
       <b>${escapeHtml(name)}</b>
@@ -1416,9 +1421,15 @@ function renderReward(phase: Extract<PhaseView, { kind: 'reward' }>): string {
             : option.kind === 'eat'
               ? foodIcon(option.def ?? '')
               : '¤';
-        const tag = option.rarity === 'rare' ? 'RELIC' : option.kind.toUpperCase();
+        const isRelic = option.kind === 'item' && option.rarity === 'rare';
+        const tag = isRelic
+          ? 'RELIC'
+          : option.rarity === 'uncommon' ? 'UNCOMMON' : option.kind.toUpperCase();
+        const rarityClass = isRelic
+          ? 'rare'
+          : option.rarity === 'uncommon' ? 'uncommon' : '';
         return `
-        <button class="reward-card ${option.kind} ${option.rarity === 'rare' ? 'rare' : ''}" data-action="reward" data-id="${escapeHtml(option.id)}">
+        <button class="reward-card ${option.kind} ${rarityClass}" data-action="reward" data-id="${escapeHtml(option.id)}">
           <span class="reward-icon" aria-hidden="true">${icon}</span>
           <span class="tag">${tag}</span>
           <b>${escapeHtml(option.label)}</b>
@@ -1532,16 +1543,22 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
       const cannotAfford = view.gold < finalPrice;
       const isRelic = offer.kind === 'item'
         && ITEM_BY_ID.get(offer.def)?.rarity === 'rare';
+      const rarity = offer.kind === 'item'
+        ? ITEM_BY_ID.get(offer.def)?.rarity
+        : offer.kind === 'eat' ? FOOD_BY_ID.get(offer.def)?.rarity : undefined;
+      const isUncommon = !isRelic && rarity === 'uncommon';
       const tag = isRelic
         ? offer.sale ? 'RELIC · 50% OFF' : 'RELIC'
-        : offer.sale ? 'SALE · 50% OFF' : KIND_LABELS[offer.kind];
+        : isUncommon
+          ? offer.sale ? 'UNCOMMON · 50% OFF' : 'UNCOMMON'
+          : offer.sale ? 'SALE · 50% OFF' : KIND_LABELS[offer.kind];
       const price = offer.sale && offer.originalPrice
         ? `<s>${offer.originalPrice} G</s> ${finalPrice} G`
         : applies && coupon > 0
           ? `<s>${offer.price} G</s> ${finalPrice} G`
           : `${offer.price} G`;
       return `
-      <article class="offer-card ${cannotAfford ? 'unavailable' : ''} ${offer.sale ? 'sale' : ''} ${isRelic ? 'rare' : ''}">
+      <article class="offer-card ${cannotAfford ? 'unavailable' : ''} ${offer.sale ? 'sale' : ''} ${isRelic ? 'rare' : isUncommon ? 'uncommon' : ''}">
         <div class="offer-top">
           <span class="item-emoji" aria-hidden="true">${info.icon}</span>
           <span class="tag">${tag}</span>

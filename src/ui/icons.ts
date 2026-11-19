@@ -175,6 +175,7 @@ const FOOD_ICONS: Record<string, string> = {
   'jumbo-hot-dog': '🌭',
   inkcap: '🍄',
   'purge-the-d': '♀️',
+  'poppy-seeds': '🥯',
   'snake-oil': '🐍',
   'old-mcdonald': '🚜',
   'spell-pepper': '🌶️',

@@ -545,10 +545,17 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'purge-the-d',
     name: 'Purge the D',
-    description: 'Very rare. Permanently purges D. No slot.',
-    price: 12,
-    rarity: 'rare',
+    description: 'Uncommon. Permanently purges D. No slot.',
+    price: 11,
+    rarity: 'uncommon',
     effects: [{ type: 'purgeLetter', letter: 'd' }],
+  }),
+  defineFood({
+    id: 'poppy-seeds',
+    name: 'Poppy Seeds',
+    description: 'Purge a random letter from all future answers. No slot.',
+    price: 4,
+    effects: [{ type: 'purgeRandomLetter' }],
   }),
   defineFood({
     id: 'snake-oil',
