@@ -1471,6 +1471,7 @@ export const ITEMS: ItemDef[] = [
     price: 8,
     kind: 'gear',
     rarity: 'uncommon',
+    appearanceWeight: 3,
     requiresVisionCurse: 1,
   }),
   defineItem({

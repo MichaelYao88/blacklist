@@ -2386,18 +2386,7 @@ export function createCore(content: Content): Core {
       return true;
     };
 
-    const wantsTally = sightCount(state) > 0
-      && !state.items.some((item) => item.id === 'tally-lens');
-    let forceTally = wantsTally;
     for (let index = 0; index < itemTarget; index++) {
-      if (forceTally) {
-        forceTally = false;
-        const tally = [...commonItems, ...uncommonItems].find((item) => item.id === 'tally-lens');
-        if (tally) {
-          pickItem(tally);
-          continue;
-        }
-      }
       pickRandomItem();
     }
     if (picked.length > 0) {

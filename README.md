@@ -84,7 +84,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Shops can show up to 2 copies of the same entry; sell rows are hoverable
 - Solve gold is 8/7/6/5/4 for solves in 1/2/3/4/5+ guesses
 - **The Endless Table** fires every on-eat effect 7 times or pays 7 gold
-- **Tally Lens** is guaranteed in a shop after a vision curse and shows correct/misplaced counts; **Tally** is never offered while you already own one
+- **Tally Lens** is an uncommon item with a 3× appearance weight while a vision curse is active; it is no longer guaranteed in a shop and shows correct/misplaced counts. **Tally** is never offered while you already own one
 - **Encore** is unique and appears three times as often as an average common item; **Poppy Seeds** gets the same appearance boost
 - **Harvest Charm**, **Empty Mouth**, **Detour**, **Dark Echo**, **Black Eye**, **Palindrome**, **Crisis 15**, **Shellshock**, **Echo Chamber**, **Panic Button**, and **Wild Magic** are the new autoguess/autocast items
 - Random guesses pull from a 200-word pool chosen for non-native speakers; **Dark Echo** avoids letters from your first guess

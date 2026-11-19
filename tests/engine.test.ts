@@ -1671,16 +1671,27 @@ describe('latest balance pass', () => {
     expect(after.board.guesses[0]?.tiles[0]).toBe('hidden');
   });
 
-  it('Tally Lens is guaranteed in a shop once a vision curse is active', () => {
-    const { state } = start('tally-shop');
+  it('Tally Lens is weighted but no longer guaranteed after a vision curse', () => {
     expect(ITEM_BY_ID.get('tally-lens')?.rarity).toBe('uncommon');
-    state.curses.push({ id: 'censor', stacks: 1 });
-    state.nodeIndex = 0;
-    state.nodes[1] = { kind: 'shop', level: 1 };
-    state.phase = 'shop';
-    const shop = enterShop(state).state.shop;
-    expect(shop?.offers.some((offer) => offer.kind === 'item' && offer.def === 'tally-lens'))
-      .toBe(true);
+    expect(ITEM_BY_ID.get('tally-lens')?.appearanceWeight).toBe(3);
+
+    let withTally = 0;
+    let withoutTally = 0;
+    for (let index = 0; index < 200; index++) {
+      const { state } = start(`tally-shop-${index}`);
+      state.curses.push({ id: 'censor', stacks: 1 });
+      state.nodeIndex = 0;
+      state.nodes[1] = { kind: 'shop', level: 1 };
+      state.phase = 'shop';
+      const shop = enterShop(state).state.shop;
+      if (shop?.offers.some((offer) => offer.kind === 'item' && offer.def === 'tally-lens')) {
+        withTally++;
+      } else {
+        withoutTally++;
+      }
+    }
+    expect(withTally).toBeGreaterThan(0);
+    expect(withoutTally).toBeGreaterThan(0);
   });
 
   it('Purge the D never returns after D is purged', () => {
