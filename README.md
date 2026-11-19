@@ -41,7 +41,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Vision-hidden letters show the hatched hidden key on the keyboard; reveals and rule-outs take priority over that layer
 - Every finished encounter pays gold; solves offer coins, usually a spell, and only rarely gear or a meal
 - Opening shields such as **Head Start** and **Quickdraw** make guesses in their window count as free guesses
-- Relics are very rare ordinary items, no longer boss rewards; shops roll a rare relic at 25% per item slot (about 60% of shops have one)
+- Relics are unique per run: once one appears in a shop or reward, or is acquired, it never appears again that run. They are very rare ordinary items, no longer boss rewards; shops roll a rare relic at 25% per item slot (about 60% of shops have one)
 - Defeat reveals the answer you missed (all of them, on the final boss)
 - 99 items (84 shop items + 15 rare relics), 6 spells, 68 foods and 25 happenings
 - New foods include **U-nagi**, **Empty Calories**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
@@ -144,7 +144,7 @@ The Runner (Soldier) and Orc sprites are from **Tiny RPG Character Asset Pack 01
 | Solve gold | `8` on a solve in 3 guesses or fewer, else random `5-8`, plus `solveGoldBonus` (Midas Touch can double any gain) |
 | Timeout gold | `1`; a death pays nothing |
 | Solve reward | a flat 5 gold plus a spell (65%) or food (35%); gear is an 8% find |
-| Relic source | very rare shop/reward finds and the Curse Broker |
+| Relic source | very rare shop/reward finds and the Curse Broker; each relic appears at most once per run |
 | Shop reroll | starts at 1 gold, doubles after each use |
 
 ### Ascension

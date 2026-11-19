@@ -2880,6 +2880,100 @@ describe('serialization', () => {
   it('rejects old save versions', () => {
     expect(game.deserialize(JSON.stringify({ version: 5 }))).toBeNull();
   });
+
+  it('seeds seen relics from owned relics in an old save', () => {
+    const { state } = start('serialize-relics');
+    state.items.push({ instance: 'i-relic', id: 'loose-tongue', data: {}, equipped: true });
+    const raw = JSON.parse(game.serialize(state));
+    delete raw.seenRelics;
+    const restored = game.deserialize(JSON.stringify(raw));
+    expect(restored?.seenRelics).toContain('loose-tongue');
+  });
+});
+
+describe('relic uniqueness', () => {
+  const relicIds = [...ITEM_BY_ID.values()]
+    .filter((item) => item.rarity === 'rare')
+    .map((item) => item.id);
+
+  it('never offers a relic already seen this run', () => {
+    expect(relicIds).toHaveLength(15);
+    let sawOtherRelic = false;
+    for (let index = 0; index < 60; index++) {
+      const { state } = start(`relic-seen-${index}`);
+      state.seenRelics = ['loose-tongue'];
+      state.nodeIndex = 0;
+      state.nodes[1] = { kind: 'shop', level: 1 };
+      state.phase = 'shop';
+      const offers = enterShop(state).state.shop?.offers ?? [];
+      for (const offer of offers) {
+        if (offer.kind !== 'item') continue;
+        const def = ITEM_BY_ID.get(offer.def);
+        if (def?.rarity !== 'rare') continue;
+        expect(offer.def).not.toBe('loose-tongue');
+        sawOtherRelic = true;
+      }
+    }
+    expect(sawOtherRelic).toBe(true);
+  });
+
+  it('marks offered relics seen and never repeats them across rerolls', () => {
+    let sawRelic = false;
+    for (let seedIndex = 0; seedIndex < 25 && !sawRelic; seedIndex++) {
+      const { state } = start(`relic-reroll-${seedIndex}`);
+      state.nodeIndex = 0;
+      state.nodes[1] = { kind: 'shop', level: 1 };
+      state.phase = 'shop';
+      let current = enterShop(state).state;
+      current.gold = 1_000_000;
+      const seen = new Set<string>();
+      for (let roll = 0; roll < 12; roll++) {
+        for (const offer of current.shop?.offers ?? []) {
+          if (offer.kind !== 'item') continue;
+          const def = ITEM_BY_ID.get(offer.def);
+          if (def?.rarity !== 'rare') continue;
+          expect(seen.has(offer.def)).toBe(false);
+          seen.add(offer.def);
+          expect(current.seenRelics).toContain(offer.def);
+          sawRelic = true;
+        }
+        current = act(current, { type: 'reroll' }).state;
+      }
+    }
+    expect(sawRelic).toBe(true);
+  });
+
+  it('never offers a seen relic as a round reward', () => {
+    for (let index = 0; index < 20; index++) {
+      const { state } = start(`relic-reward-${index}`);
+      state.seenRelics = relicIds.slice();
+      state.nodes = [
+        { kind: 'round', level: 1 },
+        { kind: 'round', level: 2 },
+      ];
+      state.nodeIndex = 0;
+      state.round!.freeLeft = 0;
+      state.round!.answer = CONTENT.answers[index % CONTENT.answers.length];
+      const solved = act(state, { type: 'guess', word: state.round!.answer });
+      const reward = act(solved.state, { type: 'continue' });
+      expect(reward.state.phase).toBe('reward');
+      for (const option of reward.state.reward?.options ?? []) {
+        if (option.kind !== 'item' || !option.def) continue;
+        expect(ITEM_BY_ID.get(option.def)?.rarity).not.toBe('rare');
+      }
+    }
+  });
+
+  it('random relic effects only grant unseen relics', () => {
+    const { state } = start('relic-cake');
+    state.seenRelics = relicIds.filter((id) => id !== 'loose-tongue');
+    state.phase = 'shop';
+    state.gold = 100;
+    state.shop = shopState([{ id: 'f0', kind: 'eat', def: 'coveted-cake', price: 11 }]);
+    const bought = act(state, { type: 'buy', offerId: 'f0' });
+    expect(bought.state.items.some((item) => item.id === 'loose-tongue')).toBe(true);
+    expect(bought.state.seenRelics).toContain('loose-tongue');
+  });
 });
 
 describe('core purity', () => {
