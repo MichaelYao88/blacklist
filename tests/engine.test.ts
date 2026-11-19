@@ -2480,8 +2480,15 @@ describe('latest balance pass', () => {
   });
 
   it('applies the latest tweaks and text', () => {
-    expect(ITEM_BY_ID.get('vowel-tithe')?.price).toBe(6);
+    expect(ITEM_BY_ID.get('vowel-tithe')?.price).toBe(8);
     expect(ITEM_BY_ID.get('vowel-tithe')?.description).toContain('25%');
+    expect(ITEM_BY_ID.get('vowel-tithe')?.description).toContain('Omen');
+    expect(ITEM_BY_ID.get('spellhoarder')?.name).toBe('Panacea Pouch');
+    expect(ITEM_BY_ID.get('spellhoarder')?.description).toContain('Heal');
+    expect(ITEM_BY_ID.get('grey-market')?.price).toBe(7);
+    expect(ITEM_BY_ID.get('grey-market')?.description).toContain('all-grey');
+    expect(ITEM_BY_ID.get('grey-market')?.description).toContain('1 gold');
+    expect(ITEM_BY_ID.get('grey-market')?.on?.onGuessScored).toBeDefined();
     expect(ITEM_BY_ID.get('tithe-box')?.price).toBe(10);
     expect(ITEM_BY_ID.get('iron-hide')?.price).toBe(6);
     expect(ITEM_BY_ID.get('thorn-crown')?.description).toContain('30%');
@@ -2489,6 +2496,37 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('chrono-anchor')?.description).toContain('Taking damage: 30% chance');
     expect(ITEM_BY_ID.get('chrono-anchor')?.on?.onSolve).toBeUndefined();
     expect(ITEM_BY_ID.get('chrono-anchor')?.on?.onDamageTaken).toBeDefined();
+  });
+
+  it('Grey Market pays 1 gold for all-grey guesses', () => {
+    const { state } = start('grey-market');
+    state.items.push({ instance: 'i-grey', id: 'grey-market', data: {}, equipped: true });
+    state.round!.freeLeft = 0;
+    state.round!.answer = 'crane';
+    const gold = state.gold;
+    const miss = act(state, { type: 'guess', word: 'sloth' });
+    expect(miss.state.gold).toBe(gold + 1);
+    const hit = act(miss.state, { type: 'guess', word: 'slate' });
+    expect(hit.state.gold).toBe(gold + 1);
+  });
+
+  it('Grey Market pays for all-grey auto-guesses too', () => {
+    let paid = false;
+    for (let seedIndex = 0; seedIndex < 40 && !paid; seedIndex++) {
+      const { state } = start(`grey-market-auto-${seedIndex}`);
+      state.items.push(
+        { instance: 'i-grey', id: 'grey-market', data: {}, equipped: true },
+        { instance: 'i-mac', id: 'old-mcdonald', data: {}, equipped: true },
+      );
+      const gold = state.gold;
+      const next = nextRound(state);
+      const answer = next.state.round?.answer ?? '';
+      if ([...'eio'].some((ch) => answer.includes(ch))) continue;
+      paid = true;
+      expect(next.state.round?.guesses.some((guess) => guess.word === 'eieio')).toBe(true);
+      expect(next.state.gold).toBe(gold + 1);
+    }
+    expect(paid).toBe(true);
   });
 
   it('Head Start is 7s and neither it nor Quickdraw is clock-gated', () => {

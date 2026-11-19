@@ -215,6 +215,17 @@ export const ITEMS: ItemDef[] = [
     },
   }),
   defineItem({
+    id: 'grey-market',
+    name: 'Grey Market',
+    description: "Every all-grey guess pays 1 gold, yours or an ally's.",
+    price: 7,
+    kind: 'gear',
+    on: {
+      onGuessScored: (_ctx, p) =>
+        isAllAbsent(p.guess.truth) ? [{ type: 'gold', amount: 1 }] : [],
+    },
+  }),
+  defineItem({
     id: 'old-mcdonald',
     name: 'Old McDonald',
     description: 'Round start: EIEIO is guessed for free.',
@@ -509,8 +520,8 @@ export const ITEMS: ItemDef[] = [
   }),
   defineItem({
     id: 'spellhoarder',
-    name: 'Spellhoarder',
-    description: 'Every 3rd spell cast: +1 random spell.',
+    name: 'Panacea Pouch',
+    description: 'Every 3rd spell cast: gain a Heal spell.',
     price: 9,
     kind: 'gear',
     initial: { casts: 0 },
@@ -519,7 +530,7 @@ export const ITEMS: ItemDef[] = [
         const next = ctx.self.data.casts + 1;
         return [
           { type: 'grow', stat: 'casts', by: 1 },
-          ...(next % 3 === 0 ? [{ type: 'giveSpell' as const, spell: 'random' as const }] : []),
+          ...(next % 3 === 0 ? [{ type: 'giveSpell' as const, spell: 'heal' as const }] : []),
         ];
       },
     },
@@ -572,11 +583,11 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'vowel-tithe',
     name: 'Vowel Tithe',
-    description: 'Spell cast: 25% chance of another random spell.',
-    price: 6,
+    description: 'Spell cast: 25% chance to grant Omen.',
+    price: 8,
     kind: 'gear',
     on: {
-      onSpellCast: () => [{ type: 'giveSpell', spell: 'random', chancePct: 25 }],
+      onSpellCast: () => [{ type: 'giveSpell', spell: 'omen', chancePct: 25 }],
     },
   }),
   defineItem({
