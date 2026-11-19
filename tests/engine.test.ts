@@ -810,6 +810,45 @@ describe('shop curses', () => {
       .toHaveLength(2);
   });
 
+  it('adds the Sanctuary, Kind Stranger and Stone Door events', () => {
+    const sanctuary = HAPPENING_BY_ID.get('sanctuary');
+    expect(sanctuary?.options.find((option) => option.id === 'rest')?.outcomes[0].effects)
+      .toEqual([{ type: 'healPercent', percent: 100 }]);
+    expect(sanctuary?.options.find((option) => option.id === 'shelf')?.outcomes[0].effects)
+      .toEqual([{ type: 'slots', delta: 1 }]);
+
+    const stranger = HAPPENING_BY_ID.get('kind-stranger');
+    expect(stranger?.options.find((option) => option.id === 'medicine')?.outcomes[0].effects)
+      .toEqual([
+        { type: 'giveSpell', spell: 'heal' },
+        { type: 'giveSpell', spell: 'heal' },
+      ]);
+    expect(stranger?.options.find((option) => option.id === 'purse')?.outcomes[0].effects)
+      .toEqual([{ type: 'gold', amount: 8 }]);
+
+    const door = HAPPENING_BY_ID.get('stone-door');
+    expect(door?.options.find((option) => option.id === 'heart')?.outcomes[0].effects)
+      .toEqual([{ type: 'maxHp', delta: 6 }]);
+    expect(door?.options.find((option) => option.id === 'shop')?.outcomes[0].effects)
+      .toEqual([{ type: 'openShop' }]);
+  });
+
+  it('resolves the Sanctuary heal and the Stone Door shop', () => {
+    const { state } = start('sanctuary-heal');
+    state.hp = 3;
+    state.phase = 'happening';
+    state.happening = { id: 'sanctuary', options: [] };
+    const healed = act(state, { type: 'choose', optionId: 'rest' });
+    expect(healed.state.hp).toBe(healed.state.maxHp);
+
+    const door = start('stone-door-shop');
+    door.state.phase = 'happening';
+    door.state.happening = { id: 'stone-door', options: [] };
+    const opened = act(door.state, { type: 'choose', optionId: 'shop' });
+    expect(opened.state.phase).toBe('shop');
+    expect(opened.state.shop?.offers.length).toBeGreaterThan(0);
+  });
+
   it('opens a shop from the Detour and applies its other rewards', () => {
     const { state } = start('detour-both');
     state.phase = 'happening';

@@ -14,7 +14,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 
 - Wordle-style scoring with duplicate-letter handling
 - A 50-level curse run: no bosses until level 50, no starting clock, no starting blacklist
-- Round loop: `round → 40% event → shop`, then `round → 40% event → curse`
+- Round loop: `round → 49% event → shop`, then `round → 49% event → curse`
 - Curse drafts offer 3 choices after every 2 levels; levels 47-49 are curse floors
 - Curse drafts draw from the weighted pool; The List and The Clock get a 3x weight until they first appear in a draft, then normal
 - Hover or focus a curse in the HUD to read its rules
@@ -43,7 +43,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Opening shields such as **Head Start** and **Quickdraw** make guesses in their window count as free guesses
 - Relics are very rare ordinary items, no longer boss rewards; shops roll a rare relic at 25% per item slot (about 60% of shops have one)
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 101 items (86 shop items + 15 rare relics), 6 spells, 65 foods and 20 happenings
+- 101 items (86 shop items + 15 rare relics), 6 spells, 65 foods and 23 happenings
 - New foods include **U-nagi**, **Empty Calories**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout

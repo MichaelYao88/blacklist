@@ -2894,7 +2894,7 @@ export function createCore(content: Content): Core {
     const nodes: RunNode[] = [];
     const addRound = (level: number): void => {
       nodes.push({ kind: 'round', level });
-      if (rngChance(state, 40)) nodes.push({ kind: 'happening', level });
+      if (rngChance(state, 49)) nodes.push({ kind: 'happening', level });
     };
 
     for (let level = 1; level <= 45; level++) {

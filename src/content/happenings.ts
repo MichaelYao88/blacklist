@@ -483,6 +483,90 @@ export const HAPPENINGS: HappeningDef[] = [
     ],
   }),
   defineHappening({
+    id: 'sanctuary',
+    name: 'The Sanctuary',
+    description: 'A quiet room with a bed in one corner and a sturdy shelf in the other.',
+    options: [
+      {
+        id: 'rest',
+        label: 'Sleep until whole',
+        description: 'Heal to full HP.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'You wake up whole, and the room is already forgetting you.',
+          effects: [{ type: 'healPercent', percent: 100 }],
+        }],
+      },
+      {
+        id: 'shelf',
+        label: 'Take the shelf',
+        description: '+1 item slot.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'You break the shelf down into a sturdy carrying frame.',
+          effects: [{ type: 'slots', delta: 1 }],
+        }],
+      },
+    ],
+  }),
+  defineHappening({
+    id: 'kind-stranger',
+    name: 'The Kind Stranger',
+    description: 'A traveler holds out two hands: medicine in one, a purse in the other.',
+    options: [
+      {
+        id: 'medicine',
+        label: 'Take the medicine',
+        description: 'Gain two Heal spells.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'The poultices are warm and smell faintly of rain.',
+          effects: [
+            { type: 'giveSpell', spell: 'heal' },
+            { type: 'giveSpell', spell: 'heal' },
+          ],
+        }],
+      },
+      {
+        id: 'purse',
+        label: 'Take the purse',
+        description: 'Gain 8 gold.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'The purse is heavier than it looked.',
+          effects: [{ type: 'gold', amount: 8 }],
+        }],
+      },
+    ],
+  }),
+  defineHappening({
+    id: 'stone-door',
+    name: 'The Stone Door',
+    description: 'A door carved with a heartbeat. A shop sign points the other way.',
+    options: [
+      {
+        id: 'heart',
+        label: 'Press your hand to the door',
+        description: '+6 max HP.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'The stone beats once, and something in you beats back harder.',
+          effects: [{ type: 'maxHp', delta: 6 }],
+        }],
+      },
+      {
+        id: 'shop',
+        label: 'Follow the shop sign',
+        description: 'Open a shop right now.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'The sign leads to a shelf that was not there a moment ago.',
+          effects: [{ type: 'openShop' }],
+        }],
+      },
+    ],
+  }),
+  defineHappening({
     id: 'endless-table',
     name: 'The Endless Table',
     description: 'Dishes keep arriving. Nobody is eating.',
