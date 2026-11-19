@@ -544,8 +544,6 @@ export interface RunState {
   purged: Letter[];
   usedAnswers: string[];
   lastAnswer?: string;
-  /** Phone a Friend has delivered the Pizza Pzazz catchphrase this run. */
-  pizzaPzazzSeen?: boolean;
   /** Knafeh: guess this word for free at the start of the next round. */
   nextRoundGuess?: string;
   /** King Mushroom: cap the next round's wrong-guess damage. */

@@ -641,22 +641,28 @@ describe('timer curses', () => {
     expect(cast.state.round?.remainingMs).toBe(305_000);
   });
 
-  it('always has the friend say Pizza Pzazz on the first two-word call', () => {
-    const { state } = start('pizza-pzazz');
-    state.curses.push({ id: 'clock', stacks: 1 });
-    const next = nextRound(state);
-    next.state.spells.push({ instance: 's-phone', id: 'phone-friend' });
-    if (!next.state.round) throw new Error('expected round');
-    next.state.round.answer = 'zzzzz';
-    const cast = act(next.state, { type: 'castSpell', instance: 's-phone' });
-    expect(cast.events.some(
-      (event) => event.type === 'friendSaid' && event.text === 'Pizza Pzazz 🍕✨',
-    )).toBe(true);
-    const words = cast.events.flatMap((event) =>
-      event.type === 'guessScored' && event.by === 'friend' ? [event.word] : [],
-    );
-    expect(words).toEqual(['pizza', 'pzazz']);
-    expect(cast.state.pizzaPzazzSeen).toBe(true);
+  it('sometimes has the friend say Pizza Pzazz', () => {
+    let seen = false;
+    for (let index = 0; index < 40 && !seen; index++) {
+      const { state } = start(`pizza-pzazz-${index}`);
+      state.curses.push({ id: 'clock', stacks: 1 });
+      const next = nextRound(state);
+      next.state.spells.push({ instance: 's-phone', id: 'phone-friend' });
+      if (!next.state.round) throw new Error('expected round');
+      next.state.round.answer = 'zzzzz';
+      const cast = act(next.state, { type: 'castSpell', instance: 's-phone' });
+      const said = cast.events.some(
+        (event) => event.type === 'friendSaid' && event.text === 'Pizza Pzazz 🍕✨',
+      );
+      if (said) {
+        const words = cast.events.flatMap((event) =>
+          event.type === 'guessScored' && event.by === 'friend' ? [event.word] : [],
+        );
+        expect(words).toEqual(['pizza', 'pzazz']);
+        seen = true;
+      }
+    }
+    expect(seen).toBe(true);
   });
 });
 

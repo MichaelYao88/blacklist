@@ -1930,13 +1930,8 @@ export function createCore(content: Content): Core {
         ([first, second]) => available(first, taken) && available(second, taken),
       );
       if (phrases.length > 0) {
-        const pizza = phrases.find(([first, second]) => first === 'pizza' && second === 'pzazz');
-        const picked = pizza && !state.pizzaPzazzSeen
-          ? pizza
-          : rngPick(state, phrases);
-        const [first, second] = picked;
+        const [first, second] = rngPick(state, phrases);
         if (first === 'pizza' && second === 'pzazz') {
-          state.pizzaPzazzSeen = true;
           emit(rt, { type: 'friendSaid', text: 'Pizza Pzazz 🍕✨' });
         }
         if (state.phase === 'round') scorePlayerGuess(rt, first, 'friend');
