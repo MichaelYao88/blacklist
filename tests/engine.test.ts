@@ -2740,6 +2740,49 @@ describe('spells and foods', () => {
     expect(eaten.state.purged).toHaveLength(1);
   });
 
+  it('purges a letter normally when legal words remain', () => {
+    const { state } = start('purge-normal');
+    state.phase = 'shop';
+    state.pendingPurge = 1;
+    const purged = act(state, { type: 'purgeLetter', letter: 'z' });
+    expect(purged.state.purged).toContain('z');
+    expect(purged.state.pendingPurge).toBe(0);
+    expect(purged.events.some(
+      (event) => event.type === 'message' && event.text.includes('legal words'),
+    )).toBe(false);
+  });
+
+  it('restores a random letter when a purge would leave no legal words', () => {
+    const alphabet = 'abcdefghijklmnopqrstuvwxyz'.split('');
+    const { state } = start('purge-dead-end');
+    state.phase = 'shop';
+    state.pendingPurge = 1;
+    state.purged = alphabet.filter((ch) => ch !== 'q');
+    const blocked = act(state, { type: 'purgeLetter', letter: 'q' });
+    const legal = CONTENT.answers.some(
+      (word) => !word.split('').some((ch) => blocked.state.purged.includes(ch)),
+    );
+    expect(legal).toBe(true);
+    expect(blocked.state.purged.length).toBeLessThan(26);
+    expect(blocked.events.some(
+      (event) => event.type === 'message' && event.text.includes('legal words'),
+    )).toBe(true);
+  });
+
+  it('restores letters before choosing an answer when none are legal', () => {
+    const alphabet = 'abcdefghijklmnopqrstuvwxyz'.split('');
+    const { state } = start('purge-legacy');
+    state.purged = alphabet.slice();
+    const next = nextRound(state);
+    const round = next.state.round;
+    if (!round) throw new Error('expected round');
+    expect(next.state.purged.length).toBeLessThan(26);
+    expect(round.answer.split('').some((ch) => next.state.purged.includes(ch))).toBe(false);
+    expect(next.events.some(
+      (event) => event.type === 'message' && event.text.includes('No legal words remained'),
+    )).toBe(true);
+  });
+
   it('gives Coffee +5s for 2 gold and Chronos +12s', () => {
     expect(FOOD_BY_ID.get('coffee')?.price).toBe(2);
     expect(FOOD_BY_ID.get('coffee')?.effects).toContainEqual({ type: 'timeBonus', ms: 5_000 });

@@ -447,6 +447,44 @@ export function createCore(content: Content): Core {
     emit(rt, { type: 'blacklistChanged', list: [] });
   }
 
+  const hasPurgedLetter = (state: RunState, word: string): boolean =>
+    word.split('').some((ch) => state.purged.includes(ch));
+
+  const legalAnswers = (state: RunState): string[] =>
+    content.answers.filter((word) => !hasPurgedLetter(state, word));
+
+  const legalAnswerExists = (state: RunState): boolean =>
+    legalAnswers(state).length > 0;
+
+  /**
+   * Purging can never leave the run without a guessable answer. If it does,
+   * restore random purged letters until at least one word is legal again.
+   */
+  function restoreLegalWords(rt: Runtime, attempted?: Letter): string[] {
+    const state = rt.state;
+    if (legalAnswerExists(state)) return [];
+    const restored: string[] = [];
+    while (!legalAnswerExists(state) && state.purged.length > 0) {
+      const index = rngInt(state, state.purged.length);
+      restored.push(state.purged[index]);
+      state.purged.splice(index, 1);
+    }
+    if (restored.length > 0) {
+      const letters = restored.map((letter) => letter.toUpperCase()).join(', ');
+      const verb = restored.length === 1 ? 'was' : 'were';
+      const attemptedRestored = Boolean(attempted && restored.includes(attempted));
+      emit(rt, {
+        type: 'message',
+        text: attemptedRestored
+          ? `Purging ${attempted!.toUpperCase()} would leave no legal words, so it was restored.`
+          : attempted
+            ? `Purging ${attempted.toUpperCase()} left no legal words, so ${letters} ${verb} restored.`
+            : `No legal words remained, so ${letters} ${verb} restored.`,
+      });
+    }
+    return restored;
+  }
+
   function purgeLetterNow(rt: Runtime, letter: Letter): boolean {
     const state = rt.state;
     const ch = letter.trim().toLowerCase();
@@ -466,19 +504,15 @@ export function createCore(content: Content): Core {
       emit(rt, { type: 'message', text: `You cannot purge a letter that is in the current answer.` });
       return false;
     }
-    const remaining = content.answers.filter(
-      (word) => !word.includes(ch) && !word.split('').some((c) => state.purged.includes(c)),
-    );
-    if (remaining.length < 80) {
-      emit(rt, { type: 'message', text: `Purging ${ch.toUpperCase()} would leave too few answers.` });
-      return false;
-    }
     state.purged.push(ch);
+    restoreLegalWords(rt, ch);
+    if (!state.purged.includes(ch)) return false;
     // If a finished round is still in state and its answer contains the letter,
     // swap that dead answer for a valid one. The real next answer is chosen when
     // the next round starts, but this keeps every stale read consistent.
     if (!liveRound && state.round && state.round.answer.includes(ch)) {
-      state.round.answer = rngPick(state, remaining);
+      const remaining = legalAnswers(state);
+      if (remaining.length > 0) state.round.answer = rngPick(state, remaining);
     }
     emit(rt, { type: 'letterPurged', letter: ch });
     return true;
@@ -493,10 +527,9 @@ export function createCore(content: Content): Core {
     }
     const candidates = ALPHABET.filter((letter) => {
       if (blocked.has(letter)) return false;
-      const remaining = content.answers.filter(
+      return content.answers.some(
         (word) => !word.includes(letter) && !word.split('').some((c) => state.purged.includes(c)),
       );
-      return remaining.length >= 80;
     });
     if (candidates.length === 0) {
       emit(rt, { type: 'message', text: 'No letter can be purged right now.' });
@@ -1328,6 +1361,7 @@ export function createCore(content: Content): Core {
 
   function chooseAnswer(rt: Runtime, boss?: BossDef): string {
     const state = rt.state;
+    restoreLegalWords(rt);
     const pools = boss?.answerPool === 'hard'
       ? [content.hardAnswers, content.answers]
       : [content.answers];

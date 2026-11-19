@@ -158,7 +158,7 @@ Ascension is only starting curses.
 
 Beating a run unlocks the next Ascension, up to A2.
 
-The answer pool excludes the blacklist, already-used answers and purged letters.
+The answer pool excludes the blacklist, already-used answers and purged letters. If purging would leave no legal answer, the game restores a random purged letter and explains why.
 
 ---
 

@@ -1754,7 +1754,7 @@ function renderPurgeModal(view: RunView): string {
     <div class="modal-card">
       <p class="panel-kicker">LETTER PURGE</p>
       <h2>Erase a letter</h2>
-      <p class="muted">The letter will never appear in a future answer, and you can never guess it again. Choose carefully.</p>
+      <p class="muted">The letter will never appear in a future answer, and you can never guess it again. Choose carefully. If a purge would leave no legal words, a random purged letter is restored.</p>
       <div class="purge-grid">
         ${letters.map((letter) => `<button class="purge-key ${view.purged.includes(letter) ? 'used' : ''}" data-action="purge" data-letter="${letter}" ${view.purged.includes(letter) ? 'disabled' : ''}>${letter.toUpperCase()}</button>`).join('')}
       </div>
