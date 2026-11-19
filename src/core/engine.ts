@@ -588,10 +588,15 @@ export function createCore(content: Content): Core {
     const state = rt.state;
     const def = foodById.get(id);
     if (!def) return;
-    const doubled = state.items.some((item) => {
+    const hasPotluck = state.items.some((item) => {
       const itemDef = itemById.get(item.id);
       return Boolean(itemDef?.doubleFood) && isEquipped(item, itemDef);
     });
+    // Potluck only doubles the first food of each level, so rerolling a shop
+    // cannot multiply the same level's food over and over. Food from rewards
+    // goes through this same path, so it counts (and doubles) as well.
+    const doubled = hasPotluck && state.potluckLevel !== state.level;
+    if (doubled) state.potluckLevel = state.level;
     emit(rt, { type: 'foodEaten', food: def.id, name: def.name });
     applyEffects(rt, doubled ? [...def.effects, ...def.effects] : def.effects, RULES);
     const shop = state.shop;

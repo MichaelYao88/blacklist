@@ -1464,7 +1464,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'potluck',
     name: 'Potluck',
-    description: 'Food you eat applies its effects twice. On-eat triggers still fire once.',
+    description: 'The first food you eat each level applies its effects twice. On-eat triggers still fire once.',
     price: 26,
     kind: 'gear',
     rarity: 'rare',

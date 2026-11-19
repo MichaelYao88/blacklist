@@ -549,6 +549,8 @@ export interface RunState {
   nextSpellDouble?: boolean;
   /** Chilaquiles: the number of upcoming sold items that pay double. */
   nextSaleDoubles?: number;
+  /** Potluck: the level whose first food has already been doubled. */
+  potluckLevel?: number;
   pendingPurge: number;
   /** Absent letters queued to reveal at the start of the next round. */
   pendingAbsent: number;

@@ -2064,6 +2064,47 @@ describe('latest balance pass', () => {
     expect(FOOD_BY_ID.get('chilaquiles')?.price).toBe(2);
   });
 
+  it('Potluck doubles only the first food eaten in each level', () => {
+    const { state } = start('potluck');
+    state.items.push({ instance: 'i-pot', id: 'potluck', data: {}, equipped: true });
+    state.phase = 'shop';
+    state.gold = 100;
+    state.shop = shopState([
+      { id: 'f0', kind: 'eat', def: 'empty-calories', price: 6 },
+      { id: 'f1', kind: 'eat', def: 'empty-calories', price: 6 },
+    ]);
+    const base = state.maxHp;
+    let current = act(state, { type: 'buy', offerId: 'f0' }).state;
+    expect(current.maxHp).toBe(base + 18); // the level's first food doubles +9
+    current = act(current, { type: 'buy', offerId: 'f1' }).state;
+    expect(current.maxHp).toBe(base + 27); // later food in the level does not
+
+    current.level = 2;
+    current.nodeIndex = 0;
+    current.nodes[0] = { kind: 'round', level: 2 };
+    current.nodes[1] = { kind: 'shop', level: 2 };
+    current.phase = 'reward';
+    current.reward = {
+      options: [{
+        id: 'eat:empty-calories',
+        kind: 'eat',
+        def: 'empty-calories',
+        label: 'Empty Calories',
+        description: '',
+      }],
+      boss: false,
+    };
+    const rewarded = act(current, { type: 'chooseReward', optionId: 'eat:empty-calories' });
+    expect(rewarded.state.maxHp).toBe(base + 45); // reward food doubles too
+    expect(rewarded.state.phase).toBe('shopChoice');
+    const opened = act(rewarded.state, { type: 'choose', optionId: 'shop' });
+
+    opened.state.gold = 100;
+    opened.state.shop!.offers = [{ id: 'f2', kind: 'eat', def: 'empty-calories', price: 6 }];
+    const after = act(opened.state, { type: 'buy', offerId: 'f2' });
+    expect(after.state.maxHp).toBe(base + 54); // level already used its double
+  });
+
   it('re-implements Piggy Bank at 2 gold plus 2 per round held', () => {
     const def = ITEM_BY_ID.get('piggy-bank');
     expect(def?.price).toBe(2);
