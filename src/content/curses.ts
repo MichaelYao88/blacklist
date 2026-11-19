@@ -157,20 +157,16 @@ export const CURSES: CurseDef[] = [
   defineCurse({
     id: 'sleeper',
     name: 'The Sleeper',
-    description: 'Green and yellow letters make the next hit hurt more.',
+    description: '+2 damage per guess per revealed letter in your first guess.',
     rules: [
-      'Level 1: +1 damage per green.',
-      'Level 2: also +1 per yellow.',
-      'Level 3: +2 per green and +1 per yellow.',
+      'Count the green and yellow letters in your first guess of the round.',
+      'Every guess this round deals +2 damage per revealed letter.',
+      'Each stack adds another +2 per revealed letter.',
     ],
     art: 'sleeper',
     tags: ['damage'],
     maxStacks: 3,
-    damageTiers: [
-      { green: 1, yellow: 0 },
-      { green: 1, yellow: 1 },
-      { green: 2, yellow: 1 },
-    ],
+    damagePerFirstReveal: 2,
   }),
   defineCurse({
     id: 'porcupine',

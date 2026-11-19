@@ -379,8 +379,28 @@ describe('damage and curses', () => {
     expect(CURSE_BY_ID.get('clumsy')?.rules.join(' ')).not.toContain('stack');
   });
 
-  it('sleeper tiers add green and yellow damage', () => {
-    expect(CURSE_BY_ID.get('sleeper')?.damageTiers).toHaveLength(3);
+  it('Sleeper adds +2 damage per revealed letter in the first guess, per stack', () => {
+    const { state } = start('sleeper');
+    state.curses.push({ id: 'sleeper', stacks: 1 });
+    const next = nextRound(state);
+    setAnswer(next.state, 'crane');
+    next.state.round!.freeLeft = 0;
+    next.state.armor = 0;
+    next.state.hp = 20;
+    const first = act(next.state, { type: 'guess', word: 'slate' }); // 2 revealed
+    expect(first.state.hp).toBe(12); // 4 base + 4 Sleeper
+    const second = act(first.state, { type: 'guess', word: 'brick' });
+    expect(second.state.hp).toBe(4); // still keyed to the first guess
+
+    const stacked = start('sleeper-stacked');
+    stacked.state.curses.push({ id: 'sleeper', stacks: 2 });
+    const stackedNext = nextRound(stacked.state);
+    setAnswer(stackedNext.state, 'crane');
+    stackedNext.state.round!.freeLeft = 0;
+    stackedNext.state.armor = 0;
+    stackedNext.state.hp = 20;
+    const hit = act(stackedNext.state, { type: 'guess', word: 'slate' });
+    expect(hit.state.hp).toBe(7); // 5 base + 8 Sleeper
   });
 });
 

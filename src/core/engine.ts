@@ -176,26 +176,16 @@ export function createCore(content: Content): Core {
     );
 
   const damagePerGreen = (state: RunState): number =>
-    curseDefs(state).reduce((sum, entry) => {
-      if (entry.def.damageTiers) return sum;
-      return sum + (entry.def.damagePerGreen ?? 0) * entry.stacks;
-    }, 0);
+    curseDefs(state).reduce(
+      (sum, entry) => sum + (entry.def.damagePerGreen ?? 0) * entry.stacks,
+      0,
+    );
 
-  const damageTierGreen = (state: RunState): number =>
-    curseDefs(state).reduce((sum, entry) => {
-      if (!entry.def.damageTiers) return sum;
-      const tier = entry.def.damageTiers[Math.min(entry.stacks, entry.def.damageTiers.length) - 1];
-      return sum + (tier?.green ?? 0);
-    }, 0);
-
-  const damagePerYellow = (state: RunState): number =>
-    curseDefs(state).reduce((sum, entry) => {
-      if (entry.def.damageTiers) {
-        const tier = entry.def.damageTiers[Math.min(entry.stacks, entry.def.damageTiers.length) - 1];
-        return sum + (tier?.yellow ?? 0);
-      }
-      return sum + (entry.def.damagePerYellow ?? 0) * entry.stacks;
-    }, 0);
+  const damagePerFirstReveal = (state: RunState): number =>
+    curseDefs(state).reduce(
+      (sum, entry) => sum + (entry.def.damagePerFirstReveal ?? 0) * entry.stacks,
+      0,
+    );
 
   const itemAvailable = (state: RunState, def: ItemDef): boolean => {
     if (def.requiresClock && !hasClock(state)) return false;
@@ -1515,20 +1505,19 @@ export function createCore(content: Content): Core {
   function guessDamageFor(state: RunState, round: RoundState, next = false): number {
     const boss = round.boss ? bossById.get(round.boss) : undefined;
     if (boss?.noGuessDamage) return 0;
-    const current = next ? undefined : round.guesses[round.guesses.length - 1];
     const previous = next
       ? round.guesses[round.guesses.length - 1]
       : round.guesses[round.guesses.length - 2];
-    const currentCounts = current
-      ? truthCounts(current.truth)
-      : { correct: 0, present: 0 };
     const previousCounts = previous
       ? truthCounts(previous.truth)
       : { correct: 0, present: 0 };
+    const firstPlayerGuess = round.guesses.find((guess) => guess.by === 'player');
+    const firstCounts = firstPlayerGuess
+      ? truthCounts(firstPlayerGuess.truth)
+      : { correct: 0, present: 0 };
     const curseBonus =
-      currentCounts.correct * damageTierGreen(state) +
-      currentCounts.present * damagePerYellow(state) +
-      previousCounts.correct * damagePerGreen(state);
+      previousCounts.correct * damagePerGreen(state) +
+      (firstCounts.correct + firstCounts.present) * damagePerFirstReveal(state);
     const base = boss?.damageFor
       ? boss.damageFor(state, next ? { ...round, totalGuesses: round.totalGuesses + 1 } : round)
       : round.baseDamage;

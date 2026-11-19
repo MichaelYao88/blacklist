@@ -192,8 +192,8 @@ export interface CurseDef {
   vision?: VisionEffect[];
   timer?: boolean;
   damagePerGreen?: number;
-  damagePerYellow?: number;
-  damageTiers?: Array<{ green: number; yellow: number }>;
+  /** Extra damage per revealed letter in the player's first guess, per stack. */
+  damagePerFirstReveal?: number;
   damageMultiplier?: number;
   shopItemDelta?: number;
   shopFoodDelta?: number;
