@@ -641,28 +641,22 @@ describe('timer curses', () => {
     expect(cast.state.round?.remainingMs).toBe(305_000);
   });
 
-  it('sometimes has the friend say Pizza Pzazz', () => {
-    let seen = false;
-    for (let index = 0; index < 40 && !seen; index++) {
-      const { state } = start(`pizza-pzazz-${index}`);
-      state.curses.push({ id: 'clock', stacks: 1 });
-      const next = nextRound(state);
-      next.state.spells.push({ instance: 's-phone', id: 'phone-friend' });
-      if (!next.state.round) throw new Error('expected round');
-      next.state.round.answer = 'zzzzz';
-      const cast = act(next.state, { type: 'castSpell', instance: 's-phone' });
-      const said = cast.events.some(
-        (event) => event.type === 'friendSaid' && event.text === 'Pizza Pzazz 🍕✨',
-      );
-      if (said) {
-        const words = cast.events.flatMap((event) =>
-          event.type === 'guessScored' && event.by === 'friend' ? [event.word] : [],
-        );
-        expect(words).toEqual(['pizza', 'pzazz']);
-        seen = true;
-      }
-    }
-    expect(seen).toBe(true);
+  it('always has the friend say Pizza Pzazz on the first two-word call', () => {
+    const { state } = start('pizza-pzazz');
+    state.curses.push({ id: 'clock', stacks: 1 });
+    const next = nextRound(state);
+    next.state.spells.push({ instance: 's-phone', id: 'phone-friend' });
+    if (!next.state.round) throw new Error('expected round');
+    next.state.round.answer = 'zzzzz';
+    const cast = act(next.state, { type: 'castSpell', instance: 's-phone' });
+    expect(cast.events.some(
+      (event) => event.type === 'friendSaid' && event.text === 'Pizza Pzazz 🍕✨',
+    )).toBe(true);
+    const words = cast.events.flatMap((event) =>
+      event.type === 'guessScored' && event.by === 'friend' ? [event.word] : [],
+    );
+    expect(words).toEqual(['pizza', 'pzazz']);
+    expect(cast.state.pizzaPzazzSeen).toBe(true);
   });
 });
 
@@ -1140,20 +1134,15 @@ describe('scaling gold items', () => {
 });
 
 describe('new item and event batch', () => {
-  it('pays 8 on a quick solve and 5-8 otherwise', () => {
-    const fast = start('gold-fast');
-    setAnswer(fast.state, 'crane');
-    const quick = act(fast.state, { type: 'guess', word: 'crane' });
-    expect(quick.state.gold).toBe(20);
-
-    for (let index = 0; index < 20; index++) {
-      const { state } = start(`gold-slow-${index}`);
+  it('pays 8/7/6/5/4 by solve guess count', () => {
+    const expected = [0, 8, 7, 6, 5, 4];
+    for (let guesses = 1; guesses <= 5; guesses++) {
+      const { state } = start(`gold-tier-${guesses}`);
       if (!state.round) throw new Error('expected round');
       setAnswer(state, 'crane');
-      state.round.totalGuesses = 3;
-      const slow = act(state, { type: 'guess', word: 'crane' });
-      expect(slow.state.gold).toBeGreaterThanOrEqual(17);
-      expect(slow.state.gold).toBeLessThanOrEqual(20);
+      state.round.totalGuesses = guesses - 1;
+      const solved = act(state, { type: 'guess', word: 'crane' });
+      expect(solved.state.gold).toBe(12 + expected[guesses]);
     }
   });
 
@@ -1950,7 +1939,9 @@ describe('latest balance pass', () => {
     expect(FOOD_BY_ID.get('hagelslag')?.description).toContain('20%');
     expect(FOOD_BY_ID.get('hearty-stew')?.price).toBe(5);
     expect(FOOD_BY_ID.get('masala-dosa')?.price).toBe(3);
-    expect(FOOD_BY_ID.get('cyrniki')?.price).toBe(4);
+    expect(FOOD_BY_ID.get('cyrniki')?.price).toBe(5);
+    expect(FOOD_BY_ID.get('cyrniki')?.effects)
+      .toContainEqual({ type: 'healMissingPercent', percent: 50 });
     expect(FOOD_BY_ID.get('menemen')?.price).toBe(4);
     expect(FOOD_BY_ID.get('big-eggplant')?.price).toBe(4);
     expect(FOOD_BY_ID.get('jumbo-hot-dog')?.price).toBe(3);
@@ -2998,6 +2989,35 @@ describe('serialization', () => {
 
   it('rejects old save versions', () => {
     expect(game.deserialize(JSON.stringify({ version: 5 }))).toBeNull();
+  });
+});
+
+describe('unique shop items', () => {
+  it('does not offer Tally while the player owns one', () => {
+    for (let index = 0; index < 80; index++) {
+      const { state } = start(`tally-owned-${index}`);
+      state.items.push({ instance: 'i-tally', id: 'tally', data: { guesses: 0 }, equipped: true });
+      state.nodeIndex = 0;
+      state.nodes[1] = { kind: 'shop', level: 1 };
+      state.phase = 'shop';
+      const offers = enterShop(state).state.shop?.offers ?? [];
+      expect(offers.some((offer) => offer.kind === 'item' && offer.def === 'tally')).toBe(false);
+    }
+  });
+
+  it('still offers Tally when the player does not own one', () => {
+    let sawTally = false;
+    for (let index = 0; index < 300 && !sawTally; index++) {
+      const { state } = start(`tally-unowned-${index}`);
+      state.nodeIndex = 0;
+      state.nodes[1] = { kind: 'shop', level: 1 };
+      state.phase = 'shop';
+      const offers = enterShop(state).state.shop?.offers ?? [];
+      if (offers.some((offer) => offer.kind === 'item' && offer.def === 'tally')) {
+        sawTally = true;
+      }
+    }
+    expect(sawTally).toBe(true);
   });
 });
 

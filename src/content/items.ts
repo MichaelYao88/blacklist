@@ -454,6 +454,7 @@ export const ITEMS: ItemDef[] = [
     description: 'Every 4 guesses: +1 gold.',
     price: 7,
     kind: 'gear',
+    unique: true,
     initial: { guesses: 0 },
     on: {
       onGuessScored: (ctx) => {

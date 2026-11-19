@@ -24,7 +24,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - The blacklist is disabled and hidden until **The List** curse is taken; The List is a single curse, never stacks, and arrives stocked with the first guess from every earlier round
 - The clock is disabled until **The Clock** curse is taken; the first stack gives 5:00
 - The Clockmaker event only appears once The Clock exists
-- **Phone a Friend** delivers a one- or two-word catchphrase, quietly adds 5 seconds, and spams his words across the screen; the **Pizza Pzazz** set shows a pizza/sparkle callout instead of the word spam
+- **Phone a Friend** delivers a one- or two-word catchphrase, quietly adds 5 seconds, and spams his words across the screen; the **Pizza Pzazz** set shows a pizza/sparkle callout instead of the word spam and is guaranteed on the first two-word call of a run
 - **Time Freeze** gives a free, unobscured guess that does not count towards solve-count items (Hat Trick, Bloom, Shortcut, etc.); Time Freeze and Immunity lock until your next guess
 - Within-X solve items count **player guesses only**; solve gold still uses total guesses
 - Curse Collector, Witch Charm, Curse Bulwark and Reliquary trigger on gaining a curse ("Whenever you gain a curse: Gain …")
@@ -77,9 +77,10 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Pen Club** pays a random 1-5 gold for guesses starting with PEN; **Gourmand** gains +1 max HP on eat or spell cast
 - **Old McDonald** is an expensive relic: EIEIO is guessed for free at round start
 - Shops can show up to 2 copies of the same entry; sell rows are hoverable
-- Solve gold is 8 for 3 guesses or fewer, otherwise a random 5-8
+- Solve gold is 8/7/6/5/4 for solves in 1/2/3/4/5+ guesses
 - **The Endless Table** fires every on-eat effect 7 times or pays 7 gold
-- **Tally Lens** is guaranteed in a shop after a vision curse and shows correct/misplaced counts
+- **Tally Lens** is guaranteed in a shop after a vision curse and shows correct/misplaced counts; **Tally** is never offered while you already own one
+- **Cyrniki** is a 5g food: heal 50% of missing HP, then 50% a spell / 50% a shop reroll
 - **The Tax** reduces encounter gold by 40% and is unique; **The Sleeper** adds +2 damage per revealed letter in your first player guess, per stack; **The Curse Broker** charges 12g for a relic or 15g to remove a curse; **The Confessional** sells 45/75/100% random curse removal for 5/10/15g
 - **The Detour** offers a slot, a shop, or both for 7 HP; **The Crossroads** offers a shop or a Heal plus Time Freeze; **The Trade** trades gold for a slot, a slot for gold, or two Heal spells
 - The Runner and Orc idle in their walk loops; free guesses and the winning guess play the Runner's attack, other guesses alternate Orc → Runner, a fatal guess is always the Orc, and the Orc collapses from the winning blow and stays down until the next round starts
@@ -145,7 +146,7 @@ The Runner (Soldier) and Orc sprites are from **Tiny RPG Character Asset Pack 01
 | Final boss damage | 3 base plus curses |
 | Timeout damage | `10 + 2 × curse stacks`, bypasses armor, ends the round |
 | Armor | a pool that soaks damage point-for-point before HP; refills each round |
-| Solve gold | `8` on a solve in 3 guesses or fewer, else random `5-8`, plus `solveGoldBonus` (Midas Touch can double any gain) |
+| Solve gold | `8/7/6/5/4` for solves in 1/2/3/4/5+ guesses, plus `solveGoldBonus` (Midas Touch can double any gain) |
 | Timeout gold | `1`; a death pays nothing |
 | Solve reward | a flat 5 gold plus a spell (65%) or food (35%); gear is an 8% find |
 | Relic source | very rare shop/reward finds and the Curse Broker; owned relics never appear again |

@@ -1739,12 +1739,20 @@ export function createCore(content: Content): Core {
       if (round.boss) state.stats.bosses++;
     }
 
-    // Every finished encounter pays a prize. Quick solves (3 guesses or fewer)
-    // always pay 8; otherwise the base is a random 5-8. Bounty-style bonuses
-    // still add on top.
+    // Every finished encounter pays a prize. Solve gold drops with each guess:
+    // 8 for a one-guess solve, then 7, 6, 5 and 4. Bounty-style bonuses still
+    // add on top.
     let baseGold = 0;
     if (outcome === 'solved') {
-      const rolled = round.totalGuesses <= 3 ? 8 : rngPick(state, [5, 6, 7, 8]);
+      const rolled = round.totalGuesses <= 1
+        ? 8
+        : round.totalGuesses === 2
+          ? 7
+          : round.totalGuesses === 3
+            ? 6
+            : round.totalGuesses === 4
+              ? 5
+              : 4;
       baseGold = rolled + state.bonusSolveGold;
     } else if (outcome === 'timeout') {
       baseGold = 1;
@@ -1922,8 +1930,13 @@ export function createCore(content: Content): Core {
         ([first, second]) => available(first, taken) && available(second, taken),
       );
       if (phrases.length > 0) {
-        const [first, second] = rngPick(state, phrases);
+        const pizza = phrases.find(([first, second]) => first === 'pizza' && second === 'pzazz');
+        const picked = pizza && !state.pizzaPzazzSeen
+          ? pizza
+          : rngPick(state, phrases);
+        const [first, second] = picked;
         if (first === 'pizza' && second === 'pzazz') {
+          state.pizzaPzazzSeen = true;
           emit(rt, { type: 'friendSaid', text: 'Pizza Pzazz 🍕✨' });
         }
         if (state.phase === 'round') scorePlayerGuess(rt, first, 'friend');
@@ -2118,11 +2131,13 @@ export function createCore(content: Content): Core {
       const common = content.items.filter(
         (item) => (item.rarity === undefined || item.rarity === 'common')
           && itemAvailable(state, item)
+          && !(item.unique && owned.has(item.id))
           && (item.kind !== 'gear' || !owned.has(item.id)),
       );
       const uncommon = content.items.filter(
         (item) => item.rarity === 'uncommon'
           && itemAvailable(state, item)
+          && !(item.unique && owned.has(item.id))
           && (item.kind !== 'gear' || !owned.has(item.id)),
       );
       const rare = content.items.filter(
@@ -2206,9 +2221,12 @@ export function createCore(content: Content): Core {
     const owned = new Set(state.items.map((item) => item.id));
     const availableItems = content.items.filter((item) => itemAvailable(state, item));
     const commonItems = availableItems.filter(
-      (item) => item.rarity === undefined || item.rarity === 'common',
+      (item) => (item.rarity === undefined || item.rarity === 'common')
+        && !(item.unique && owned.has(item.id)),
     );
-    const uncommonItems = availableItems.filter((item) => item.rarity === 'uncommon');
+    const uncommonItems = availableItems.filter(
+      (item) => item.rarity === 'uncommon' && !(item.unique && owned.has(item.id)),
+    );
     const rareItems = availableItems.filter(
       (item) => item.rarity === 'rare' && !owned.has(item.id),
     );
@@ -2253,12 +2271,16 @@ export function createCore(content: Content): Core {
       picked.push({ kind: 'spell', def: spell.id, price: shopPrice(state, 4) });
     };
     const pickRandomItem = (): boolean => {
-      let pool = commonItems.filter((item) => usedCount(`item:${item.id}`) < 2);
+      let pool = commonItems.filter(
+        (item) => usedCount(`item:${item.id}`) < (item.unique ? 1 : 2),
+      );
       if (rareItems.length > 0 && rngChance(state, 25)) {
         const rarePool = rareItems.filter((item) => usedCount(`item:${item.id}`) < 1);
         if (rarePool.length > 0) pool = rarePool;
       } else if (uncommonItems.length > 0 && rngChance(state, 40)) {
-        pool = uncommonItems.filter((item) => usedCount(`item:${item.id}`) < 2);
+        pool = uncommonItems.filter(
+          (item) => usedCount(`item:${item.id}`) < (item.unique ? 1 : 2),
+        );
       }
       if (pool.length === 0) return false;
       pickItem(rngPick(state, pool));

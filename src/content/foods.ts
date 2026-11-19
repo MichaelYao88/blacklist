@@ -233,15 +233,18 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'cyrniki',
     name: 'Cyrniki',
-    description: '50%: a spell. 50%: reroll the shop. No slot.',
-    price: 4,
-    effects: [{
-      type: 'randomChoice',
-      options: [
-        [{ type: 'giveSpell', spell: 'random' }],
-        [{ type: 'rerollShop' }],
-      ],
-    }],
+    description: 'Heal 50% of missing HP. 50%: a spell. 50%: reroll the shop. No slot.',
+    price: 5,
+    effects: [
+      { type: 'healMissingPercent', percent: 50 },
+      {
+        type: 'randomChoice',
+        options: [
+          [{ type: 'giveSpell', spell: 'random' }],
+          [{ type: 'rerollShop' }],
+        ],
+      },
+    ],
   }),
   defineFood({
     id: 'masala-dosa',

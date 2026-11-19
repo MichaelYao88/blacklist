@@ -402,6 +402,8 @@ export interface ItemDef {
   kind: ItemKind;
   /** Rare relics are boss prizes. They consume an item slot like any other gear. */
   rarity?: 'common' | 'uncommon' | 'rare';
+  /** Only one copy can be offered while the player already owns it. */
+  unique?: boolean;
   /** Allows guesses that are not in the dictionary. */
   allowInvalidGuesses?: boolean;
   slots?: number;
@@ -542,6 +544,8 @@ export interface RunState {
   purged: Letter[];
   usedAnswers: string[];
   lastAnswer?: string;
+  /** Phone a Friend has delivered the Pizza Pzazz catchphrase this run. */
+  pizzaPzazzSeen?: boolean;
   /** Knafeh: guess this word for free at the start of the next round. */
   nextRoundGuess?: string;
   /** King Mushroom: cap the next round's wrong-guess damage. */
