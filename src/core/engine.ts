@@ -2147,23 +2147,25 @@ export function createCore(content: Content): Core {
   }
 
   /**
-   * 40%: rare or lower, 30%: uncommon or lower, 30%: common.
-   * A missing tier falls through to the next lower tier.
+   * Rarity rolls are floors, not exclusive tiers:
+   * 40% rare floor: pull from the entire pool
+   * 30% uncommon floor: pull from uncommon + common (exclude rare)
+   * 30% common floor: pull from common only (exclude rare + uncommon)
+   * If the selected floor is empty, fall back to the entire pool.
    */
   function pickByRarity<T extends RarityWeighted>(
     state: RunState,
     pools: { common: T[]; uncommon: T[]; rare: T[] },
   ): T | undefined {
+    const all = [...pools.rare, ...pools.uncommon, ...pools.common];
+    if (all.length === 0) return undefined;
     const roll = rngNext(state) * 100;
-    const order = roll < 40
-      ? [pools.rare, pools.uncommon, pools.common]
+    const pool = roll < 40
+      ? all
       : roll < 70
-        ? [pools.uncommon, pools.common, pools.rare]
-        : [pools.common, pools.uncommon, pools.rare];
-    for (const pool of order) {
-      if (pool.length > 0) return weightedPick(state, pool);
-    }
-    return undefined;
+        ? [...pools.uncommon, ...pools.common]
+        : pools.common;
+    return weightedPick(state, pool.length > 0 ? pool : all);
   }
 
   function makeRewards(rt: Runtime): RewardOption[] {

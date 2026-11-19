@@ -41,7 +41,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Vision-hidden letters show the hatched hidden key on the keyboard; reveals and rule-outs take priority over that layer
 - Every finished encounter pays gold; solves offer coins, usually a spell, and only rarely gear or a meal
 - Opening shields such as **Head Start** and **Quickdraw** make guesses in their window count as free guesses
-- Rarity is rolled per slot: 40% rare tier, 30% uncommon tier, 30% common tier. A missing tier falls through to the next lower one, and the pick inside the tier is uniform
+- Rarity rolls are quality floors, not exclusive tiers: 40% rare floor pulls from the entire pool, 30% uncommon floor pulls from uncommon + common, and 30% common floor pulls from common only. A missing floor falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the final boss)
 - 108 items (99 shop items + 9 rare relics), 6 spells, 78 foods and 25 happenings
