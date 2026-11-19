@@ -1340,6 +1340,7 @@ export function createCore(content: Content): Core {
       gauntletTotal: boss?.gauntlet ? boss.gauntlet.puzzles : 1,
       gauntletAnswers: [],
       totalGuesses: 0,
+      playerGuesses: 0,
       unobscuredGuesses: 0,
       lockedSpells: [],
       hints: {},
@@ -1453,7 +1454,7 @@ export function createCore(content: Content): Core {
     if (goldAward > 0) changeGold(rt, goldAward, RULES);
 
     if (outcome === 'solved') {
-      const countedGuesses = round.totalGuesses - round.unobscuredGuesses;
+      const countedGuesses = round.playerGuesses - round.unobscuredGuesses;
       runHook(rt, 'onSolve', {
         guesses: countedGuesses,
         elapsedMs: round.elapsedMs,
@@ -1676,6 +1677,7 @@ export function createCore(content: Content): Core {
 
     round.totalGuesses++;
     state.stats.guesses++;
+    if (by === 'player') round.playerGuesses++;
     if (unobscured) round.unobscuredGuesses++;
     if (by === 'player' && round.lockedSpells.length > 0) round.lockedSpells = [];
     round.guesses.push(guess);
@@ -3074,6 +3076,11 @@ export function createCore(content: Content): Core {
         }
         if (typeof state.round.unobscuredGuesses !== 'number') {
           state.round.unobscuredGuesses = 0;
+        }
+        if (typeof state.round.playerGuesses !== 'number') {
+          state.round.playerGuesses = state.round.guesses.filter(
+            (guess) => guess.by === 'player',
+          ).length;
         }
         if (!Array.isArray(state.round.lockedSpells)) {
           state.round.lockedSpells = [];

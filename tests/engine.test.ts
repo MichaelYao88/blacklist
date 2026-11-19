@@ -957,6 +957,7 @@ describe('scaling gold items', () => {
     if (!state.round) throw new Error('expected round');
     setAnswer(state, 'crane');
     state.round.totalGuesses = 3;
+    state.round.playerGuesses = 3;
 
     const solve = act(state, { type: 'guess', word: 'crane' });
     expect(solve.state.gold).toBeGreaterThanOrEqual(17);
@@ -1601,6 +1602,7 @@ describe('latest balance pass', () => {
     if (!quick.state.round) throw new Error('expected round');
     setAnswer(quick.state, 'crane');
     quick.state.round.totalGuesses = 1;
+    quick.state.round.playerGuesses = 1;
     const two = act(quick.state, { type: 'guess', word: 'crane' });
     expect(two.state.slots).toBe(6);
 
@@ -1609,8 +1611,22 @@ describe('latest balance pass', () => {
     if (!slow.state.round) throw new Error('expected round');
     setAnswer(slow.state, 'crane');
     slow.state.round.totalGuesses = 2;
+    slow.state.round.playerGuesses = 2;
     const three = act(slow.state, { type: 'guess', word: 'crane' });
     expect(three.state.slots).toBe(5);
+  });
+
+  it('counts only player guesses for within-X items', () => {
+    const { state } = start('player-guess-count');
+    state.curses.push({ id: 'clock', stacks: 1 });
+    const next = nextRound(state);
+    next.state.items.push({ instance: 'i-short', id: 'shortcut', data: {}, equipped: true });
+    next.state.spells = [{ instance: 's-phone', id: 'phone-friend' }];
+    setAnswer(next.state, 'crane');
+    const cast = act(next.state, { type: 'castSpell', instance: 's-phone' });
+    expect(cast.state.round?.guesses.filter((guess) => guess.by === 'friend')).toHaveLength(2);
+    const solved = act(cast.state, { type: 'guess', word: 'crane' });
+    expect(solved.state.slots).toBe(6); // one player guess, despite two friend guesses
   });
 
   it('Necronomicon procs at 13 reveals for an Omen and -3 max HP', () => {

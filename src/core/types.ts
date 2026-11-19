@@ -138,6 +138,8 @@ export interface RoundState {
   gauntletTotal: number;
   gauntletAnswers: string[];
   totalGuesses: number;
+  /** Player guesses, excluding friend and auto-guesses. */
+  playerGuesses: number;
   /** Guesses that were free and unobscured from Time Freeze. */
   unobscuredGuesses: number;
   /** Spells that must wait for the player's next guess before another cast. */
