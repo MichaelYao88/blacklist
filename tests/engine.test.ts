@@ -401,6 +401,7 @@ describe('damage and curses', () => {
     stackedNext.state.hp = 20;
     const hit = act(stackedNext.state, { type: 'guess', word: 'slate' });
     expect(hit.state.hp).toBe(7); // 5 base + 8 Sleeper
+    expect(CURSE_BY_ID.get('sleeper')?.description).toContain('first player guess');
   });
 });
 

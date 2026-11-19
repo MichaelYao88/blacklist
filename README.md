@@ -71,7 +71,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Solve gold is 8 for 3 guesses or fewer, otherwise a random 5-8
 - **The Endless Table** fires every on-eat effect 7 times or pays 7 gold
 - **Tally Lens** is guaranteed in a shop after a vision curse and shows correct/misplaced counts
-- **The Tax** reduces encounter gold by 40% and is unique; **The Sleeper** adds +2 damage per revealed letter in your first guess, per stack; **The Curse Broker** charges 12g for a relic or 15g to remove a curse; **The Confessional** sells 45/75/100% random curse removal for 5/10/15g
+- **The Tax** reduces encounter gold by 40% and is unique; **The Sleeper** adds +2 damage per revealed letter in your first player guess, per stack; **The Curse Broker** charges 12g for a relic or 15g to remove a curse; **The Confessional** sells 45/75/100% random curse removal for 5/10/15g
 - **The Detour** offers a slot, a shop, or both for 7 HP; **The Crossroads** offers a shop or a Heal plus Time Freeze; **The Trade** trades gold for a slot, a slot for gold, or two Heal spells
 - The run path rail is gone; the current level stays in the battle rail
 - Purge is an event (The Redaction) and rare foods; its rest option triggers an eat and a 10% random curse removal

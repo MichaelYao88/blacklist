@@ -157,9 +157,9 @@ export const CURSES: CurseDef[] = [
   defineCurse({
     id: 'sleeper',
     name: 'The Sleeper',
-    description: '+2 damage per guess per revealed letter in your first guess.',
+    description: '+2 damage per guess per revealed letter in your first player guess.',
     rules: [
-      'Count the green and yellow letters in your first guess of the round.',
+      'Count the green and yellow letters in your first player guess of the round.',
       'Every guess this round deals +2 damage per revealed letter.',
       'Each stack adds another +2 per revealed letter.',
     ],
