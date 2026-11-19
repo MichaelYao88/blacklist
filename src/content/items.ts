@@ -217,12 +217,17 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'grey-market',
     name: 'Grey Market',
-    description: "Every all-grey guess pays 1 gold, yours or an ally's.",
+    description: 'Every all-grey guess pays 1 gold. If one pays nothing, a letter was hidden.',
     price: 7,
     kind: 'gear',
     on: {
       onGuessScored: (_ctx, p) =>
-        isAllAbsent(p.guess.truth) ? [{ type: 'gold', amount: 1 }] : [],
+        isAllAbsent(p.guess.truth)
+          ? [
+              { type: 'gold', amount: 1 },
+              { type: 'message', text: 'Grey Market: +1 gold.' },
+            ]
+          : [],
     },
   }),
   defineItem({

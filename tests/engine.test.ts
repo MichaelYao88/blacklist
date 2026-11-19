@@ -2506,8 +2506,28 @@ describe('latest balance pass', () => {
     const gold = state.gold;
     const miss = act(state, { type: 'guess', word: 'sloth' });
     expect(miss.state.gold).toBe(gold + 1);
+    expect(miss.events.some(
+      (event) => event.type === 'message' && event.text.includes('Grey Market'),
+    )).toBe(true);
     const hit = act(miss.state, { type: 'guess', word: 'slate' });
     expect(hit.state.gold).toBe(gold + 1);
+  });
+
+  it('Grey Market stays silent when a hidden letter keeps a guess off all-grey', () => {
+    const { state } = start('grey-market-hidden');
+    state.items.push({ instance: 'i-grey', id: 'grey-market', data: {}, equipped: true });
+    state.curses.push({ id: 'hard-r', stacks: 1 });
+    state.round!.freeLeft = 0;
+    state.round!.answer = 'crane';
+    const gold = state.gold;
+    // roost hides its one present letter (R), so the board looks all-dark.
+    const hidden = act(state, { type: 'guess', word: 'roost' });
+    expect(hidden.state.gold).toBe(gold);
+    expect(hidden.events.some(
+      (event) => event.type === 'message' && event.text.includes('Grey Market'),
+    )).toBe(false);
+    const miss = act(hidden.state, { type: 'guess', word: 'sloth' });
+    expect(miss.state.gold).toBe(gold + 1);
   });
 
   it('Grey Market pays for all-grey auto-guesses too', () => {

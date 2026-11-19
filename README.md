@@ -64,7 +64,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Second Hand** and **Engine** are 8g items that cross-grant spells on cast at 80%
 - **Panacea Pouch** (formerly Spellhoarder) is a 9g item: every 3rd spell cast grants a Heal spell
 - **Vowel Tithe** is an 8g item: each spell cast has a 25% chance to grant Omen
-- **Grey Market** is a 7g item: every all-grey guess pays 1 gold, whether you made it or an ally did
+- **Grey Market** is a 7g item: every all-grey guess pays 1 gold, whether you made it or an ally did; an all-dark guess that pays nothing hides a letter
 - **Photosynthesis** is a 10g item: on solve, +2 max HP and heal 20% max HP
 - **Stopped Clock** is a 6g item: casting Time Freeze grants +5 max HP, once per round
 - **Adrenaline** is a 10g item: dropping below 50% HP grants +1 max HP and +1 max armor, re-arming after healing above 50%
