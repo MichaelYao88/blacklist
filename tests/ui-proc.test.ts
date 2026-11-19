@@ -9,7 +9,6 @@ describe('item proc feed', () => {
     localStorage.clear();
     const { state } = game.newRun({ seed: 'proc-feed' });
     state.items.push(
-      { instance: 'i-gm', id: 'grey-matter', data: { used: 0 }, equipped: true },
       { instance: 'i-grey', id: 'grey-market', data: {}, equipped: true },
     );
     state.round!.answer = 'crane';
@@ -22,7 +21,7 @@ describe('item proc feed', () => {
     root.querySelector<HTMLElement>('[data-action="resume"]')!.click();
   });
 
-  it('shows Grey Matter and Grey Market when an all-grey guess procs them', () => {
+  it('shows Grey Market when an all-grey guess procs it', () => {
     for (const letter of 'sloth') {
       root.querySelector<HTMLElement>(`[data-action="key"][data-letter="${letter}"]`)!.click();
     }
@@ -30,8 +29,6 @@ describe('item proc feed', () => {
 
     const procs = [...document.querySelectorAll<HTMLElement>('#proc-root .proc-pop')];
     const text = procs.map((proc) => proc.textContent ?? '').join(' | ');
-    expect(text).toContain('Grey Matter');
-    expect(text).toContain('free guess');
     expect(text).toContain('Grey Market');
     expect(text).toContain('+1 gold');
   });

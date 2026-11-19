@@ -534,6 +534,20 @@ button {
   background: rgba(255, 255, 255, 0.017);
 }
 
+.item-card.spent {
+  border-style: dashed;
+}
+
+.item-state {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(223, 97, 90, 0.12);
+  color: #e48a84;
+  font-size: 0.52rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
 .item-card p,
 .spell-card p {
   margin: 4px 0 6px;

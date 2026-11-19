@@ -1508,17 +1508,15 @@ export function createCore(content: Content): Core {
       if (effects.length === 0) continue;
       const before = snapshotProc(rt);
       applyEffects(rt, effects, { kind: 'item', instance: item.instance }, item.instance);
-      if (hook !== 'onTimerTick') {
-        const text = procSummary(before, rt, hook);
-        if (text) {
-          emit(rt, {
-            type: 'itemProc',
-            item: item.id,
-            instance: item.instance,
-            hook,
-            text,
-          });
-        }
+      const text = procSummary(before, rt, hook);
+      if (text) {
+        emit(rt, {
+          type: 'itemProc',
+          item: item.id,
+          instance: item.instance,
+          hook,
+          text,
+        });
       }
       if (isOver(state)) break;
     }

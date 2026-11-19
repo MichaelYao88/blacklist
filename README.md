@@ -44,7 +44,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Rarity is rolled per slot: 40% rare tier, 30% uncommon tier, 30% common tier. A missing tier falls through to the next lower one, and the pick inside the tier is uniform
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 109 items (99 shop items + 10 rare relics), 6 spells, 78 foods and 25 happenings
+- 108 items (99 shop items + 9 rare relics), 6 spells, 78 foods and 25 happenings
 - New foods include **U-nagi**, **Empty Calories**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
@@ -61,12 +61,16 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Every shop node offers a choice: visit the shop, or rest at the inn to heal to full HP and move on
 - **Hearty Stew** is a 5g food that grants 1-2 casts of Heal; **Hagelslag** gives +3 max HP and heals 20% of missing HP
 - **Bulwark** is an 8g item: every 10 damage blocked by armor, cast a random spell
+- **Ricochet** is a 7g item: every 10 armor lost, autoguess a random word
+- **Scattershot** autoguesses once per round after a guess sharing no letters with the previous guess
+- **Yellow1** autoguesses once per round on exactly one yellow and no green; **Green1** does the same for exactly one green and no yellow
+- **Deadline** grants +1 free guess as soon as the clock drops below 30s each round
 - **Second Hand** and **Engine** are 8g items that cross-cast spells on cast at 80%
 - **Panacea Pouch** (formerly Spellhoarder) is a 9g item: every 3rd spell cast casts Heal
 - **Vowel Tithe** is an 8g item: each spell cast has a 25% chance to cast Omen
 - **Wild Magic** is a 9g item: each spell cast has a 25% chance to cast a random spell and a 25% chance to autoguess a random word
 - **Acquired Taste** is an 11g uncommon item: each different food you eat this run gives +4 max HP
-- Item triggers show a compact proc pop-up with the actual result (for example **Grey Matter** arming a free guess or **Grey Market** paying gold)
+- Item triggers show a compact proc pop-up with the actual result (for example **Yellow1** calling an autoguess or **Grey Market** paying gold); once-per-round items show **SPENT** after they fire
 - **Grey Market** is a 7g item: every all-grey guess pays 1 gold, whether you made it or an ally did; an all-dark guess that pays nothing hides a letter
 - **Photosynthesis** is a 10g item: on solve, +2 max HP and heal 20% max HP
 - **Stopped Clock** is a 6g item: casting Time Freeze grants +5 max HP, once per round

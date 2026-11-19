@@ -1417,9 +1417,10 @@ function renderItem(view: RunView, item: ItemView): string {
   const name = def?.name ?? item.id;
   const description = def?.dynamicDescription?.(item.data) ?? def?.description ?? '';
   const data = Object.entries(item.data)
-    .filter(([key, value]) => value !== 0 && !key.startsWith('_'))
+    .filter(([key, value]) => value !== 0 && !key.startsWith('_') && key !== 'used')
     .map(([key, value]) => `<span class="data-chip">${escapeHtml(key)} ${value}</span>`)
     .join('');
+  const spent = def?.initial?.used !== undefined && (item.data.used ?? 0) > 0;
   const usable = Boolean(def?.onUse);
   const rarity = !item.equipped && item.slots > 0
     ? 'BAG'
@@ -1434,10 +1435,11 @@ function renderItem(view: RunView, item: ItemView): string {
     ? 'rare'
     : def?.rarity === 'uncommon' ? 'uncommon' : '';
   return `
-  <article class="item-card ${rarityClass} ${!item.equipped && item.slots > 0 ? 'in-bag' : ''}" data-tip="${escapeHtml(description)}">
+  <article class="item-card ${rarityClass} ${spent ? 'spent' : ''} ${!item.equipped && item.slots > 0 ? 'in-bag' : ''}" data-tip="${escapeHtml(description)}">
     <div class="item-top">
       <span class="item-emoji" aria-hidden="true">${itemIcon(item.id)}</span>
       <b>${escapeHtml(name)}</b>
+      ${spent ? `<span class="item-state">SPENT</span>` : ''}
       <span class="tag">${rarity}</span>
     </div>
     <p>${glossaryText(description)}</p>

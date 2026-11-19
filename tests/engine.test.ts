@@ -2412,7 +2412,6 @@ describe('latest balance pass', () => {
     const prices: Record<string, number> = {
       'chrono-anchor': 28,
       counterweight: 10,
-      'loaded-dice': 26,
       'loose-tongue': 24,
       'mending-plate': 26,
       'old-mcdonald': 10,
@@ -2527,17 +2526,56 @@ describe('latest balance pass', () => {
     expect(hit.state.gold).toBe(gold + 1);
   });
 
-  it('Grey Matter reports the free guess it grants', () => {
-    const { state } = start('grey-matter-proc');
-    state.items.push({ instance: 'i-gm', id: 'grey-matter', data: { used: 0 }, equipped: true });
-    state.round!.freeLeft = 0;
+  it('Scattershot autoguesses once per round after a disjoint guess', () => {
+    const { state } = start('scattershot-auto');
+    state.items.push({ instance: 'i-scatter', id: 'scattershot', data: { used: 0 }, equipped: true });
     state.round!.answer = 'crane';
-    const miss = act(state, { type: 'guess', word: 'sloth' });
-    const proc = miss.events.find(
-      (event): event is Extract<GameEvent, { type: 'itemProc' }> =>
-        event.type === 'itemProc' && event.item === 'grey-matter',
-    );
-    expect(proc?.text).toContain('free guess');
+    state.round!.freeLeft = 0;
+    let current = act(state, { type: 'guess', word: 'sloth' }).state;
+    expect(current.round?.guesses.some((guess) => guess.by === 'friend')).toBe(false);
+    current = act(current, { type: 'guess', word: 'brick' }).state;
+    expect(current.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
+    expect(current.items.find((item) => item.id === 'scattershot')?.data.used).toBe(1);
+  });
+
+  it('Yellow1 autoguesses on one yellow and no green', () => {
+    const { state } = start('yellow1-auto');
+    state.items.push({ instance: 'i-yellow', id: 'double-blind', data: { used: 0 }, equipped: true });
+    state.round!.answer = 'crane';
+    state.round!.freeLeft = 0;
+    const guessed = act(state, { type: 'guess', word: 'roost' });
+    expect(guessed.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
+    expect(guessed.state.items.find((item) => item.id === 'double-blind')?.data.used).toBe(1);
+  });
+
+  it('Green1 autoguesses on one green and no yellow', () => {
+    const { state } = start('green1-auto');
+    state.items.push({ instance: 'i-green', id: 'green1', data: { used: 0 }, equipped: true });
+    state.round!.answer = 'crane';
+    state.round!.freeLeft = 0;
+    const guessed = act(state, { type: 'guess', word: 'climb' });
+    expect(guessed.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
+    expect(guessed.state.items.find((item) => item.id === 'green1')?.data.used).toBe(1);
+    expect(ITEM_BY_ID.get('green1')?.price).toBe(ITEM_BY_ID.get('double-blind')?.price);
+  });
+
+  it('Deadline grants one free guess when the clock drops below 30s', () => {
+    const { state } = start('deadline-timer');
+    state.curses.push({ id: 'clock', stacks: 1 });
+    const next = nextRound(state);
+    next.state.items.push({
+      instance: 'i-deadline',
+      id: 'deadline',
+      data: { used: 0 },
+      equipped: true,
+    });
+    next.state.round!.remainingMs = 30_500;
+    const before = next.state.round!.freeLeft;
+    const ticked = act(next.state, { type: 'tick', dtMs: 1_000 });
+    expect(ticked.state.round?.freeLeft).toBe(before + 1);
+    expect(ticked.state.items.find((item) => item.id === 'deadline')?.data.used).toBe(1);
+    const again = act(ticked.state, { type: 'tick', dtMs: 1_000 });
+    expect(again.state.round?.freeLeft).toBe(before + 1);
   });
 
   it('Grey Market stays silent when a hidden letter keeps a guess off all-grey', () => {
@@ -3131,13 +3169,19 @@ describe('autocast and random-guess batch', () => {
     expect(chosen.state.maxArmor).toBe(2);
   });
 
-  it('Glass Cannon gives a random guess after the first player guess', () => {
-    const { state } = start('glass-cannon-guess');
-    state.items.push({ instance: 'i-glass', id: 'glass-cannon', data: { used: 0 }, equipped: true });
+  it('Ricochet autoguesses after losing 10 armor', () => {
+    const { state } = start('ricochet');
+    state.items.push({ instance: 'i-rico', id: 'ricochet', data: { lost: 0 }, equipped: true });
+    state.maxArmor = 20;
+    state.armor = 20;
     setAnswer(state, 'crane');
     state.round!.freeLeft = 0;
-    const first = act(state, { type: 'guess', word: 'sloth' });
-    expect(first.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
+    let current = state;
+    for (const word of ['slate', 'pride', 'brick', 'crony']) {
+      current = act(current, { type: 'guess', word }).state;
+    }
+    expect(current.items.find((item) => item.id === 'ricochet')?.data.lost).toBe(2);
+    expect(current.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
   });
 
   it('marks the new uncommon and weighted content', () => {
@@ -3209,7 +3253,7 @@ describe('relic uniqueness', () => {
     .map((item) => item.id);
 
   it('never offers a relic already in the player inventory', () => {
-    expect(relicIds).toHaveLength(10);
+    expect(relicIds).toHaveLength(9);
     let sawOtherRelic = false;
     for (let index = 0; index < 60; index++) {
       const { state } = start(`relic-owned-${index}`);

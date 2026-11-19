@@ -180,7 +180,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'scattershot',
     name: 'Scattershot',
-    description: 'Once per round: no shared letters means a free guess.',
+    description: 'Once per round: a guess sharing no letters with the previous guess autoguesses a random word.',
     price: 8,
     kind: 'gear',
     initial: { used: 0 },
@@ -190,25 +190,7 @@ export const ITEMS: ItemDef[] = [
         if (ctx.self.data.used || !p.previous) return [];
         if (sharedLetters(p.guess.word, p.previous.word) > 0) return [];
         return [
-          { type: 'makeGuessFree' },
-          { type: 'setItemData', stat: 'used', value: 1 },
-        ];
-      },
-    },
-  }),
-  defineItem({
-    id: 'grey-matter',
-    name: 'Grey Matter',
-    description: 'Once per round: an all-grey guess is a free guess.',
-    price: 8,
-    kind: 'gear',
-    initial: { used: 0 },
-    on: {
-      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
-      onGuessScored: (ctx, p) => {
-        if (ctx.self.data.used || !isAllAbsent(p.guess.truth)) return [];
-        return [
-          { type: 'makeGuessFree' },
+          { type: 'randomGuesses', count: 1 },
           { type: 'setItemData', stat: 'used', value: 1 },
         ];
       },
@@ -542,25 +524,6 @@ export const ITEMS: ItemDef[] = [
     },
   }),
   defineItem({
-    id: 'glass-cannon',
-    name: 'Glass Cannon',
-    description: 'After your first guess each round: autoguess a random word. −10 max HP when acquired.',
-    price: 9,
-    kind: 'gear',
-    initial: { used: 0 },
-    onAcquire: () => [{ type: 'maxHp', delta: -10 }],
-    on: {
-      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
-      onGuessScored: (ctx, p) => {
-        if (ctx.self.data.used || p.guess.by !== 'player') return [];
-        return [
-          { type: 'randomGuesses', count: 1 },
-          { type: 'setItemData', stat: 'used', value: 1 },
-        ];
-      },
-    },
-  }),
-  defineItem({
     id: 'loose-tongue',
     name: 'Loose Tongue',
     description: 'Any five letters are a valid guess. Nonsense still scores.',
@@ -757,6 +720,28 @@ export const ITEMS: ItemDef[] = [
         return [
           { type: 'setItemData', stat: 'blocked', value: total % 10 },
           ...Array.from({ length: spells }, () => ({ type: 'castSpell' as const, spell: 'random' as const })),
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'ricochet',
+    name: 'Ricochet',
+    description: 'Every 10 armor lost: autoguess a random word.',
+    price: 7,
+    kind: 'gear',
+    initial: { lost: 0 },
+    on: {
+      onDamageTaken: (ctx, p) => {
+        if (p.armorUsed <= 0) return [];
+        const total = ctx.self.data.lost + p.armorUsed;
+        const guesses = Math.floor(total / 10);
+        return [
+          { type: 'setItemData', stat: 'lost', value: total % 10 },
+          ...Array.from({ length: guesses }, () => ({
+            type: 'randomGuesses' as const,
+            count: 1,
+          })),
         ];
       },
     },
@@ -1011,18 +996,18 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'deadline',
     name: 'Deadline',
-    description: 'The first guess with 30s or less left each round is free.',
+    description: 'As soon as the clock drops below 30s each round: +1 free guess.',
     price: 8,
     kind: 'gear',
     requiresClock: true,
     initial: { used: 0 },
     on: {
       onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
-      onGuessScored: (ctx, p) => {
-        if (ctx.self.data.used || p.guess.free) return [];
-        if (p.remainingMs === null || p.remainingMs > 30_000) return [];
+      onTimerTick: (ctx, p) => {
+        if (ctx.self.data.used) return [];
+        if (p.remainingMs === null || p.remainingMs >= 30_000) return [];
         return [
-          { type: 'makeGuessFree' },
+          { type: 'freeGuesses', count: 1 },
           { type: 'setItemData', stat: 'used', value: 1 },
         ];
       },
@@ -1070,7 +1055,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'double-blind',
     name: 'Yellow1',
-    description: 'Once per round: a guess with exactly one yellow and no green is free.',
+    description: 'Once per round: a guess with exactly one yellow and no green autoguesses a random word.',
     price: 8,
     kind: 'gear',
     initial: { used: 0 },
@@ -1081,7 +1066,27 @@ export const ITEMS: ItemDef[] = [
         const counts = truthCounts(p.guess.truth);
         if (counts.correct !== 0 || counts.present !== 1) return [];
         return [
-          { type: 'makeGuessFree' },
+          { type: 'randomGuesses', count: 1 },
+          { type: 'setItemData', stat: 'used', value: 1 },
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'green1',
+    name: 'Green1',
+    description: 'Once per round: a guess with exactly one green and no yellow autoguesses a random word.',
+    price: 8,
+    kind: 'gear',
+    initial: { used: 0 },
+    on: {
+      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
+      onGuessScored: (ctx, p) => {
+        if (ctx.self.data.used) return [];
+        const counts = truthCounts(p.guess.truth);
+        if (counts.correct !== 1 || counts.present !== 0) return [];
+        return [
+          { type: 'randomGuesses', count: 1 },
           { type: 'setItemData', stat: 'used', value: 1 },
         ];
       },
@@ -1586,18 +1591,6 @@ export const ITEMS: ItemDef[] = [
     on: {
       onSolve: (_ctx, p) =>
         p.elapsedMs < 60_000 ? [{ type: 'giveSpell', spell: 'omen' }] : [],
-    },
-  }),
-  defineItem({
-    id: 'loaded-dice',
-    name: 'Loaded Dice',
-    description: 'Every guess: 25% chance to be free.',
-    price: 26,
-    kind: 'gear',
-    rarity: 'rare',
-    on: {
-      onGuessScored: (_ctx, p) =>
-        p.guess.free ? [] : [{ type: 'makeGuessFree', chancePct: 25 }],
     },
   }),
   defineItem({
