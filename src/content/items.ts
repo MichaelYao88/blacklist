@@ -222,12 +222,7 @@ export const ITEMS: ItemDef[] = [
     kind: 'gear',
     on: {
       onGuessScored: (_ctx, p) =>
-        isAllAbsent(p.guess.truth)
-          ? [
-              { type: 'gold', amount: 1 },
-              { type: 'message', text: 'Grey Market: +1 gold.' },
-            ]
-          : [],
+        isAllAbsent(p.guess.truth) ? [{ type: 'gold', amount: 1 }] : [],
     },
   }),
   defineItem({
@@ -1459,9 +1454,9 @@ export const ITEMS: ItemDef[] = [
     id: 'acquired-taste',
     name: 'Acquired Taste',
     description: 'Each different food you eat this run: +4 max HP.',
-    price: 26,
+    price: 11,
     kind: 'gear',
-    rarity: 'rare',
+    rarity: 'uncommon',
     initial: { _mask: 0, tasted: 0 },
     on: {
       onEat: (ctx, p) => {

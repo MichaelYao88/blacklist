@@ -759,7 +759,7 @@ export type GameEvent =
   | { type: 'goldChanged'; delta: number; total: number; source: Source }
   | { type: 'itemAcquired'; item: ItemView }
   | { type: 'itemRemoved'; instance: InstanceId; reason: 'sold' | 'consumed' | 'replaced' }
-  | { type: 'itemTriggered'; instance: InstanceId; hook: HookName }
+  | { type: 'itemProc'; item: ItemId; instance: InstanceId; hook: HookName; text: string }
   | { type: 'itemGrew'; instance: InstanceId; stat: string; value: number }
   | { type: 'itemEquipped'; instance: InstanceId; equipped: boolean }
   | { type: 'itemDataChanged'; instance: InstanceId; stat: string; value: number }

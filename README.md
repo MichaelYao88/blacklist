@@ -43,7 +43,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Opening shields such as **Head Start** and **Quickdraw** make guesses in their window count as free guesses
 - Relics you currently own will not appear again in shops or rewards. They are very rare ordinary items, no longer boss rewards; shops roll a rare relic at 25% per item slot (about 60% of shops have one)
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 100 items (85 shop items + 15 rare relics), 6 spells, 68 foods and 25 happenings
+- 100 items (86 shop items + 14 rare relics), 6 spells, 68 foods and 25 happenings
 - New foods include **U-nagi**, **Empty Calories**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
@@ -64,6 +64,8 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Second Hand** and **Engine** are 8g items that cross-grant spells on cast at 80%
 - **Panacea Pouch** (formerly Spellhoarder) is a 9g item: every 3rd spell cast grants a Heal spell
 - **Vowel Tithe** is an 8g item: each spell cast has a 25% chance to grant Omen
+- **Acquired Taste** is an 11g uncommon item: each different food you eat this run gives +4 max HP
+- Item triggers show a compact proc pop-up with the actual result (for example **Grey Matter** arming a free guess or **Grey Market** paying gold)
 - **Grey Market** is a 7g item: every all-grey guess pays 1 gold, whether you made it or an ally did; an all-dark guess that pays nothing hides a letter
 - **Photosynthesis** is a 10g item: on solve, +2 max HP and heal 20% max HP
 - **Stopped Clock** is a 6g item: casting Time Freeze grants +5 max HP, once per round
@@ -100,14 +102,13 @@ Not in this version: daily seeds, Ascension above A2, dordle grids, Antiwordle, 
 
 ## Music
 
-Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title screen or top bar to cycle through the seven regular tracks; the mute button is separate. **More Power** is locked to the final boss and is not available in the carousel.
+Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title screen or top bar to cycle through the six regular tracks; the mute button is separate. **More Power** is locked to the final boss and is not available in the carousel.
 
 **Liborio Conti** — free to use, no attribution required, via [no-copyright-music.com](https://www.no-copyright-music.com/):
 
 - More Power
 - Chip Tunes (Chiptune)
 - Dark Score
-- Drums (Upbeat Drums)
 - Dangerous
 
 **Sub_Clair** — via [Pixabay](https://pixabay.com/users/sub_clair-55456531/) under the Pixabay Content License:

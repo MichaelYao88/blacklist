@@ -51,6 +51,11 @@ document.body.appendChild(fxRoot);
 const phraseRoot = document.createElement('div');
 phraseRoot.id = 'phrase-root';
 document.body.appendChild(phraseRoot);
+
+const procRoot = document.createElement('div');
+procRoot.id = 'proc-root';
+procRoot.setAttribute('aria-live', 'polite');
+document.body.appendChild(procRoot);
 let phraseTimer: number | undefined;
 
 // The Immunity banner lives outside the main render tree so its timer drain is
@@ -75,6 +80,8 @@ let shake = false;
 let shakeTimer: number | undefined;
 let lastTick = performance.now();
 let paused = false;
+let pointerHeld = 0;
+let renderQueued = false;
 let soundMuted = sfx.muted;
 let heartbeatSecond = -1;
 interface DamageFx {
@@ -174,6 +181,69 @@ function flashFriendPhrases(words: string[], callout?: string): void {
   }, 1700);
 }
 
+interface ProcEntry {
+  id: number;
+  itemId: string;
+  text: string;
+  count: number;
+}
+let procEntries: ProcEntry[] = [];
+const procTimers = new Map<number, number>();
+let procSeq = 0;
+const PROC_TTL = 2_800;
+const PROC_MAX = 4;
+
+function renderProcFeed(): void {
+  procRoot.innerHTML = procEntries.map((entry) => {
+    const def = ITEM_BY_ID.get(entry.itemId);
+    const name = escapeHtml(def?.name ?? entry.itemId);
+    const count = entry.count > 1 ? ` ×${entry.count}` : '';
+    return `<div class="proc-pop">
+      <span class="proc-icon" aria-hidden="true">${itemIcon(entry.itemId)}</span>
+      <span class="proc-text"><b>${name}</b><span>${escapeHtml(entry.text)}${count}</span></span>
+    </div>`;
+  }).join('');
+}
+
+function dropProc(id: number): void {
+  const timer = procTimers.get(id);
+  if (timer) window.clearTimeout(timer);
+  procTimers.delete(id);
+  procEntries = procEntries.filter((entry) => entry.id !== id);
+  renderProcFeed();
+}
+
+function showProc(itemId: string, text: string): void {
+  const existing = procEntries.find((entry) => entry.itemId === itemId);
+  if (existing) {
+    existing.count += 1;
+    existing.text = text;
+    const timer = procTimers.get(existing.id);
+    if (timer) window.clearTimeout(timer);
+    procTimers.set(existing.id, window.setTimeout(() => dropProc(existing.id), PROC_TTL));
+  } else {
+    const entry = { id: ++procSeq, itemId, text, count: 1 };
+    procEntries.push(entry);
+    procTimers.set(entry.id, window.setTimeout(() => dropProc(entry.id), PROC_TTL));
+    if (procEntries.length > PROC_MAX) {
+      const dropped = procEntries.shift();
+      if (dropped) {
+        const timer = procTimers.get(dropped.id);
+        if (timer) window.clearTimeout(timer);
+        procTimers.delete(dropped.id);
+      }
+    }
+  }
+  renderProcFeed();
+}
+
+function clearProcFeed(): void {
+  for (const timer of procTimers.values()) window.clearTimeout(timer);
+  procTimers.clear();
+  procEntries = [];
+  renderProcFeed();
+}
+
 function processEvents(events: GameEvent[]): void {
   let playerGuessed = false;
   let playerFreeGuess = false;
@@ -193,6 +263,7 @@ function processEvents(events: GameEvent[]): void {
       sfx.play('error');
     }
     if (event.type === 'message') notify(event.text, 'info');
+    if (event.type === 'itemProc') showProc(event.item, event.text);
     if (event.type === 'happeningResolved') notify(event.text, event.success ? 'good' : 'bad');
     if (event.type === 'damageTaken') {
       if (event.hp <= 0) playerDied = true;
@@ -338,6 +409,7 @@ function startNewRun(): void {
   orcDeathTimer = undefined;
   playerDeathStartedAt = null;
   phraseRoot.innerHTML = '';
+  clearProcFeed();
   heartbeatSecond = -1;
   processEvents(events);
   lastTick = performance.now();
@@ -364,6 +436,7 @@ function resumeRun(): void {
   if (orcDeathTimer) window.clearTimeout(orcDeathTimer);
   orcDeathTimer = undefined;
   playerDeathStartedAt = null;
+  clearProcFeed();
   heartbeatSecond = -1;
   countdownUntil = 0;
   music.resume();
@@ -398,6 +471,28 @@ function submitGuess(): void {
 }
 
 // ── click / keyboard wiring ────────────────────────────────────────────────
+
+document.addEventListener('pointerdown', () => {
+  pointerHeld += 1;
+}, true);
+
+function releasePointer(): void {
+  if (pointerHeld > 0) pointerHeld -= 1;
+  if (pointerHeld === 0 && renderQueued) {
+    renderQueued = false;
+    // Let the click event for this press run before replacing the DOM.
+    window.setTimeout(() => render(), 0);
+  }
+}
+window.addEventListener('pointerup', releasePointer, true);
+window.addEventListener('pointercancel', releasePointer, true);
+window.addEventListener('blur', () => {
+  pointerHeld = 0;
+  if (renderQueued) {
+    renderQueued = false;
+    render();
+  }
+});
 
 app.addEventListener('click', (event) => {
   sfx.unlock();
@@ -657,6 +752,12 @@ document.addEventListener('visibilitychange', () => {
 // ── rendering ──────────────────────────────────────────────────────────────
 
 function render(): void {
+  // A full re-render replaces every button node. Doing that between a pointer
+  // press and release swallows the click, so hold renders until the press ends.
+  if (pointerHeld > 0) {
+    renderQueued = true;
+    return;
+  }
   const view = host.view();
   if (screen === 'run' && !view) screen = 'title';
 

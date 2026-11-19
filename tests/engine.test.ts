@@ -2399,7 +2399,6 @@ describe('latest balance pass', () => {
 
   it('uses the new rare relic prices', () => {
     const prices: Record<string, number> = {
-      'acquired-taste': 26,
       'chrono-anchor': 28,
       counterweight: 26,
       'loaded-dice': 26,
@@ -2489,6 +2488,8 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('grey-market')?.description).toContain('all-grey');
     expect(ITEM_BY_ID.get('grey-market')?.description).toContain('1 gold');
     expect(ITEM_BY_ID.get('grey-market')?.on?.onGuessScored).toBeDefined();
+    expect(ITEM_BY_ID.get('acquired-taste')?.price).toBe(11);
+    expect(ITEM_BY_ID.get('acquired-taste')?.rarity).toBe('uncommon');
     expect(ITEM_BY_ID.get('tithe-box')?.price).toBe(10);
     expect(ITEM_BY_ID.get('iron-hide')?.price).toBe(6);
     expect(ITEM_BY_ID.get('thorn-crown')?.description).toContain('30%');
@@ -2507,10 +2508,25 @@ describe('latest balance pass', () => {
     const miss = act(state, { type: 'guess', word: 'sloth' });
     expect(miss.state.gold).toBe(gold + 1);
     expect(miss.events.some(
-      (event) => event.type === 'message' && event.text.includes('Grey Market'),
+      (event) => event.type === 'itemProc'
+        && event.item === 'grey-market'
+        && event.text.includes('+1 gold'),
     )).toBe(true);
     const hit = act(miss.state, { type: 'guess', word: 'slate' });
     expect(hit.state.gold).toBe(gold + 1);
+  });
+
+  it('Grey Matter reports the free guess it grants', () => {
+    const { state } = start('grey-matter-proc');
+    state.items.push({ instance: 'i-gm', id: 'grey-matter', data: { used: 0 }, equipped: true });
+    state.round!.freeLeft = 0;
+    state.round!.answer = 'crane';
+    const miss = act(state, { type: 'guess', word: 'sloth' });
+    const proc = miss.events.find(
+      (event): event is Extract<GameEvent, { type: 'itemProc' }> =>
+        event.type === 'itemProc' && event.item === 'grey-matter',
+    );
+    expect(proc?.text).toContain('free guess');
   });
 
   it('Grey Market stays silent when a hidden letter keeps a guess off all-grey', () => {
@@ -2524,7 +2540,7 @@ describe('latest balance pass', () => {
     const hidden = act(state, { type: 'guess', word: 'roost' });
     expect(hidden.state.gold).toBe(gold);
     expect(hidden.events.some(
-      (event) => event.type === 'message' && event.text.includes('Grey Market'),
+      (event) => event.type === 'itemProc' && event.item === 'grey-market',
     )).toBe(false);
     const miss = act(hidden.state, { type: 'guess', word: 'sloth' });
     expect(miss.state.gold).toBe(gold + 1);
@@ -2991,7 +3007,7 @@ describe('relic uniqueness', () => {
     .map((item) => item.id);
 
   it('never offers a relic already in the player inventory', () => {
-    expect(relicIds).toHaveLength(15);
+    expect(relicIds).toHaveLength(14);
     let sawOtherRelic = false;
     for (let index = 0; index < 60; index++) {
       const { state } = start(`relic-owned-${index}`);

@@ -6,6 +6,7 @@ describe('run music', () => {
   it('includes the new Pixabay synthwave track', () => {
     const ids = MUSIC_TRACKS.map((track) => track.id);
     expect(ids).not.toContain('neon-synthwave-vibe');
+    expect(ids).not.toContain('upbeat-drums');
     expect(ids).toContain('synthwave-retro-80s');
     expect(MUSIC_TRACKS.find((track) => track.id === 'synthwave-retro-80s')?.name)
       .toContain('DELOSound');

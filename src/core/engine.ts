@@ -1273,6 +1273,191 @@ export function createCore(content: Content): Core {
 
   // ── hooks ────────────────────────────────────────────────────────────────
 
+  interface ProcSnapshot {
+    gold: number;
+    hp: number;
+    maxHp: number;
+    armor: number;
+    maxArmor: number;
+    slots: number;
+    freeLeft: number;
+    pendingFree: boolean;
+    spells: Map<string, number>;
+    items: Set<string>;
+    curses: Map<string, number>;
+    purged: Set<string>;
+    hints: Map<string, string | undefined>;
+    permanentReveals: Set<string>;
+    nextSpellDouble: boolean;
+    nextSaleDoubles: number;
+    nextRoundGuess?: string;
+    bonusTimeMs: number;
+    remainingMs: number | null;
+    immuneGuesses: number;
+    immuneUntilMs: number;
+    guessImmuneUntilMs: number;
+    nextRoundDamageCap?: number;
+    freeGuessBonus: number;
+    pendingPurge: number;
+    pendingAbsent: number;
+    pendingCurseRemoval: number;
+    visionCountsRounds: number;
+    blacklist: number;
+    guesses: number;
+    frozenMs: number;
+    frozenUntilGuess: boolean;
+    nextFreeUnobscured: boolean;
+  }
+
+  const countIds = (ids: string[]): Map<string, number> => {
+    const counts = new Map<string, number>();
+    for (const id of ids) counts.set(id, (counts.get(id) ?? 0) + 1);
+    return counts;
+  };
+
+  function snapshotProc(rt: Runtime): ProcSnapshot {
+    const state = rt.state;
+    const round = state.round;
+    return {
+      gold: state.gold,
+      hp: state.hp,
+      maxHp: state.maxHp,
+      armor: state.armor,
+      maxArmor: state.maxArmor,
+      slots: state.slots,
+      freeLeft: round?.freeLeft ?? 0,
+      pendingFree: rt.pendingFree,
+      spells: countIds(state.spells.map((spell) => spell.id)),
+      items: new Set(state.items.map((item) => item.id)),
+      curses: countIds(state.curses.map((entry) => entry.id)),
+      purged: new Set(state.purged),
+      hints: new Map(Object.entries(round?.hints ?? {})),
+      permanentReveals: new Set(state.permanentReveals),
+      nextSpellDouble: state.nextSpellDouble === true,
+      nextSaleDoubles: state.nextSaleDoubles ?? 0,
+      nextRoundGuess: state.nextRoundGuess,
+      bonusTimeMs: state.bonusTimeMs,
+      remainingMs: round?.remainingMs ?? null,
+      immuneGuesses: round?.immuneGuesses ?? 0,
+      immuneUntilMs: round?.immuneUntilMs ?? 0,
+      guessImmuneUntilMs: round?.guessImmuneUntilMs ?? 0,
+      nextRoundDamageCap: state.nextRoundDamageCap,
+      freeGuessBonus: state.freeGuessBonus,
+      pendingPurge: state.pendingPurge,
+      pendingAbsent: state.pendingAbsent,
+      pendingCurseRemoval: state.pendingCurseRemoval,
+      visionCountsRounds: state.visionCountsRounds ?? 0,
+      blacklist: state.blacklist.length,
+      guesses: round?.guesses.length ?? 0,
+      frozenMs: round?.frozenMs ?? 0,
+      frozenUntilGuess: round?.frozenUntilGuess ?? false,
+      nextFreeUnobscured: round?.nextFreeUnobscured ?? false,
+    };
+  }
+
+  function procSummary(before: ProcSnapshot, rt: Runtime, hook: HookName): string {
+    const state = rt.state;
+    const round = state.round;
+    const parts: string[] = [];
+    const signed = (value: number): string => `${value > 0 ? '+' : ''}${value}`;
+
+    const gold = state.gold - before.gold;
+    if (gold !== 0) parts.push(`${signed(gold)} gold`);
+    const hp = state.hp - before.hp;
+    if (hp !== 0) parts.push(`${signed(hp)} HP`);
+    const maxHp = state.maxHp - before.maxHp;
+    if (maxHp !== 0) parts.push(`${signed(maxHp)} max HP`);
+    const armor = state.armor - before.armor;
+    if (armor !== 0) parts.push(`${signed(armor)} armor`);
+    const maxArmor = state.maxArmor - before.maxArmor;
+    if (maxArmor !== 0) parts.push(`${signed(maxArmor)} max armor`);
+    const slots = state.slots - before.slots;
+    if (slots !== 0) parts.push(`${signed(slots)} slot${Math.abs(slots) === 1 ? '' : 's'}`);
+
+    for (const [id, count] of countIds(state.spells.map((spell) => spell.id))) {
+      const gained = count - (before.spells.get(id) ?? 0);
+      if (gained > 0) {
+        parts.push(`+${gained > 1 ? `${gained} ` : ''}${spellById.get(id)?.name ?? id}`);
+      }
+    }
+    for (const id of state.items.map((item) => item.id)) {
+      if (!before.items.has(id)) parts.push(`+${itemById.get(id)?.name ?? id}`);
+    }
+    for (const [id, count] of countIds(state.curses.map((entry) => entry.id))) {
+      const gained = count - (before.curses.get(id) ?? 0);
+      if (gained > 0) parts.push(`+${curseById.get(id)?.name ?? id} curse`);
+      else if (gained < 0) parts.push(`-${curseById.get(id)?.name ?? id}`);
+    }
+    for (const letter of state.purged) {
+      if (!before.purged.has(letter)) parts.push(`purged ${letter.toUpperCase()}`);
+    }
+    for (const [letter, status] of Object.entries(round?.hints ?? {})) {
+      if (before.hints.get(letter) === status) continue;
+      parts.push(status === 'present'
+        ? `revealed ${letter.toUpperCase()}`
+        : `ruled out ${letter.toUpperCase()}`);
+    }
+    for (const letter of state.permanentReveals) {
+      if (!before.permanentReveals.has(letter)) {
+        parts.push(`revealed ${letter.toUpperCase()} for good`);
+      }
+    }
+
+    if (round) {
+      const free = round.freeLeft - before.freeLeft;
+      if (free > 0) parts.push(`+${free} free guess${free === 1 ? '' : 'es'}`);
+      if (round.immuneGuesses > before.immuneGuesses) parts.push('Immunity');
+      if (round.immuneUntilMs > before.immuneUntilMs) parts.push('opening shield');
+      if (round.guessImmuneUntilMs > before.guessImmuneUntilMs) parts.push('guess shield');
+      if (round.remainingMs !== null && before.remainingMs !== null) {
+        const delta = round.remainingMs - before.remainingMs;
+        if (delta >= 1_000) parts.push(`+${Math.round(delta / 1_000)}s`);
+        else if (delta <= -1_000) parts.push(`${Math.round(delta / 1_000)}s`);
+      }
+      if (round.guesses.length > before.guesses) {
+        const words = round.guesses.slice(before.guesses).map((guess) => guess.word.toUpperCase());
+        if (words.length > 0) parts.push(`guessed ${words.join(' ')}`);
+      }
+    }
+    if (!before.pendingFree && rt.pendingFree) {
+      parts.push(hook === 'onGuessScored' ? 'free guess' : 'next guess free');
+    }
+    if (!before.nextSpellDouble && state.nextSpellDouble) parts.push('next spell doubled');
+    const sales = (state.nextSaleDoubles ?? 0) - before.nextSaleDoubles;
+    if (sales > 0) parts.push(`next sale${sales === 1 ? '' : 's'} doubled`);
+    if (!before.nextRoundGuess && state.nextRoundGuess) parts.push('next round auto-guess');
+    if (state.bonusTimeMs > before.bonusTimeMs) {
+      parts.push(`+${Math.round((state.bonusTimeMs - before.bonusTimeMs) / 1_000)}s next round`);
+    }
+    if (
+      state.nextRoundDamageCap !== undefined
+      && state.nextRoundDamageCap !== before.nextRoundDamageCap
+    ) {
+      parts.push('next round damage capped');
+    }
+    if (state.blacklist.length > before.blacklist) {
+      parts.push(`+${state.blacklist.length - before.blacklist} blacklist`);
+    }
+    const freeBonus = state.freeGuessBonus - before.freeGuessBonus;
+    if (freeBonus !== 0) parts.push(`${signed(freeBonus)} free guess${Math.abs(freeBonus) === 1 ? '' : 'es'}`);
+    const pendingPurge = state.pendingPurge - before.pendingPurge;
+    if (pendingPurge > 0) parts.push(`+${pendingPurge} purge`);
+    const pendingAbsent = state.pendingAbsent - before.pendingAbsent;
+    if (pendingAbsent > 0) parts.push(`+${pendingAbsent} reveal next round`);
+    const pendingRemoval = state.pendingCurseRemoval - before.pendingCurseRemoval;
+    if (pendingRemoval > 0) parts.push('curse removal');
+    if ((state.visionCountsRounds ?? 0) > before.visionCountsRounds) {
+      parts.push(`counts for ${state.visionCountsRounds} rounds`);
+    }
+    if (round && round.frozenMs > before.frozenMs) parts.push('clock frozen');
+    if (round?.frozenUntilGuess && !before.frozenUntilGuess) parts.push('clock frozen');
+    if (round?.nextFreeUnobscured && !before.nextFreeUnobscured) {
+      parts.push('next guess unobscured');
+    }
+
+    return [...new Set(parts)].join(' · ');
+  }
+
   function runHook<H extends HookName>(rt: Runtime, hook: H, payload: HookPayloads[H]): void {
     const state = rt.state;
     if (rt.depth > 10 || isOver(state)) return;
@@ -1302,8 +1487,20 @@ export function createCore(content: Content): Core {
       if (!handler) continue;
       const effects = handler({ state, self: item, roundStartSpells }, payload);
       if (effects.length === 0) continue;
-      emit(rt, { type: 'itemTriggered', instance: item.instance, hook });
+      const before = snapshotProc(rt);
       applyEffects(rt, effects, { kind: 'item', instance: item.instance }, item.instance);
+      if (hook !== 'onTimerTick') {
+        const text = procSummary(before, rt, hook);
+        if (text) {
+          emit(rt, {
+            type: 'itemProc',
+            item: item.id,
+            instance: item.instance,
+            hook,
+            text,
+          });
+        }
+      }
       if (isOver(state)) break;
     }
   }

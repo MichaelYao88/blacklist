@@ -1,7 +1,6 @@
 import morePower from '../assets/audio/more-power.mp3?url';
 import chiptune from '../assets/audio/chiptune.mp3?url';
 import darkScore from '../assets/audio/dark-score.mp3?url';
-import upbeatDrums from '../assets/audio/upbeat-drums.mp3?url';
 import dangerous from '../assets/audio/dangerous.mp3?url';
 import dark from '../assets/audio/dark.mp3?url';
 import darkSynthwave from '../assets/audio/dark-synthwave.mp3?url';
@@ -11,7 +10,6 @@ export type MusicTrack =
   | 'more-power'
   | 'chiptune'
   | 'dark-score'
-  | 'upbeat-drums'
   | 'dangerous'
   | 'dark'
   | 'dark-synthwave'
@@ -27,7 +25,6 @@ export const MUSIC_TRACKS: MusicTrackInfo[] = [
   { id: 'more-power', name: 'More Power', src: morePower },
   { id: 'chiptune', name: 'Chip Tunes', src: chiptune },
   { id: 'dark-score', name: 'Dark Score', src: darkScore },
-  { id: 'upbeat-drums', name: 'Drums', src: upbeatDrums },
   { id: 'dangerous', name: 'Dangerous', src: dangerous },
   { id: 'dark', name: 'Dark · Sub_Clair', src: dark },
   { id: 'dark-synthwave', name: 'Dark Synthwave · Sub_Clair', src: darkSynthwave },
