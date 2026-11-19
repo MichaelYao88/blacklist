@@ -2665,9 +2665,9 @@ describe('spells and foods', () => {
     expect(FOOD_BY_ID.get('chronos')?.effects).toContainEqual({ type: 'timeBonus', ms: 12_000 });
   });
 
-  it('Snake Oil has a 10% chance to remove a random curse', () => {
+  it('Snake Oil has a 30% chance to remove a random curse', () => {
     expect(FOOD_BY_ID.get('snake-oil')?.price).toBe(6);
-    expect(FOOD_BY_ID.get('snake-oil')?.description).toContain('10% chance');
+    expect(FOOD_BY_ID.get('snake-oil')?.description).toContain('30% chance');
 
     let removed = 0;
     const runs = 150;
@@ -2681,9 +2681,9 @@ describe('spells and foods', () => {
       expect(bought.state.gold).toBe(14);
       if (bought.state.curses.length === 0) removed++;
     }
-    // 10% of 150 runs is ~15; wide bounds keep the seeded run deterministic.
-    expect(removed).toBeGreaterThanOrEqual(4);
-    expect(removed).toBeLessThanOrEqual(32);
+    // 30% of 150 runs is ~45; wide bounds keep the seeded run deterministic.
+    expect(removed).toBeGreaterThanOrEqual(25);
+    expect(removed).toBeLessThanOrEqual(70);
   });
 
   it('accepts penis in the dictionary', () => {

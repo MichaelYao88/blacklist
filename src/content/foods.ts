@@ -553,9 +553,9 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'snake-oil',
     name: 'Snake Oil',
-    description: '10% chance: remove a random curse. No slot.',
+    description: '30% chance: remove a random curse. No slot.',
     price: 6,
-    effects: [{ type: 'removeRandomCurse', chancePct: 10 }],
+    effects: [{ type: 'removeRandomCurse', chancePct: 30 }],
   }),
   defineFood({
     id: 'coveted-cake',
