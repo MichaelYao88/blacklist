@@ -1669,6 +1669,7 @@ describe('latest balance pass', () => {
 
   it('Tally Lens is guaranteed in a shop once a vision curse is active', () => {
     const { state } = start('tally-shop');
+    expect(ITEM_BY_ID.get('tally-lens')?.rarity).toBe('uncommon');
     state.curses.push({ id: 'censor', stacks: 1 });
     state.nodeIndex = 0;
     state.nodes[1] = { kind: 'shop', level: 1 };
@@ -2490,8 +2491,8 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('chrono-anchor')?.on?.onDamageTaken).toBeDefined();
   });
 
-  it('Head Start is 6s and neither it nor Quickdraw is clock-gated', () => {
-    expect(ITEM_BY_ID.get('head-start')?.description).toContain('6s');
+  it('Head Start is 7s and neither it nor Quickdraw is clock-gated', () => {
+    expect(ITEM_BY_ID.get('head-start')?.description).toContain('7s');
     expect(ITEM_BY_ID.get('head-start')?.requiresClock).toBeUndefined();
     expect(ITEM_BY_ID.get('quickdraw')?.requiresClock).toBeUndefined();
     expect(ITEM_BY_ID.get('quickdraw')?.description).toBe('First 12s of each round: guesses are free.');
@@ -2720,7 +2721,8 @@ describe('spells and foods', () => {
   });
 
   it('has uncommon and rare purge foods', () => {
-    expect(FOOD_BY_ID.get('inkcap')?.price).toBe(16);
+    expect(FOOD_BY_ID.get('inkcap')?.price).toBe(8);
+    expect(FOOD_BY_ID.get('inkcap')?.rarity).toBe('uncommon');
     expect(FOOD_BY_ID.get('purge-the-d')?.price).toBe(8);
     expect(FOOD_BY_ID.get('purge-the-d')?.rarity).toBe('uncommon');
     expect(FOOD_BY_ID.get('poppy-seeds')?.price).toBe(4);

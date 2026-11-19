@@ -135,11 +135,11 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'head-start',
     name: 'Head Start',
-    description: 'The first 6s of each round: guesses are free.',
+    description: 'The first 7s of each round: guesses are free.',
     price: 8,
     kind: 'gear',
     on: {
-      onRoundStart: () => [{ type: 'timedImmunity', ms: 6_000 }],
+      onRoundStart: () => [{ type: 'timedImmunity', ms: 7_000 }],
     },
   }),
   defineItem({
@@ -1290,6 +1290,7 @@ export const ITEMS: ItemDef[] = [
     description: 'While a vision curse is active, guesses show correct and misplaced counts.',
     price: 8,
     kind: 'gear',
+    rarity: 'uncommon',
     requiresVisionCurse: 1,
   }),
   defineItem({

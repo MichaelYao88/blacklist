@@ -2070,7 +2070,7 @@ export function createCore(content: Content): Core {
     for (let index = 0; index < itemTarget; index++) {
       if (forceTally) {
         forceTally = false;
-        const tally = commonItems.find((item) => item.id === 'tally-lens');
+        const tally = [...commonItems, ...uncommonItems].find((item) => item.id === 'tally-lens');
         if (tally) {
           pickItem(tally);
           continue;

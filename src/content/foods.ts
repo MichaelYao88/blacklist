@@ -538,9 +538,9 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'inkcap',
     name: 'Inkcap',
-    description: 'Rare. Purge one letter from all future answers. No slot.',
-    price: 16,
-    rarity: 'rare',
+    description: 'Uncommon. Purge one letter from all future answers. No slot.',
+    price: 8,
+    rarity: 'uncommon',
     effects: [{ type: 'pendingPurge', count: 1 }],
   }),
   defineFood({
