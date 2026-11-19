@@ -288,11 +288,11 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'hagelslag',
     name: 'Hagelslag',
-    description: '+1 max HP and heal 10% of missing HP. No slot.',
+    description: '+3 max HP and heal 20% of missing HP. No slot.',
     price: 4,
     effects: [
-      { type: 'maxHp', delta: 1 },
-      { type: 'healMissingPercent', percent: 10 },
+      { type: 'maxHp', delta: 3 },
+      { type: 'healMissingPercent', percent: 20 },
     ],
   }),
   defineFood({
@@ -310,6 +310,24 @@ export const FOODS: FoodDef[] = [
     effects: [
       { type: 'maxHp', delta: 5 },
       { type: 'heal', amount: 5 },
+    ],
+  }),
+  defineFood({
+    id: 'hearty-stew',
+    name: 'Hearty Stew',
+    description: 'Gain 1-2 casts of Heal. No slot.',
+    price: 5,
+    effects: [
+      {
+        type: 'randomChoice',
+        options: [
+          [{ type: 'giveSpell', spell: 'heal' }],
+          [
+            { type: 'giveSpell', spell: 'heal' },
+            { type: 'giveSpell', spell: 'heal' },
+          ],
+        ],
+      },
     ],
   }),
   defineFood({

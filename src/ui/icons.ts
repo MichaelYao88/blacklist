@@ -119,6 +119,7 @@ const FOOD_ICONS: Record<string, string> = {
   coffee: '☕',
   'mystery-stew': '🍲',
   'hearty-meal': '🍖',
+  'hearty-stew': '🥘',
   'only-u': '🇺',
   'empty-calories': '🍩',
   'one-bo-hue': '🍜',

@@ -1026,6 +1026,21 @@ describe('new item and event batch', () => {
     expect(patched.state.hp).toBe(17);
   });
 
+  it('Hearty Stew grants one or two casts of Heal', () => {
+    for (const seed of ['stew-a', 'stew-b', 'stew-c', 'stew-d', 'stew-e', 'stew-f']) {
+      const { state } = start(seed);
+      state.phase = 'shop';
+      state.gold = 20;
+      state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'hearty-stew', price: 5 }]);
+      const before = state.spells.filter((spell) => spell.id === 'heal').length;
+      const eaten = act(state, { type: 'buy', offerId: 'o0' });
+      expect(eaten.state.gold).toBe(15);
+      const gained = eaten.state.spells.filter((spell) => spell.id === 'heal').length - before;
+      expect(gained).toBeGreaterThanOrEqual(1);
+      expect(gained).toBeLessThanOrEqual(2);
+    }
+  });
+
   it('Doggy Bag reveals 2 absent letters and queues 1 after eating', () => {
     const { state } = start('doggy-bag');
     state.items.push({ instance: 'i-dog', id: 'doggy-bag', data: {}, equipped: true });
@@ -1739,6 +1754,10 @@ describe('latest balance pass', () => {
     expect(FOOD_BY_ID.get('pani-puri')?.price).toBe(1);
     expect(FOOD_BY_ID.get('potato-chips')?.price).toBe(1);
     expect(FOOD_BY_ID.get('hagelslag')?.price).toBe(4);
+    expect(FOOD_BY_ID.get('hagelslag')?.effects)
+      .toContainEqual({ type: 'maxHp', delta: 3 });
+    expect(FOOD_BY_ID.get('hagelslag')?.description).toContain('20%');
+    expect(FOOD_BY_ID.get('hearty-stew')?.price).toBe(5);
     expect(FOOD_BY_ID.get('masala-dosa')?.price).toBe(3);
     expect(FOOD_BY_ID.get('cyrniki')?.price).toBe(4);
     expect(FOOD_BY_ID.get('menemen')?.price).toBe(4);

@@ -43,7 +43,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Opening shields such as **Head Start** and **Quickdraw** make guesses in their window count as free guesses
 - Relics are very rare ordinary items, no longer boss rewards; shops roll a rare relic at 25% per item slot (about 60% of shops have one)
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 101 items (86 shop items + 15 rare relics), 6 spells, 64 foods and 20 happenings
+- 101 items (86 shop items + 15 rare relics), 6 spells, 65 foods and 20 happenings
 - New foods include **U-nagi**, **Empty Calories**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
@@ -57,6 +57,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Ice Cream Sundae** is a 3g consumable: gain Time Freeze, or heal 1 and +1 max HP
 - **Muffin Tin** is a 2g item: +1 max armor for each food eaten until you next leave the shop
 - **Chilaquiles** is a 1g food that doubles the next sale
+- **Hearty Stew** is a 5g food that grants 1-2 casts of Heal; **Hagelslag** gives +3 max HP and heals 20% of missing HP
 - **Bulwark** is an 8g item: every 10 damage blocked by armor, +1 random spell
 - **Second Hand** and **Engine** are 8g items that cross-grant spells on cast at 80%
 - **Photosynthesis** is a 10g item: on solve, +2 max HP and heal 20% max HP
