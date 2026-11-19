@@ -184,10 +184,17 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'accept',
         label: 'Accept the edits',
-        description: '55%: random spell. 45%: −5 HP.',
+        description: '70%: two random spells. 30%: -5 HP.',
         outcomes: [
-          { chancePct: 55, text: 'The red ink rewrites something in your favour. A spell.', effects: [{ type: 'giveSpell', spell: 'random' }] },
-          { chancePct: 45, text: 'The red ink finds a flaw. −5 HP.', effects: [{ type: 'damage', amount: 5 }] },
+          {
+            chancePct: 70,
+            text: 'The red ink rewrites something in your favour. Two spells.',
+            effects: [
+              { type: 'giveSpell', spell: 'random' },
+              { type: 'giveSpell', spell: 'random' },
+            ],
+          },
+          { chancePct: 30, text: 'The red ink finds a flaw. -5 HP.', effects: [{ type: 'damage', amount: 5 }] },
         ],
       },
       {

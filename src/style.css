@@ -902,21 +902,13 @@ button {
 
 .tile.hidden {
   background:
-    repeating-linear-gradient(135deg, #332a49 0 6px, #241e34 6px 12px);
-  border: 1px dashed #7d69a8;
-  color: #e5dcff;
-  box-shadow: inset 0 0 12px rgba(150, 120, 220, 0.16);
+    repeating-linear-gradient(135deg, #241e30 0 6px, #1b1625 6px 12px);
+  border: 1px dashed #493c60;
+  color: #9a8db2;
 }
 
 .tile.hidden .tile-letter {
-  opacity: 1;
-  color: #ffffff;
-  text-shadow: 0 0 10px rgba(200, 170, 255, 0.7), 0 1px 2px #000;
-}
-
-.tile.hidden .tile-mark {
-  opacity: 0.95;
-  color: #e5dcff;
+  opacity: 0.5;
 }
 
 .tile.input {

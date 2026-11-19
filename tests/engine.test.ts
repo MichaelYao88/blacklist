@@ -730,6 +730,16 @@ describe('shop curses', () => {
     expect(paid.state.curses).toEqual([]);
   });
 
+  it('The Revisor offers two spells at 70%', () => {
+    const accept = HAPPENING_BY_ID.get('revisor')?.options.find(
+      (option) => option.id === 'accept',
+    );
+    expect(accept?.description).toContain('two random spells');
+    expect(accept?.outcomes[0].chancePct).toBe(70);
+    expect(accept?.outcomes[0].effects).toHaveLength(2);
+    expect(accept?.outcomes[1].chancePct).toBe(30);
+  });
+
   it('The Chained blocks selling', () => {
     const { state } = start();
     state.phase = 'shop';
