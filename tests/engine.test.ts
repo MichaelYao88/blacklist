@@ -1237,75 +1237,59 @@ describe('new item and event batch', () => {
     expect(solved.state.slots).toBe(6);
   });
 
-  it('Muffin Tin grants +1 max armor for each food eaten until you leave the shop', () => {
-    const { state } = start('muffin-tin');
-    state.items.push({ instance: 'i-muffin', id: 'muffin-tin', data: { visit: -1 }, equipped: true });
+  it('Muffin Tin is a 2g food that grants temporary armor per food eaten this shop', () => {
+    expect(FOOD_BY_ID.get('muffin-tin')?.price).toBe(2);
+    expect(ITEM_BY_ID.get('muffin-tin')).toBeUndefined();
+    expect(ITEM_BY_ID.get('bulk-order')).toBeUndefined();
+
+    const { state } = start('muffin-food');
     state.phase = 'shop';
     state.gold = 100;
     state.shop = shopState([
       { id: 'f0', kind: 'eat', def: 'snack', price: 3 },
-      { id: 'f1', kind: 'eat', def: 'feast', price: 5 },
+      { id: 'f1', kind: 'eat', def: 'muffin-tin', price: 2 },
+      { id: 'f2', kind: 'eat', def: 'feast', price: 5 },
     ]);
     const base = state.maxArmor;
-    let current = state;
-    current = act(current, { type: 'buy', offerId: 'f0' }).state;
+    let current = act(state, { type: 'buy', offerId: 'f0' }).state;
     current = act(current, { type: 'buy', offerId: 'f1' }).state;
-    expect(current.maxArmor).toBe(base + 2);
-    expect(ITEM_BY_ID.get('muffin-tin')?.price).toBe(2);
-    expect(ITEM_BY_ID.get('muffin-tin')?.description)
-      .toContain('until the next time you leave a shop');
-    expect(ITEM_BY_ID.get('bulk-order')).toBeUndefined();
+    expect(current.maxArmor).toBe(base + 2); // the snack already eaten, plus itself
+    current = act(current, { type: 'buy', offerId: 'f2' }).state;
+    expect(current.maxArmor).toBe(base + 3);
+
+    current.nodeIndex = 0;
+    current.nodes[1] = { kind: 'shop', level: 1 };
+    const left = act(current, { type: 'continue' });
+    expect(left.state.maxArmor).toBe(base);
   });
 
-  it('Muffin Tin keeps counting after a shop reroll', () => {
+  it('Muffin Tin keeps counting across a shop reroll', () => {
     const { state } = start('muffin-reroll');
-    state.items.push({ instance: 'i-muffin', id: 'muffin-tin', data: { visit: -1 }, equipped: true });
     state.phase = 'shop';
     state.gold = 100;
-    state.shop = shopState([{ id: 'f0', kind: 'eat', def: 'snack', price: 3 }]);
+    state.shop = shopState([{ id: 'f0', kind: 'eat', def: 'muffin-tin', price: 2 }]);
+    const base = state.maxArmor;
     let current = act(state, { type: 'buy', offerId: 'f0' }).state;
-    const first = current.maxArmor;
+    expect(current.maxArmor).toBe(base + 1);
     current = act(current, { type: 'reroll' }).state;
     current.shop!.offers = [{ id: 'f1', kind: 'eat', def: 'feast', price: 5 }];
     current.shop!.foodOffers = 1;
     current.shop!.foodsBought = 0;
     current = act(current, { type: 'buy', offerId: 'f1' }).state;
-    expect(current.maxArmor).toBe(first + 1);
-    expect(current.items.find((item) => item.id === 'muffin-tin')?.data.visit)
-      .toBe(current.shop?.visit);
+    expect(current.maxArmor).toBe(base + 2);
   });
 
-  it('Muffin Tin stops after leaving the shop it was armed for', () => {
-    const { state } = start('muffin-leave');
-    state.items.push({ instance: 'i-muffin', id: 'muffin-tin', data: { visit: -1 }, equipped: true });
+  it('Muffin Tin does not count foods eaten in another shop', () => {
+    const { state } = start('muffin-visit');
     state.phase = 'shop';
     state.gold = 100;
-    state.shop = shopState([{ id: 'f0', kind: 'eat', def: 'snack', price: 3 }]);
+    state.shop = shopState([{ id: 'f0', kind: 'eat', def: 'muffin-tin', price: 2 }]);
+    const base = state.maxArmor;
     let current = act(state, { type: 'buy', offerId: 'f0' }).state;
-    const afterFirstShop = current.maxArmor;
+    expect(current.maxArmor).toBe(base + 1);
 
-    current.shop = { ...shopState([{ id: 'f1', kind: 'eat', def: 'feast', price: 5 }]), visit: 7 };
+    current.shop = { ...shopState([{ id: 'f1', kind: 'eat', def: 'feast', price: 5 }]), visit: 9 };
     current = act(current, { type: 'buy', offerId: 'f1' }).state;
-    expect(current.maxArmor).toBe(afterFirstShop);
-
-    current.shop = { ...shopState([{ id: 'f2', kind: 'eat', def: 'snack', price: 3 }]), visit: 8 };
-    current = act(current, { type: 'buy', offerId: 'f2' }).state;
-    expect(current.maxArmor).toBe(afterFirstShop);
-  });
-
-  it('Muffin Tin arms itself when bought in a shop', () => {
-    const { state } = start('muffin-buy');
-    state.phase = 'shop';
-    state.gold = 100;
-    state.shop = shopState([
-      { id: 'o0', kind: 'item', def: 'muffin-tin', price: 2 },
-      { id: 'f0', kind: 'eat', def: 'snack', price: 3 },
-    ]);
-    let current = act(state, { type: 'buy', offerId: 'o0' }).state;
-    const muffin = current.items.find((item) => item.id === 'muffin-tin');
-    expect(muffin?.data.visit).toBe(current.shop?.visit);
-    const base = current.maxArmor;
-    current = act(current, { type: 'buy', offerId: 'f0' }).state;
     expect(current.maxArmor).toBe(base + 1);
   });
 
@@ -1424,7 +1408,7 @@ describe('new item and event batch', () => {
     expect(FOOD_BY_ID.get('bitter-root')?.effects)
       .not.toContainEqual({ type: 'armor', delta: 1 });
     expect(ITEM_BY_ID.get('growth-spurt')?.description).toContain('+2 max HP');
-    expect(ITEM_BY_ID.get('muffin-tin')?.description).toContain('+1 max armor');
+    expect(FOOD_BY_ID.get('muffin-tin')?.description).toContain('+1 max armor');
     expect(CURSE_BY_ID.get('porcupine')?.damagePerGreen).toBe(2);
     expect(CURSE_BY_ID.get('porcupine')?.description)
       .toBe('+2 damage on the next guess per green tile on the previous guess.');
@@ -2214,7 +2198,7 @@ describe('latest balance pass', () => {
       'speed-dial': 28,
       spellplate: 16,
       'thorn-crown': 26,
-      'vowel-sigil': 24,
+      'vowel-sigil': 18,
     };
     for (const [id, price] of Object.entries(prices)) {
       expect(ITEM_BY_ID.get(id)?.price, id).toBe(price);

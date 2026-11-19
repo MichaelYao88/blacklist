@@ -569,6 +569,21 @@ export function createCore(content: Content): Core {
     return view;
   }
 
+  /**
+   * Muffin Tin: arm the current shop. Every food eaten from here until the
+   * shop is left adds +1 max armor, all of which is removed on leaving.
+   */
+  function armMuffinTin(rt: Runtime): void {
+    const state = rt.state;
+    const shop = state.shop;
+    if (!shop || state.phase !== 'shop') return;
+    if (state.muffinShopVisit === shop.visit) return;
+    const grant = shop.foodsEaten ?? 0;
+    state.muffinShopVisit = shop.visit;
+    state.muffinTempArmor = grant;
+    changeMaxArmor(rt, grant);
+  }
+
   function eatFood(rt: Runtime, id: string): void {
     const state = rt.state;
     const def = foodById.get(id);
@@ -579,6 +594,14 @@ export function createCore(content: Content): Core {
     });
     emit(rt, { type: 'foodEaten', food: def.id, name: def.name });
     applyEffects(rt, doubled ? [...def.effects, ...def.effects] : def.effects, RULES);
+    const shop = state.shop;
+    if (shop && state.phase === 'shop') {
+      shop.foodsEaten = (shop.foodsEaten ?? 0) + 1;
+      if (state.muffinShopVisit === shop.visit) {
+        state.muffinTempArmor = (state.muffinTempArmor ?? 0) + 1;
+        changeMaxArmor(rt, 1);
+      }
+    }
     runHook(rt, 'onEat', { food: def.id });
   }
 
@@ -822,6 +845,9 @@ export function createCore(content: Content): Core {
       case 'maxArmor':
         if (effect.chancePct !== undefined && !rngChance(state, effect.chancePct)) break;
         changeMaxArmor(rt, effect.delta);
+        break;
+      case 'muffinArmor':
+        armMuffinTin(rt);
         break;
       case 'revive': {
         if (isOver(state)) break;
@@ -2004,6 +2030,7 @@ export function createCore(content: Content): Core {
       visit: state.nodeIndex,
       foodOffers: offers.filter((offer) => offer.kind === 'eat').length,
       foodsBought: 0,
+      foodsEaten: 0,
     };
     state.phase = 'shop';
     emit(rt, {
@@ -2457,6 +2484,13 @@ export function createCore(content: Content): Core {
       return;
     }
     if (state.phase === 'shop') {
+      const temp = state.muffinTempArmor ?? 0;
+      if (temp > 0) {
+        changeMaxArmor(rt, -temp);
+        state.muffinTempArmor = 0;
+        state.muffinShopVisit = undefined;
+        emit(rt, { type: 'message', text: 'The Muffin Tin armor wears off as you leave.' });
+      }
       advanceNode(rt);
       return;
     }
@@ -3102,6 +3136,7 @@ export function createCore(content: Content): Core {
           state.shop.foodOffers = state.shop.offers.filter((offer) => offer.kind === 'eat').length;
         }
         if (typeof state.shop.foodsBought !== 'number') state.shop.foodsBought = 0;
+        if (typeof state.shop.foodsEaten !== 'number') state.shop.foodsEaten = 0;
       }
       if (state.reward) {
         state.reward.options = state.reward.options.filter(

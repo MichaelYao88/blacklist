@@ -242,6 +242,8 @@ export interface ShopState {
   foodOffers: number;
   /** Foods bought from the current shelf. */
   foodsBought: number;
+  /** Foods eaten during this shop visit, kept across rerolls. */
+  foodsEaten?: number;
 }
 
 export interface HappeningOutcomeView {
@@ -279,6 +281,7 @@ export type Effect =
   | { type: 'armor'; delta: number }
   | { type: 'refillArmor' }
   | { type: 'maxArmor'; delta: number; chancePct?: number }
+  | { type: 'muffinArmor' }
   | { type: 'revive'; hp: number }
   | { type: 'gold'; amount: number }
   | { type: 'solveGold'; amount: number }
@@ -565,6 +568,10 @@ export interface RunState {
   reward?: RewardState;
   shop?: ShopState;
   happening?: HappeningState;
+  /** Muffin Tin: max armor granted for this shop visit, removed when leaving. */
+  muffinTempArmor?: number;
+  /** Muffin Tin: the shop visit that granted the temporary armor. */
+  muffinShopVisit?: number;
   over?: { result: 'victory' | 'defeat'; answer?: string; answers?: string[] };
   stats: RunStats;
 }

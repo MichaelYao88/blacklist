@@ -1205,35 +1205,6 @@ export const ITEMS: ItemDef[] = [
     },
   }),
   defineItem({
-    id: 'muffin-tin',
-    name: 'Muffin Tin',
-    description: '+1 max armor for each food eaten until the next time you leave a shop.',
-    price: 2,
-    kind: 'gear',
-    initial: { visit: -1 },
-    onAcquire: (ctx) => {
-      const shop = ctx.state.shop;
-      return shop ? [{ type: 'setItemData', stat: 'visit', value: shop.visit }] : [];
-    },
-    on: {
-      onEat: (ctx) => {
-        const shop = ctx.state.shop;
-        if (!shop || ctx.state.phase !== 'shop') return [];
-        const visit = ctx.self.data.visit;
-        if (visit === -2) return [];
-        if (visit === -1) {
-          return [
-            { type: 'setItemData', stat: 'visit', value: shop.visit },
-            { type: 'maxArmor', delta: 1 },
-          ];
-        }
-        if (visit === shop.visit) return [{ type: 'maxArmor', delta: 1 }];
-        // The shop this item was armed for is behind us. It has done its job.
-        return [{ type: 'setItemData', stat: 'visit', value: -2 }];
-      },
-    },
-  }),
-  defineItem({
     id: 'solo-note',
     name: 'Solo Note',
     description: 'Once per round: a guess with one yellow and no green grants Restore.',
@@ -1432,7 +1403,7 @@ export const ITEMS: ItemDef[] = [
     id: 'vowel-sigil',
     name: 'Vowel Sigil',
     description: 'Solve under 60s: Omen.',
-    price: 24,
+    price: 18,
     kind: 'gear',
     rarity: 'rare',
     timerInterest: true,
