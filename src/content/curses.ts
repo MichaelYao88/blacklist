@@ -283,12 +283,12 @@ export const CURSES: CurseDef[] = [
   defineCurse({
     id: 'wasting',
     name: 'Wasting',
-    description: 'Current max HP is multiplied by 0.4 per stack.',
-    rules: ['Each stack reduces current max HP to 40%.'],
+    description: 'Current max HP is reduced by 40% per stack.',
+    rules: ['Each stack reduces current max HP by 40%.'],
     art: 'sleeper',
     tags: ['body'],
     maxStacks: Infinity,
-    maxHpMult: 0.4,
+    maxHpMult: 0.6,
     startingEligible: false,
   }),
   defineCurse({

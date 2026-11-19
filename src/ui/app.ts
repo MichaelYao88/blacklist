@@ -1223,11 +1223,13 @@ function renderKeyboard(board: BoardView): string {
       const status = board.keyboard[letter] ?? '';
       const hint = board.hints[letter];
       const hinted = hint ? 'hinted' : '';
-      const title = hint === 'present'
-        ? `${letter.toUpperCase()} · revealed in the answer`
-        : hint === 'absent'
-          ? `${letter.toUpperCase()} · revealed not in the answer`
-          : letter.toUpperCase();
+      const title = status === 'hidden'
+        ? `${letter.toUpperCase()} · hidden by a vision curse`
+        : hint === 'present'
+          ? `${letter.toUpperCase()} · revealed in the answer`
+          : hint === 'absent'
+            ? `${letter.toUpperCase()} · revealed not in the answer`
+            : letter.toUpperCase();
       return `<button class="key ${status} ${hinted}" data-action="key" data-letter="${letter}" title="${title}" ${status === 'purged' ? 'disabled' : ''}>${letter}</button>`;
     }).join('');
     const tail = rowIndex === 2

@@ -1337,6 +1337,7 @@ export function createCore(content: Content): Core {
       gauntletTotal: boss?.gauntlet ? boss.gauntlet.puzzles : 1,
       gauntletAnswers: [],
       totalGuesses: 0,
+      unobscuredGuesses: 0,
       hints: {},
     };
 
@@ -1448,8 +1449,9 @@ export function createCore(content: Content): Core {
     if (goldAward > 0) changeGold(rt, goldAward, RULES);
 
     if (outcome === 'solved') {
+      const countedGuesses = round.totalGuesses - round.unobscuredGuesses;
       runHook(rt, 'onSolve', {
-        guesses: round.totalGuesses,
+        guesses: countedGuesses,
         elapsedMs: round.elapsedMs,
         remainingMs: round.remainingMs,
         damageTaken: round.damageTaken,
@@ -1601,15 +1603,15 @@ export function createCore(content: Content): Core {
     // A two-word call only ever delivers one of the friend's curated
     // catchphrases. He never improvises a pair from the random word bucket.
     if (count >= 2) {
-      if (rngChance(state, 25)) {
-        emit(rt, { type: 'friendSaid', text: 'Pizza Pzazz 🍕✨' });
-      }
       const taken = used();
       const phrases = content.friendPhrases.filter(
         ([first, second]) => available(first, taken) && available(second, taken),
       );
       if (phrases.length > 0) {
         const [first, second] = rngPick(state, phrases);
+        if (first === 'pizza' && second === 'pzazz') {
+          emit(rt, { type: 'friendSaid', text: 'Pizza Pzazz 🍕✨' });
+        }
         if (state.phase === 'round') scorePlayerGuess(rt, first, 'friend');
         if (state.phase === 'round') scorePlayerGuess(rt, second, 'friend');
         return;
@@ -1671,6 +1673,7 @@ export function createCore(content: Content): Core {
 
     round.totalGuesses++;
     state.stats.guesses++;
+    if (unobscured) round.unobscuredGuesses++;
     round.guesses.push(guess);
 
     const mark = rt.events.length;
@@ -2607,8 +2610,21 @@ export function createCore(content: Content): Core {
         keyboard[letter] = 'absent';
       }
     }
+    const hiddenLetters = new Set<string>();
+    for (const entry of curseDefs(state)) {
+      for (const effect of entry.def.vision ?? []) {
+        if (effect.kind === 'hideLetters') {
+          for (const letter of effect.letters) hiddenLetters.add(letter);
+        }
+      }
+    }
+    for (const letter of hiddenLetters) {
+      if (!keyboard[letter]) keyboard[letter] = 'hidden';
+    }
     for (const letter of state.purged) {
-      if (!keyboard[letter] || keyboard[letter] === 'absent') keyboard[letter] = 'purged';
+      if (!keyboard[letter] || keyboard[letter] === 'absent' || keyboard[letter] === 'hidden') {
+        keyboard[letter] = 'purged';
+      }
     }
 
     return {
@@ -3029,6 +3045,9 @@ export function createCore(content: Content): Core {
         }
         if (typeof state.round.nextFreeUnobscured !== 'boolean') {
           state.round.nextFreeUnobscured = false;
+        }
+        if (typeof state.round.unobscuredGuesses !== 'number') {
+          state.round.unobscuredGuesses = 0;
         }
         if (typeof state.round.damageRamp !== 'number') {
           state.round.damageRamp = 0;

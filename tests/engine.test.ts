@@ -265,6 +265,28 @@ describe('vision curses and Tally Lens', () => {
     expect(CURSE_BY_ID.get('rip-curse')?.vision)
       .toContainEqual({ kind: 'ambiguousLetters', letters: 'rip' });
   });
+
+  it('marks vision-hidden letters on the keyboard and lets reveals override it', () => {
+    const { state } = start('hidden-keyboard');
+    state.curses.push({ id: 'hard-r', stacks: 1 });
+    const view = game.view(state).phase;
+    if (view.kind !== 'round') throw new Error('expected round');
+    expect(view.board.keyboard.r).toBe('hidden');
+    expect(view.board.keyboard.s).toBeUndefined();
+
+    const hinted = start('hidden-keyboard-hint');
+    hinted.state.curses.push({ id: 'hard-r', stacks: 1 });
+    hinted.state.round!.hints.r = 'present';
+    const hintedView = game.view(hinted.state).phase;
+    if (hintedView.kind !== 'round') throw new Error('expected round');
+    expect(hintedView.board.keyboard.r).toBe('present');
+
+    const silver = start('hidden-keyboard-silver');
+    silver.state.curses.push({ id: 'monochrome', stacks: 1 });
+    const silverView = game.view(silver.state).phase;
+    if (silverView.kind !== 'round') throw new Error('expected round');
+    expect(silverView.board.keyboard.s).not.toBe('hidden');
+  });
 });
 
 describe('blacklist curse', () => {
@@ -316,6 +338,19 @@ describe('damage and curses', () => {
     expect(next.state.round?.baseDamage).toBe(10); // (3 + 2) × 1.4² = 9.8
     expect(CURSE_BY_ID.get('heavy-hand')?.damageMultiplier).toBe(1.4);
     expect(CURSE_BY_ID.get('heavy-hand')?.description).toContain('40%');
+  });
+
+  it('Wasting cuts current max HP by 40%', () => {
+    const { state } = start('wasting');
+    state.curse = { options: ['wasting'], starting: false };
+    state.phase = 'curse';
+    state.maxHp = 20;
+    state.hp = 20;
+    const chosen = act(state, { type: 'chooseCurse', curseId: 'wasting' });
+    expect(chosen.state.maxHp).toBe(12);
+    expect(chosen.state.hp).toBe(12);
+    expect(CURSE_BY_ID.get('wasting')?.maxHpMult).toBe(0.6);
+    expect(CURSE_BY_ID.get('wasting')?.description).toContain('40%');
   });
 
   it('raises base damage by 1 for every curse stack', () => {
@@ -495,6 +530,23 @@ describe('timer curses', () => {
     expect(after.board.guesses[1].tiles[0]).toBe('hidden');
   });
 
+  it('does not count Time Freeze free guesses for solve-count items', () => {
+    const { state } = start('time-freeze-count');
+    state.items.push({ instance: 'i-short', id: 'shortcut', data: {}, equipped: true });
+    state.spells = [
+      { instance: 's-tf1', id: 'time-freeze' },
+      { instance: 's-tf2', id: 'time-freeze' },
+    ];
+    state.round!.freeLeft = 0;
+    setAnswer(state, 'crane');
+    let current = act(state, { type: 'castSpell', instance: 's-tf1' }).state;
+    current = act(current, { type: 'guess', word: 'slate' }).state;
+    current = act(current, { type: 'castSpell', instance: 's-tf2' }).state;
+    current = act(current, { type: 'guess', word: 'brick' }).state;
+    const solved = act(current, { type: 'guess', word: 'crane' });
+    expect(solved.state.slots).toBe(6);
+  });
+
   it('makes Phone a Friend add five seconds instead of freezing the clock', () => {
     const { state } = start();
     state.curses.push({ id: 'clock', stacks: 1 });
@@ -518,9 +570,16 @@ describe('timer curses', () => {
       if (!next.state.round) throw new Error('expected round');
       next.state.round.answer = 'zzzzz';
       const cast = act(next.state, { type: 'castSpell', instance: 's-phone' });
-      if (cast.events.some(
+      const said = cast.events.some(
         (event) => event.type === 'friendSaid' && event.text === 'Pizza Pzazz 🍕✨',
-      )) seen = true;
+      );
+      if (said) {
+        const words = cast.events.flatMap((event) =>
+          event.type === 'guessScored' && event.by === 'friend' ? [event.word] : [],
+        );
+        expect(words).toEqual(['pizza', 'pzazz']);
+        seen = true;
+      }
     }
     expect(seen).toBe(true);
   });
@@ -2257,7 +2316,7 @@ describe('spells and foods', () => {
 
   it('uses the new Time Freeze text', () => {
     expect(SPELL_BY_ID.get('time-freeze')?.description)
-      .toBe('Freeze the clock until your next guess. Without a clock: the next guess is free and unobscured.');
+      .toBe('Get a free and unobscured guess. Doesn\'t count towards the number of guesses (for certain items). Freeze the Clock.');
   });
 
   it('prices Pen Club at 15 gold for a 1-5 gold payout', () => {

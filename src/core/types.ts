@@ -21,7 +21,7 @@ export type InstanceId = string;
 
 export type TileTruth = 'correct' | 'present' | 'absent';
 export type TileShown = TileTruth | 'hit' | 'hidden';
-export type KeyboardStatus = 'correct' | 'present' | 'absent' | 'hit' | 'purged';
+export type KeyboardStatus = 'correct' | 'present' | 'absent' | 'hit' | 'hidden' | 'purged';
 
 export interface PresentedGuess {
   word: string;
@@ -137,6 +137,8 @@ export interface RoundState {
   gauntletTotal: number;
   gauntletAnswers: string[];
   totalGuesses: number;
+  /** Guesses that were free and unobscured from Time Freeze. */
+  unobscuredGuesses: number;
   /** Persistent keyboard information from Omen and reveal items. */
   hints: Partial<Record<Letter, 'present' | 'absent'>>;
 }

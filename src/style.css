@@ -902,13 +902,21 @@ button {
 
 .tile.hidden {
   background:
-    repeating-linear-gradient(135deg, #241e30 0 6px, #1b1625 6px 12px);
-  border: 1px dashed #493c60;
-  color: #9a8db2;
+    repeating-linear-gradient(135deg, #332a49 0 6px, #241e34 6px 12px);
+  border: 1px dashed #7d69a8;
+  color: #e5dcff;
+  box-shadow: inset 0 0 12px rgba(150, 120, 220, 0.16);
 }
 
 .tile.hidden .tile-letter {
-  opacity: 0.5;
+  opacity: 1;
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(200, 170, 255, 0.7), 0 1px 2px #000;
+}
+
+.tile.hidden .tile-mark {
+  opacity: 0.95;
+  color: #e5dcff;
 }
 
 .tile.input {
@@ -1022,6 +1030,24 @@ button {
   color: #4b4359;
   border-color: #362d46;
   text-decoration: line-through;
+}
+
+.key.hidden {
+  position: relative;
+  overflow: hidden;
+  background: repeating-linear-gradient(135deg, #332a49 0 5px, #241e34 5px 10px);
+  border-color: #7d69a8;
+  color: #ffffff;
+  text-shadow: 0 0 8px rgba(200, 170, 255, 0.6), 0 1px 2px #000;
+}
+
+.key.hidden::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  background: linear-gradient(45deg, transparent 46%, #a88fd6 47%, #a88fd6 53%, transparent 54%);
+  opacity: 0.55;
+  pointer-events: none;
 }
 
 /* ── phase cards ─────────────────────────────────────────────────────────── */

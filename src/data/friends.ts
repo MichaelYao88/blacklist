@@ -55,4 +55,5 @@ export const FRIEND_PHRASES: readonly (readonly [string, string])[] = [
   ['sicks', 'seven'],
   ['skill', 'issue'],
   ['touch', 'grass'],
+  ['pizza', 'pzazz'],
 ];
