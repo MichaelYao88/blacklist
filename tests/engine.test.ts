@@ -547,6 +547,34 @@ describe('timer curses', () => {
     expect(solved.state.slots).toBe(6);
   });
 
+  it('locks Immunity and Time Freeze until the player guesses', () => {
+    const { state } = start('spell-lock');
+    state.spells = [
+      { instance: 's-imm1', id: 'immunity' },
+      { instance: 's-imm2', id: 'immunity' },
+      { instance: 's-tf1', id: 'time-freeze' },
+      { instance: 's-tf2', id: 'time-freeze' },
+    ];
+    setAnswer(state, 'crane');
+
+    const first = act(state, { type: 'castSpell', instance: 's-imm1' });
+    const blocked = act(first.state, { type: 'castSpell', instance: 's-imm2' });
+    expect(blocked.events.some(
+      (event) => event.type === 'spellRejected'
+        && event.reason === 'Guess First! You already cast Immunity.',
+    )).toBe(true);
+    expect(blocked.state.spells.some((spell) => spell.instance === 's-imm2')).toBe(true);
+
+    const freeze = act(blocked.state, { type: 'castSpell', instance: 's-tf1' });
+    expect(freeze.state.spells.some((spell) => spell.instance === 's-tf1')).toBe(false);
+    expect(freeze.state.round?.lockedSpells).toEqual(['immunity', 'time-freeze']);
+
+    const guessed = act(freeze.state, { type: 'guess', word: 'slate' });
+    expect(guessed.state.round?.lockedSpells).toEqual([]);
+    const recast = act(guessed.state, { type: 'castSpell', instance: 's-imm2' });
+    expect(recast.state.spells.some((spell) => spell.instance === 's-imm2')).toBe(false);
+  });
+
   it('makes Phone a Friend add five seconds instead of freezing the clock', () => {
     const { state } = start();
     state.curses.push({ id: 'clock', stacks: 1 });
@@ -728,6 +756,50 @@ describe('shop curses', () => {
     const paid = act(state, { type: 'choose', optionId: 'everything' });
     expect(paid.state.gold).toBe(5);
     expect(paid.state.curses).toEqual([]);
+  });
+
+  it('adds the Detour, Crossroads and Trade events', () => {
+    const detour = HAPPENING_BY_ID.get('detour');
+    const both = detour?.options.find((option) => option.id === 'both');
+    expect(both?.outcomes[0].effects).toContainEqual({ type: 'damage', amount: 7, ignoreArmor: true });
+    expect(both?.outcomes[0].effects).toContainEqual({ type: 'slots', delta: 1 });
+    expect(both?.outcomes[0].effects).toContainEqual({ type: 'openShop' });
+
+    const crossroads = HAPPENING_BY_ID.get('crossroads');
+    expect(crossroads?.options.find((option) => option.id === 'rest')?.outcomes[0].effects)
+      .toEqual([
+        { type: 'giveSpell', spell: 'heal' },
+        { type: 'giveSpell', spell: 'time-freeze' },
+      ]);
+
+    const trade = HAPPENING_BY_ID.get('trade');
+    expect(trade?.options.find((option) => option.id === 'buy-slot')?.costGold).toBe(10);
+    expect(trade?.options.find((option) => option.id === 'sell-slot')?.outcomes[0].effects)
+      .toContainEqual({ type: 'gold', amount: 20 });
+    expect(trade?.options.find((option) => option.id === 'heal')?.outcomes[0].effects)
+      .toHaveLength(2);
+  });
+
+  it('opens a shop from the Detour and applies its other rewards', () => {
+    const { state } = start('detour-both');
+    state.phase = 'happening';
+    state.happening = { id: 'detour', options: [] };
+    const chosen = act(state, { type: 'choose', optionId: 'both' });
+    expect(chosen.state.hp).toBe(13);
+    expect(chosen.state.slots).toBe(6);
+    expect(chosen.state.phase).toBe('shop');
+    expect(chosen.state.shop?.offers.length).toBeGreaterThan(0);
+  });
+
+  it('Nest Egg pays 3 gold when a shop opens', () => {
+    const { state } = start('nest-egg');
+    state.items.push({ instance: 'i-nest', id: 'nest-egg', data: {}, equipped: true });
+    state.nodeIndex = 0;
+    state.nodes[1] = { kind: 'shop', level: 1 };
+    state.phase = 'shop';
+    state.shop = shopState();
+    const result = act(state, { type: 'continue' });
+    expect(result.state.gold).toBe(15);
   });
 
   it('The Revisor offers two spells at 70%', () => {
@@ -952,6 +1024,16 @@ describe('new item and event batch', () => {
     expect(bought.state.maxArmor).toBe(8);
     expect(ITEM_BY_ID.get('bottomless')?.description)
       .toContain('20% chance of +1 max armor');
+
+    const bottomless = bought.state.items.find((item) => item.id === 'bottomless');
+    const off = act(bought.state, { type: 'unequipItem', instance: bottomless!.instance });
+    expect(off.state.maxArmor).toBe(4);
+    const on = act(off.state, { type: 'equipItem', instance: bottomless!.instance });
+    expect(on.state.maxArmor).toBe(8);
+    on.state.phase = 'shop';
+    on.state.shop = shopState();
+    const sold = act(on.state, { type: 'sell', instance: bottomless!.instance });
+    expect(sold.state.maxArmor).toBe(4);
   });
 
   it('stops offering food that permanently revealed its letter', () => {
@@ -1909,7 +1991,7 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('necronomicon')?.price).toBe(13);
     expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('not in the word');
     expect(ITEM_BY_ID.get('nest-egg')?.price).toBe(4);
-    expect(ITEM_BY_ID.get('nest-egg')?.description).toContain('+1 gold');
+    expect(ITEM_BY_ID.get('nest-egg')?.description).toContain('+3 gold');
     expect(ITEM_BY_ID.get('plate-timer')?.price).toBe(7);
     expect(ITEM_BY_ID.get('plate-timer')?.description).toContain('15s');
     expect(ITEM_BY_ID.get('second-skin')?.price).toBe(6);

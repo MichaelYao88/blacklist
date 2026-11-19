@@ -361,10 +361,10 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'bottomless',
     name: 'Bottomless',
-    description: 'Gain 4 max armor. Eating food: 20% chance of +1 max armor.',
+    description: 'Equipped: +4 max armor. Eating food: 20% chance of +1 max armor.',
     price: 12,
     kind: 'gear',
-    onAcquire: () => [{ type: 'maxArmor', delta: 4 }],
+    equipMaxArmor: 4,
     on: {
       onEat: () => [{ type: 'maxArmor', delta: 1, chancePct: 20 }],
     },
@@ -645,10 +645,10 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'nest-egg',
     name: 'Nest Egg',
-    description: 'On solve: +1 gold.',
+    description: 'Visit a shop: +3 gold.',
     price: 4,
     kind: 'gear',
-    on: { onSolve: () => [{ type: 'gold', amount: 3 }] },
+    on: { onShopOpen: () => [{ type: 'gold', amount: 3 }] },
   }),
   defineItem({
     id: 'waste-basket',

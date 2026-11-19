@@ -279,6 +279,91 @@ export const HAPPENINGS: HappeningDef[] = [
     ],
   }),
   defineHappening({
+    id: 'detour',
+    name: 'The Detour',
+    description: 'A side road, a shop sign, and a pocket that was not there before.',
+    options: [
+      {
+        id: 'slot',
+        label: 'Take the extra pocket',
+        description: '+1 item slot.',
+        outcomes: [{ chancePct: 100, text: 'You find room for one more thing.', effects: [{ type: 'slots', delta: 1 }] }],
+      },
+      {
+        id: 'shop',
+        label: 'Visit the shop',
+        description: 'Open a shop right now.',
+        outcomes: [{ chancePct: 100, text: 'The side road leads straight to a shelf.', effects: [{ type: 'openShop' }] }],
+      },
+      {
+        id: 'both',
+        label: 'Do both',
+        description: 'Lose 7 HP, +1 item slot, and open a shop.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'You take the long way and pay for it in blood, room and a detour.',
+          effects: [
+            { type: 'damage', amount: 7, ignoreArmor: true },
+            { type: 'slots', delta: 1 },
+            { type: 'openShop' },
+          ],
+        }],
+      },
+    ],
+  }),
+  defineHappening({
+    id: 'crossroads',
+    name: 'The Crossroads',
+    description: 'A shop on one road and a quiet fire on the other.',
+    options: [
+      {
+        id: 'shop',
+        label: 'Take the shop road',
+        description: 'Open a shop right now.',
+        outcomes: [{ chancePct: 100, text: 'You follow the lanterns to a shop.', effects: [{ type: 'openShop' }] }],
+      },
+      {
+        id: 'rest',
+        label: 'Rest by the fire',
+        description: 'Gain a Heal spell and a Time Freeze spell.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'You rest, and the fire leaves two spells in the ashes.',
+          effects: [
+            { type: 'giveSpell', spell: 'heal' },
+            { type: 'giveSpell', spell: 'time-freeze' },
+          ],
+        }],
+      },
+    ],
+  }),
+  defineHappening({
+    id: 'trade',
+    name: 'The Trade',
+    description: 'A merchant with three ways to balance the scales.',
+    options: [
+      {
+        id: 'buy-slot',
+        label: 'Buy a slot',
+        description: 'Lose 10 gold: +1 item slot.',
+        costGold: 10,
+        outcomes: [{ chancePct: 100, text: 'Coins change hands. Your loadout grows.', effects: [{ type: 'slots', delta: 1 }] }],
+      },
+      {
+        id: 'sell-slot',
+        label: 'Sell a slot',
+        description: 'Lose 1 item slot: gain 20 gold.',
+        outcomes: [{ chancePct: 100, text: 'You trade carrying room for a heavy purse.', effects: [{ type: 'slots', delta: -1 }, { type: 'gold', amount: 20 }] }],
+      },
+      {
+        id: 'heal',
+        label: 'Take the heals',
+        description: 'Gain two Heal spells.',
+        outcomes: [{ chancePct: 100, text: 'The merchant wraps two poultices in paper.', effects: [{ type: 'giveSpell', spell: 'heal' }, { type: 'giveSpell', spell: 'heal' }] }],
+      },
+    ],
+  }),
+  defineHappening({
     id: 'bone-dice',
     name: 'Bone Dice',
     description: 'Two dice carved from something that used to answer questions.',

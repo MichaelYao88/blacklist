@@ -58,7 +58,8 @@ export type HookName =
   | 'onGoldSpent'
   | 'onMaxHpChanged'
   | 'onReveal'
-  | 'onCurseGained';
+  | 'onCurseGained'
+  | 'onShopOpen';
 
 export type RejectReason =
   | 'wrongPhase'
@@ -139,6 +140,8 @@ export interface RoundState {
   totalGuesses: number;
   /** Guesses that were free and unobscured from Time Freeze. */
   unobscuredGuesses: number;
+  /** Spells that must wait for the player's next guess before another cast. */
+  lockedSpells: SpellId[];
   /** Persistent keyboard information from Omen and reveal items. */
   hints: Partial<Record<Letter, 'present' | 'absent'>>;
 }
@@ -306,6 +309,7 @@ export type Effect =
   | { type: 'addRandomItem' }
   | { type: 'addRandomRelic' }
   | { type: 'addRandomCurse' }
+  | { type: 'openShop' }
   | { type: 'addPreviewItem' }
   | { type: 'addPreviewCurse' }
   | { type: 'eat'; food: string }
@@ -373,6 +377,7 @@ export interface HookPayloads {
   onReveal: { letter: Letter; status: 'present' | 'absent' };
   onPuzzleSolved: { index: number; total: number; elapsedMs: number };
   onCurseGained: { curse: CurseId; stacks: number };
+  onShopOpen: { offers: Offer[] };
 }
 export type Reactors<C extends Ctx> = Partial<{
   [H in HookName]: (ctx: C, payload: HookPayloads[H]) => Effect[];
@@ -395,6 +400,8 @@ export interface ItemDef {
   goldDoubleChance?: number;
   /** Extra gold added to every positive gold gain. */
   goldGainBonus?: number;
+  /** Max armor granted only while this item is equipped. */
+  equipMaxArmor?: number;
   initial?: Record<string, number>;
   on?: Reactors<ItemCtx>;
   onAcquire?: (ctx: ItemCtx) => Effect[];

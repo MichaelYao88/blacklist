@@ -522,6 +522,9 @@ export function createCore(content: Content): Core {
     if (def.onAcquire) {
       applyEffects(rt, def.onAcquire({ state, self: item }), { kind: 'item', instance: item.instance }, item.instance);
     }
+    if (equip && def.equipMaxArmor) {
+      changeMaxArmor(rt, def.equipMaxArmor);
+    }
     return true;
   }
 
@@ -538,6 +541,7 @@ export function createCore(content: Content): Core {
     }
     item.equipped = true;
     emit(rt, { type: 'itemEquipped', instance, equipped: true });
+    if (def.equipMaxArmor) changeMaxArmor(rt, def.equipMaxArmor);
   }
 
   function unequipItem(rt: Runtime, instance: InstanceId): void {
@@ -548,12 +552,18 @@ export function createCore(content: Content): Core {
     if (!def || itemSlots(def) === 0 || item.equipped === false) return;
     item.equipped = false;
     emit(rt, { type: 'itemEquipped', instance, equipped: false });
+    if (def.equipMaxArmor) changeMaxArmor(rt, -def.equipMaxArmor);
   }
 
   function removeItem(rt: Runtime, instance: InstanceId, reason: 'sold' | 'consumed' | 'replaced'): void {
     const state = rt.state;
     const index = state.items.findIndex((i) => i.instance === instance);
     if (index < 0) return;
+    const item = state.items[index];
+    const def = itemById.get(item.id);
+    if (item.equipped !== false && def?.equipMaxArmor) {
+      changeMaxArmor(rt, -def.equipMaxArmor);
+    }
     state.items.splice(index, 1);
     emit(rt, { type: 'itemRemoved', instance, reason });
   }
@@ -995,6 +1005,9 @@ export function createCore(content: Content): Core {
         }
         break;
       }
+      case 'openShop':
+        openShop(rt);
+        break;
       case 'rerollShop': {
         const shop = state.shop;
         if (!shop || state.phase !== 'shop') break;
@@ -1115,7 +1128,7 @@ export function createCore(content: Content): Core {
         state.slots = Math.max(0, state.slots + effect.delta);
         emit(rt, { type: 'slotsChanged', slots: state.slots });
         if (effect.delta < 0) {
-          const dropped = enforceSlotCapacity(state);
+          const dropped = enforceSlotCapacity(rt, state);
           if (dropped.length > 0) {
             emit(rt, {
               type: 'message',
@@ -1338,6 +1351,7 @@ export function createCore(content: Content): Core {
       gauntletAnswers: [],
       totalGuesses: 0,
       unobscuredGuesses: 0,
+      lockedSpells: [],
       hints: {},
     };
 
@@ -1674,6 +1688,7 @@ export function createCore(content: Content): Core {
     round.totalGuesses++;
     state.stats.guesses++;
     if (unobscured) round.unobscuredGuesses++;
+    if (by === 'player' && round.lockedSpells.length > 0) round.lockedSpells = [];
     round.guesses.push(guess);
 
     const mark = rt.events.length;
@@ -2004,6 +2019,7 @@ export function createCore(content: Content): Core {
       offers: clone(state.shop.offers),
       rerollCost: state.shop.rerollCost,
     });
+    runHook(rt, 'onShopOpen', { offers: state.shop.offers });
   }
 
   function buy(rt: Runtime, offerId: string): void {
@@ -2277,7 +2293,7 @@ export function createCore(content: Content): Core {
   }
 
   /** Unequip overflow when the slot count shrinks, keeping the bag usable. */
-  function enforceSlotCapacity(state: RunState): string[] {
+  function enforceSlotCapacity(rt: Runtime, state: RunState): string[] {
     let equippedCost = 0;
     const dropped: string[] = [];
     for (const item of state.items) {
@@ -2286,6 +2302,7 @@ export function createCore(content: Content): Core {
       if (item.equipped === false || cost === 0) continue;
       if (equippedCost + cost > state.slots) {
         item.equipped = false;
+        if (def?.equipMaxArmor) changeMaxArmor(rt, -def.equipMaxArmor);
         dropped.push(def?.name ?? item.id);
         continue;
       }
@@ -2318,7 +2335,7 @@ export function createCore(content: Content): Core {
     if (def.slotDelta) {
       state.slots = Math.max(0, state.slots + def.slotDelta);
       emit(rt, { type: 'slotsChanged', slots: state.slots });
-      const dropped = enforceSlotCapacity(state);
+      const dropped = enforceSlotCapacity(rt, state);
       if (dropped.length > 0) {
         emit(rt, {
           type: 'message',
@@ -2488,6 +2505,19 @@ export function createCore(content: Content): Core {
       emit(rt, { type: 'spellRejected', instance, reason: 'Only usable during a round.' });
       return;
     }
+    const round = state.round;
+    if (
+      round
+      && (def.id === 'immunity' || def.id === 'time-freeze')
+      && round.lockedSpells.includes(def.id)
+    ) {
+      emit(rt, {
+        type: 'spellRejected',
+        instance,
+        reason: `Guess First! You already cast ${def.name}.`,
+      });
+      return;
+    }
     state.spells.splice(index, 1);
     const doubled = state.nextSpellDouble === true;
     if (doubled) state.nextSpellDouble = false;
@@ -2499,6 +2529,13 @@ export function createCore(content: Content): Core {
     }
     if (isOver(state)) return;
     runHook(rt, 'onSpellCast', { spell: def.id });
+    if (
+      round
+      && (def.id === 'immunity' || def.id === 'time-freeze')
+      && !round.lockedSpells.includes(def.id)
+    ) {
+      round.lockedSpells.push(def.id);
+    }
   }
 
   function useItem(rt: Runtime, instance: InstanceId): void {
@@ -3048,6 +3085,9 @@ export function createCore(content: Content): Core {
         }
         if (typeof state.round.unobscuredGuesses !== 'number') {
           state.round.unobscuredGuesses = 0;
+        }
+        if (!Array.isArray(state.round.lockedSpells)) {
+          state.round.lockedSpells = [];
         }
         if (typeof state.round.damageRamp !== 'number') {
           state.round.damageRamp = 0;
