@@ -1360,10 +1360,6 @@ function renderSidePanel(view: RunView): string {
     ? view.blacklist.map((word, index) => `<li><span>${String(index + 1).padStart(2, '0')}</span>${escapeHtml(word)}</li>`).join('')
     : `<li class="empty"><span>—</span>empty</li>`;
 
-  const items = view.items.length
-    ? view.items.map((item) => renderItem(view, item)).join('')
-    : `<p class="empty-note">No items yet. Shops and the Curse Broker fix that.</p>`;
-  const bagged = view.items.filter((item) => !item.equipped && item.slots > 0).length;
   const hasList = view.curses.some((curse) => curse.id === 'the-list');
   const blacklistTip = 'Blacklisted words can never be guessed again. The List adds the first guess of every round, and blacklisted words are never chosen as future answers. No limit.';
 
@@ -1396,11 +1392,21 @@ function renderSidePanel(view: RunView): string {
     </section>` : ''}
     ${(view.revealed.length || view.purged.length) ? `<section>
       ${view.revealed.length ? `<div class="revealed">
-        <span class="panel-kicker">REVEALED THIS PUZZLE</span>
+        <span class="panel-kicker">${view.phase.kind === 'round' || view.phase.kind === 'summary' ? 'REVEALED THIS PUZZLE' : 'REVEALED'}</span>
         <div>${view.revealed.map(({ letter, status }) => `<span class="reveal-chip ${status}"><b>${escapeHtml(letter.toUpperCase())}</b><em>${status === 'present' ? 'IN WORD' : 'RULED OUT'}</em></span>`).join('')}</div>
       </div>` : ''}
       ${view.purged.length ? `<div class="purged"><span class="panel-kicker">PURGED</span><div>${view.purged.map((letter) => `<span class="letter-chip">${escapeHtml(letter.toUpperCase())}</span>`).join('')}</div></div>` : ''}
     </section>` : ''}
+  </aside>`;
+}
+
+function renderItemsPanel(view: RunView): string {
+  const items = view.items.length
+    ? view.items.map((item) => renderItem(view, item)).join('')
+    : `<p class="empty-note">No items yet. Shops and the Curse Broker fix that.</p>`;
+  const bagged = view.items.filter((item) => !item.equipped && item.slots > 0).length;
+  return `
+  <aside class="panel items-panel">
     <section class="rail-items">
       <div class="panel-head">
         <span class="panel-kicker">ITEMS</span>
@@ -2019,6 +2025,7 @@ function renderRun(view: RunView): string {
           ${renderBattleRail(view, bossId)}
           <section class="center-column">${phasePanel(view)}</section>
           ${renderSidePanel(view)}
+          ${renderItemsPanel(view)}
         </main>`}
     ${renderPurgeModal(view)}
     ${renderCurseRemovalModal(view)}

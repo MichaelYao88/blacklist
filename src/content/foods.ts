@@ -156,6 +156,23 @@ export const FOODS: FoodDef[] = [
     effects: [{ type: 'permanentRandomGuesses', count: 1 }],
   }),
   defineFood({
+    id: 'moon-cake',
+    name: 'Moon Cake',
+    description: 'Each round: autocast Omen. No slot.',
+    price: 16,
+    rarity: 'rare',
+    unique: true,
+    effects: [{ type: 'permanentRoundStartSpell', spell: 'omen' }],
+  }),
+  defineFood({
+    id: 'old-mcdonald',
+    name: "Old McDonald's",
+    description: 'Each round: EIEIO is guessed for free. No slot.',
+    price: 15,
+    unique: true,
+    effects: [{ type: 'permanentRoundStartWord', word: 'eieio' }],
+  }),
+  defineFood({
     id: 'king-mushroom',
     name: 'King Mushroom',
     description: 'Next round: wrong guesses deal only 2 damage. No slot.',
@@ -261,7 +278,7 @@ export const FOODS: FoodDef[] = [
     id: 'cyrniki',
     name: 'Cyrniki',
     description: 'Heal 50% of missing HP. 50%: a spell. 50%: reroll the shop. No slot.',
-    price: 5,
+    price: 3,
     effects: [
       { type: 'healMissingPercent', percent: 50 },
       {
@@ -648,9 +665,9 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'inkcap',
     name: 'Inkcap',
-    description: 'Uncommon. Purge one letter from all future answers. No slot.',
+    description: 'Rare. Purge one letter from all future answers. No slot.',
     price: 8,
-    rarity: 'uncommon',
+    rarity: 'rare',
     effects: [{ type: 'pendingPurge', count: 1 }],
   }),
   defineFood({

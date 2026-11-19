@@ -315,6 +315,8 @@ export type Effect =
   | { type: 'randomGuesses'; count: number; chancePct?: number; excludeLetters?: string }
   | { type: 'queueRandomGuesses'; count: number }
   | { type: 'permanentRandomGuesses'; count: number }
+  | { type: 'permanentRoundStartSpell'; spell: SpellId }
+  | { type: 'permanentRoundStartWord'; word: string }
   | { type: 'disableVisionThisRound' }
   | { type: 'friendGuesses'; count: number }
   | { type: 'autoGuess'; word: string }
@@ -568,6 +570,10 @@ export interface RunState {
   nextRoundRandomGuesses: number;
   /** Oracle's Banquet: autoguesses at the start of every round. */
   permanentRandomGuesses: number;
+  /** Moon Cake: spells autocast at the start of every round. */
+  permanentRoundStartSpells: SpellId[];
+  /** Old McDonald's: a word guessed for free at the start of every round. */
+  permanentRoundStartWord?: string;
   /** King Mushroom: cap the next round's wrong-guess damage. */
   nextRoundDamageCap?: number;
   /** Midnight Snack: show correct/misplaced counts for this many rounds. */

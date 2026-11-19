@@ -1015,7 +1015,6 @@ describe('curse-triggered items', () => {
     const { state } = start();
     state.items.push(
       { instance: 'i-trophy-hunter', id: 'trophy-hunter', data: {}, equipped: true },
-      { instance: 'i-boss-trophy', id: 'boss-trophy', data: {}, equipped: true },
       { instance: 'i-boss-aegis', id: 'boss-aegis', data: {}, equipped: true },
       { instance: 'i-trophy-room', id: 'trophy-room', data: {}, equipped: true },
     );
@@ -1025,11 +1024,11 @@ describe('curse-triggered items', () => {
     expect(chosen.state.maxHp).toBe(20);
     expect(chosen.state.maxArmor).toBe(6);
     expect(chosen.state.slots).toBe(6);
-    expect(chosen.state.spells).toHaveLength(2);
+    expect(chosen.state.spells).toHaveLength(1);
   });
 
   it('describes all of them as Gain a curse', () => {
-    for (const id of ['trophy-hunter', 'boss-trophy', 'boss-aegis', 'trophy-room']) {
+    for (const id of ['trophy-hunter', 'boss-aegis', 'trophy-room']) {
       expect(ITEM_BY_ID.get(id)?.description.startsWith('Whenever you gain a curse: Gain ')).toBe(true);
       expect(ITEM_BY_ID.get(id)?.name).not.toMatch(/boss|trophy/i);
     }
@@ -1070,16 +1069,24 @@ describe('item and food batch', () => {
     expect(['c', 'r', 'n']).toContain(hint);
   });
 
-  it('Old McDonald makes a free EIEIO guess at round start', () => {
+  it("Old McDonald's food makes a free EIEIO guess every round", () => {
     const { state } = start('old-mcdonald');
-    state.items.push({ instance: 'i-mac', id: 'old-mcdonald', data: {}, equipped: true });
-    const next = nextRound(state);
+    state.phase = 'shop';
+    state.gold = 20;
+    state.shop = shopState([{ id: 'f0', kind: 'eat', def: 'old-mcdonald', price: 15 }]);
+    const bought = act(state, { type: 'buy', offerId: 'f0' });
+    const next = nextRound(bought.state);
     const guess = next.state.round?.guesses.find((entry) => entry.word === 'eieio');
     expect(guess).toBeDefined();
     expect(guess?.free).toBe(true);
     expect(next.state.hp).toBe(16);
-    expect(ITEM_BY_ID.get('old-mcdonald')?.rarity).toBe('uncommon');
-    expect(ITEM_BY_ID.get('old-mcdonald')?.price).toBe(10);
+    const second = nextRound(next.state);
+    expect(second.state.round?.guesses.some((entry) => entry.word === 'eieio')).toBe(true);
+    expect(FOOD_BY_ID.get('old-mcdonald')?.name).toBe("Old McDonald's");
+    expect(FOOD_BY_ID.get('old-mcdonald')?.price).toBe(15);
+    expect(FOOD_BY_ID.get('old-mcdonald')?.unique).toBe(true);
+    expect(FOOD_BY_ID.get('old-mcdonald')?.effects)
+      .toContainEqual({ type: 'permanentRoundStartWord', word: 'eieio' });
   });
 
   it('removes the damage cap and prices letter foods by rarity', () => {
@@ -1580,7 +1587,7 @@ describe('new item and event batch', () => {
     expect(CURSE_BY_ID.get('tight-slots')?.slotDelta).toBe(-2);
     expect(SPELL_BY_ID.get('restore')?.description)
       .toContain('ignore vision curses');
-    expect(ITEM_BY_ID.get('siphon')?.description).toContain('40% chance to cast Heal');
+    expect(ITEM_BY_ID.get('siphon')?.description).toContain('40% chance to autocast Heal');
     expect(ITEM_BY_ID.get('gourmand')?.description).toContain('On spell cast or food eaten');
     expect(ITEM_BY_ID.get('pen-club')?.description).toContain('1-5 gold');
     expect(ITEM_BY_ID.get('big-belt')?.description).toContain('Every 5 eats or solves');
@@ -1671,9 +1678,20 @@ describe('latest balance pass', () => {
     expect(after.board.guesses[0]?.tiles[0]).toBe('hidden');
   });
 
+  it('keeps the revealed letters visible in a shop', () => {
+    const { state } = start('revealed-shop');
+    state.round!.hints = { a: 'present', z: 'absent' };
+    state.phase = 'shop';
+    state.shop = shopState();
+    const view = game.view(state);
+    expect(view.revealed).toContainEqual({ letter: 'a', status: 'present' });
+    expect(view.revealed).toContainEqual({ letter: 'z', status: 'absent' });
+  });
+
   it('Tally Lens is weighted but no longer guaranteed after a vision curse', () => {
     expect(ITEM_BY_ID.get('tally-lens')?.rarity).toBe('uncommon');
     expect(ITEM_BY_ID.get('tally-lens')?.appearanceWeight).toBe(3);
+    expect(ITEM_BY_ID.get('tally-lens')?.price).toBe(12);
 
     let withTally = 0;
     let withoutTally = 0;
@@ -1916,7 +1934,7 @@ describe('latest balance pass', () => {
     expect(FOOD_BY_ID.get('gg-gum')?.price).toBe(9);
     expect(ITEM_BY_ID.get('overachiever')).toBeUndefined();
     expect(ITEM_BY_ID.get('miser')).toBeUndefined();
-    expect(ITEM_BY_ID.get('old-mcdonald')).toBeDefined();
+    expect(FOOD_BY_ID.get('old-mcdonald')).toBeDefined();
   });
 
   it('Die Coke turns excess healing into gold', () => {
@@ -1967,7 +1985,7 @@ describe('latest balance pass', () => {
     expect(FOOD_BY_ID.get('hagelslag')?.description).toContain('20%');
     expect(FOOD_BY_ID.get('hearty-stew')?.price).toBe(5);
     expect(FOOD_BY_ID.get('masala-dosa')?.price).toBe(3);
-    expect(FOOD_BY_ID.get('cyrniki')?.price).toBe(5);
+    expect(FOOD_BY_ID.get('cyrniki')?.price).toBe(3);
     expect(FOOD_BY_ID.get('cyrniki')?.effects)
       .toContainEqual({ type: 'healMissingPercent', percent: 50 });
     expect(FOOD_BY_ID.get('menemen')?.price).toBe(4);
@@ -2317,7 +2335,8 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('nest-egg')?.description).toContain('+3 gold');
     expect(ITEM_BY_ID.get('plate-timer')?.price).toBe(7);
     expect(ITEM_BY_ID.get('plate-timer')?.description).toContain('15s');
-    expect(ITEM_BY_ID.get('second-skin')?.price).toBe(6);
+    expect(ITEM_BY_ID.get('second-skin')?.price).toBe(9);
+    expect(ITEM_BY_ID.get('second-skin')?.rarity).toBe('uncommon');
     expect(ITEM_BY_ID.get('second-skin')?.description).not.toContain('heal');
     expect(ITEM_BY_ID.get('solo-note')?.price).toBe(7);
     expect(ITEM_BY_ID.get('ticking-fee')?.description).toContain('40s');
@@ -2425,7 +2444,6 @@ describe('latest balance pass', () => {
       counterweight: 10,
       'loose-tongue': 24,
       'mending-plate': 26,
-      'old-mcdonald': 10,
       'oracle-skull': 26,
       'phoenix-egg': 18,
       potluck: 26,
@@ -2512,7 +2530,9 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('acquired-taste')?.price).toBe(11);
     expect(ITEM_BY_ID.get('acquired-taste')?.rarity).toBe('uncommon');
     expect(ITEM_BY_ID.get('tithe-box')?.price).toBe(10);
-    expect(ITEM_BY_ID.get('iron-hide')?.price).toBe(6);
+    expect(ITEM_BY_ID.get('iron-hide')).toBeUndefined();
+    expect(ITEM_BY_ID.get('purge-token')).toBeUndefined();
+    expect(ITEM_BY_ID.get('boss-trophy')).toBeUndefined();
     expect(ITEM_BY_ID.get('thorn-crown')?.description).toContain('30%');
     expect(ITEM_BY_ID.get('vampire-teeth')).toBeUndefined();
     expect(ITEM_BY_ID.get('chrono-anchor')?.description).toContain('Taking damage: 30% chance');
@@ -2614,8 +2634,8 @@ describe('latest balance pass', () => {
       const { state } = start(`grey-market-auto-${seedIndex}`);
       state.items.push(
         { instance: 'i-grey', id: 'grey-market', data: {}, equipped: true },
-        { instance: 'i-mac', id: 'old-mcdonald', data: {}, equipped: true },
       );
+      state.permanentRoundStartWord = 'eieio';
       const gold = state.gold;
       const next = nextRound(state);
       const answer = next.state.round?.answer ?? '';
@@ -2842,7 +2862,7 @@ describe('spells and foods', () => {
 
   it('has uncommon and rare purge foods', () => {
     expect(FOOD_BY_ID.get('inkcap')?.price).toBe(8);
-    expect(FOOD_BY_ID.get('inkcap')?.rarity).toBe('uncommon');
+    expect(FOOD_BY_ID.get('inkcap')?.rarity).toBe('rare');
     expect(FOOD_BY_ID.get('purge-the-d')?.price).toBe(8);
     expect(FOOD_BY_ID.get('purge-the-d')?.rarity).toBe('uncommon');
     expect(FOOD_BY_ID.get('poppy-seeds')?.price).toBe(4);
@@ -3077,9 +3097,10 @@ describe('unique shop items', () => {
 });
 
 describe('autocast and random-guess batch', () => {
-  it('ships a 200-word non-native guess pool', () => {
-    expect(CONTENT.nonnative).toHaveLength(200);
-    expect(new Set(CONTENT.nonnative).size).toBe(200);
+  it('ships a non-native guess pool including wharf', () => {
+    expect(CONTENT.nonnative).toHaveLength(201);
+    expect(CONTENT.nonnative).toContain('wharf');
+    expect(new Set(CONTENT.nonnative).size).toBe(201);
     for (const word of CONTENT.nonnative) {
       expect(word, word).toMatch(/^[a-z]{5}$/);
     }
@@ -3119,7 +3140,7 @@ describe('autocast and random-guess batch', () => {
     expect(sawFriend).toBe(true);
   });
 
-  it('Palindrome and Crisis 15 trigger random guesses from player guesses', () => {
+  it('Palindrome and Oasis 15 trigger random guesses from player guesses', () => {
     const palindrome = start('palindrome');
     palindrome.state.items.push({
       instance: 'i-pal',
@@ -3143,7 +3164,7 @@ describe('autocast and random-guess batch', () => {
     crisis.state.round!.freeLeft = 0;
     const isGuess = act(crisis.state, { type: 'guess', word: 'taxis' });
     expect(isGuess.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
-    expect(ITEM_BY_ID.get('crisis-15')?.name).toBe('Crisis 15');
+    expect(ITEM_BY_ID.get('crisis-15')?.name).toBe('Oasis 15');
   });
 
   it('Echo Chamber carries its cast count across rounds', () => {
@@ -3198,8 +3219,6 @@ describe('autocast and random-guess batch', () => {
   });
 
   it('marks the new uncommon and weighted content', () => {
-    expect(ITEM_BY_ID.get('old-mcdonald')?.rarity).toBe('uncommon');
-    expect(ITEM_BY_ID.get('old-mcdonald')?.price).toBe(10);
     expect(ITEM_BY_ID.get('counterweight')?.rarity).toBe('uncommon');
     expect(ITEM_BY_ID.get('counterweight')?.price).toBe(10);
     expect(ITEM_BY_ID.get('thorn-crown')?.rarity).toBe('uncommon');
@@ -3249,14 +3268,39 @@ describe('autocast and random-guess batch', () => {
 
   it('adds the new random-guess and autocast items', () => {
     const ids = [
-      'empty-mouth', 'detour', 'dark-echo', 'black-eye', 'palindrome',
-      'crisis-15', 'shellshock', 'echo-chamber', 'panic-button', 'wild-magic',
+      'empty-mouth', 'empty-orb', 'empty-phone', 'detour', 'dark-echo',
+      'black-eye', 'palindrome', 'crisis-15', 'shellshock', 'echo-chamber',
+      'panic-button', 'wild-magic',
     ];
     for (const id of ids) expect(ITEM_BY_ID.get(id), id).toBeDefined();
     expect(ITEM_BY_ID.get('dark-echo')?.rarity).toBe('uncommon');
     expect(ITEM_BY_ID.get('dark-echo')?.price).toBe(11);
     expect(ITEM_BY_ID.get('wild-magic')?.price).toBe(9);
     expect(ITEM_BY_ID.get('panic-button')?.price).toBe(8);
+    expect(ITEM_BY_ID.get('black-eye')?.price).toBe(8);
+    expect(ITEM_BY_ID.get('black-eye')?.description).toContain('40%');
+    expect(ITEM_BY_ID.get('empty-orb')?.price).toBe(7);
+    expect(ITEM_BY_ID.get('empty-phone')?.price).toBe(9);
+  });
+
+  it('Empty Orb and Empty Phone cast at round start with no spells', () => {
+    const { state } = start('empty-orb-phone');
+    state.spells = [];
+    state.items.push(
+      { instance: 'i-orb', id: 'empty-orb', data: {}, equipped: true },
+      { instance: 'i-phone', id: 'empty-phone', data: {}, equipped: true },
+    );
+    const next = nextRound(state);
+    const casts = next.events.filter(
+      (event) => event.type === 'spellCast' && event.auto,
+    ).map((event) => event.type === 'spellCast' ? event.spell.id : '');
+    expect(casts).toContain('omen');
+    expect(casts).toContain('phone-friend');
+  });
+
+  it('adds Idiot Moron to the friend phrase list and wharf to the guess pool', () => {
+    expect(CONTENT.friendPhrases).toContainEqual(['idiot', 'moron']);
+    expect(CONTENT.nonnative).toContain('wharf');
   });
 });
 
@@ -3265,8 +3309,8 @@ describe('round-start autoguess foods', () => {
     const { state } = start('tally-friend');
     state.items.push(
       { instance: 'i-tally', id: 'tally', data: { guesses: 0 }, equipped: true },
-      { instance: 'i-mac', id: 'old-mcdonald', data: {}, equipped: true },
     );
+    state.permanentRoundStartWord = 'eieio';
     const next = nextRound(state);
     expect(next.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
     expect(next.state.items.find((item) => item.id === 'tally')?.data.guesses)
@@ -3288,6 +3332,31 @@ describe('round-start autoguess foods', () => {
     expect(FOOD_BY_ID.get('fortune-cookie')?.appearanceWeight).toBe(5);
     expect(FOOD_BY_ID.get('fortune-cookie')?.effects)
       .toContainEqual({ type: 'queueRandomGuesses', count: 1 });
+  });
+
+  it('Moon Cake autocasts Omen at the start of every round', () => {
+    const { state } = start('moon-cake');
+    state.phase = 'shop';
+    state.gold = 30;
+    state.shop = shopState([{ id: 'f0', kind: 'eat', def: 'moon-cake', price: 16 }]);
+    const bought = act(state, { type: 'buy', offerId: 'f0' });
+    expect(bought.state.permanentRoundStartSpells).toContain('omen');
+
+    const first = nextRound(bought.state);
+    expect(first.events.some(
+      (event) => event.type === 'spellCast' && event.auto && event.spell.id === 'omen',
+    )).toBe(true);
+
+    const second = nextRound(first.state);
+    expect(second.events.some(
+      (event) => event.type === 'spellCast' && event.auto && event.spell.id === 'omen',
+    )).toBe(true);
+
+    expect(FOOD_BY_ID.get('moon-cake')?.price).toBe(16);
+    expect(FOOD_BY_ID.get('moon-cake')?.rarity).toBe('rare');
+    expect(FOOD_BY_ID.get('moon-cake')?.unique).toBe(true);
+    expect(FOOD_BY_ID.get('moon-cake')?.effects)
+      .toContainEqual({ type: 'permanentRoundStartSpell', spell: 'omen' });
   });
 
   it("Oracle's Banquet autoguesses at the start of every round", () => {

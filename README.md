@@ -27,7 +27,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Phone a Friend** delivers a one- or two-word catchphrase, quietly adds 5 seconds, and spams his words across the screen; the **Pizza Pzazz** set shows a pizza/sparkle callout instead of the word spam
 - **Time Freeze** gives a free, unobscured guess that does not count towards solve-count items (Hat Trick, Bloom, Shortcut, etc.); Time Freeze and Immunity lock until your next guess
 - Within-X solve items count **player guesses only**; solve gold still uses total guesses
-- Curse Collector, Witch Charm, Curse Bulwark and Reliquary trigger on gaining a curse ("Whenever you gain a curse: Gain …")
+- Curse Collector, Curse Bulwark and Reliquary trigger on gaining a curse ("Whenever you gain a curse: Gain …")
 - Ascension A1/A2 draft 1/2 starting curses
 - Shops with rerolls that start at 1g and double in price: three items, two foods and one wildcard; one item is always 50% off
 - Every spell offered in a shop costs 4g
@@ -44,7 +44,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Rarity rolls are quality floors, not exclusive tiers: 40% rare floor pulls from the entire pool, 30% uncommon floor pulls from uncommon + common, and 30% common floor pulls from common only. A missing floor falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 108 items (99 shop items + 9 rare relics), 6 spells, 80 foods and 25 happenings
+- 106 items (97 shop items + 9 rare relics), 6 spells, 82 foods and 25 happenings
 - New foods include **U-nagi**, **Empty Calories**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
@@ -71,6 +71,8 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Wild Magic** is a 9g item: each spell cast has a 25% chance to cast a random spell and a 25% chance to autoguess a random word
 - **Acquired Taste** is an 11g uncommon item: each different food you eat this run gives +4 max HP
 - Item triggers show a compact proc pop-up with the actual result (for example **Yellow1** calling an autoguess or **Grey Market** paying gold); once-per-round items show **SPENT** after they fire
+- The revealed-letter panel persists between screens; in shops it is labelled **REVEALED**
+- On desktop the item list sits under the battle rail on the left; on mobile it stays at the bottom of the sidebar
 - **Grey Market** is a 7g item: every all-grey guess pays 1 gold, whether you made it or an ally did; an all-dark guess that pays nothing hides a letter
 - **Photosynthesis** is a 10g item: on solve, +2 max HP and heal 20% max HP
 - **Stopped Clock** is a 6g item: casting Time Freeze grants +5 max HP, once per round
@@ -80,33 +82,37 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Immunity** blocks the next hurting guess and any guess for 4 seconds after it
 - **Big Belt** gains +1 item slot every 5 eats or solves
 - **Pen Club** pays a random 1-5 gold for guesses starting with PEN; **Gourmand** gains +1 max HP on eat or spell cast
-- **Old McDonald** is a 10g uncommon item: EIEIO is guessed for free at round start
+- **Old McDonald's** is a 15g unique food: EIEIO is guessed for free at the start of every round
 - Shops can show up to 2 copies of the same entry; sell rows are hoverable
 - Solve gold is 8/7/6/5/4 for solves in 1/2/3/4/5+ guesses
 - **The Endless Table** fires every on-eat effect 7 times or pays 7 gold
-- **Tally Lens** is an uncommon item with a 3× appearance weight while a vision curse is active; it is no longer guaranteed in a shop and shows correct/misplaced counts. **Tally** is never offered while you already own one
+- **Tally Lens** is a 12g uncommon item with a 3× appearance weight while a vision curse is active; it is no longer guaranteed in a shop and shows correct/misplaced counts. **Tally** is never offered while you already own one
 - **Encore** is unique and appears three times as often as an average common item; **Poppy Seeds** gets the same appearance boost
 - **Fortune Cookie** is a 1g food with a hidden 5× appearance weight: it queues one autoguess for the next round
 - **Oracle's Banquet** is an 18g rare unique food: it permanently autoguesses at the start of every round
 - **Tally** counts every guess, including ally and autoguesses
-- **Harvest Charm**, **Empty Mouth**, **Detour**, **Dark Echo**, **Black Eye**, **Palindrome**, **Crisis 15**, **Shellshock**, **Echo Chamber**, **Panic Button**, and **Wild Magic** are the new autoguess/autocast items
-- Random guesses pull from a 200-word pool chosen for non-native speakers; **Dark Echo** avoids letters from your first guess
+- **Harvest Charm**, **Empty Mouth**, **Empty Orb**, **Empty Phone**, **Detour**, **Dark Echo**, **Black Eye**, **Palindrome**, **Oasis 15**, **Shellshock**, **Echo Chamber**, **Panic Button**, and **Wild Magic** are the new autoguess/autocast items
+- **Black Eye** is an 8g item: a hit that deals HP damage has a 40% chance to autoguess a random word
+- **Second Skin** is a 9g uncommon item: the first time armor hits 0 each round, restore half your max armor
+- **Moon Cake** is a 16g rare unique food: autocast Omen at the start of every round
+- **Empty Orb** is a 7g item that autocasts Omen when a round starts with no spells; **Empty Phone** is the 9g Phone a Friend version
+- Random guesses pull from a 201-word pool chosen for non-native speakers, including **wharf**; **Dark Echo** avoids letters from your first guess
 - **The Naked Curse** halves your max armor; curse drafts now offer two choices
 - Every spell cast plays an animated pop-up, including item autocasts
-- **Cyrniki** is a 5g food: heal 50% of missing HP, then 50% a spell / 50% a shop reroll
+- **Cyrniki** is a 3g food: heal 50% of missing HP, then 50% a spell / 50% a shop reroll
 - **The Tax** reduces encounter gold by 40% and is unique; **The Sleeper** adds +2 damage per revealed letter in your first player guess, per stack; **The Curse Broker** charges 12g for a relic or 15g to remove a random curse; **The Confessional** sells 45/75/100% random curse removal for 5/10/15g
 - **The Detour** offers a slot, a shop, or both for 7 HP; **The Crossroads** offers a shop or a Heal plus Time Freeze; **The Trade** trades gold for a slot, a slot for gold, or two Heal spells
 - The Runner and Orc idle in their walk loops; free guesses and the winning guess play the Runner's attack, other guesses alternate Orc → Runner, a fatal guess is always the Orc, and the Orc collapses from the winning blow and stays down until the next round starts
 - Defeat drops the Runner into their death animation on the run-over screen
 - The run path rail is gone; the current level stays in the battle rail
-- Purge is an event (The Redaction) and foods (Poppy Seeds, Inkcap, Purge the D); its rest option triggers an eat and a 10% random curse removal
+- Purge is an event (The Redaction) and foods (Poppy Seeds, rare Inkcap, Purge the D); its rest option triggers an eat and a 10% random curse removal
 - One exact-state autosave slot. Defeat clears it. Victory clears it and updates meta stats.
 - A **STATS** page tracks run history (last 50 runs), win rate, best level, average solve time, favorite items and curses, play time, gold and damage totals
 - The top bar shows gold and area; the current level lives in the battle rail, not a level counter
 - Clock-gated items such as **Ticking Fee** never appear in shops or rewards until **The Clock** curse exists
 - Compact battle rail on the left: round timer with a hover tooltip for timeout damage, a wrong-guess damage chip, a side-view mini arena with the runner facing the act's monster (or boss), player HP and armor
 - Damage numbers slam into the centre of the screen as `N damage`, with a block message when armor or immunity eats the hit
-- Spells and the blacklist sit on the right, with items below them
+- Spells and the blacklist sit on the right; the item list sits under the battle rail on desktop and at the bottom of the right column on mobile
 - Pause (Space or Esc), independent music/SFX mutes, synthesized SFX, keyboard and on-screen keyboard, colorblind symbols, reduced-motion-friendly CSS
 - Soundtrack opens every run on Dark Synthwave and rerolls to a random regular track every 7 levels (repeats allowed). Click the **MUSIC** control to cycle manually. More Power is reserved for the final boss and is not in the carousel. Music sits below the SFX mix.
 

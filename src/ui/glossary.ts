@@ -33,6 +33,10 @@ const ENTRIES: GlossaryEntry[] = [
     tip: 'One spell picked at random from the spell pool.',
   },
   {
+    pattern: /\bautocast(?:s|ing)?\b/gi,
+    tip: 'The item casts the spell immediately. It never enters your spell list.',
+  },
+  {
     pattern: /\bspells?\b/gi,
     tip: 'A one-use ability. Duplicates stack into a single pile.',
   },

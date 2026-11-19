@@ -8,7 +8,7 @@ describe('Old McDonald round start', () => {
   beforeAll(async () => {
     localStorage.clear();
     const { state } = game.newRun({ seed: 'mcdonald-ui' });
-    state.items.push({ instance: 'i-mac', id: 'old-mcdonald', data: {}, equipped: true });
+    state.permanentRoundStartWord = 'eieio';
     state.nodes[1] = { kind: 'round', level: 2 };
     state.phase = 'shop';
     state.shop = {

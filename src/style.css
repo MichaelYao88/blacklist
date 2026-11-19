@@ -455,12 +455,30 @@ button {
 .layout {
   display: grid;
   grid-template-columns: 296px minmax(0, 1fr) 320px;
+  grid-template-rows: auto auto;
   gap: 14px;
   align-items: start;
 }
 
+.battle-rail {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.items-panel {
+  grid-column: 1;
+  grid-row: 2;
+}
+
 .center-column {
+  grid-column: 2;
+  grid-row: 1 / span 2;
   min-width: 0;
+}
+
+.side-panel {
+  grid-column: 3;
+  grid-row: 1 / span 2;
 }
 
 /* ── combat panel ────────────────────────────────────────────────────────── */
@@ -3903,10 +3921,27 @@ button {
 @media (max-width: 1180px) {
   .layout {
     grid-template-columns: 264px minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+  }
+
+  .battle-rail {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .items-panel {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .center-column {
+    grid-column: 2;
+    grid-row: 1 / span 2;
   }
 
   .side-panel {
     grid-column: 1 / -1;
+    grid-row: 3;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
@@ -3943,9 +3978,12 @@ button {
 
   .layout {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
   }
 
   .battle-rail {
+    grid-column: 1;
+    grid-row: auto;
     order: 0;
     width: 100%;
     max-width: 430px;
@@ -3953,13 +3991,22 @@ button {
   }
 
   .center-column {
+    grid-column: 1;
+    grid-row: auto;
     order: 1;
   }
 
   .side-panel {
+    grid-column: 1;
+    grid-row: auto;
     order: 2;
-    grid-column: auto;
     grid-template-columns: 1fr;
+  }
+
+  .items-panel {
+    grid-column: 1;
+    grid-row: auto;
+    order: 3;
   }
 
   .mini-stage {

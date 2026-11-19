@@ -1134,6 +1134,14 @@ export function createCore(content: Content): Core {
       case 'permanentRandomGuesses':
         state.permanentRandomGuesses += effect.count;
         break;
+      case 'permanentRoundStartSpell':
+        if (!state.permanentRoundStartSpells.includes(effect.spell)) {
+          state.permanentRoundStartSpells.push(effect.spell);
+        }
+        break;
+      case 'permanentRoundStartWord':
+        state.permanentRoundStartWord = effect.word;
+        break;
       case 'disableVisionThisRound':
         if (state.round && !state.round.visionDisabled) {
           state.round.visionDisabled = true;
@@ -1734,6 +1742,25 @@ export function createCore(content: Content): Core {
       ) {
         scorePlayerGuess(rt, word, 'friend');
       }
+    }
+
+    // Old McDonald's guesses its word for free every round.
+    if (state.permanentRoundStartWord) {
+      const word = state.permanentRoundStartWord;
+      if (
+        word.length === WORD_LENGTH
+        && !state.blacklist.includes(word)
+        && !word.split('').some((ch) => state.purged.includes(ch))
+        && !round.guesses.some((guess) => guess.word === word)
+      ) {
+        scorePlayerGuess(rt, word, 'friend');
+      }
+    }
+
+    // Moon Cake autocasts Omen (or any other permanent round-start spell).
+    for (const spell of state.permanentRoundStartSpells) {
+      if (state.phase !== 'round') break;
+      castSpellById(rt, spell);
     }
 
     // Oracle's Banquet autoguesses at the start of every round; Fortune
@@ -3290,11 +3317,9 @@ export function createCore(content: Content): Core {
       spells: state.spells.map((s) => spellView(s)),
       blacklist: state.blacklist.slice(),
       purged: state.purged.slice(),
-      revealed: state.phase === 'round' || state.phase === 'summary'
-        ? Object.entries(state.round?.hints ?? {})
-            .filter((entry): entry is [string, 'present' | 'absent'] => Boolean(entry[1]))
-            .map(([letter, status]) => ({ letter, status }))
-        : [],
+      revealed: Object.entries(state.round?.hints ?? {})
+        .filter((entry): entry is [string, 'present' | 'absent'] => Boolean(entry[1]))
+        .map(([letter, status]) => ({ letter, status })),
       pendingPurge: state.pendingPurge,
       lastAnswer: state.lastAnswer,
       stats: statsCopy(state),
@@ -3462,6 +3487,7 @@ export function createCore(content: Content): Core {
       permanentReveals: [],
       nextRoundRandomGuesses: 0,
       permanentRandomGuesses: 0,
+      permanentRoundStartSpells: [],
       curses: [],
       seenCurses: [],
       pendingStartingCurses: startingCurses,
@@ -3537,6 +3563,7 @@ export function createCore(content: Content): Core {
       if (!Array.isArray(state.eatenFoods)) state.eatenFoods = [];
       if (typeof state.nextRoundRandomGuesses !== 'number') state.nextRoundRandomGuesses = 0;
       if (typeof state.permanentRandomGuesses !== 'number') state.permanentRandomGuesses = 0;
+      if (!Array.isArray(state.permanentRoundStartSpells)) state.permanentRoundStartSpells = [];
       if (!Array.isArray(state.firstGuesses)) state.firstGuesses = state.blacklist.slice();
       if (typeof state.level !== 'number') {
         state.level = state.nodes[state.nodeIndex]?.level ?? 1;
