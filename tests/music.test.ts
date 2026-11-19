@@ -13,6 +13,7 @@ describe('run music', () => {
     expect(ids).toContain('dark-trap');
     expect(ids).toContain('trap-instrumental');
     expect(ids).toContain('trap-beat');
+    expect(ids).toContain('rap-trap-instrumental');
     expect(MUSIC_TRACKS.find((track) => track.id === 'synthwave-retro-80s')?.name)
       .toContain('DELOSound');
   });

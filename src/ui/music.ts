@@ -10,6 +10,7 @@ import darkElectronic from '../assets/audio/dark-electronic.mp3?url';
 import darkTrap from '../assets/audio/dark-trap.mp3?url';
 import trapInstrumental from '../assets/audio/trap-instrumental.mp3?url';
 import trapBeat from '../assets/audio/trap-beat.mp3?url';
+import rapTrapInstrumental from '../assets/audio/rap-trap-instrumental.mp3?url';
 
 export type MusicTrack =
   | 'more-power'
@@ -23,7 +24,8 @@ export type MusicTrack =
   | 'dark-electronic'
   | 'dark-trap'
   | 'trap-instrumental'
-  | 'trap-beat';
+  | 'trap-beat'
+  | 'rap-trap-instrumental';
 
 export interface MusicTrackInfo {
   id: MusicTrack;
@@ -44,6 +46,7 @@ export const MUSIC_TRACKS: MusicTrackInfo[] = [
   { id: 'dark-trap', name: 'Dark Trap · APALONBeats', src: darkTrap },
   { id: 'trap-instrumental', name: 'Trap Instrumental · Sub_Clair', src: trapInstrumental },
   { id: 'trap-beat', name: 'Trap Beat · JonasBlakewood', src: trapBeat },
+  { id: 'rap-trap-instrumental', name: 'Rap Trap Instrumental · Sub_Clair', src: rapTrapInstrumental },
 ];
 
 const TRACK_BY_ID = new Map(MUSIC_TRACKS.map((track) => [track.id, track]));

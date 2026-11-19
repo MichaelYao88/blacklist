@@ -113,7 +113,7 @@ Not in this version: daily seeds, Ascension above A2, dordle grids, Antiwordle, 
 
 ## Music
 
-Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title screen or top bar to cycle through the eleven regular tracks; the mute button is separate. **More Power** is locked to the final boss and is not available in the carousel.
+Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title screen or top bar to cycle through the twelve regular tracks; the mute button is separate. **More Power** is locked to the final boss and is not available in the carousel.
 
 **Liborio Conti** — free to use, no attribution required, via [no-copyright-music.com](https://www.no-copyright-music.com/):
 
@@ -127,6 +127,7 @@ Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title s
 - Dark
 - Dark Synthwave
 - Trap Instrumental
+- Rap Trap Instrumental
 
 **SlimeyFox** — via [Pixabay](https://pixabay.com/users/slimeyfox-6041778/) under the Pixabay Content License:
 
