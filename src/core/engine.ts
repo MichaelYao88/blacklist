@@ -2996,7 +2996,7 @@ export function createCore(content: Content): Core {
     const seed = String(opts.seed || 'blacklist');
     const ascension = Math.max(0, Math.min(ASCENSION_MAX, Math.floor(opts.ascension ?? 0)));
     const startingCurses = ascensionStartingCurses(ascension);
-    const maxHp = 20;
+    const maxHp = 16;
     const startArmor = 4;
     const state: RunState = {
       version: VERSION,

@@ -87,21 +87,21 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'cheeseburger',
     name: 'Cheeseburger',
-    description: '+3 max HP, lose 3 HP. No slot.',
+    description: '+3 max HP, lose 1 HP. No slot.',
     price: 3,
     effects: [
       { type: 'maxHp', delta: 3 },
-      { type: 'damage', amount: 3, ignoreArmor: true },
+      { type: 'damage', amount: 1, ignoreArmor: true },
     ],
   }),
   defineFood({
     id: 'double-cheeseburger',
     name: 'Double Cheeseburger',
-    description: '+6 max HP, lose 6 HP. No slot.',
+    description: '+6 max HP, lose 2 HP. No slot.',
     price: 4,
     effects: [
       { type: 'maxHp', delta: 6 },
-      { type: 'damage', amount: 6, ignoreArmor: true },
+      { type: 'damage', amount: 2, ignoreArmor: true },
     ],
   }),
   defineFood({
