@@ -102,7 +102,6 @@ const ITEM_ICONS: Record<string, string> = {
   'plate-timer': '🛡️',
   'off-road': '🚙',
   'clean-slate': '🧼',
-  shortcut: '⚡',
   'growth-spurt': '🌱',
   counterweight: '⚖️',
   'acquired-taste': '👅',

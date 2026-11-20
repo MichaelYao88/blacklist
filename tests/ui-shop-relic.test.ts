@@ -14,15 +14,15 @@ describe('shop relic labelling', () => {
       offers: [
         { id: 'o0', kind: 'item', def: 'mending-plate', price: 26 },
         { id: 'o1', kind: 'item', def: 'bloom', price: 7 },
-        { id: 'o2', kind: 'eat', def: 'satchel', price: 9 },
-        { id: 'o3', kind: 'eat', def: 'plating', price: 3 },
-        { id: 'o4', kind: 'eat', def: 'poppy-seeds', price: 4 },
+        { id: 'o2', kind: 'eat', def: 'satchel', price: 19 },
+        { id: 'o3', kind: 'eat', def: 'plating', price: 4 },
+        { id: 'o4', kind: 'eat', def: 'poppy-seeds', price: 6 },
         { id: 'o5', kind: 'item', def: 'tally-lens', price: 12 },
-        { id: 'o6', kind: 'eat', def: 'a-steak', price: 7 },
-        { id: 'o7', kind: 'eat', def: 'without-u', price: 2 },
-        { id: 'o8', kind: 'eat', def: 'purge-the-d', price: 8 },
-        { id: 'o9', kind: 'eat', def: 'pay-respects-f', price: 5 },
-        { id: 'o10', kind: 'eat', def: 'reveal-the-d', price: 10 },
+        { id: 'o6', kind: 'eat', def: 'a-steak', price: 11 },
+        { id: 'o7', kind: 'eat', def: 'without-u', price: 3 },
+        { id: 'o8', kind: 'eat', def: 'purge-the-d', price: 12 },
+        { id: 'o9', kind: 'eat', def: 'pay-respects-f', price: 8 },
+        { id: 'o10', kind: 'eat', def: 'reveal-the-d', price: 16 },
         { id: 'o11', kind: 'item', def: 'quickdraw', price: 24 },
       ],
       rerollCost: 2,
@@ -77,16 +77,18 @@ describe('shop relic labelling', () => {
   });
 
   it('uses shop banner overrides for common-rarity specials', () => {
-    for (const name of ['Poppy Seeds', 'Tally Lens', 'Without U', 'Purge the D', 'Pay Respects to F', 'Reveal the D']) {
+    for (const name of ['Poppy Seeds', 'Tally Lens', 'Without U', 'Purge the D', 'Pay Respects to F']) {
       const card = [...root.querySelectorAll<HTMLElement>('.offer-card')]
         .find((entry) => entry.textContent?.includes(name));
       expect(card?.classList.contains('uncommon')).toBe(true);
       expect(card?.querySelector('.tag')?.textContent?.trim()).toBe('UNCOMMON');
     }
 
-    const aSteak = [...root.querySelectorAll<HTMLElement>('.offer-card')]
-      .find((entry) => entry.textContent?.includes('A-Steak'));
-    expect(aSteak?.classList.contains('rare')).toBe(true);
-    expect(aSteak?.querySelector('.tag')?.textContent?.trim()).toBe('RARE');
+    for (const name of ['A-Steak', 'Reveal the D']) {
+      const card = [...root.querySelectorAll<HTMLElement>('.offer-card')]
+        .find((entry) => entry.textContent?.includes(name));
+      expect(card?.classList.contains('rare')).toBe(true);
+      expect(card?.querySelector('.tag')?.textContent?.trim()).toBe('RARE');
+    }
   });
 });

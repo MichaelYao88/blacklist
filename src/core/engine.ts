@@ -2046,6 +2046,11 @@ export function createCore(content: Content): Core {
       round.damageTaken = 0;
       round.frozenUntilGuess = false;
       round.answer = chooseAnswer(rt, boss);
+      // Knowledge foods promise a reveal every round, including Second Wind's
+      // extra word in the same encounter.
+      for (const letter of state.permanentReveals ?? []) {
+        hintLetter(rt, letter, round.answer.includes(letter) ? 'present' : 'absent');
+      }
       // Second Wind's extra word starts with one free guess. Boss gauntlets
       // keep their normal free-guess state and ignore the curse.
       if (!round.boss) round.freeLeft += 1;

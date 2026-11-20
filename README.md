@@ -27,7 +27,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - The clock is disabled until **The Clock** curse is taken; the first stack gives 5:00 and each further stack shrinks it by 40%. If the clock reaches zero, the run ends immediately
 - The Clockmaker event only appears once The Clock exists
 - **Phone a Friend** delivers a one- or two-word catchphrase, quietly adds 5 seconds, and spams his words across the screen; the **Pizza Pzazz** set shows a pizza/sparkle callout instead of the word spam. If purges leave fewer than three two-word phrases available, he falls back to single words
-- **Time Freeze** gives a free, unobscured guess that does not count towards solve-count items (Hat Trick, Bloom, Shortcut, etc.); Time Freeze and Immunity lock until your next guess
+- **Time Freeze** gives a free, unobscured guess that does not count towards solve-count items (Hat Trick, Bloom, Growth Spurt, etc.); Time Freeze and Immunity lock until your next guess
 - Within-X solve items count **player guesses only**; solve gold is a random 4-8, independent of guess count and auto-guesses
 - Curse Collector, Curse Bulwark and Reliquary trigger on gaining a curse ("Whenever you gain a curse: Gain …"). Curse Collector grants +6 max HP and heals 6
 - Ascension A1/A2 draft 1/2 starting curses
@@ -47,17 +47,17 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Rarity uses cumulative floors: 40% pulls from rare, uncommon or common, 45% pulls from uncommon or common, and 15% pulls from common only. If a tier is empty, it falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 105 items (98 shop items + 7 rare relics), 6 spells, 84 foods and 29 happenings
+- 104 items (97 shop items + 7 rare relics), 6 spells, 84 foods and 29 happenings
 - New foods include **U-nagi**, **Donut Holes**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
 - **Field Kit** reveals exactly 4 letters that are not in the word; **Doggy Bag** reveals 2 and queues another after every food
-- Letter foods cover A, B, C, D, E, F, G, H, I, J, K, L, O, P, Q, T, U, W, X, and Y+N; each is unique and stops appearing once all its letters are permanently revealed. E-Fu, I-Cee, O-Toro, T-Bone, P-Stachio and L-Bacore Tuna are rare, while B-Fsteak and the rest are uncommon; **A-Steak** is common-rarity with a rare shop banner. A-Steak and B-Fsteak reveal whether their letter is in the answer
+- Letter foods cover A, B, C, D, E, F, G, H, I, J, K, L, O, P, Q, T, U, W, X, and Y+N; every letter food is rare, unique, and stops appearing once all its letters are permanently revealed. A-Steak and B-Fsteak reveal whether their letter is in the answer
 - New solve rewards: **Brace** (6g, +1 max armor), **Bloom** (+5 max HP, +1 per trigger), **Patch Kit** (heal 30% of max HP +1)
 - **Four-Leaf Clover** has a 20% chance of a random spell when you eat or cast
 - **Nest Egg** pays 3 gold whenever a shop opens
 - **Frozen Durian** grants +1 Time Freeze every 3 foods eaten or solves
-- **Muffin Tin** is a 2g uncommon food: in that shop, each food eaten gives +1 max armor per Muffin Tin eaten, but a tin does not count itself; the armor is permanent and the counting stops when you leave
+- **Muffin Tin** is a 3g uncommon food: in that shop, each food eaten gives +1 max armor per Muffin Tin eaten, but a tin does not count itself; the armor is permanent and the counting stops when you leave
 - **Chilaquiles** is a 2g food that doubles the next two sales
 - **Spell Pepper** is a 3g food that doubles your next spell
 - Every shop node offers a choice: visit the shop, or rest at the inn to gain +8 max HP, heal to full HP, and move on
@@ -85,15 +85,15 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Stopped Clock** is a 6g item: casting Time Freeze grants +5 max HP, once per round
 - **Adrenaline** is a 10g item: dropping below 50% HP grants +1 max HP and +1 max armor, re-arming after healing above 50%
 - **Gold Standard** is an 8g item: every gold gain gives +1 more gold
-- **Guardian Angel** is an 8g item: after every 10 HP damage taken, gain Immunity
+- **Guardian Angel** is an 8g item: after every 10 HP damage taken, autocast Immunity
 - **Immunity** blocks the next hurting guess and any guess for 4 seconds after it
 - **Big Belt** is a 12g uncommon item: +1 item slot every 6 eats or solves
 - **Mending Plate** is a rare item: +1 max armor per 7 HP healed
-- **Bounty** is a 6g rare food: +1 gold per solve
+- **Bounty** is a 9g rare food: +1 gold per solve
 - **Necronomicon** is a rare item: reveal 2 random letters at round start, plus 1 more for every 13 max HP paid to the book; every 13 reveals autocasts Omen and costs 3 max HP
 - **Growth Spurt** gives +3 max HP when you solve in 4 guesses or fewer
 - **Growth Chart** is an 8g item: every 3 max HP gained grants +1 Time Freeze
-- **Midas Touch** has a 40% chance to double every gold gain
+- **Midas Touch** has a 30% chance to double every gold gain
 - **Oracle Skull** is a 12g uncommon item: every heal autocasts Omen
 - **Loyalty Card** pays +1 item slot after every 9 shop purchases
 - **Placebo** is a 4g item that heals exactly 1 HP on each player guess
@@ -102,25 +102,25 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Shops can show up to 2 copies of the same entry; sell rows are hoverable
 - Solve gold is a random 4-8 per solve, independent of guess count
 - **The Endless Table** fires every on-eat effect 7 times or pays 7 gold
-- **Tally Lens** is a 12g common-rarity item with an uncommon shop banner and a 3× appearance weight while a vision curse is active; it is no longer guaranteed in a shop and shows correct/misplaced counts. **Tally** is never offered while you already own one
-- **Encore** is unique and appears three times as often as an average common item; **Poppy Seeds** is a common-rarity food that shows an uncommon shop banner
-- **Without U** is a 2g common-rarity unique food that permanently purges U and shows an uncommon shop banner; **Purge the D** is also common-rarity with an uncommon shop banner
-- **Reveal the D** is a 10g common-rarity food with an uncommon shop banner; **Pay Respects to F** is a 5g common-rarity food with an uncommon banner that permanently purges F
-- **A-Steak** is a common-rarity food with a rare shop banner that reveals whether A is in the answer every round
+- **Tally Lens** is a 12g common-rarity unique item with an uncommon shop banner and a 3x appearance weight while a vision curse is active; it is no longer guaranteed in a shop and shows correct/misplaced counts. **Tally** is never offered while you already own one
+- **Encore** is unique and appears three times as often as an average common item; **Poppy Seeds** is a 6g common-rarity food that shows an uncommon shop banner
+- **Without U** is a 3g common-rarity unique food that permanently purges U and shows an uncommon shop banner; **Purge the D** is also common-rarity with an uncommon shop banner
+- **Reveal the D** is a 16g rare food; **Pay Respects to F** is an 8g common-rarity food with an uncommon banner that permanently purges F
+- **A-Steak** is an 11g rare food that reveals whether A is in the answer every round
 - **Black Market Ledger** is an 8g item: every shop purchase or event arrival has a 40% chance to add a random spell
 - **The Spellbroker** event trades your spells for permanent value: Omen or Phone a Friend becomes a random permanent letter, Heal becomes +10 max HP and a 10 HP heal, and Immunity or Restore becomes +5 armor
 - **The Spell Tithe** event trades one random spell for either permanent knowledge of a specific letter or a permanent purge of a specific letter; the trades are locked when you have no spells
 - **Fortune Cookie** is a 1g food with a hidden 5× appearance weight: it queues one autoguess for the next round
-- **Oracle's Banquet** is an 18g rare unique food: it permanently autoguesses at the start of every round
+- **Oracle's Banquet** is a 28g rare unique food: it permanently autoguesses at the start of every round
 - **Tally** counts every guess, including ally and autoguesses
 - **Harvest Charm**, **Empty Mouth**, **Empty Orb**, **Empty Phone**, **Detour**, **Dark Echo**, **Black Eye**, **Palindrome**, **Oasis 15**, **Shellshock**, **Echo Chamber**, **Panic Button**, and **Wild Magic** are the new autoguess/autocast items
 - **Black Eye** is an 8g item: a hit that deals HP damage has a 40% chance to autoguess a random word
 - **Second Skin** is a 9g uncommon item: the first time armor hits 0 each round, restore half your max armor
-- **Moon Cake** is a 16g rare unique food: autocast Omen at the start of every round
+- **Moon Cake** is a 25g rare unique food: autocast Omen at the start of every round
 - **Empty Orb** is a 7g item that autocasts Omen when a round starts with no spells; **Empty Phone** is the 9g Phone a Friend version
 - **Enoki** is a 4g food: +3 max HP and one autoguess next round
 - **Corn** is a 3g food: +2 max HP and reveals C, O, R and N for the next round only
-- **Iron Ration** is an 8g rare food: +2 max armor. **One Bo Hue** and **Plating** are uncommon; **Taco Pizza Party** is rare
+- **Iron Ration** is a 12g rare food: +2 max armor. **One Bo Hue** and **Plating** are uncommon; **Taco Pizza Party** is rare
 - **Clean Slate** gives +1 max HP or +1 max armor at random when its condition triggers, once per round
 - **Double Dip** is Kase's new name; it keeps the +1 max armor and queued-answer effect
 - **The Naked Curse** removes all max armor; **Piercing** makes half of every hit bypass armor even while armor remains; curse drafts offer two choices

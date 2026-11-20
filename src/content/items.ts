@@ -246,10 +246,10 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'midas-touch',
     name: 'Midas Touch',
-    description: 'Every gold gain: 40% chance to double it.',
+    description: 'Every gold gain: 30% chance to double it.',
     price: 12,
     kind: 'gear',
-    goldDoubleChance: 40,
+    goldDoubleChance: 30,
   }),
   defineItem({
     id: 'gold-standard',
@@ -767,7 +767,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'guardian-angel',
     name: 'Guardian Angel',
-    description: 'After every 10 HP damage taken: gain Immunity.',
+    description: 'After every 10 HP damage taken: autocast Immunity.',
     price: 8,
     kind: 'gear',
     initial: { taken: 0 },
@@ -1138,12 +1138,12 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'bookend',
     name: 'Bookend',
-    description: 'Guess a word starting and ending with the same letter: +3 gold.',
+    description: 'Guess a word starting and ending with the same letter: +2 gold.',
     price: 7,
     kind: 'gear',
     on: {
       onGuessScored: (_ctx, p) =>
-        p.guess.word[0] === p.guess.word[4] ? [{ type: 'gold', amount: 3 }] : [],
+        p.guess.word[0] === p.guess.word[4] ? [{ type: 'gold', amount: 2 }] : [],
     },
   }),
   defineItem({
@@ -1439,16 +1439,6 @@ export const ITEMS: ItemDef[] = [
     },
   }),
   defineItem({
-    id: 'shortcut',
-    name: 'Shortcut',
-    description: 'Solve in 2 guesses or fewer: +1 item slot.',
-    price: 12,
-    kind: 'gear',
-    on: {
-      onSolve: (_ctx, p) => (p.guesses <= 2 ? [{ type: 'slots', delta: 1 }] : []),
-    },
-  }),
-  defineItem({
     id: 'growth-spurt',
     name: 'Growth Spurt',
     description: 'Solve in 4 guesses or fewer: +3 max HP.',
@@ -1467,6 +1457,7 @@ export const ITEMS: ItemDef[] = [
     kind: 'gear',
     rarity: 'common',
     shopRarity: 'uncommon',
+    unique: true,
     appearanceWeight: 3,
     requiresVisionCurse: 1,
   }),

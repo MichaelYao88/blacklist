@@ -12,6 +12,7 @@ import {
   CONTENT,
   CURSE_BY_ID,
   FOOD_BY_ID,
+  FOODS,
   HAPPENING_BY_ID,
   ITEM_BY_ID,
   SPELL_BY_ID,
@@ -671,7 +672,7 @@ describe('timer curses', () => {
 
   it('does not count Time Freeze free guesses for solve-count items', () => {
     const { state } = start('time-freeze-count');
-    state.items.push({ instance: 'i-short', id: 'shortcut', data: {}, equipped: true });
+    state.items.push({ instance: 'i-growth', id: 'growth-spurt', data: {}, equipped: true });
     state.spells = [
       { instance: 's-tf1', id: 'time-freeze' },
       { instance: 's-tf2', id: 'time-freeze' },
@@ -683,7 +684,7 @@ describe('timer curses', () => {
     current = act(current, { type: 'castSpell', instance: 's-tf2' }).state;
     current = act(current, { type: 'guess', word: 'brick' }).state;
     const solved = act(current, { type: 'guess', word: 'crane' });
-    expect(solved.state.slots).toBe(6);
+    expect(solved.state.maxHp).toBe(18);
   });
 
   it('locks Immunity and Time Freeze until the player guesses', () => {
@@ -1218,9 +1219,10 @@ describe('item and food batch', () => {
 
   it('removes the damage cap and prices letter foods by rarity', () => {
     expect(ITEM_BY_ID.get('hard-hat')).toBeUndefined();
-    expect(FOOD_BY_ID.get('x-ray')?.price).toBe(4);
+    expect(FOOD_BY_ID.get('x-ray')?.price).toBe(6);
     expect(FOOD_BY_ID.get('x-ray')?.name).toBe('X-Ray Cake');
-    expect(FOOD_BY_ID.get('q-tip')?.price).toBe(3);
+    expect(FOOD_BY_ID.get('x-ray')?.rarity).toBe('rare');
+    expect(FOOD_BY_ID.get('q-tip')?.price).toBe(4);
     expect(FOOD_BY_ID.get('i-spy')?.effects)
       .toContainEqual({ type: 'revealLetter', letter: 'i' });
     expect(FOOD_BY_ID.get('reveal-the-d')?.effects)
@@ -1470,8 +1472,8 @@ describe('new item and event batch', () => {
     expect(solved.state.slots).toBe(6);
   });
 
-  it('Muffin Tin is a 2g food that grants permanent armor for food eaten this shop', () => {
-    expect(FOOD_BY_ID.get('muffin-tin')?.price).toBe(2);
+  it('Muffin Tin is a 3g food that grants permanent armor for food eaten this shop', () => {
+    expect(FOOD_BY_ID.get('muffin-tin')?.price).toBe(3);
     expect(ITEM_BY_ID.get('muffin-tin')).toBeUndefined();
     expect(ITEM_BY_ID.get('bulk-order')).toBeUndefined();
 
@@ -1480,7 +1482,7 @@ describe('new item and event batch', () => {
     state.gold = 100;
     state.shop = shopState([
       { id: 'f0', kind: 'eat', def: 'snack', price: 3 },
-      { id: 'f1', kind: 'eat', def: 'muffin-tin', price: 2 },
+      { id: 'f1', kind: 'eat', def: 'muffin-tin', price: 3 },
       { id: 'f2', kind: 'eat', def: 'feast', price: 5 },
     ]);
     const base = state.maxArmor;
@@ -1613,7 +1615,7 @@ describe('new item and event batch', () => {
     expect(hit.state.round?.immuneGuesses).toBe(1);
     expect(ITEM_BY_ID.get('guardian-angel')?.price).toBe(8);
     expect(ITEM_BY_ID.get('guardian-angel')?.description)
-      .toContain('every 10 HP damage');
+      .toContain('autocast Immunity');
   });
 
   it('Second Hand and Engine cross-cast spells at 80%', () => {
@@ -1708,8 +1710,8 @@ describe('new item and event batch', () => {
     expect(ITEM_BY_ID.get('pen-club')?.description).toContain('1-5 gold');
     expect(ITEM_BY_ID.get('big-belt')?.description).toContain('Every 6 eats or solves');
     expect(ITEM_BY_ID.get('big-belt')?.rarity).toBe('uncommon');
-    expect(ITEM_BY_ID.get('midas-touch')?.description).toContain('40%');
-    expect(ITEM_BY_ID.get('midas-touch')?.goldDoubleChance).toBe(40);
+    expect(ITEM_BY_ID.get('midas-touch')?.description).toContain('30%');
+    expect(ITEM_BY_ID.get('midas-touch')?.goldDoubleChance).toBe(30);
     expect(ITEM_BY_ID.get('miser')).toBeUndefined();
     expect(ITEM_BY_ID.get('plate-timer')?.requiresClock).toBe(true);
     expect(ITEM_BY_ID.get('solo-note')?.description)
@@ -1813,6 +1815,7 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('tally-lens')?.shopRarity).toBe('uncommon');
     expect(ITEM_BY_ID.get('tally-lens')?.appearanceWeight).toBe(3);
     expect(ITEM_BY_ID.get('tally-lens')?.price).toBe(12);
+    expect(ITEM_BY_ID.get('tally-lens')?.unique).toBe(true);
 
     let withTally = 0;
     let withoutTally = 0;
@@ -1831,6 +1834,24 @@ describe('latest balance pass', () => {
     }
     expect(withTally).toBeGreaterThan(0);
     expect(withoutTally).toBeGreaterThan(0);
+
+    for (let index = 0; index < 50; index++) {
+      const { state: ownedState } = start(`tally-owned-${index}`);
+      ownedState.curses.push({ id: 'censor', stacks: 1 });
+      ownedState.items.push({
+        instance: 'i-owned-tally',
+        id: 'tally-lens',
+        data: {},
+        equipped: true,
+      });
+      ownedState.nodeIndex = 0;
+      ownedState.nodes[1] = { kind: 'shop', level: 1 };
+      ownedState.phase = 'shop';
+      const shop = enterShop(ownedState).state.shop;
+      expect(
+        shop?.offers.some((offer) => offer.kind === 'item' && offer.def === 'tally-lens'),
+      ).toBe(false);
+    }
   });
 
   it('Purge the D never returns after D is purged', () => {
@@ -1899,12 +1920,12 @@ describe('latest balance pass', () => {
       .toContain('+3 gold');
   });
 
-  it('adds 2g Leftovers and 6g Iron Ration', () => {
+  it('adds 2g Leftovers and 12g Iron Ration', () => {
     expect(ITEM_BY_ID.get('rabbit-foot')).toBeUndefined();
     expect(FOOD_BY_ID.get('leftovers')?.price).toBe(2);
     expect(FOOD_BY_ID.get('leftovers')?.effects)
       .toContainEqual({ type: 'healMissingPercent', percent: 50 });
-    expect(FOOD_BY_ID.get('iron-ration')?.price).toBe(8);
+    expect(FOOD_BY_ID.get('iron-ration')?.price).toBe(12);
     expect(FOOD_BY_ID.get('iron-ration')?.rarity).toBe('rare');
     expect(FOOD_BY_ID.get('iron-ration')?.effects)
       .toContainEqual({ type: 'maxArmor', delta: 2 });
@@ -1952,37 +1973,32 @@ describe('latest balance pass', () => {
     expect(eaten.state.hp).toBe(11);
   });
 
-  it('Shortcut only pays for solves in 2 guesses or fewer', () => {
-    const quick = start('shortcut-quick');
-    quick.state.items.push({ instance: 'i-short', id: 'shortcut', data: {}, equipped: true });
-    if (!quick.state.round) throw new Error('expected round');
-    setAnswer(quick.state, 'crane');
-    quick.state.round.totalGuesses = 1;
-    quick.state.round.playerGuesses = 1;
-    const two = act(quick.state, { type: 'guess', word: 'crane' });
-    expect(two.state.slots).toBe(6);
-
-    const slow = start('shortcut-slow');
-    slow.state.items.push({ instance: 'i-short', id: 'shortcut', data: {}, equipped: true });
-    if (!slow.state.round) throw new Error('expected round');
-    setAnswer(slow.state, 'crane');
-    slow.state.round.totalGuesses = 2;
-    slow.state.round.playerGuesses = 2;
-    const three = act(slow.state, { type: 'guess', word: 'crane' });
-    expect(three.state.slots).toBe(5);
+  it('removes Shortcut', () => {
+    expect(ITEM_BY_ID.get('shortcut')).toBeUndefined();
+    expect(ITEM_BY_ID.has('shortcut')).toBe(false);
   });
 
   it('counts only player guesses for within-X items', () => {
     const { state } = start('player-guess-count');
     state.curses.push({ id: 'clock', stacks: 1 });
     const next = nextRound(state);
-    next.state.items.push({ instance: 'i-short', id: 'shortcut', data: {}, equipped: true });
+    next.state.items.push({ instance: 'i-growth', id: 'growth-spurt', data: {}, equipped: true });
     next.state.spells = [{ instance: 's-phone', id: 'phone-friend' }];
     setAnswer(next.state, 'crane');
     const cast = act(next.state, { type: 'castSpell', instance: 's-phone' });
     expect(cast.state.round?.guesses.filter((guess) => guess.by === 'friend')).toHaveLength(2);
     const solved = act(cast.state, { type: 'guess', word: 'crane' });
-    expect(solved.state.slots).toBe(6); // one player guess, despite two friend guesses
+    expect(solved.state.maxHp).toBe(18); // one player guess, despite two friend guesses
+  });
+
+  it('Bookend pays 2 gold for matching first and last letters', () => {
+    const { state } = start('bookend-pay');
+    state.items.push({ instance: 'i-book', id: 'bookend', data: {}, equipped: true });
+    state.round!.freeLeft = 0;
+    setAnswer(state, 'crane');
+    const before = state.gold;
+    const guess = act(state, { type: 'guess', word: 'level' });
+    expect(guess.state.gold).toBe(before + 2);
   });
 
   it('Necronomicon reveals 2 random letters at round start, plus 1 per 13 max HP paid', () => {
@@ -2037,7 +2053,7 @@ describe('latest balance pass', () => {
     expect(FOOD_BY_ID.get('empty-calories')?.price).toBe(5);
     expect(FOOD_BY_ID.get('empty-calories')?.name).toBe('Donut Holes');
     expect(FOOD_BY_ID.get('empty-calories')?.effects).toContainEqual({ type: 'maxHp', delta: 9 });
-    expect(FOOD_BY_ID.get('one-bo-hue')?.price).toBe(4);
+    expect(FOOD_BY_ID.get('one-bo-hue')?.price).toBe(6);
     expect(FOOD_BY_ID.get('warm-bowl')?.price).toBe(4);
     expect(FOOD_BY_ID.get('banh-mi')?.price).toBe(3);
     expect(FOOD_BY_ID.get('banh-mi')?.effects)
@@ -2060,7 +2076,8 @@ describe('latest balance pass', () => {
     expect(FOOD_BY_ID.get('spring-tonic')).toBeUndefined();
     expect(FOOD_BY_ID.get('packed-lunch')).toBeUndefined();
     expect(ITEM_BY_ID.get('bookend')?.price).toBe(7);
-    expect(FOOD_BY_ID.get('gg-gum')?.price).toBe(9);
+    expect(ITEM_BY_ID.get('bookend')?.description).toContain('+2 gold');
+    expect(FOOD_BY_ID.get('gg-gum')?.price).toBe(14);
     expect(ITEM_BY_ID.get('overachiever')).toBeUndefined();
     expect(ITEM_BY_ID.get('miser')).toBeUndefined();
     expect(FOOD_BY_ID.get('old-mcdonald')).toBeDefined();
@@ -2122,16 +2139,16 @@ describe('latest balance pass', () => {
     expect(FOOD_BY_ID.get('jumbo-hot-dog')?.price).toBe(3);
     expect(FOOD_BY_ID.get('juicy-peach')?.price).toBe(4);
     expect(FOOD_BY_ID.get('cherries')?.price).toBe(2);
-    expect(FOOD_BY_ID.get('satchel')?.price).toBe(12);
+    expect(FOOD_BY_ID.get('satchel')?.price).toBe(19);
     expect(FOOD_BY_ID.get('satchel')?.rarity).toBe('rare');
-    expect(FOOD_BY_ID.get('o-toro')?.price).toBe(10);
+    expect(FOOD_BY_ID.get('o-toro')?.price).toBe(16);
     expect(FOOD_BY_ID.get('o-toro')?.effects)
       .toContainEqual({ type: 'revealLetter', letter: 'o' });
-    expect(FOOD_BY_ID.get('i-spy')?.price).toBe(9);
+    expect(FOOD_BY_ID.get('i-spy')?.price).toBe(14);
     expect(FOOD_BY_ID.get('i-spy')?.name).toBe('I-Cee');
-    expect(FOOD_BY_ID.get('reveal-the-d')?.price).toBe(10);
-    expect(FOOD_BY_ID.get('reveal-the-d')?.rarity).toBe('common');
-    expect(FOOD_BY_ID.get('reveal-the-d')?.shopRarity).toBe('uncommon');
+    expect(FOOD_BY_ID.get('reveal-the-d')?.price).toBe(16);
+    expect(FOOD_BY_ID.get('reveal-the-d')?.rarity).toBe('rare');
+    expect(FOOD_BY_ID.get('reveal-the-d')?.shopRarity).toBeUndefined();
     expect(FOOD_BY_ID.get('honey-cake')?.price).toBe(6);
     expect(FOOD_BY_ID.get('vitality')?.price).toBe(8);
     expect(FOOD_BY_ID.get('yin-yang')?.name).toBe('NY Cheesecake');
@@ -2323,7 +2340,7 @@ describe('latest balance pass', () => {
 
   it('Taco Pizza Party heals 12 and adds 1 max armor', () => {
     const def = FOOD_BY_ID.get('taco-pizza-party');
-    expect(def?.price).toBe(9);
+    expect(def?.price).toBe(14);
     expect(def?.effects).toContainEqual({ type: 'heal', amount: 12 });
     expect(def?.effects).toContainEqual({ type: 'maxArmor', delta: 1 });
 
@@ -2332,16 +2349,16 @@ describe('latest balance pass', () => {
     state.gold = 20;
     state.hp = 5;
     const armorBefore = state.maxArmor;
-    state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'taco-pizza-party', price: 9 }]);
+    state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'taco-pizza-party', price: 14 }]);
     const eaten = act(state, { type: 'buy', offerId: 'o0' });
     expect(eaten.state.hp).toBe(15);
     expect(eaten.state.maxArmor).toBe(armorBefore + 1);
-    expect(eaten.state.gold).toBe(11);
+    expect(eaten.state.gold).toBe(6);
   });
 
   it('Coveted Cake trades an item slot for a random rare relic', () => {
     const def = FOOD_BY_ID.get('coveted-cake');
-    expect(def?.price).toBe(11);
+    expect(def?.price).toBe(17);
     expect(def?.rarity).toBe('rare');
     expect(def?.effects).toContainEqual({ type: 'slots', delta: -1 });
     expect(def?.effects).toContainEqual({ type: 'addRandomRelic' });
@@ -2350,9 +2367,9 @@ describe('latest balance pass', () => {
     state.phase = 'shop';
     state.gold = 20;
     const slotsBefore = state.slots;
-    state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'coveted-cake', price: 11 }]);
+    state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'coveted-cake', price: 17 }]);
     const eaten = act(state, { type: 'buy', offerId: 'o0' });
-    expect(eaten.state.gold).toBe(9);
+    expect(eaten.state.gold).toBe(3);
     expect(eaten.state.slots).toBe(slotsBefore - 1);
     const relic = eaten.state.items.find((item) => ITEM_BY_ID.get(item.id)?.rarity === 'rare');
     expect(relic).toBeDefined();
@@ -3014,16 +3031,15 @@ describe('latest balance pass', () => {
   });
 
   it('applies the latest prices and text', () => {
-    expect(FOOD_BY_ID.get('plating')?.price).toBe(3);
+    expect(FOOD_BY_ID.get('plating')?.price).toBe(4);
     expect(FOOD_BY_ID.get('plating')?.effects).toContainEqual({ type: 'maxArmor', delta: 1 });
     expect(ITEM_BY_ID.get('compound-interest')?.price).toBe(4);
-    expect(FOOD_BY_ID.get('yin-yang')?.price).toBe(10);
-    expect(FOOD_BY_ID.get('bounty')?.price).toBe(6);
+    expect(FOOD_BY_ID.get('yin-yang')?.price).toBe(16);
+    expect(FOOD_BY_ID.get('bounty')?.price).toBe(9);
     expect(FOOD_BY_ID.get('bounty')?.rarity).toBe('rare');
     expect(FOOD_BY_ID.get('bounty')?.effects).toContainEqual({ type: 'solveGold', amount: 1 });
     expect(ITEM_BY_ID.get('counterweight')?.description).toContain('Completely blocked hit');
     expect(ITEM_BY_ID.get('encore')?.description).toContain('last solved answer');
-    expect(ITEM_BY_ID.get('shortcut')?.description).toContain('2 guesses or fewer');
     expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('Every 13 reveals');
     expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('pay 3 max HP');
     expect(FOOD_BY_ID.get('hearty-meal')?.description).toBe('+5 max HP, heal 5. No slot.');
@@ -3056,30 +3072,40 @@ describe('spells and foods', () => {
   });
 
   it('has common purge foods with uncommon shop banners', () => {
-    expect(FOOD_BY_ID.get('inkcap')?.price).toBe(8);
+    expect(FOOD_BY_ID.get('inkcap')?.price).toBe(12);
     expect(FOOD_BY_ID.get('inkcap')?.rarity).toBe('rare');
-    expect(FOOD_BY_ID.get('purge-the-d')?.price).toBe(8);
+    expect(FOOD_BY_ID.get('purge-the-d')?.price).toBe(12);
     expect(FOOD_BY_ID.get('purge-the-d')?.rarity).toBe('common');
     expect(FOOD_BY_ID.get('purge-the-d')?.shopRarity).toBe('uncommon');
-    expect(FOOD_BY_ID.get('poppy-seeds')?.price).toBe(4);
+    expect(FOOD_BY_ID.get('poppy-seeds')?.price).toBe(6);
     expect(FOOD_BY_ID.get('poppy-seeds')?.shopRarity).toBe('uncommon');
     expect(FOOD_BY_ID.get('poppy-seeds')?.effects)
       .toContainEqual({ type: 'purgeRandomLetter' });
   });
 
-  it('adds Without U and the A knowledge food with banner overrides', () => {
+  it('adds Without U and makes every knowledge food rare', () => {
     const uNagi = FOOD_BY_ID.get('only-u');
     const withoutU = FOOD_BY_ID.get('without-u');
-    expect(withoutU?.price).toBe((uNagi?.price ?? 0) - 6);
+    expect(uNagi?.price).toBe(12);
+    expect(uNagi?.rarity).toBe('rare');
+    expect(withoutU?.price).toBe(3);
     expect(withoutU?.rarity).toBe('common');
     expect(withoutU?.shopRarity).toBe('uncommon');
     expect(withoutU?.unique).toBe(true);
     expect(withoutU?.effects).toContainEqual({ type: 'purgeLetter', letter: 'u' });
 
     const aSteak = FOOD_BY_ID.get('a-steak');
-    expect(aSteak?.rarity).toBe('common');
-    expect(aSteak?.shopRarity).toBe('rare');
+    expect(aSteak?.rarity).toBe('rare');
+    expect(aSteak?.shopRarity).toBeUndefined();
+    expect(aSteak?.price).toBe(11);
     expect(aSteak?.effects).toContainEqual({ type: 'revealLetter', letter: 'a' });
+
+    for (const food of FOODS) {
+      if (food.effects.some((effect) => effect.type === 'revealLetter')) {
+        expect(food.rarity, food.id).toBe('rare');
+        expect(food.shopRarity, food.id).toBeUndefined();
+      }
+    }
   });
 
   it('Poppy Seeds purges one random letter', () => {
@@ -3310,8 +3336,8 @@ describe('unique shop items', () => {
 });
 
 describe('autocast and random-guess batch', () => {
-  it('ships a non-native guess pool including wharf', () => {
-    expect(CONTENT.nonnative).toHaveLength(212);
+  it('ships a non-native guess pool including etude and butte', () => {
+    expect(CONTENT.nonnative).toHaveLength(214);
     expect(CONTENT.nonnative).toContain('patsy');
     expect(CONTENT.nonnative).toContain('wharf');
     expect(CONTENT.nonnative).toContain('rajah');
@@ -3325,11 +3351,18 @@ describe('autocast and random-guess batch', () => {
     expect(CONTENT.nonnative).toContain('torus');
     expect(CONTENT.nonnative).toContain('bough');
     expect(CONTENT.nonnative).toContain('caput');
+    expect(CONTENT.nonnative).toContain('etude');
+    expect(CONTENT.nonnative).toContain('butte');
     expect(CONTENT.nonnative).not.toContain('daisy');
-    expect(new Set(CONTENT.nonnative).size).toBe(212);
+    expect(new Set(CONTENT.nonnative).size).toBe(214);
     for (const word of CONTENT.nonnative) {
       expect(word, word).toMatch(/^[a-z]{5}$/);
     }
+  });
+
+  it('removes Chikn Nuggy from Phone a Friend', () => {
+    expect(CONTENT.friendWords).not.toContain('chikn');
+    expect(CONTENT.friendWords).not.toContain('nuggy');
   });
 
   it('Harvest Charm autoguesses a non-native word at round start', () => {
@@ -3469,15 +3502,15 @@ describe('autocast and random-guess batch', () => {
 
   it('adds the new letter foods and prices', () => {
     const expected: Record<string, [string, number, string]> = {
-      'e-fu-noodles': ['E-Fu Noodles', 12, 'e'],
-      't-bone': ['T-Bone', 8, 't'],
-      'j-ello': ['J-Ello', 4, 'j'],
-      'c-urchin': ['C-Urchin', 8, 'c'],
-      'f-unnel-cake': ['F-Unnel Cake', 7, 'f'],
-      'h-erring': ['H-Erring', 7, 'h'],
-      'p-stachio': ['P-Stachio', 7, 'p'],
-      'l-bacore-tuna': ['L-Bacore Tuna', 9, 'l'],
-      'w-asabi': ['W-Asabi', 5, 'w'],
+      'e-fu-noodles': ['E-Fu Noodles', 19, 'e'],
+      't-bone': ['T-Bone', 12, 't'],
+      'j-ello': ['J-Ello', 6, 'j'],
+      'c-urchin': ['C-Urchin', 12, 'c'],
+      'f-unnel-cake': ['F-Unnel Cake', 11, 'f'],
+      'h-erring': ['H-Erring', 11, 'h'],
+      'p-stachio': ['P-Stachio', 11, 'p'],
+      'l-bacore-tuna': ['L-Bacore Tuna', 14, 'l'],
+      'w-asabi': ['W-Asabi', 8, 'w'],
     };
     for (const [id, [name, price, letter]] of Object.entries(expected)) {
       expect(FOOD_BY_ID.get(id)?.name, id).toBe(name);
@@ -3487,28 +3520,26 @@ describe('autocast and random-guess batch', () => {
         .toContainEqual({ type: 'revealLetter', letter });
     }
     expect(FOOD_BY_ID.get('i-spy')?.name).toBe('I-Cee');
-    expect(FOOD_BY_ID.get('i-spy')?.price).toBe(9);
+    expect(FOOD_BY_ID.get('i-spy')?.price).toBe(14);
     expect(FOOD_BY_ID.get('b-file')?.name).toBe('B-Fsteak');
-    expect(FOOD_BY_ID.get('b-file')?.price).toBe(7);
-    expect(FOOD_BY_ID.get('q-tip')?.price).toBe(3);
-    expect(FOOD_BY_ID.get('x-ray')?.price).toBe(4);
-    expect(FOOD_BY_ID.get('o-toro')?.price).toBe(10);
-    expect(FOOD_BY_ID.get('only-u')?.price).toBe(8);
+    expect(FOOD_BY_ID.get('b-file')?.price).toBe(11);
+    expect(FOOD_BY_ID.get('q-tip')?.price).toBe(4);
+    expect(FOOD_BY_ID.get('x-ray')?.price).toBe(6);
+    expect(FOOD_BY_ID.get('o-toro')?.price).toBe(16);
+    expect(FOOD_BY_ID.get('only-u')?.price).toBe(12);
 
-    for (const id of ['e-fu-noodles', 'i-spy', 'o-toro', 't-bone', 'p-stachio', 'l-bacore-tuna']) {
-      expect(FOOD_BY_ID.get(id)?.rarity, id).toBe('rare');
-    }
     for (const id of [
       'only-u', 'b-file', 'x-ray', 'q-tip', 'gg-gum', 'yin-yang',
       'j-ello', 'c-urchin', 'f-unnel-cake', 'h-erring', 'w-asabi', 'knafeh',
+      'e-fu-noodles', 'i-spy', 'o-toro', 't-bone', 'p-stachio', 'l-bacore-tuna',
+      'a-steak', 'reveal-the-d',
     ]) {
-      expect(FOOD_BY_ID.get(id)?.rarity, id).toBe('uncommon');
+      expect(FOOD_BY_ID.get(id)?.rarity, id).toBe('rare');
+      expect(FOOD_BY_ID.get(id)?.shopRarity, id).toBeUndefined();
     }
-    expect(FOOD_BY_ID.get('reveal-the-d')?.rarity).toBe('common');
-    expect(FOOD_BY_ID.get('reveal-the-d')?.shopRarity).toBe('uncommon');
     expect(FOOD_BY_ID.get('pay-respects-f')?.rarity).toBe('common');
     expect(FOOD_BY_ID.get('pay-respects-f')?.shopRarity).toBe('uncommon');
-    expect(FOOD_BY_ID.get('pay-respects-f')?.price).toBe(5);
+    expect(FOOD_BY_ID.get('pay-respects-f')?.price).toBe(8);
     expect(FOOD_BY_ID.get('pay-respects-f')?.effects)
       .toContainEqual({ type: 'purgeLetter', letter: 'f' });
   });
@@ -3670,7 +3701,7 @@ describe('round-start autoguess foods', () => {
     const { state } = start('moon-cake');
     state.phase = 'shop';
     state.gold = 30;
-    state.shop = shopState([{ id: 'f0', kind: 'eat', def: 'moon-cake', price: 16 }]);
+    state.shop = shopState([{ id: 'f0', kind: 'eat', def: 'moon-cake', price: 25 }]);
     const bought = act(state, { type: 'buy', offerId: 'f0' });
     expect(bought.state.permanentRoundStartSpells).toContain('omen');
 
@@ -3684,7 +3715,7 @@ describe('round-start autoguess foods', () => {
       (event) => event.type === 'spellCast' && event.auto && event.spell.id === 'omen',
     )).toBe(true);
 
-    expect(FOOD_BY_ID.get('moon-cake')?.price).toBe(16);
+    expect(FOOD_BY_ID.get('moon-cake')?.price).toBe(25);
     expect(FOOD_BY_ID.get('moon-cake')?.rarity).toBe('rare');
     expect(FOOD_BY_ID.get('moon-cake')?.unique).toBe(true);
     expect(FOOD_BY_ID.get('moon-cake')?.effects)
@@ -3694,8 +3725,8 @@ describe('round-start autoguess foods', () => {
   it("Oracle's Banquet autoguesses at the start of every round", () => {
     const { state } = start('oracles-banquet');
     state.phase = 'shop';
-    state.gold = 30;
-    state.shop = shopState([{ id: 'f0', kind: 'eat', def: 'oracles-banquet', price: 18 }]);
+    state.gold = 40;
+    state.shop = shopState([{ id: 'f0', kind: 'eat', def: 'oracles-banquet', price: 28 }]);
     const bought = act(state, { type: 'buy', offerId: 'f0' });
     expect(bought.state.permanentRandomGuesses).toBe(1);
 
@@ -3707,7 +3738,7 @@ describe('round-start autoguess foods', () => {
     expect(second.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
     expect(second.state.permanentRandomGuesses).toBe(1);
 
-    expect(FOOD_BY_ID.get('oracles-banquet')?.price).toBe(18);
+    expect(FOOD_BY_ID.get('oracles-banquet')?.price).toBe(28);
     expect(FOOD_BY_ID.get('oracles-banquet')?.rarity).toBe('rare');
     expect(FOOD_BY_ID.get('oracles-banquet')?.unique).toBe(true);
     expect(FOOD_BY_ID.get('oracles-banquet')?.effects)
@@ -3786,7 +3817,7 @@ describe('content and rules batch', () => {
   it('applies the new food tiers and removals', () => {
     expect(FOOD_BY_ID.get('one-bo-hue')?.rarity).toBe('uncommon');
     expect(FOOD_BY_ID.get('taco-pizza-party')?.rarity).toBe('rare');
-    expect(FOOD_BY_ID.get('iron-ration')?.price).toBe(8);
+    expect(FOOD_BY_ID.get('iron-ration')?.price).toBe(12);
     expect(FOOD_BY_ID.get('iron-ration')?.rarity).toBe('rare');
     expect(FOOD_BY_ID.get('plating')?.rarity).toBe('uncommon');
     expect(FOOD_BY_ID.get('muffin-tin')?.rarity).toBe('uncommon');
@@ -4188,6 +4219,20 @@ describe('Second Wind and late curse pool', () => {
     expect(second.state.phase).toBe('summary');
     expect(second.state.summary?.answers).toEqual(['crane', 'trace']);
     expect(second.state.summary?.rewardPending).toBe(true);
+  });
+
+  it('reapplies knowledge food reveals to the second word', () => {
+    const { state } = start('second-wind-knowledge');
+    state.curses.push({ id: 'second-wind', stacks: 1 });
+    state.permanentReveals.push('q');
+    const started = nextRound(state);
+    expect(started.state.round?.hints.q).toBeDefined();
+
+    setAnswer(started.state, 'crane');
+    started.state.round!.freeLeft = 0;
+    const first = act(started.state, { type: 'guess', word: 'crane' });
+    expect(first.state.round?.gauntletIndex).toBe(1);
+    expect(first.state.round?.hints.q).toBeDefined();
   });
 
   it('does not add a fourth final-boss puzzle or a free guess', () => {
