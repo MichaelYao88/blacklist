@@ -73,7 +73,6 @@ const ITEM_ICONS: Record<string, string> = {
   'wild-magic': '✨',
   detour: '🛣️',
   'tithe-box': '🪙',
-  'life-savings': '🏦',
   'growth-chart': '📊',
   'stopped-clock': '⏱️',
   'time-lattice': '🧩',
