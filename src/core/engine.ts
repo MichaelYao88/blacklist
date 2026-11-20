@@ -1977,8 +1977,7 @@ export function createCore(content: Content): Core {
     const base = boss?.damageFor
       ? boss.damageFor(state, next ? { ...round, totalGuesses: round.totalGuesses + 1 } : round)
       : round.baseDamage;
-    const spentDamage = Math.floor((state.goldSpent ?? 0) / 60);
-    return Math.max(0, Math.round(base + curseBonus) + spentDamage);
+    return Math.max(0, Math.round(base + curseBonus));
   }
 
   function timeoutDamageFor(state: RunState): number {
@@ -2243,7 +2242,8 @@ export function createCore(content: Content): Core {
       const boss = round.boss ? bossById.get(round.boss) : undefined;
       if (!boss?.noGuessDamage) {
         round.paidGuesses++;
-        const raw = guessDamageFor(state, round);
+        const raw = guessDamageFor(state, round)
+          + Math.floor((state.goldSpent ?? 0) / 60);
         const amount = state.nextRoundDamageCap !== undefined
           ? Math.min(raw, state.nextRoundDamageCap)
           : raw;

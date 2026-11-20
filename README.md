@@ -19,7 +19,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Curse drafts draw from the weighted pool; The List and The Clock get a 3x weight until they first appear in a draft, then normal
 - Hover or focus a curse in the HUD to read its rules
 - 50 is the final boss: three rounds back-to-back with no intermission
-- Base encounter damage is **3 + the total number of curse stacks**; Heavy Hand multiplies it by **1.4 per stack**
+- Base encounter damage is **3 + the total number of curse stacks** plus **+1 for every 60 gold spent this run**; Heavy Hand multiplies the base by **1.4 per stack**
 - Vision curses include **Take the L** (L hidden), **A-Aron, where are you?** (A hidden), **IP Theft** (I and P hidden), **Hard R** (R hidden), and a silver **RIP Curse**; **Wasting** cuts current max HP by 40% per stack
 - The blacklist is disabled and hidden until **The List** curse is taken; The List is a single curse, never stacks, and arrives stocked with the first guess from every earlier round
 - The clock is disabled until **The Clock** curse is taken; the first stack gives 5:00 and each further stack shrinks it by 40%
@@ -42,7 +42,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Vision-hidden letters show the hatched hidden key on the keyboard; reveals and rule-outs take priority over that layer
 - Every finished encounter pays gold; solves offer coins, usually a spell, and only rarely gear or a meal
 - Opening shields such as **Head Start** and **Quickdraw** make guesses in their window count as free guesses
-- Rarity is rolled directly: 35% rare, 50% uncommon, and 15% common for both items and foods. If a tier is empty, it falls back to the entire pool
+- Rarity uses cumulative floors: 40% pulls from rare, uncommon or common, 45% pulls from uncommon or common, and 15% pulls from common only. If a tier is empty, it falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the final boss)
 - 106 items (98 shop items + 8 rare relics), 6 spells, 85 foods and 29 happenings
@@ -66,7 +66,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Yellow1** autoguesses on exactly one yellow and no green; **Green1** does the same for exactly one green and no yellow. Neither has a round limit
 - **Deadline** grants +1 free guess as soon as the clock drops below 30s each round
 - **Second Hand** and **Counterclockwise** (formerly Engine) are 8g items that cross-cast spells on cast at 80%
-- **Genie Summon** is a 12g uncommon item: after the 3rd guess of each round, player or otherwise, it autocasts a random spell
+- **Genie Summon** is an 8g uncommon item: after your 3rd player guess each round, autocast a random spell
 - **Combustion Engine** is a 10g uncommon item with a 3x appearance weight: after you autocast a spell, it has a 40% chance to autocast a random spell. It does not retrigger itself, and autocast chains cap at 10 spells per step
 - **Encore** now costs 7g
 - **Panacea Pouch** (formerly Spellhoarder) is a 9g item: every 3rd spell cast casts Heal
@@ -203,7 +203,7 @@ The Runner (Soldier) and Orc sprites are from **Tiny RPG Character Asset Pack 01
 | Normal timer | none until The Clock curse |
 | Clock curse | first stack 5:00, each later stack -40%, floor 0:30 |
 | Final boss | 3 rounds, shared clock if active |
-| Base damage | `3 + total curse stacks`, then Heavy Hand and other modifiers apply |
+| Base damage | `3 + total curse stacks + floor(gold spent / 60)`, then Heavy Hand and other modifiers apply |
 | Paid guess damage | curse-scaled base, modified only by curses |
 | Final boss damage | 3 base plus curses |
 | Timeout damage | `10 + 2 × curse stacks`, bypasses armor, ends the round |
