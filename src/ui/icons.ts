@@ -128,6 +128,8 @@ const FOOD_ICONS: Record<string, string> = {
   'hearty-stew': '🥘',
   'muffin-tin': '🧁',
   'only-u': '🇺',
+  'without-u': '🚫',
+  'a-steak': '🥩',
   'empty-calories': '🍩',
   'one-bo-hue': '🍜',
   'warm-bowl': '🍲',

@@ -2040,10 +2040,12 @@ function renderRun(view: RunView): string {
     ${over
       ? `<main class="over-layout">${phasePanel(view)}</main>`
       : `<main class="layout">
-          ${renderBattleRail(view, bossId)}
+          <div class="rail-column">
+            ${renderBattleRail(view, bossId)}
+            ${renderItemsPanel(view)}
+          </div>
           <section class="center-column">${phasePanel(view)}</section>
           ${renderSidePanel(view)}
-          ${renderItemsPanel(view)}
         </main>`}
     ${renderPurgeModal(view)}
     ${renderCurseRemovalModal(view)}

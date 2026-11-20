@@ -28,7 +28,7 @@ export const SPELLS: SpellDef[] = [
   defineSpell({
     id: 'restore',
     name: 'Restore',
-    description: 'Refill armor, clear the blacklist, and ignore vision curses for the rest of the round.',
+    description: 'Refill armor, clear the blacklist, and ignore vision curses (including hidden positions) for the rest of the round.',
     price: 6,
     usable: 'any',
     cast: () => [

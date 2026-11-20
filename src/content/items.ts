@@ -11,7 +11,7 @@ const SPELL_BITS: Record<string, number> = {
   'phone-friend': 32,
 };
 
-const FOOD_BITS = new Map(FOODS.map((food, index) => [food.id, 1 << index]));
+const FOOD_BITS = new Map(FOODS.map((food, index) => [food.id, index]));
 
 /** Every fifth eat/solve pays one item slot. */
 function everyFiveEatsOrSolves(self: { data: Record<string, number> }): Effect[] {
@@ -1572,14 +1572,17 @@ export const ITEMS: ItemDef[] = [
     initial: { _mask: 0, tasted: 0 },
     on: {
       onEat: (ctx, p) => {
-        const bit = FOOD_BITS.get(p.food);
-        if (!bit) return [];
-        const mask = ctx.self.data._mask ?? 0;
+        const index = FOOD_BITS.get(p.food);
+        if (index === undefined) return [];
+        const word = Math.floor(index / 30);
+        const stat = word === 0 ? '_mask' : `_mask${word}`;
+        const bit = 1 << (index % 30);
+        const mask = ctx.self.data[stat] ?? 0;
         if (mask & bit) return [];
         const next = mask | bit;
         return [
-          { type: 'setItemData', stat: '_mask', value: next },
-          { type: 'setItemData', stat: 'tasted', value: popcount(next) },
+          { type: 'setItemData', stat, value: next },
+          { type: 'setItemData', stat: 'tasted', value: (ctx.self.data.tasted ?? 0) + 1 },
           { type: 'maxHp', delta: 4 },
         ];
       },

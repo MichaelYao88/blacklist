@@ -34,7 +34,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Five item slots by default. Only equipped gear is active, and each shop has a drag-and-drop loadout
 - **Loose Tongue**, a rare relic that lets you guess five-letter nonsense for free-form probes
 - Spells stack by type and come from food, item triggers and the shop wildcard slot
-- **Restore** clears the blacklist, refills armor, and ignores vision curses for the rest of the round; **Contrapuntal** turns into a random relic if you cast all six spell types
+- **Restore** clears the blacklist, refills armor, and ignores vision curses — including position curses — for the rest of the round; **Contrapuntal** turns into a random relic if you cast all six spell types
 - Happenings with visible odds and persistent consequences
 - **Know the Letter** offers two random letters and permanently reveals the one you pick; **Purge the Letter** offers three random letters and permanently purges one
 - Short item, spell and offer text with hover tooltips for keywords like armor, reveal, ruled out, free guesses, blacklist, relic and timeout
@@ -42,15 +42,15 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Vision-hidden letters show the hatched hidden key on the keyboard; reveals and rule-outs take priority over that layer
 - Every finished encounter pays gold; solves offer coins, usually a spell, and only rarely gear or a meal
 - Opening shields such as **Head Start** and **Quickdraw** make guesses in their window count as free guesses
-- Rarity rolls are quality floors, not exclusive tiers: 40% rare floor pulls from the entire pool, 30% uncommon floor pulls from uncommon + common, and 30% common floor pulls from common only. A missing floor falls back to the entire pool
+- Rarity is rolled directly: 35% rare, 50% uncommon, and 15% common for both items and foods. If a tier is empty, it falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 104 items (95 shop items + 9 rare relics), 6 spells, 82 foods and 27 happenings
+- 104 items (95 shop items + 9 rare relics), 6 spells, 84 foods and 27 happenings
 - New foods include **U-nagi**, **Donut Holes**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
 - **Field Kit** reveals exactly 4 letters that are not in the word; **Doggy Bag** reveals 2 and queues another after every food
-- Letter foods cover B, C, D, E, F, G, H, I, J, K, L, O, P, Q, T, U, W, X, and Y+N; each is unique and stops appearing once all its letters are permanently revealed. E-Fu, I-Cee, O-Toro, T-Bone, P-Stachio and L-Bacore Tuna are rare; the rest are uncommon
+- Letter foods cover A, B, C, D, E, F, G, H, I, J, K, L, O, P, Q, T, U, W, X, and Y+N; each is unique and stops appearing once all its letters are permanently revealed. E-Fu, I-Cee, O-Toro, T-Bone, P-Stachio and L-Bacore Tuna are rare, while B-Fsteak and the rest are uncommon; **A-Steak** is common-rarity with a rare shop banner. A-Steak and B-Fsteak reveal whether their letter is in the answer
 - New solve rewards: **Brace** (6g, +1 max armor), **Bloom** (+5 max HP, +1 per trigger), **Patch Kit** (heal 30% of max HP +1)
 - **Four-Leaf Clover** has a 20% chance of a random spell when you eat or cast
 - **Nest Egg** pays 3 gold whenever a shop opens
@@ -88,6 +88,8 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **The Endless Table** fires every on-eat effect 7 times or pays 7 gold
 - **Tally Lens** is a 12g common-rarity item with an uncommon shop banner and a 3× appearance weight while a vision curse is active; it is no longer guaranteed in a shop and shows correct/misplaced counts. **Tally** is never offered while you already own one
 - **Encore** is unique and appears three times as often as an average common item; **Poppy Seeds** is a common-rarity food that shows an uncommon shop banner
+- **Without U** is a 2g common-rarity unique food that permanently purges U and shows an uncommon shop banner; **Purge the D** is also common-rarity with an uncommon shop banner
+- **A-Steak** is a common-rarity food with a rare shop banner that reveals whether A is in the answer every round
 - **Fortune Cookie** is a 1g food with a hidden 5× appearance weight: it queues one autoguess for the next round
 - **Oracle's Banquet** is an 18g rare unique food: it permanently autoguesses at the start of every round
 - **Tally** counts every guess, including ally and autoguesses
@@ -105,7 +107,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **The Naked Curse** removes all max armor; **Piercing** makes half of every hit bypass armor even while armor remains; curse drafts offer two choices
 - Blacklisted words are never chosen as round targets; if a late run runs out of legal targets, the List releases one
 - The run-over screen and run history record the items you had equipped, and the stats page shows them per run
-- Random guesses pull from a 201-word pool chosen for non-native speakers, including **wharf**; **Dark Echo** avoids letters from your first guess
+- Random guesses pull from a 204-word pool chosen for non-native speakers, including **wharf**, **rajah**, **guppy**, **glyph**, and **lymph**; **Dark Echo** avoids letters from your first guess
 - Every spell cast plays an animated pop-up, including item autocasts
 - **Cyrniki** is a 3g food: heal 50% of missing HP, then 50% a spell / 50% a shop reroll
 - **The Tax** reduces encounter gold by 40% and is unique; **The Sleeper** adds +2 damage per revealed letter in your first player guess, per stack; **The Curse Broker** charges 12g for a relic or 15g to remove a random curse; **The Confessional** sells 45/75/100% random curse removal for 5/10/15g

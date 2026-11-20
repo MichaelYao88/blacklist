@@ -574,6 +574,41 @@ describe('timer curses', () => {
     expect(after.board.guesses[1].tiles[0]).toBe('hidden');
   });
 
+  it('Time Freeze is free and unobscured with a clock and a position curse', () => {
+    const { state } = start('time-freeze-clock');
+    state.curses.push({ id: 'clock', stacks: 1 });
+    state.curses.push({ id: 'censor', stacks: 1 });
+    setAnswer(state, 'crane');
+    state.round!.remainingMs = 300_000;
+    state.round!.timerStartMs = 300_000;
+    state.round!.freeLeft = 0;
+    state.spells.push({ instance: 's-freeze', id: 'time-freeze' });
+    const cast = act(state, { type: 'castSpell', instance: 's-freeze' });
+    expect(cast.state.round?.frozenUntilGuess).toBe(true);
+    expect(cast.state.round?.nextFreeUnobscured).toBe(true);
+    expect(cast.state.round?.freeLeft).toBe(1);
+
+    const guess = act(cast.state, { type: 'guess', word: 'slate' });
+    expect(guess.state.round?.guesses.at(-1)?.free).toBe(true);
+    expect(guess.state.round?.guesses.at(-1)?.unobscured).toBe(true);
+    const view = game.view(guess.state).phase;
+    if (view.kind !== 'round') throw new Error('expected round');
+    expect(view.board.guesses[0].tiles[0]).not.toBe('hidden');
+  });
+
+  it('Restore ignores a position curse for the rest of the round', () => {
+    const { state } = start('restore-position');
+    state.curses.push({ id: 'censor', stacks: 1 });
+    setAnswer(state, 'crane');
+    state.round!.freeLeft = 0;
+    state.spells.push({ instance: 's-restore', id: 'restore' });
+    const cast = act(state, { type: 'castSpell', instance: 's-restore' });
+    const guess = act(cast.state, { type: 'guess', word: 'slate' });
+    const view = game.view(guess.state).phase;
+    if (view.kind !== 'round') throw new Error('expected round');
+    expect(view.board.guesses[0].tiles[0]).not.toBe('hidden');
+  });
+
   it('does not count Time Freeze free guesses for solve-count items', () => {
     const { state } = start('time-freeze-count');
     state.items.push({ instance: 'i-short', id: 'shortcut', data: {}, equipped: true });
@@ -2832,14 +2867,31 @@ describe('spells and foods', () => {
     expect(pen?.description).toContain('1-5 gold');
   });
 
-  it('has uncommon and rare purge foods', () => {
+  it('has common purge foods with uncommon shop banners', () => {
     expect(FOOD_BY_ID.get('inkcap')?.price).toBe(8);
     expect(FOOD_BY_ID.get('inkcap')?.rarity).toBe('rare');
     expect(FOOD_BY_ID.get('purge-the-d')?.price).toBe(8);
-    expect(FOOD_BY_ID.get('purge-the-d')?.rarity).toBe('uncommon');
+    expect(FOOD_BY_ID.get('purge-the-d')?.rarity).toBe('common');
+    expect(FOOD_BY_ID.get('purge-the-d')?.shopRarity).toBe('uncommon');
     expect(FOOD_BY_ID.get('poppy-seeds')?.price).toBe(4);
+    expect(FOOD_BY_ID.get('poppy-seeds')?.shopRarity).toBe('uncommon');
     expect(FOOD_BY_ID.get('poppy-seeds')?.effects)
       .toContainEqual({ type: 'purgeRandomLetter' });
+  });
+
+  it('adds Without U and the A knowledge food with banner overrides', () => {
+    const uNagi = FOOD_BY_ID.get('only-u');
+    const withoutU = FOOD_BY_ID.get('without-u');
+    expect(withoutU?.price).toBe((uNagi?.price ?? 0) - 6);
+    expect(withoutU?.rarity).toBe('common');
+    expect(withoutU?.shopRarity).toBe('uncommon');
+    expect(withoutU?.unique).toBe(true);
+    expect(withoutU?.effects).toContainEqual({ type: 'purgeLetter', letter: 'u' });
+
+    const aSteak = FOOD_BY_ID.get('a-steak');
+    expect(aSteak?.rarity).toBe('common');
+    expect(aSteak?.shopRarity).toBe('rare');
+    expect(aSteak?.effects).toContainEqual({ type: 'revealLetter', letter: 'a' });
   });
 
   it('Poppy Seeds purges one random letter', () => {
@@ -3070,9 +3122,14 @@ describe('unique shop items', () => {
 
 describe('autocast and random-guess batch', () => {
   it('ships a non-native guess pool including wharf', () => {
-    expect(CONTENT.nonnative).toHaveLength(201);
+    expect(CONTENT.nonnative).toHaveLength(204);
     expect(CONTENT.nonnative).toContain('wharf');
-    expect(new Set(CONTENT.nonnative).size).toBe(201);
+    expect(CONTENT.nonnative).toContain('rajah');
+    expect(CONTENT.nonnative).toContain('guppy');
+    expect(CONTENT.nonnative).toContain('glyph');
+    expect(CONTENT.nonnative).toContain('lymph');
+    expect(CONTENT.nonnative).not.toContain('daisy');
+    expect(new Set(CONTENT.nonnative).size).toBe(204);
     for (const word of CONTENT.nonnative) {
       expect(word, word).toMatch(/^[a-z]{5}$/);
     }

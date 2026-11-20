@@ -18,6 +18,9 @@ describe('shop relic labelling', () => {
         { id: 'o3', kind: 'eat', def: 'plating', price: 3 },
         { id: 'o4', kind: 'eat', def: 'poppy-seeds', price: 4 },
         { id: 'o5', kind: 'item', def: 'tally-lens', price: 12 },
+        { id: 'o6', kind: 'eat', def: 'a-steak', price: 7 },
+        { id: 'o7', kind: 'eat', def: 'without-u', price: 2 },
+        { id: 'o8', kind: 'eat', def: 'purge-the-d', price: 8 },
       ],
       rerollCost: 2,
       rerolls: 0,
@@ -59,12 +62,23 @@ describe('shop relic labelling', () => {
     expect(uncommonFood?.querySelector('.tag')?.textContent?.trim()).toBe('UNCOMMON');
   });
 
+  it('keeps the inventory in the rail column directly under the battle rail', () => {
+    const railColumn = root.querySelector('.rail-column');
+    expect(railColumn?.querySelector('.battle-rail')).not.toBeNull();
+    expect(railColumn?.querySelector('.items-panel')).not.toBeNull();
+  });
+
   it('uses shop banner overrides for common-rarity specials', () => {
-    for (const name of ['Poppy Seeds', 'Tally Lens']) {
+    for (const name of ['Poppy Seeds', 'Tally Lens', 'Without U', 'Purge the D']) {
       const card = [...root.querySelectorAll<HTMLElement>('.offer-card')]
         .find((entry) => entry.textContent?.includes(name));
       expect(card?.classList.contains('uncommon')).toBe(true);
       expect(card?.querySelector('.tag')?.textContent?.trim()).toBe('UNCOMMON');
     }
+
+    const aSteak = [...root.querySelectorAll<HTMLElement>('.offer-card')]
+      .find((entry) => entry.textContent?.includes('A-Steak'));
+    expect(aSteak?.classList.contains('rare')).toBe(true);
+    expect(aSteak?.querySelector('.tag')?.textContent?.trim()).toBe('RARE');
   });
 });

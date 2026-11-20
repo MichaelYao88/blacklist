@@ -979,6 +979,9 @@ export function createCore(content: Content): Core {
           break;
         }
         round.frozenUntilGuess = true;
+        round.freeLeft += 1;
+        round.nextFreeUnobscured = true;
+        emit(rt, { type: 'freeGuessesChanged', remaining: round.freeLeft, source });
         emit(rt, {
           type: 'timerChanged',
           remainingMs: round.remainingMs,
@@ -2247,11 +2250,8 @@ export function createCore(content: Content): Core {
   }
 
   /**
-   * Rarity rolls are floors, not exclusive tiers:
-   * 40% rare floor: pull from the entire pool
-   * 30% uncommon floor: pull from uncommon + common (exclude rare)
-   * 30% common floor: pull from common only (exclude rare + uncommon)
-   * If the selected floor is empty, fall back to the entire pool.
+   * Rarity is rolled directly: 35% rare, 50% uncommon, 15% common.
+   * If the selected tier is empty, fall back to the entire pool.
    */
   function pickByRarity<T extends RarityWeighted>(
     state: RunState,
@@ -2260,10 +2260,10 @@ export function createCore(content: Content): Core {
     const all = [...pools.rare, ...pools.uncommon, ...pools.common];
     if (all.length === 0) return undefined;
     const roll = rngNext(state) * 100;
-    const pool = roll < 40
-      ? all
-      : roll < 70
-        ? [...pools.uncommon, ...pools.common]
+    const pool = roll < 35
+      ? pools.rare
+      : roll < 85
+        ? pools.uncommon
         : pools.common;
     return weightedPick(state, pool.length > 0 ? pool : all);
   }

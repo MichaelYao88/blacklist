@@ -1,5 +1,8 @@
 import { defineFood, type FoodDef } from '../core/types';
 
+/** Without U is priced relative to U-nagi. */
+const U_NAGI_PRICE = 8;
+
 export const FOODS: FoodDef[] = [
   defineFood({
     id: 'snack',
@@ -19,10 +22,20 @@ export const FOODS: FoodDef[] = [
     id: 'only-u',
     name: 'U-nagi',
     description: 'Every round: U is revealed. No slot.',
-    price: 8,
+    price: U_NAGI_PRICE,
     rarity: 'uncommon',
     unique: true,
     effects: [{ type: 'revealLetter', letter: 'u' }],
+  }),
+  defineFood({
+    id: 'without-u',
+    name: 'Without U',
+    description: 'Permanently purges U. No slot.',
+    price: U_NAGI_PRICE - 6,
+    rarity: 'common',
+    shopRarity: 'uncommon',
+    unique: true,
+    effects: [{ type: 'purgeLetter', letter: 'u' }],
   }),
   defineFood({
     id: 'empty-calories',
@@ -527,6 +540,16 @@ export const FOODS: FoodDef[] = [
   // Letter reveals are too narrow for a gear slot, so they are sold as
   // expensive meals. Once eaten, the reveal is permanent for the rest of the run.
   defineFood({
+    id: 'a-steak',
+    name: 'A-Steak',
+    description: 'Every round: reveal whether the answer has A. No slot.',
+    price: 7,
+    rarity: 'common',
+    shopRarity: 'rare',
+    unique: true,
+    effects: [{ type: 'revealLetter', letter: 'a' }],
+  }),
+  defineFood({
     id: 'b-file',
     name: 'B-Fsteak',
     description: 'Every round: reveal whether the answer has B. No slot.',
@@ -693,9 +716,10 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'purge-the-d',
     name: 'Purge the D',
-    description: 'Uncommon. Permanently purges D. No slot.',
+    description: 'Permanently purges D. No slot.',
     price: 8,
-    rarity: 'uncommon',
+    rarity: 'common',
+    shopRarity: 'uncommon',
     effects: [{ type: 'purgeLetter', letter: 'd' }],
   }),
   defineFood({
