@@ -2,7 +2,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { game } from '../src/game';
 
-describe('chronicle setting', () => {
+describe('chronicle', () => {
   let root: HTMLElement;
 
   beforeAll(async () => {
@@ -16,13 +16,11 @@ describe('chronicle setting', () => {
     root.querySelector<HTMLElement>('[data-action="resume"]')!.click();
   });
 
-  it('shows the run path below the battle rail when enabled', () => {
+  it('appears inside the pause menu, never in the player view', () => {
     expect(root.querySelector('.chronicle')).toBeNull();
+    expect(root.querySelector('.rail-column .chronicle')).toBeNull();
     root.querySelector<HTMLElement>('[data-action="pause"]')!.click();
-    const toggle = root.querySelector<HTMLElement>('[data-action="toggle-chronicle"]');
-    expect(toggle?.textContent).toContain('HIDDEN');
-    toggle!.click();
-    expect(root.querySelector('.rail-column .chronicle')).not.toBeNull();
-    expect(localStorage.getItem('blacklist.chronicle.v1')).toBe('1');
+    expect(root.querySelector('.pause-card .chronicle')).not.toBeNull();
+    expect(root.querySelector('.rail-column .chronicle')).toBeNull();
   });
 });

@@ -3875,7 +3875,7 @@ button {
 }
 
 .pause-card {
-  width: min(440px, 100%);
+  width: min(560px, 100%);
   padding: 30px 26px;
   border: 1px solid var(--line-2);
   border-radius: 16px;
@@ -3912,14 +3912,18 @@ button {
   margin-top: 20px;
 }
 
-.pause-settings {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 7px;
+.pause-chronicle {
+  width: 100%;
   margin-top: 18px;
   padding-top: 14px;
   border-top: 1px solid var(--line);
+}
+
+.pause-chronicle .chronicle {
+  padding: 0;
+  background: none;
+  border: 0;
+  box-shadow: none;
 }
 
 /* item / offer / reward art */
@@ -4128,29 +4132,23 @@ button {
     margin: 0 auto;
   }
 
-  .chronicle {
+  .center-column {
     grid-column: 1;
     grid-row: auto;
     order: 1;
   }
 
-  .center-column {
-    grid-column: 1;
-    grid-row: auto;
-    order: 2;
-  }
-
   .side-panel {
     grid-column: 1;
     grid-row: auto;
-    order: 3;
+    order: 2;
     grid-template-columns: 1fr;
   }
 
   .items-panel {
     grid-column: 1;
     grid-row: auto;
-    order: 4;
+    order: 3;
   }
 
   .mini-stage {

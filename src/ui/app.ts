@@ -145,15 +145,6 @@ let shake = false;
 let shakeTimer: number | undefined;
 let lastTick = performance.now();
 let paused = false;
-const CHRONICLE_KEY = 'blacklist.chronicle.v1';
-const readChronicle = (): boolean => {
-  try {
-    return localStorage.getItem(CHRONICLE_KEY) === '1';
-  } catch {
-    return false;
-  }
-};
-let chronicleVisible = readChronicle();
 let pointerHeld = 0;
 let renderQueued = false;
 let soundMuted = sfx.muted;
@@ -625,15 +616,6 @@ app.addEventListener('click', (event) => {
       paused = false;
       lastTick = performance.now();
       music.resume();
-      render();
-      break;
-    case 'toggle-chronicle':
-      chronicleVisible = !chronicleVisible;
-      try {
-        localStorage.setItem(CHRONICLE_KEY, chronicleVisible ? '1' : '0');
-      } catch {
-        // Ignore storage failures.
-      }
       render();
       break;
     case 'sound':
@@ -2112,11 +2094,8 @@ function renderPauseOverlay(view: RunView): string {
         <button class="btn primary big" data-action="unpause">RESUME</button>
         <button class="btn ghost" data-action="help">RULES</button>
       </div>
-      <div class="pause-settings">
-        <span class="panel-kicker">SETTINGS</span>
-        <button class="btn tiny ghost" data-action="toggle-chronicle">
-          CHRONICLE: ${chronicleVisible ? 'SHOWN' : 'HIDDEN'}
-        </button>
+      <div class="pause-chronicle">
+        ${renderChronicle(view)}
       </div>
       <p class="hint">Space or Esc also resumes.</p>
     </div>
@@ -2148,7 +2127,6 @@ function renderRun(view: RunView): string {
       : `<main class="layout">
           <div class="rail-column">
             ${renderBattleRail(view, bossId)}
-            ${chronicleVisible ? renderChronicle(view) : ''}
             ${renderItemsPanel(view)}
           </div>
           <section class="center-column">${phasePanel(view)}</section>

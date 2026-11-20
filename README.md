@@ -129,7 +129,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **The Detour** offers a slot, a shop, or both for 7 HP; **The Crossroads** offers a shop or a Heal plus Time Freeze; **The Trade** trades gold for a slot, a slot for gold, or two Heal spells
 - The Runner and Orc idle in their walk loops; free guesses and the winning guess play the Runner's attack, other guesses alternate Orc → Runner, a fatal guess is always the Orc, and the Orc collapses from the winning blow and stays down until the next round starts
 - Defeat drops the Runner into their death animation on the run-over screen
-- The run path rail is hidden by default; the pause menu has a **CHRONICLE: SHOWN/HIDDEN** setting that restores it below the battle rail
+- The run path appears as the **CHRONICLE** inside the pause menu; it is never shown during play
 - Purge is an event (The Redaction) and foods (Poppy Seeds, rare Inkcap, Purge the D, Pay Respects to F); its rest option triggers an eat and a 10% random curse removal
 - One exact-state autosave slot. Defeat clears it. Victory clears it and updates meta stats.
 - A **STATS** page tracks run history (last 50 runs), win rate, best level, average solve time, favorite items and curses, play time, gold and damage totals
