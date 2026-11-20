@@ -417,6 +417,8 @@ export interface ItemDef {
   kind: ItemKind;
   /** Rare relics are very rare finds. They consume an item slot like any other gear. */
   rarity?: 'common' | 'uncommon' | 'rare';
+  /** Shop banner override; rarity still controls drop rolls. */
+  shopRarity?: 'common' | 'uncommon' | 'rare';
   /** Multiplies how often this item is chosen inside its rarity tier. */
   appearanceWeight?: number;
   /** Only one copy can be offered while the player already owns it. */
@@ -486,6 +488,8 @@ export interface FoodDef {
   description: string;
   price: number;
   rarity?: 'common' | 'uncommon' | 'rare';
+  /** Shop banner override; rarity still controls drop rolls. */
+  shopRarity?: 'common' | 'uncommon' | 'rare';
   /** Multiplies how often this food is chosen inside its rarity tier. */
   appearanceWeight?: number;
   /** Once eaten, this food never appears again this run. */

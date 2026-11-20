@@ -1189,10 +1189,10 @@ describe('new item and event batch', () => {
       const { state } = start(seed);
       state.phase = 'shop';
       state.gold = 20;
-      state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'hearty-stew', price: 5 }]);
+      state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'hearty-stew', price: 4 }]);
       const before = state.spells.filter((spell) => spell.id === 'heal').length;
       const eaten = act(state, { type: 'buy', offerId: 'o0' });
-      expect(eaten.state.gold).toBe(15);
+      expect(eaten.state.gold).toBe(16);
       const gained = eaten.state.spells.filter((spell) => spell.id === 'heal').length - before;
       expect(gained).toBeGreaterThanOrEqual(1);
       expect(gained).toBeLessThanOrEqual(2);
@@ -1674,7 +1674,8 @@ describe('latest balance pass', () => {
   });
 
   it('Tally Lens is weighted but no longer guaranteed after a vision curse', () => {
-    expect(ITEM_BY_ID.get('tally-lens')?.rarity).toBe('uncommon');
+    expect(ITEM_BY_ID.get('tally-lens')?.rarity).toBe('common');
+    expect(ITEM_BY_ID.get('tally-lens')?.shopRarity).toBe('uncommon');
     expect(ITEM_BY_ID.get('tally-lens')?.appearanceWeight).toBe(3);
     expect(ITEM_BY_ID.get('tally-lens')?.price).toBe(12);
 
@@ -1877,7 +1878,8 @@ describe('latest balance pass', () => {
   it('adds the new food batch and prices', () => {
     expect(FOOD_BY_ID.get('only-u')?.name).toBe('U-nagi');
     expect(FOOD_BY_ID.get('only-u')?.effects).toContainEqual({ type: 'revealLetter', letter: 'u' });
-    expect(FOOD_BY_ID.get('empty-calories')?.price).toBe(6);
+    expect(FOOD_BY_ID.get('empty-calories')?.price).toBe(5);
+    expect(FOOD_BY_ID.get('empty-calories')?.name).toBe('Donut Holes');
     expect(FOOD_BY_ID.get('empty-calories')?.effects).toContainEqual({ type: 'maxHp', delta: 9 });
     expect(FOOD_BY_ID.get('one-bo-hue')?.price).toBe(4);
     expect(FOOD_BY_ID.get('warm-bowl')?.price).toBe(4);
@@ -1957,7 +1959,7 @@ describe('latest balance pass', () => {
     expect(FOOD_BY_ID.get('hagelslag')?.effects)
       .toContainEqual({ type: 'maxHp', delta: 3 });
     expect(FOOD_BY_ID.get('hagelslag')?.description).toContain('20%');
-    expect(FOOD_BY_ID.get('hearty-stew')?.price).toBe(5);
+    expect(FOOD_BY_ID.get('hearty-stew')?.price).toBe(4);
     expect(FOOD_BY_ID.get('masala-dosa')?.price).toBe(3);
     expect(FOOD_BY_ID.get('cyrniki')?.price).toBe(3);
     expect(FOOD_BY_ID.get('cyrniki')?.effects)
@@ -2103,8 +2105,8 @@ describe('latest balance pass', () => {
     state.phase = 'shop';
     state.gold = 100;
     state.shop = shopState([
-      { id: 'f0', kind: 'eat', def: 'empty-calories', price: 6 },
-      { id: 'f1', kind: 'eat', def: 'empty-calories', price: 6 },
+      { id: 'f0', kind: 'eat', def: 'empty-calories', price: 5 },
+      { id: 'f1', kind: 'eat', def: 'empty-calories', price: 5 },
     ]);
     const base = state.maxHp;
     let current = act(state, { type: 'buy', offerId: 'f0' }).state;
@@ -2122,7 +2124,7 @@ describe('latest balance pass', () => {
         id: 'eat:empty-calories',
         kind: 'eat',
         def: 'empty-calories',
-        label: 'Empty Calories',
+        label: 'Donut Holes',
         description: '',
       }],
       boss: false,
@@ -2133,7 +2135,7 @@ describe('latest balance pass', () => {
     const opened = act(rewarded.state, { type: 'choose', optionId: 'shop' });
 
     opened.state.gold = 100;
-    opened.state.shop!.offers = [{ id: 'f2', kind: 'eat', def: 'empty-calories', price: 6 }];
+    opened.state.shop!.offers = [{ id: 'f2', kind: 'eat', def: 'empty-calories', price: 5 }];
     const after = act(opened.state, { type: 'buy', offerId: 'f2' });
     expect(after.state.maxHp).toBe(base + 54); // level already used its double
   });
@@ -3197,7 +3199,8 @@ describe('autocast and random-guess batch', () => {
     expect(ITEM_BY_ID.get('chrono-anchor')?.rarity).toBe('uncommon');
     expect(ITEM_BY_ID.get('encore')?.unique).toBe(true);
     expect(ITEM_BY_ID.get('encore')?.appearanceWeight).toBe(3);
-    expect(FOOD_BY_ID.get('poppy-seeds')?.rarity).toBe('uncommon');
+    expect(FOOD_BY_ID.get('poppy-seeds')?.rarity).toBe('common');
+    expect(FOOD_BY_ID.get('poppy-seeds')?.shopRarity).toBe('uncommon');
     expect(FOOD_BY_ID.get('poppy-seeds')?.appearanceWeight).toBeUndefined();
   });
 

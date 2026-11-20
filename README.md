@@ -46,7 +46,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the final boss)
 - 104 items (95 shop items + 9 rare relics), 6 spells, 82 foods and 27 happenings
-- New foods include **U-nagi**, **Empty Calories**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
+- New foods include **U-nagi**, **Donut Holes**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
 - **Field Kit** reveals exactly 4 letters that are not in the word; **Doggy Bag** reveals 2 and queues another after every food
@@ -59,7 +59,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Chilaquiles** is a 2g food that doubles the next two sales
 - **Spell Pepper** is a 3g food that doubles your next spell
 - Every shop node offers a choice: visit the shop, or rest at the inn to heal to full HP and move on
-- **Hearty Stew** is a 5g food that grants 1-2 casts of Heal; **Hagelslag** gives +3 max HP and heals 20% of missing HP
+- **Hearty Stew** is a 4g food that grants 1-2 casts of Heal; **Hagelslag** gives +3 max HP and heals 20% of missing HP
 - **Bulwark** is an 8g item: every 10 damage blocked by armor, cast a random spell
 - **Ricochet** is a 7g item: every 10 armor lost, autoguess a random word
 - **Scattershot** autoguesses once per round after a guess sharing no letters with the previous guess
@@ -86,8 +86,8 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Shops can show up to 2 copies of the same entry; sell rows are hoverable
 - Solve gold is 8/7/6/5/4 for solves in 1/2/3/4/5+ player guesses; auto-guesses do not lower it
 - **The Endless Table** fires every on-eat effect 7 times or pays 7 gold
-- **Tally Lens** is a 12g uncommon item with a 3× appearance weight while a vision curse is active; it is no longer guaranteed in a shop and shows correct/misplaced counts. **Tally** is never offered while you already own one
-- **Encore** is unique and appears three times as often as an average common item; **Poppy Seeds** is a normal uncommon food
+- **Tally Lens** is a 12g common-rarity item with an uncommon shop banner and a 3× appearance weight while a vision curse is active; it is no longer guaranteed in a shop and shows correct/misplaced counts. **Tally** is never offered while you already own one
+- **Encore** is unique and appears three times as often as an average common item; **Poppy Seeds** is a common-rarity food that shows an uncommon shop banner
 - **Fortune Cookie** is a 1g food with a hidden 5× appearance weight: it queues one autoguess for the next round
 - **Oracle's Banquet** is an 18g rare unique food: it permanently autoguesses at the start of every round
 - **Tally** counts every guess, including ally and autoguesses

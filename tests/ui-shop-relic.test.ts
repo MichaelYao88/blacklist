@@ -16,6 +16,8 @@ describe('shop relic labelling', () => {
         { id: 'o1', kind: 'item', def: 'bloom', price: 7 },
         { id: 'o2', kind: 'eat', def: 'satchel', price: 9 },
         { id: 'o3', kind: 'eat', def: 'plating', price: 3 },
+        { id: 'o4', kind: 'eat', def: 'poppy-seeds', price: 4 },
+        { id: 'o5', kind: 'item', def: 'tally-lens', price: 12 },
       ],
       rerollCost: 2,
       rerolls: 0,
@@ -55,5 +57,14 @@ describe('shop relic labelling', () => {
       .find((card) => card.textContent?.includes('Plating'));
     expect(uncommonFood?.classList.contains('uncommon')).toBe(true);
     expect(uncommonFood?.querySelector('.tag')?.textContent?.trim()).toBe('UNCOMMON');
+  });
+
+  it('uses shop banner overrides for common-rarity specials', () => {
+    for (const name of ['Poppy Seeds', 'Tally Lens']) {
+      const card = [...root.querySelectorAll<HTMLElement>('.offer-card')]
+        .find((entry) => entry.textContent?.includes(name));
+      expect(card?.classList.contains('uncommon')).toBe(true);
+      expect(card?.querySelector('.tag')?.textContent?.trim()).toBe('UNCOMMON');
+    }
   });
 });

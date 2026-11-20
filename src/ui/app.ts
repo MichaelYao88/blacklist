@@ -1712,9 +1712,10 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
       const applies = offer.kind === 'item' || offer.kind === 'eat';
       const finalPrice = Math.max(1, offer.price - (applies ? coupon : 0));
       const cannotAfford = view.gold < finalPrice;
-      const rarity = offer.kind === 'item'
-        ? ITEM_BY_ID.get(offer.def)?.rarity
-        : offer.kind === 'eat' ? FOOD_BY_ID.get(offer.def)?.rarity : undefined;
+      const def = offer.kind === 'item'
+        ? ITEM_BY_ID.get(offer.def)
+        : offer.kind === 'eat' ? FOOD_BY_ID.get(offer.def) : undefined;
+      const rarity = def?.shopRarity ?? def?.rarity;
       const isRare = rarity === 'rare';
       const isRelic = offer.kind === 'item' && isRare;
       const isUncommon = !isRare && rarity === 'uncommon';

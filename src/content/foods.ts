@@ -26,9 +26,9 @@ export const FOODS: FoodDef[] = [
   }),
   defineFood({
     id: 'empty-calories',
-    name: 'Empty Calories',
+    name: 'Donut Holes',
     description: '+9 max HP. No slot.',
-    price: 6,
+    price: 5,
     effects: [{ type: 'maxHp', delta: 9 }],
   }),
   defineFood({
@@ -375,7 +375,7 @@ export const FOODS: FoodDef[] = [
     id: 'hearty-stew',
     name: 'Hearty Stew',
     description: 'Gain 1-2 casts of Heal. No slot.',
-    price: 5,
+    price: 4,
     effects: [
       {
         type: 'randomChoice',
@@ -703,7 +703,8 @@ export const FOODS: FoodDef[] = [
     name: 'Poppy Seeds',
     description: 'Purge a random letter from all future answers. No slot.',
     price: 4,
-    rarity: 'uncommon',
+    rarity: 'common',
+    shopRarity: 'uncommon',
     effects: [{ type: 'purgeRandomLetter' }],
   }),
   defineFood({
