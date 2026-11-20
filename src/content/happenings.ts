@@ -281,7 +281,7 @@ export const HAPPENINGS: HappeningDef[] = [
   defineHappening({
     id: 'detour',
     name: 'The Detour',
-    description: 'A side road, a shop sign, and a pocket that was not there before.',
+    description: 'A side road, a bakery sign, and a pocket that was not there before.',
     options: [
       {
         id: 'slot',
@@ -290,22 +290,15 @@ export const HAPPENINGS: HappeningDef[] = [
         outcomes: [{ chancePct: 100, text: 'You find room for one more thing.', effects: [{ type: 'slots', delta: 1 }] }],
       },
       {
-        id: 'shop',
-        label: 'Visit the shop',
-        description: 'Open a shop right now.',
-        outcomes: [{ chancePct: 100, text: 'The side road leads straight to a shelf.', effects: [{ type: 'openShop' }] }],
-      },
-      {
-        id: 'both',
-        label: 'Do both',
-        description: 'Lose 7 HP, +1 item slot, and open a shop.',
+        id: 'bakery',
+        label: 'Visit the Time Bakery',
+        description: '+8 max HP and a Time Freeze spell.',
         outcomes: [{
           chancePct: 100,
-          text: 'You take the long way and pay for it in blood, room and a detour.',
+          text: 'The bakery sells you a slice of tomorrow and a little borrowed time.',
           effects: [
-            { type: 'damage', amount: 7, ignoreArmor: true },
-            { type: 'slots', delta: 1 },
-            { type: 'openShop' },
+            { type: 'maxHp', delta: 8 },
+            { type: 'giveSpell', spell: 'time-freeze' },
           ],
         }],
       },

@@ -861,10 +861,12 @@ describe('shop curses', () => {
 
   it('adds the Detour, Crossroads and Trade events', () => {
     const detour = HAPPENING_BY_ID.get('detour');
-    const both = detour?.options.find((option) => option.id === 'both');
-    expect(both?.outcomes[0].effects).toContainEqual({ type: 'damage', amount: 7, ignoreArmor: true });
-    expect(both?.outcomes[0].effects).toContainEqual({ type: 'slots', delta: 1 });
-    expect(both?.outcomes[0].effects).toContainEqual({ type: 'openShop' });
+    expect(detour?.options.map((option) => option.id)).toEqual(['slot', 'bakery']);
+    const bakery = detour?.options.find((option) => option.id === 'bakery');
+    expect(bakery?.outcomes[0].effects).toEqual([
+      { type: 'maxHp', delta: 8 },
+      { type: 'giveSpell', spell: 'time-freeze' },
+    ]);
 
     const crossroads = HAPPENING_BY_ID.get('crossroads');
     expect(crossroads?.options.find((option) => option.id === 'rest')?.outcomes[0].effects)
@@ -960,15 +962,17 @@ describe('shop curses', () => {
     expect(opened.state.shop?.offers.length).toBeGreaterThan(0);
   });
 
-  it('opens a shop from the Detour and applies its other rewards', () => {
-    const { state } = start('detour-both');
+  it('visits the Time Bakery from the Detour for +8 max HP and a Time Freeze', () => {
+    const { state } = start('detour-bakery');
     state.phase = 'happening';
     state.happening = { id: 'detour', options: [] };
-    const chosen = act(state, { type: 'choose', optionId: 'both' });
-    expect(chosen.state.hp).toBe(9);
-    expect(chosen.state.slots).toBe(6);
-    expect(chosen.state.phase).toBe('shop');
-    expect(chosen.state.shop?.offers.length).toBeGreaterThan(0);
+    state.spells = [];
+    const startMax = state.maxHp;
+    const chosen = act(state, { type: 'choose', optionId: 'bakery' });
+    expect(chosen.state.maxHp).toBe(startMax + 8);
+    expect(chosen.state.spells.some((spell) => spell.id === 'time-freeze')).toBe(true);
+    expect(chosen.state.phase).toBe('happening');
+    expect(chosen.state.happening?.resolved?.option).toBe('bakery');
   });
 
   it('offers a shop or an inn when entering a shop node', () => {
