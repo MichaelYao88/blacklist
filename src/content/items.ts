@@ -1050,11 +1050,12 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'double-blind',
     name: 'Yellow1',
-    description: 'A guess with exactly one yellow and no green autoguesses a random word.',
+    description: 'Your guess with exactly one yellow and no green autoguesses a random word.',
     price: 8,
     kind: 'gear',
     on: {
       onGuessScored: (_ctx, p) => {
+        if (p.guess.by !== 'player') return [];
         const counts = truthCounts(p.guess.truth);
         if (counts.correct !== 0 || counts.present !== 1) return [];
         return [{ type: 'randomGuesses', count: 1 }];
@@ -1064,11 +1065,12 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'green1',
     name: 'Green1',
-    description: 'A guess with exactly one green and no yellow autoguesses a random word.',
+    description: 'Your guess with exactly one green and no yellow autoguesses a random word.',
     price: 8,
     kind: 'gear',
     on: {
       onGuessScored: (_ctx, p) => {
+        if (p.guess.by !== 'player') return [];
         const counts = truthCounts(p.guess.truth);
         if (counts.correct !== 1 || counts.present !== 0) return [];
         return [{ type: 'randomGuesses', count: 1 }];

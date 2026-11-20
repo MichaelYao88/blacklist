@@ -2628,6 +2628,30 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('double-blind')?.on?.onRoundStart).toBeUndefined();
   });
 
+  it('Yellow1 and Green1 ignore non-player guesses', () => {
+    const yellow = start('yellow1-friend');
+    yellow.state.items.push({ instance: 'i-yellow-friend', id: 'double-blind', data: {}, equipped: true });
+    yellow.state.permanentRoundStartWord = 'roost';
+    yellow.state.round!.answer = 'crane';
+    const yellowNext = nextRound(yellow.state);
+    expect(yellowNext.state.round?.guesses.filter((guess) => guess.by === 'friend')).toHaveLength(1);
+    expect(yellowNext.events.some(
+      (event) => event.type === 'itemProc' && event.item === 'double-blind',
+    )).toBe(false);
+
+    const green = start('green1-friend');
+    green.state.items.push({ instance: 'i-green-friend', id: 'green1', data: {}, equipped: true });
+    green.state.permanentRoundStartWord = 'climb';
+    green.state.round!.answer = 'crane';
+    const greenNext = nextRound(green.state);
+    expect(greenNext.state.round?.guesses.filter((guess) => guess.by === 'friend')).toHaveLength(1);
+    expect(greenNext.events.some(
+      (event) => event.type === 'itemProc' && event.item === 'green1',
+    )).toBe(false);
+    expect(ITEM_BY_ID.get('double-blind')?.description).toContain('Your guess');
+    expect(ITEM_BY_ID.get('green1')?.description).toContain('Your guess');
+  });
+
   it('Green1 autoguesses on one green and no yellow without a round limit', () => {
     const { state } = start('green1-auto');
     state.items.push({ instance: 'i-green', id: 'green1', data: {}, equipped: true });
