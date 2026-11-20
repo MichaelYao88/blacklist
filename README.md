@@ -115,7 +115,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Blacklisted words are never chosen as round targets; if a late run runs out of legal targets, the List releases one
 - The run-over screen and run history record the items you had equipped, and the stats page shows them per run
 - Random guesses pull from a 208-word pool chosen for non-native speakers, including **patsy**, **wharf**, **rajah**, **guppy**, **glyph**, **lymph**, **gaunt**, **jaunt**, and **vaunt**; **Dark Echo** avoids letters from your first guess
-- Every spell cast plays an animated pop-up, including item autocasts; spell pop-ups queue 2 seconds apart, and the last one stays up 3 seconds longer
+- Every spell cast plays an animated pop-up, including item autocasts; spell pop-ups appear 2 seconds apart, and every pop-up stays visible for 5 seconds
 - **Cyrniki** is a 3g food: heal 50% of missing HP, then 50% a spell / 50% a shop reroll
 - **The Tax** reduces encounter gold by 40% and is unique; **The Sleeper** adds +2 damage per revealed letter in your first player guess, per stack; **The Curse Broker** charges 12g for a relic or 15g to remove a random curse; **The Confessional** sells 45/75/100% random curse removal for 5/10/15g
 - **The Detour** offers a slot, a shop, or both for 7 HP; **The Crossroads** offers a shop or a Heal plus Time Freeze; **The Trade** trades gold for a slot, a slot for gold, or two Heal spells

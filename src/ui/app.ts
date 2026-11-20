@@ -67,14 +67,15 @@ interface SpellPopup {
   name: string;
   icon: string;
   auto: boolean;
-  durationMs?: number;
 }
 let spellPopupQueue: SpellPopup[] = [];
-let activeSpellPopup: SpellPopup | null = null;
+let spellPopups: SpellPopup[] = [];
+const spellPopupTimers = new Map<number, number>();
+let spellReleaseTimer: number | undefined;
 let spellPopupSeq = 0;
-let spellPopupTimer: number | undefined;
 const POPUP_GAP_MS = 2_000;
 const POPUP_EXTRA_MS = 3_000;
+const SPELL_POPUP_TTL = POPUP_GAP_MS + POPUP_EXTRA_MS;
 
 function showSpellPopup(spellId: string, auto: boolean): void {
   const def = SPELL_BY_ID.get(spellId);
@@ -84,33 +85,42 @@ function showSpellPopup(spellId: string, auto: boolean): void {
     icon: spellIcon(spellId),
     auto,
   });
-  pumpSpellPopups();
+  releaseNextSpellPopup();
 }
 
-function pumpSpellPopups(): void {
-  if (activeSpellPopup || spellPopupQueue.length === 0) return;
-  const next = spellPopupQueue.shift()!;
-  const durationMs = POPUP_GAP_MS + (spellPopupQueue.length === 0 ? POPUP_EXTRA_MS : 0);
-  activeSpellPopup = { ...next, durationMs };
+function releaseNextSpellPopup(): void {
+  if (spellReleaseTimer !== undefined) return;
+  const popup = spellPopupQueue.shift();
+  if (!popup) return;
+  spellPopups.push(popup);
+  spellPopupTimers.set(
+    popup.id,
+    window.setTimeout(() => dropSpellPopup(popup.id), SPELL_POPUP_TTL),
+  );
   renderSpellPopups();
-  spellPopupTimer = window.setTimeout(() => {
-    activeSpellPopup = null;
-    spellPopupTimer = undefined;
-    renderSpellPopups();
-    pumpSpellPopups();
-  }, durationMs);
+  spellReleaseTimer = window.setTimeout(() => {
+    spellReleaseTimer = undefined;
+    releaseNextSpellPopup();
+  }, POPUP_GAP_MS);
+}
+
+function dropSpellPopup(id: number): void {
+  const timer = spellPopupTimers.get(id);
+  if (timer) window.clearTimeout(timer);
+  spellPopupTimers.delete(id);
+  spellPopups = spellPopups.filter((popup) => popup.id !== id);
+  renderSpellPopups();
 }
 
 function renderSpellPopups(): void {
-  spellRoot.innerHTML = activeSpellPopup
-    ? `<div class="spell-popup-stack">
-      <div class="spell-popup ${activeSpellPopup.auto ? 'auto' : ''}" style="--popup-ms:${activeSpellPopup.durationMs ?? POPUP_GAP_MS}ms">
-        <span class="spell-popup-icon" aria-hidden="true">${activeSpellPopup.icon}</span>
-        <span class="spell-popup-name">${escapeHtml(activeSpellPopup.name)}</span>
-        <span class="spell-popup-tag">${activeSpellPopup.auto ? 'AUTOCAST' : 'CAST'}</span>
-      </div>
-    </div>`
-    : '';
+  spellRoot.innerHTML = spellPopups.length === 0
+    ? ''
+    : `<div class="spell-popup-stack">${spellPopups.map((popup) => `
+      <div class="spell-popup ${popup.auto ? 'auto' : ''}">
+        <span class="spell-popup-icon" aria-hidden="true">${popup.icon}</span>
+        <span class="spell-popup-name">${escapeHtml(popup.name)}</span>
+        <span class="spell-popup-tag">${popup.auto ? 'AUTOCAST' : 'CAST'}</span>
+      </div>`).join('')}</div>`;
 }
 
 // The Immunity banner lives outside the main render tree so its timer drain is
@@ -320,10 +330,12 @@ function clearProcFeed(): void {
 }
 
 function clearSpellPopups(): void {
-  if (spellPopupTimer) window.clearTimeout(spellPopupTimer);
-  spellPopupTimer = undefined;
-  activeSpellPopup = null;
+  if (spellReleaseTimer) window.clearTimeout(spellReleaseTimer);
+  for (const timer of spellPopupTimers.values()) window.clearTimeout(timer);
+  spellReleaseTimer = undefined;
+  spellPopupTimers.clear();
   spellPopupQueue = [];
+  spellPopups = [];
   renderSpellPopups();
 }
 
