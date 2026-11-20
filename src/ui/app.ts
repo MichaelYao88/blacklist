@@ -130,6 +130,12 @@ immunityRoot.id = 'immunity-root';
 document.body.appendChild(immunityRoot);
 let immunityActive = false;
 
+const openingRoot = document.createElement('div');
+openingRoot.id = 'opening-root';
+document.body.appendChild(openingRoot);
+let openingActive = false;
+let openingTotalMs = 0;
+
 const host = new CoreHost({ core: game, store: new LocalStore() });
 
 type Screen = 'title' | 'run' | 'help' | 'stats';
@@ -1052,6 +1058,7 @@ function render(): void {
   }
 
   renderImmunity(screen === 'run' ? view : null);
+  renderOpeningShield(screen === 'run' ? view : null);
 }
 
 function renderImmunity(view: RunView | null): void {
@@ -1080,6 +1087,52 @@ function renderImmunity(view: RunView | null): void {
   const ratio = Math.max(0, Math.min(1, left / 4_000));
   bar.style.width = `${(ratio * 100).toFixed(1)}%`;
   bar.style.opacity = `${(0.35 + ratio * 0.65).toFixed(2)}`;
+}
+
+function renderOpeningShield(view: RunView | null): void {
+  if (!view || view.phase.kind !== 'round') {
+    if (openingActive) {
+      openingRoot.innerHTML = '';
+      openingActive = false;
+      openingTotalMs = 0;
+    }
+    return;
+  }
+  const left = view.phase.board.shieldMsLeft;
+  if (left <= 0) {
+    if (openingActive) {
+      openingRoot.innerHTML = '';
+      openingActive = false;
+      openingTotalMs = 0;
+    }
+    return;
+  }
+
+  const quickdraw = view.items.some((item) => item.id === 'quickdraw' && item.equipped);
+  const headStart = view.items.some((item) => item.id === 'head-start' && item.equipped);
+  const total = quickdraw ? 12_000 : headStart ? 7_000 : Math.max(1_000, left);
+  const label = quickdraw ? 'Quickdraw!' : headStart ? 'Head Start!' : 'Opening Shield!';
+
+  if (!openingActive || total !== openingTotalMs) {
+    openingRoot.innerHTML = `
+    <div class="immunity-banner opening-banner" role="status" aria-live="polite">
+      <span class="immunity-shield" aria-hidden="true">⚡</span>
+      <span class="immunity-word">${label}</span>
+      <span class="opening-seconds" aria-hidden="true">${Math.ceil(left / 1_000)}s</span>
+      <span class="immunity-timer" aria-hidden="true"><i></i></span>
+    </div>`;
+    openingActive = true;
+    openingTotalMs = total;
+  }
+
+  const ratio = Math.max(0, Math.min(1, left / openingTotalMs));
+  const bar = openingRoot.querySelector<HTMLElement>('.opening-banner .immunity-timer i');
+  if (bar) {
+    bar.style.width = `${(ratio * 100).toFixed(1)}%`;
+    bar.style.opacity = `${(0.35 + ratio * 0.65).toFixed(2)}`;
+  }
+  const seconds = openingRoot.querySelector<HTMLElement>('.opening-seconds');
+  if (seconds) seconds.textContent = `${Math.ceil(left / 1_000)}s`;
 }
 
 function noticeHtml(): string {

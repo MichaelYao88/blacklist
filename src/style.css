@@ -3133,6 +3133,10 @@ button {
     animation: none;
   }
 
+  .opening-banner {
+    animation: none;
+  }
+
   .immunity-timer i {
     transition: none;
   }
@@ -3775,6 +3779,15 @@ button {
   pointer-events: none;
 }
 
+#opening-root {
+  position: fixed;
+  top: 134px;
+  left: 50%;
+  z-index: 54;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
 .immunity-banner {
   position: relative;
   display: flex;
@@ -3820,6 +3833,30 @@ button {
   border-radius: inherit;
   background: linear-gradient(90deg, #64c8ff, #dcf4ff);
   transition: width 1s linear, opacity 1s linear;
+}
+
+.opening-banner {
+  border-color: rgba(231, 184, 90, 0.6);
+  background: rgba(26, 18, 8, 0.9);
+  color: #fff0c6;
+}
+
+.opening-banner .immunity-word {
+  text-shadow: 0 0 12px rgba(231, 184, 90, 0.6);
+}
+
+.opening-banner .immunity-timer i {
+  background: linear-gradient(90deg, #e7b85a, #fff0c6);
+}
+
+.opening-seconds {
+  min-width: 2.4em;
+  color: var(--gold);
+  font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-align: right;
 }
 
 @keyframes immunity-pop {
@@ -4164,6 +4201,10 @@ button {
 @media (max-width: 620px) {
   #immunity-root {
     top: 118px;
+  }
+
+  #opening-root {
+    top: 174px;
   }
 
   .shell {
