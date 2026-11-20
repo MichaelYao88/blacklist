@@ -207,6 +207,8 @@ export interface CurseDef {
   shopPriceAdd?: number;
   freeGuessDelta?: number;
   armorRefillMult?: number;
+  /** Fraction of each hit that bypasses armor even when armor remains. */
+  armorPierce?: number;
   /** Multiplies max armor when this curse is gained. */
   maxArmorMult?: number;
   healMult?: number;
@@ -685,6 +687,7 @@ export type PhaseView =
       result: 'victory' | 'defeat';
       answer?: string;
       answers?: string[];
+      equippedItems?: string[];
       stats: RunStats;
     };
 

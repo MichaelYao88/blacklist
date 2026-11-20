@@ -13,6 +13,7 @@ export interface RunRecord {
   act: number;
   curses: string[];
   items: string[];
+  equippedItems: string[];
   goldEarned: number;
   damageTaken: number;
   rounds: number;
@@ -106,7 +107,14 @@ export function readMeta(): Meta {
       // stats page has something meaningful before the next run finishes.
       bestLevel: Number(parsed.bestLevel) || (Number(parsed.bestAct) || 0) * 10,
       ascension: Math.max(0, Math.min(ASCENSION_MAX, Number(parsed.ascension) || 0)),
-      history: Array.isArray(parsed.history) ? parsed.history.slice(0, HISTORY_LIMIT) : [],
+      history: Array.isArray(parsed.history)
+        ? parsed.history.map((run) => ({
+            ...run,
+            equippedItems: Array.isArray(run.equippedItems)
+              ? run.equippedItems
+              : Array.isArray(run.items) ? run.items : [],
+          })).slice(0, HISTORY_LIMIT)
+        : [],
       itemCounts: parsed.itemCounts && typeof parsed.itemCounts === 'object'
         ? { ...parsed.itemCounts }
         : {},
@@ -147,6 +155,7 @@ export interface RunRecordInput {
   ascension: number;
   curses: string[];
   items: string[];
+  equippedItems: string[];
   stats: RunStats;
 }
 
@@ -162,7 +171,7 @@ export function recordRun(input: RunRecordInput): void {
   for (const id of input.curses) {
     meta.curseCounts[id] = (meta.curseCounts[id] ?? 0) + 1;
   }
-  for (const id of input.items) {
+  for (const id of input.equippedItems) {
     meta.itemCounts[id] = (meta.itemCounts[id] ?? 0) + 1;
   }
 
@@ -181,6 +190,7 @@ export function recordRun(input: RunRecordInput): void {
     act: input.act,
     curses: input.curses.slice(),
     items: input.items.slice(),
+    equippedItems: input.equippedItems.slice(),
     goldEarned: input.stats.goldEarned,
     damageTaken: input.stats.damageTaken,
     rounds: input.stats.rounds,

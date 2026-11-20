@@ -28,7 +28,8 @@ describe('run history store', () => {
       act: 4,
       ascension: 0,
       curses: ['clock', 'censor'],
-      items: ['hourglass', 'tally-lens'],
+      items: ['hourglass', 'tally-lens', 'bloom'],
+      equippedItems: ['hourglass', 'tally-lens'],
       stats: stats(),
     });
     recordStart();
@@ -39,6 +40,7 @@ describe('run history store', () => {
       ascension: 1,
       curses: ['clock'],
       items: ['hourglass'],
+      equippedItems: ['hourglass'],
       stats: stats({ rounds: 5, guesses: 20, solves: 4, solveMs: 80_000, playMs: 120_000 }),
     });
 
@@ -57,6 +59,7 @@ describe('run history store', () => {
     expect(meta.history[0].result).toBe('defeat');
     expect(meta.history[1].result).toBe('victory');
     expect(meta.history[1].curses).toEqual(['clock', 'censor']);
+    expect(meta.history[1].equippedItems).toEqual(['hourglass', 'tally-lens']);
   });
 
   it('keeps only the newest 50 runs', () => {
@@ -69,6 +72,7 @@ describe('run history store', () => {
         ascension: 0,
         curses: [],
         items: [],
+        equippedItems: [],
         stats: stats(),
       });
     }
@@ -76,6 +80,30 @@ describe('run history store', () => {
     expect(meta.runs).toBe(55);
     expect(meta.history).toHaveLength(50);
     expect(meta.history[0].level).toBe(55);
+  });
+
+  it('backfills equipped items for old history rows', () => {
+    localStorage.setItem(
+      'blacklist.meta.v1',
+      JSON.stringify({
+        history: [{
+          at: 1,
+          result: 'defeat',
+          level: 4,
+          act: 0,
+          curses: [],
+          items: ['hourglass'],
+          goldEarned: 1,
+          damageTaken: 1,
+          rounds: 1,
+          guesses: 1,
+          solves: 0,
+          solveMs: 0,
+          playMs: 1000,
+        }],
+      }),
+    );
+    expect(readMeta().history[0].equippedItems).toEqual(['hourglass']);
   });
 
   it('migrates legacy meta without history or level tracking', () => {

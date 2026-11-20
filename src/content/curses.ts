@@ -257,6 +257,16 @@ export const CURSES: CurseDef[] = [
     armorRefillMult: 0.5,
   }),
   defineCurse({
+    id: 'piercing',
+    name: 'Piercing',
+    description: 'Armor blocks at most half of each hit.',
+    rules: ['Half of every hit bypasses armor, even while armor remains.'],
+    art: 'gauntlet',
+    tags: ['body', 'damage'],
+    maxStacks: 1,
+    armorPierce: 0.5,
+  }),
+  defineCurse({
     id: 'naked',
     name: 'The Naked Curse',
     description: 'Lose half of your max armor.',

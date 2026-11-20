@@ -661,17 +661,16 @@ export function createCore(content: Content): Core {
     if (shop && state.phase === 'shop') {
       shop.foodsEaten = (shop.foodsEaten ?? 0) + 1;
       if (state.muffinShopVisit === shop.visit) {
-        if (def.id === 'muffin-tin') {
-          state.muffinStacks = (state.muffinStacks ?? 0) + 1;
-        }
         const stacks = state.muffinStacks ?? 0;
         if (stacks > 0) changeMaxArmor(rt, stacks);
+        if (def.id === 'muffin-tin') state.muffinStacks = stacks + 1;
       }
     } else if (def.id === 'muffin-tin') {
-      // Eaten outside a shop: its own armor applies now and the stack waits
-      // for the next shop, where it counts food until that shop is left.
-      state.pendingMuffinStacks = (state.pendingMuffinStacks ?? 0) + 1;
-      changeMaxArmor(rt, state.pendingMuffinStacks);
+      // Eaten outside a shop: a tin never pays for itself, but existing tins
+      // still pay now and the new stack waits for the next shop.
+      const stacks = state.pendingMuffinStacks ?? 0;
+      if (stacks > 0) changeMaxArmor(rt, stacks);
+      state.pendingMuffinStacks = stacks + 1;
     }
     runHook(rt, 'onEat', { food: def.id });
   }
@@ -751,9 +750,16 @@ export function createCore(content: Content): Core {
 
     // Armor is a pool of damage reduction, not an all-or-nothing charge:
     // each point soaks one point of the hit before HP is touched.
-    const armorUsed = round && !options.ignoreArmor
+    const armorPierce = curseDefs(state).reduce(
+      (highest, entry) => Math.max(highest, entry.def.armorPierce ?? 0),
+      0,
+    );
+    let armorUsed = round && !options.ignoreArmor
       ? Math.min(state.armor, modified)
       : 0;
+    if (armorPierce > 0) {
+      armorUsed = Math.min(armorUsed, Math.floor(modified * (1 - armorPierce)));
+    }
     if (armorUsed > 0) {
       state.armor -= armorUsed;
       emit(rt, { type: 'armorChanged', armor: state.armor, max: state.maxArmor });
@@ -1613,23 +1619,44 @@ export function createCore(content: Content): Core {
         return true;
       });
 
+    const pick = (candidates: string[]): string => {
+      const answer = rngPick(state, candidates);
+      state.usedAnswers.push(answer);
+      return answer;
+    };
+
     for (const pool of pools) {
       let candidates = clean(pool, true);
       if (candidates.length === 0) {
+        // Used answers can run out; the blacklist and purged letters cannot be
+        // relaxed. Start the used-answer cycle over before ever selecting a
+        // blacklisted word.
+        state.usedAnswers = [];
         candidates = pool.filter(
           (word) =>
-            !state.usedAnswers.includes(word) &&
+            !state.blacklist.includes(word) &&
             !word.split('').some((ch) => state.purged.includes(ch)),
         );
       }
-      if (candidates.length === 0) {
-        candidates = pool.filter((word) => !word.split('').some((ch) => state.purged.includes(ch)));
+      if (candidates.length > 0) return pick(candidates);
+    }
+
+    // Extremely late runs can have every legal word blacklisted. Release one
+    // legal word rather than using a blacklisted target.
+    const legal = content.answers.filter(
+      (word) => !word.split('').some((ch) => state.purged.includes(ch)),
+    );
+    if (legal.length > 0) {
+      const answer = rngPick(state, legal);
+      if (state.blacklist.includes(answer)) {
+        state.blacklist = state.blacklist.filter((word) => word !== answer);
+        emit(rt, {
+          type: 'message',
+          text: `The List releases ${answer.toUpperCase()} so the round can begin.`,
+        });
       }
-      if (candidates.length > 0) {
-        const answer = rngPick(state, candidates);
-        state.usedAnswers.push(answer);
-        return answer;
-      }
+      state.usedAnswers.push(answer);
+      return answer;
     }
 
     const fallback = rngPick(state, content.answers);
@@ -1816,13 +1843,18 @@ export function createCore(content: Content): Core {
     // add on top.
     let baseGold = 0;
     if (outcome === 'solved') {
-      const rolled = round.totalGuesses <= 1
+      // Auto-guesses are free information and should not downgrade the reward.
+      const rewardGuesses = Math.max(
+        1,
+        round.totalGuesses - round.guesses.filter((guess) => guess.by === 'friend').length,
+      );
+      const rolled = rewardGuesses <= 1
         ? 8
-        : round.totalGuesses === 2
+        : rewardGuesses === 2
           ? 7
-          : round.totalGuesses === 3
+          : rewardGuesses === 3
             ? 6
-            : round.totalGuesses === 4
+            : rewardGuesses === 4
               ? 5
               : 4;
       baseGold = rolled + state.bonusSolveGold;
@@ -3284,6 +3316,9 @@ export function createCore(content: Content): Core {
           result: state.over?.result ?? 'defeat',
           answer: state.over?.answer,
           answers: state.over?.answers ? state.over.answers.slice() : undefined,
+          equippedItems: state.items
+            .filter((item) => item.equipped !== false)
+            .map((item) => item.id),
           stats: statsCopy(state),
         };
         break;

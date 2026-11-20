@@ -395,6 +395,9 @@ function processEvents(events: GameEvent[]): void {
         ascension: view?.ascension ?? 0,
         curses: finalState?.curses.map((curse) => curse.id) ?? [],
         items: finalState?.items.map((item) => item.id) ?? [],
+        equippedItems: finalState?.items
+          .filter((item) => item.equipped !== false)
+          .map((item) => item.id) ?? [],
         stats: event.stats,
       });
       notify(
@@ -1097,7 +1100,7 @@ function renderStats(): string {
       </section>
 
       <section class="stats-panel">
-        <p class="panel-kicker">FAVORITE ITEMS</p>
+        <p class="panel-kicker">MOST EQUIPPED</p>
         ${favorites.length
           ? `<ol class="favorite-list">${favorites.map(([id, count]) => `<li><span>${escapeHtml(ITEM_BY_ID.get(id)?.name ?? id)}</span><b>${count}</b></li>`).join('')}</ol>`
           : `<p class="empty-note">No completed runs yet.</p>`}
@@ -1117,10 +1120,16 @@ function renderStats(): string {
         ? `<div class="history-list">${history.map((run) => {
           const result = run.result === 'victory' ? 'WIN' : 'LOSS';
           const solve = run.solves > 0 ? formatTime(run.solveMs / run.solves) : '—';
+          const equipped = (run.equippedItems ?? run.items)
+            .map((id) => ITEM_BY_ID.get(id)?.name ?? id);
+          const equippedLabel = equipped.length > 0
+            ? equipped.join(', ')
+            : 'nothing equipped';
           return `<article class="history-row ${run.result}">
             <span class="history-result">${result}</span>
             <b>Level ${run.level}</b>
             <span>${run.curses.length} curse${run.curses.length === 1 ? '' : 's'} · ${run.items.length} item${run.items.length === 1 ? '' : 's'}</span>
+            <span class="history-equipment" title="${escapeHtml(equippedLabel)}">Equipped: ${escapeHtml(equippedLabel)}</span>
             <span>${run.rounds} rounds · ${solve} avg solve</span>
             <span>+${run.goldEarned} gold · ${run.damageTaken} damage</span>
             <time>${new Date(run.at).toLocaleDateString()}</time>
@@ -1874,6 +1883,8 @@ function renderOver(phase: Extract<PhaseView, { kind: 'over' }>): string {
         ${missed || `<b>${escapeHtml(phase.answer.toUpperCase())}</b>`}
       </div>`
     : '';
+  const equipped = (phase.equippedItems ?? [])
+    .map((id) => ITEM_BY_ID.get(id)?.name ?? id);
   const deathElapsed = playerDeathStartedAt === null ? DEATH_MS : performance.now() - playerDeathStartedAt;
   const deathDelay = -Math.max(0, Math.min(deathElapsed, DEATH_MS));
   const defeatFighter = victory
@@ -1899,6 +1910,10 @@ function renderOver(phase: Extract<PhaseView, { kind: 'over' }>): string {
       <div><b>${stats.damageTaken}</b><span>damage taken</span></div>
       <div><b>${stats.timeouts}</b><span>timeouts</span></div>
     </div>
+    ${equipped.length > 0 ? `<div class="over-loadout">
+      <span class="over-answer-label">EQUIPPED AT THE END</span>
+      <div>${equipped.map((name) => `<span>${escapeHtml(name)}</span>`).join('')}</div>
+    </div>` : ''}
     <div class="over-actions">
       <button class="btn primary big" data-action="new-run">NEW RUN</button>
       <button class="btn ghost big" data-action="stats">STATS</button>

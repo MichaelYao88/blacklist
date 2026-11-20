@@ -338,17 +338,6 @@ export const ITEMS: ItemDef[] = [
     },
   }),
   defineItem({
-    id: 'bottomless',
-    name: 'Bottomless',
-    description: 'Equipped: +4 max armor. Eating food: 20% chance of +1 max armor.',
-    price: 12,
-    kind: 'gear',
-    equipMaxArmor: 4,
-    on: {
-      onEat: () => [{ type: 'maxArmor', delta: 1, chancePct: 20 }],
-    },
-  }),
-  defineItem({
     id: 'spellbook',
     name: 'Spellbook',
     description: 'Spell cast: +1 gold. The bonus increases by 1 after every spell cast.',
@@ -1404,7 +1393,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'clean-slate',
     name: 'Clean Slate',
-    description: 'Once per round: a guess sharing no letters with the previous guess: +1 max armor.',
+    description: 'Once per round: a guess sharing no letters with the previous guess: +1 max HP or +1 max armor at random.',
     price: 9,
     kind: 'gear',
     initial: { used: 0 },
@@ -1414,7 +1403,13 @@ export const ITEMS: ItemDef[] = [
         if (ctx.self.data.used || !p.previous) return [];
         if (sharedLetters(p.guess.word, p.previous.word) > 0) return [];
         return [
-          { type: 'maxArmor', delta: 1 },
+          {
+            type: 'randomChoice',
+            options: [
+              [{ type: 'maxHp', delta: 1 }],
+              [{ type: 'maxArmor', delta: 1 }],
+            ],
+          },
           { type: 'setItemData', stat: 'used', value: 1 },
         ];
       },
@@ -1589,7 +1584,7 @@ export const ITEMS: ItemDef[] = [
     id: 'acquired-taste',
     name: 'Acquired Taste',
     description: 'Each different food you eat this run: +4 max HP.',
-    price: 11,
+    price: 7,
     kind: 'gear',
     rarity: 'uncommon',
     initial: { _mask: 0, tasted: 0 },

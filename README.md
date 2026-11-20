@@ -26,7 +26,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - The Clockmaker event only appears once The Clock exists
 - **Phone a Friend** delivers a one- or two-word catchphrase, quietly adds 5 seconds, and spams his words across the screen; the **Pizza Pzazz** set shows a pizza/sparkle callout instead of the word spam
 - **Time Freeze** gives a free, unobscured guess that does not count towards solve-count items (Hat Trick, Bloom, Shortcut, etc.); Time Freeze and Immunity lock until your next guess
-- Within-X solve items count **player guesses only**; solve gold still uses total guesses
+- Within-X solve items count **player guesses only**; solve gold ignores auto-guesses but still counts free player guesses
 - Curse Collector, Curse Bulwark and Reliquary trigger on gaining a curse ("Whenever you gain a curse: Gain …")
 - Ascension A1/A2 draft 1/2 starting curses
 - Shops with rerolls that start at 1g and double in price: three items, two foods and one wildcard; one item is always 50% off
@@ -44,18 +44,17 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Rarity rolls are quality floors, not exclusive tiers: 40% rare floor pulls from the entire pool, 30% uncommon floor pulls from uncommon + common, and 30% common floor pulls from common only. A missing floor falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 106 items (97 shop items + 9 rare relics), 6 spells, 82 foods and 25 happenings
+- 105 items (96 shop items + 9 rare relics), 6 spells, 81 foods and 25 happenings
 - New foods include **U-nagi**, **Empty Calories**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
 - **Field Kit** reveals exactly 4 letters that are not in the word; **Doggy Bag** reveals 2 and queues another after every food
-- Letter foods cover B, C, D, E, F, G, H, I, J, K, L, O, P, Q, T, U, W, X, and Y+N; each is unique and stops appearing once all its letters are permanently revealed
+- Letter foods cover B, C, D, E, F, G, H, I, J, K, L, O, P, Q, T, U, W, X, and Y+N; each is unique and stops appearing once all its letters are permanently revealed. E-Fu, I-Cee, O-Toro, T-Bone, P-Stachio and L-Bacore Tuna are rare; the rest are uncommon
 - New solve rewards: **Brace** (+2 max armor), **Bloom** (+5 max HP, +1 per trigger), **Patch Kit** (heal 30% of max HP +1)
 - **Four-Leaf Clover** has a 20% chance of a random spell when you eat or cast
-- **Bottomless** grants +4 max armor while equipped and loses it when unequipped; eating food has a 20% chance of +1 max armor
 - **Nest Egg** pays 3 gold whenever a shop opens
 - **Frozen Durian** grants +1 Time Freeze every 4 foods eaten
-- **Muffin Tin** is a 2g food: in that shop, each food eaten gives +1 max armor per Muffin Tin eaten, including itself; the armor is permanent and the counting stops when you leave
+- **Muffin Tin** is a 2g uncommon food: in that shop, each food eaten gives +1 max armor per Muffin Tin eaten, but a tin does not count itself; the armor is permanent and the counting stops when you leave
 - **Chilaquiles** is a 2g food that doubles the next two sales
 - **Spell Pepper** is a 3g food that doubles your next spell
 - Every shop node offers a choice: visit the shop, or rest at the inn to heal to full HP and move on
@@ -69,7 +68,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Panacea Pouch** (formerly Spellhoarder) is a 9g item: every 3rd spell cast casts Heal
 - **Vowel Tithe** is an 8g item: each spell cast has a 25% chance to cast Omen
 - **Wild Magic** is a 9g item: each spell cast has a 25% chance to cast a random spell and a 25% chance to autoguess a random word
-- **Acquired Taste** is an 11g uncommon item: each different food you eat this run gives +4 max HP
+- **Acquired Taste** is a 7g uncommon item: each different food you eat this run gives +4 max HP
 - Item triggers show a compact proc pop-up with the actual result (for example **Yellow1** calling an autoguess or **Grey Market** paying gold); once-per-round items show **SPENT** after they fire
 - The revealed-letter panel persists between screens; in shops it is labelled **REVEALED**
 - On desktop the item list sits under the battle rail on the left; on mobile it stays at the bottom of the sidebar
@@ -84,10 +83,10 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Pen Club** pays a random 1-5 gold for guesses starting with PEN; **Gourmand** gains +1 max HP on eat or spell cast
 - **Old McDonald's** is a 15g unique food: EIEIO is guessed for free at the start of every round
 - Shops can show up to 2 copies of the same entry; sell rows are hoverable
-- Solve gold is 8/7/6/5/4 for solves in 1/2/3/4/5+ guesses
+- Solve gold is 8/7/6/5/4 for solves in 1/2/3/4/5+ player guesses; auto-guesses do not lower it
 - **The Endless Table** fires every on-eat effect 7 times or pays 7 gold
 - **Tally Lens** is a 12g uncommon item with a 3× appearance weight while a vision curse is active; it is no longer guaranteed in a shop and shows correct/misplaced counts. **Tally** is never offered while you already own one
-- **Encore** is unique and appears three times as often as an average common item; **Poppy Seeds** gets the same appearance boost
+- **Encore** is unique and appears three times as often as an average common item; **Poppy Seeds** is a normal uncommon food
 - **Fortune Cookie** is a 1g food with a hidden 5× appearance weight: it queues one autoguess for the next round
 - **Oracle's Banquet** is an 18g rare unique food: it permanently autoguesses at the start of every round
 - **Tally** counts every guess, including ally and autoguesses
@@ -96,8 +95,15 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Second Skin** is a 9g uncommon item: the first time armor hits 0 each round, restore half your max armor
 - **Moon Cake** is a 16g rare unique food: autocast Omen at the start of every round
 - **Empty Orb** is a 7g item that autocasts Omen when a round starts with no spells; **Empty Phone** is the 9g Phone a Friend version
+- **Enoki** is a 4g food: +3 max HP and one autoguess next round
+- **Packed Lunch** is a 3g food: +3 max armor and +7 max HP
+- **Iron Ration** is an 8g rare food: +2 max armor. **One Bo Hue** and **Plating** are uncommon; **Taco Pizza Party** is rare
+- **Clean Slate** gives +1 max HP or +1 max armor at random when its condition triggers, once per round
+- **Double Dip** is Kase's new name; it keeps the +1 max armor and queued-answer effect
+- **The Naked Curse** halves max armor; **Piercing** makes half of every hit bypass armor even while armor remains; curse drafts offer two choices
+- Blacklisted words are never chosen as round targets; if a late run runs out of legal targets, the List releases one
+- The run-over screen and run history record the items you had equipped, and the stats page shows them per run
 - Random guesses pull from a 201-word pool chosen for non-native speakers, including **wharf**; **Dark Echo** avoids letters from your first guess
-- **The Naked Curse** halves your max armor; curse drafts now offer two choices
 - Every spell cast plays an animated pop-up, including item autocasts
 - **Cyrniki** is a 3g food: heal 50% of missing HP, then 50% a spell / 50% a shop reroll
 - **The Tax** reduces encounter gold by 40% and is unique; **The Sleeper** adds +2 damage per revealed letter in your first player guess, per stack; **The Curse Broker** charges 12g for a relic or 15g to remove a random curse; **The Confessional** sells 45/75/100% random curse removal for 5/10/15g
@@ -183,7 +189,7 @@ The Runner (Soldier) and Orc sprites are from **Tiny RPG Character Asset Pack 01
 | Final boss damage | 3 base plus curses |
 | Timeout damage | `10 + 2 × curse stacks`, bypasses armor, ends the round |
 | Armor | a pool that soaks damage point-for-point before HP; refills each round |
-| Solve gold | `8/7/6/5/4` for solves in 1/2/3/4/5+ guesses, plus `solveGoldBonus` (Midas Touch can double any gain) |
+| Solve gold | `8/7/6/5/4` for solves in 1/2/3/4/5+ player guesses (auto-guesses excluded), plus `solveGoldBonus` (Midas Touch can double any gain) |
 | Timeout gold | `1`; a death pays nothing |
 | Solve reward | a flat 5 gold plus a spell (65%) or food (35%); gear is an 8% find |
 | Relic source | rare-tier shop/reward finds and the Curse Broker; owned relics never appear again |
