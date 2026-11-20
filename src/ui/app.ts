@@ -272,6 +272,7 @@ const DEATH_MS = 700;
 const KILL_MS = 560;
 const spritesStartedAt = performance.now();
 let countdownUntil = 0;
+let setupPurge = false;
 const COUNTDOWN_MS = 2_400;
 let selectedAscension = 0;
 let selectedCharacter = 'runner';
@@ -663,6 +664,11 @@ function processEvents(events: GameEvent[]): void {
       notify(`Puzzle ${event.index}/${event.total} solved`, 'good');
       sfx.play('solve');
     }
+    if (event.type === 'letterPurged' && setupPurge && (host.view()?.pendingPurge ?? 0) === 0) {
+      setupPurge = false;
+      countdownUntil = performance.now() + COUNTDOWN_MS;
+      heartbeatSecond = -1;
+    }
     if (event.type === 'roundStarted') {
       countdownUntil = performance.now() + COUNTDOWN_MS;
       heartbeatSecond = -1;
@@ -793,6 +799,11 @@ function startNewRun(): void {
   clearChronicle();
   heartbeatSecond = -1;
   processEvents(events);
+  setupPurge = (host.view()?.pendingPurge ?? 0) > 0;
+  if (setupPurge) {
+    countdownUntil = 0;
+    heartbeatSecond = -1;
+  }
   lastTick = performance.now();
   render();
 }
@@ -831,6 +842,7 @@ function resumeRun(): void {
   clearChronicle();
   logChronicle('info', 'Run resumed');
   heartbeatSecond = -1;
+  setupPurge = (resumedView?.pendingPurge ?? 0) > 0;
   countdownUntil = 0;
   music.resume();
   lastTick = performance.now();
