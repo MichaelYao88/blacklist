@@ -236,7 +236,7 @@ export interface Offer {
   kind: OfferKind;
   def: string;
   price: number;
-  /** A shop sale marks one item down by half. */
+  /** One random shop offer is marked down by half, whatever its kind. */
   sale?: boolean;
   originalPrice?: number;
 }
@@ -269,6 +269,8 @@ export interface HappeningOptionView {
   chancePct?: number;
   /** Spell the merchant requires before this trade can be taken. */
   requiresSpell?: SpellId;
+  /** Trade consumes one random spell from the player's list. */
+  requiresAnySpell?: boolean;
   /** True when the required spell is not in the player's spell list. */
   locked?: boolean;
   outcomes: HappeningOutcomeView[];
@@ -322,6 +324,7 @@ export type Effect =
   | { type: 'randomChoice'; options: Effect[][] }
   | { type: 'giveSpell'; spell: SpellId | 'random'; chancePct?: number }
   | { type: 'removeSpell'; spell: SpellId }
+  | { type: 'removeRandomSpell' }
   | { type: 'castSpell'; spell: SpellId | 'random'; chancePct?: number }
   | { type: 'randomGuesses'; count: number; chancePct?: number; excludeLetters?: string }
   | { type: 'queueRandomGuesses'; count: number }

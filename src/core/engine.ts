@@ -1125,6 +1125,14 @@ export function createCore(content: Content): Core {
         emit(rt, { type: 'message', text: `${name} changes hands.` });
         break;
       }
+      case 'removeRandomSpell': {
+        if (state.spells.length === 0) break;
+        const index = rngInt(state, state.spells.length);
+        const [spell] = state.spells.splice(index, 1);
+        const name = spellById.get(spell.id)?.name ?? spell.id;
+        emit(rt, { type: 'message', text: `${name} changes hands.` });
+        break;
+      }
       case 'giveMissingSpells': {
         const owned = new Set(state.spells.map((spell) => spell.id));
         for (const spell of content.spells) {
@@ -2518,16 +2526,6 @@ export function createCore(content: Content): Core {
     for (let index = 0; index < itemTarget; index++) {
       pickRandomItem();
     }
-    if (picked.length > 0) {
-      const saleIndex = rngInt(state, picked.length);
-      const sale = picked[saleIndex];
-      if (sale.kind === 'item') {
-        const original = sale.price;
-        sale.price = Math.max(1, Math.floor(original / 2));
-        sale.sale = true;
-        sale.originalPrice = original;
-      }
-    }
     for (let index = 0; index < foodTarget; index++) pickRandomFood();
 
     const categories = ['spell', 'eat'] as const;
@@ -2536,6 +2534,16 @@ export function createCore(content: Content): Core {
       if (content.spells.length > 0) pickSpell(rngPick(state, content.spells));
     } else {
       pickRandomFood();
+    }
+
+    // One random offer is half price. It can land on an item, a food, or the
+    // wildcard spell, so sales are not limited to the item row.
+    if (picked.length > 0) {
+      const sale = picked[rngInt(state, picked.length)];
+      const original = sale.price;
+      sale.price = Math.max(1, Math.floor(original / 2));
+      sale.sale = true;
+      sale.originalPrice = original;
     }
 
     return picked.map((pick, index) => ({
@@ -2760,6 +2768,46 @@ export function createCore(content: Content): Core {
       const leave = baseOptions.find((option) => option.id === 'leave');
       options = [...letterOptions, ...(leave ? [leave] : [])];
     }
+    if (def.id === 'spell-tithe') {
+      const knowPool = ALPHABET.filter(
+        (letter) => !state.purged.includes(letter) && !state.permanentReveals.includes(letter),
+      );
+      const purgePool = ALPHABET.filter((letter) => !state.purged.includes(letter));
+      const knowLetter = knowPool.length > 0 ? rngPick(state, knowPool) : undefined;
+      const purgeLetter = purgePool.length > 0 ? rngPick(state, purgePool) : undefined;
+      const canTrade = state.spells.length > 0;
+      const trades: HappeningOptionView[] = [];
+      if (knowLetter) {
+        trades.push({
+          id: `know-${knowLetter}`,
+          label: `Know ${knowLetter.toUpperCase()}`,
+          description: `Lose a random spell. Permanently reveal ${knowLetter.toUpperCase()} in every round.`,
+          requiresAnySpell: true,
+          locked: !canTrade,
+          chancePct: 100,
+          outcomes: [{
+            chancePct: 100,
+            text: `${knowLetter.toUpperCase()} is written into your book for good.`,
+          }],
+        });
+      }
+      if (purgeLetter) {
+        trades.push({
+          id: `purge-${purgeLetter}`,
+          label: `Purge ${purgeLetter.toUpperCase()}`,
+          description: `Lose a random spell. Permanently purge ${purgeLetter.toUpperCase()} from future answers.`,
+          requiresAnySpell: true,
+          locked: !canTrade,
+          chancePct: 100,
+          outcomes: [{
+            chancePct: 100,
+            text: `${purgeLetter.toUpperCase()} is struck from every future answer.`,
+          }],
+        });
+      }
+      const leave = baseOptions.find((option) => option.id === 'leave');
+      options = [...trades, ...(leave ? [leave] : [])];
+    }
     state.happening = {
       id: def.id,
       options,
@@ -2790,6 +2838,50 @@ export function createCore(content: Content): Core {
     if (!happening || state.phase !== 'happening' || happening.resolved) return;
     const def = happeningById.get(happening.id);
     if (!def) return;
+    const tithe = def.id === 'spell-tithe' && /^(know|purge)-([a-z])$/.exec(optionId);
+    if (tithe) {
+      if (!happening.options.some((option) => option.id === optionId)) return;
+      if (state.spells.length === 0) {
+        emit(rt, { type: 'message', text: 'You have no spell to trade.' });
+        return;
+      }
+      const kind = tithe[1];
+      const letter = tithe[2] as Letter;
+      if (kind === 'purge' && !purgeLetterNow(rt, letter)) {
+        const text = `${letter.toUpperCase()} could not be purged.`;
+        happening.resolved = { option: optionId, success: false, text };
+        emit(rt, {
+          type: 'happeningResolved',
+          happening: def.id,
+          option: optionId,
+          success: false,
+          text,
+        });
+        return;
+      }
+      applyEffects(
+        rt,
+        [
+          { type: 'removeRandomSpell' },
+          ...(kind === 'know'
+            ? [{ type: 'revealLetter' as const, letter }]
+            : []),
+        ],
+        { kind: 'happening', happening: def.id },
+      );
+      const text = kind === 'know'
+        ? `${letter.toUpperCase()} is written into your book for good.`
+        : `${letter.toUpperCase()} is struck from every future answer.`;
+      happening.resolved = { option: optionId, success: true, text };
+      emit(rt, {
+        type: 'happeningResolved',
+        happening: def.id,
+        option: optionId,
+        success: true,
+        text,
+      });
+      return;
+    }
     if (happening.letters && def.id === 'know-the-letter' && happening.letters.includes(optionId as Letter)) {
       const letter = optionId as Letter;
       applyEffects(rt, [{ type: 'revealLetter', letter }], { kind: 'happening', happening: def.id });

@@ -682,6 +682,19 @@ export const HAPPENINGS: HappeningDef[] = [
     ],
   }),
   defineHappening({
+    id: 'spell-tithe',
+    name: 'The Spell Tithe',
+    description: 'A quiet collector offers knowledge or erasure. Both cost one random spell from your list.',
+    options: [
+      {
+        id: 'leave',
+        label: 'Keep your spells',
+        description: 'Nothing happens.',
+        outcomes: [{ chancePct: 100, text: 'The collector closes the ledger.', effects: [] }],
+      },
+    ],
+  }),
+  defineHappening({
     id: 'spellbroker',
     name: 'The Spellbroker',
     description: 'A merchant with ink-stained cuffs and no interest in gold. He only wants the spells you carry.',

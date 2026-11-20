@@ -1851,9 +1851,13 @@ function renderHappening(phase: Extract<PhaseView, { kind: 'happening' }>): stri
             <b>${escapeHtml(option.label)}</b>
             <p>${glossaryText(option.description)}</p>
             ${happeningPreviews(phase, option.id)}
-            ${option.requiresSpell ? `<span class="warn">${option.locked
-              ? `NEEDS ${escapeHtml((SPELL_BY_ID.get(option.requiresSpell)?.name ?? option.requiresSpell).toUpperCase())}`
-              : 'TRADES ONE SPELL'}</span>` : ''}
+            ${option.requiresSpell
+              ? `<span class="warn">${option.locked
+                ? `NEEDS ${escapeHtml((SPELL_BY_ID.get(option.requiresSpell)?.name ?? option.requiresSpell).toUpperCase())}`
+                : 'TRADES ONE SPELL'}</span>`
+              : option.requiresAnySpell
+                ? `<span class="warn">${option.locked ? 'NEEDS A SPELL' : 'TRADES A RANDOM SPELL'}</span>`
+                : ''}
             ${option.costGold ? `<span class="warn">Costs ${option.costGold} gold${option.fallbackPct ? ` · or ${Math.round(option.fallbackPct * 100)}% of your gold` : ''}</span>` : ''}
           </div>
           <div class="odds">

@@ -29,8 +29,8 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Within-X solve items count **player guesses only**; solve gold ignores auto-guesses but still counts free player guesses
 - Curse Collector, Curse Bulwark and Reliquary trigger on gaining a curse ("Whenever you gain a curse: Gain …")
 - Ascension A1/A2 draft 1/2 starting curses
-- Shops with rerolls that start at 1g and double in price: three items, two foods and one wildcard; the wildcard is always food or a spell, never an item, and one item is always 50% off
-- Every spell offered in a shop costs 4g
+- Shops with rerolls that start at 1g and double in price: three items, two foods and one wildcard; the wildcard is always food or a spell, never an item, and one random offer is always 50% off
+- Every spell offered in a shop has a 4g base price; the half-price sale can land on it
 - Five item slots by default. Only equipped gear is active, and each shop has a drag-and-drop loadout
 - **Loose Tongue**, a rare relic that lets you guess five-letter nonsense for free-form probes
 - Spells stack by type and come from food, item triggers and the shop wildcard slot
@@ -45,7 +45,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Rarity is rolled directly: 35% rare, 50% uncommon, and 15% common for both items and foods. If a tier is empty, it falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 104 items (95 shop items + 9 rare relics), 6 spells, 85 foods and 28 happenings
+- 104 items (95 shop items + 9 rare relics), 6 spells, 85 foods and 29 happenings
 - New foods include **U-nagi**, **Donut Holes**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
@@ -73,7 +73,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Item triggers show a compact proc pop-up with the actual result (for example **Yellow1** calling an autoguess or **Grey Market** paying gold); once-per-round items show **SPENT** after they fire
 - The revealed-letter panel persists between screens; in shops it is labelled **REVEALED**
 - On desktop the item list sits under the battle rail on the left; on mobile it stays at the bottom of the sidebar
-- **Grey Market** is a 7g item: every all-grey guess pays 1 gold, whether you made it or an ally did; an all-dark guess that pays nothing hides a letter
+- **Grey Market** is a 7g item: every all-grey guess pays 3 gold, whether you made it or an ally did; an all-dark guess that pays nothing hides a letter
 - **Photosynthesis** is a 10g item: on solve, +2 max HP and heal 20% max HP
 - **Stopped Clock** is a 6g item: casting Time Freeze grants +5 max HP, once per round
 - **Adrenaline** is a 10g item: dropping below 50% HP grants +1 max HP and +1 max armor, re-arming after healing above 50%
@@ -93,6 +93,8 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **A-Steak** is a common-rarity food with a rare shop banner that reveals whether A is in the answer every round
 - **Black Market Ledger** is an 8g item: every shop purchase or event arrival has a 40% chance to add a random spell
 - **The Spellbroker** event trades your spells for permanent value: Omen or Phone a Friend becomes a random permanent letter, Heal becomes +10 max HP and a 10 HP heal, and Immunity or Restore becomes +5 armor
+- **The Spell Tithe** event trades one random spell for either permanent knowledge of a specific letter or a permanent purge of a specific letter; the trades are locked when you have no spells
+- **Off-Road** is a 9g item: once per round, a player guess sharing no letters with your previous player guess autocasts a random spell. Auto-guesses neither trigger it nor break the comparison
 - **Fortune Cookie** is a 1g food with a hidden 5× appearance weight: it queues one autoguess for the next round
 - **Oracle's Banquet** is an 18g rare unique food: it permanently autoguesses at the start of every round
 - **Tally** counts every guess, including ally and autoguesses
@@ -110,7 +112,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **The Naked Curse** removes all max armor; **Piercing** makes half of every hit bypass armor even while armor remains; curse drafts offer two choices
 - Blacklisted words are never chosen as round targets; if a late run runs out of legal targets, the List releases one
 - The run-over screen and run history record the items you had equipped, and the stats page shows them per run
-- Random guesses pull from a 204-word pool chosen for non-native speakers, including **wharf**, **rajah**, **guppy**, **glyph**, and **lymph**; **Dark Echo** avoids letters from your first guess
+- Random guesses pull from a 207-word pool chosen for non-native speakers, including **wharf**, **rajah**, **guppy**, **glyph**, **lymph**, **gaunt**, **jaunt**, and **vaunt**; **Dark Echo** avoids letters from your first guess
 - Every spell cast plays an animated pop-up, including item autocasts
 - **Cyrniki** is a 3g food: heal 50% of missing HP, then 50% a spell / 50% a shop reroll
 - **The Tax** reduces encounter gold by 40% and is unique; **The Sleeper** adds +2 damage per revealed letter in your first player guess, per stack; **The Curse Broker** charges 12g for a relic or 15g to remove a random curse; **The Confessional** sells 45/75/100% random curse removal for 5/10/15g

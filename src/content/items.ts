@@ -191,12 +191,12 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'grey-market',
     name: 'Grey Market',
-    description: 'Every all-grey guess pays 1 gold. If one pays nothing, a letter was hidden.',
+    description: 'Every all-grey guess pays 3 gold. If one pays nothing, a letter was hidden.',
     price: 7,
     kind: 'gear',
     on: {
       onGuessScored: (_ctx, p) =>
-        isAllAbsent(p.guess.truth) ? [{ type: 'gold', amount: 1 }] : [],
+        isAllAbsent(p.guess.truth) ? [{ type: 'gold', amount: 3 }] : [],
     },
   }),
   defineItem({
@@ -1200,15 +1200,19 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'off-road',
     name: 'Off-Road',
-    description: 'Once per round: a guess sharing no letters with the previous guess autocasts a random spell.',
+    description: 'Once per round: your guess sharing no letters with your previous guess autocasts a random spell.',
     price: 9,
     kind: 'gear',
     initial: { used: 0 },
     on: {
       onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
       onGuessScored: (ctx, p) => {
-        if (ctx.self.data.used || !p.previous || p.guess.by !== 'player') return [];
-        if (sharedLetters(p.guess.word, p.previous.word) > 0) return [];
+        if (ctx.self.data.used || p.guess.by !== 'player') return [];
+        const previousPlayer = ctx.state.round?.guesses
+          .filter((guess) => guess.by === 'player' && guess.index < p.guess.index)
+          .at(-1);
+        if (!previousPlayer) return [];
+        if (sharedLetters(p.guess.word, previousPlayer.word) > 0) return [];
         return [
           { type: 'castSpell', spell: 'random' },
           { type: 'setItemData', stat: 'used', value: 1 },

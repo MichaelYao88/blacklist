@@ -2534,7 +2534,7 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('spellhoarder')?.description).toContain('Heal');
     expect(ITEM_BY_ID.get('grey-market')?.price).toBe(7);
     expect(ITEM_BY_ID.get('grey-market')?.description).toContain('all-grey');
-    expect(ITEM_BY_ID.get('grey-market')?.description).toContain('1 gold');
+    expect(ITEM_BY_ID.get('grey-market')?.description).toContain('3 gold');
     expect(ITEM_BY_ID.get('grey-market')?.on?.onGuessScored).toBeDefined();
     expect(ITEM_BY_ID.get('acquired-taste')?.price).toBe(7);
     expect(ITEM_BY_ID.get('acquired-taste')?.rarity).toBe('uncommon');
@@ -2549,21 +2549,21 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('chrono-anchor')?.on?.onDamageTaken).toBeDefined();
   });
 
-  it('Grey Market pays 1 gold for all-grey guesses', () => {
+  it('Grey Market pays 3 gold for all-grey guesses', () => {
     const { state } = start('grey-market');
     state.items.push({ instance: 'i-grey', id: 'grey-market', data: {}, equipped: true });
     state.round!.freeLeft = 0;
     state.round!.answer = 'crane';
     const gold = state.gold;
     const miss = act(state, { type: 'guess', word: 'sloth' });
-    expect(miss.state.gold).toBe(gold + 1);
+    expect(miss.state.gold).toBe(gold + 3);
     expect(miss.events.some(
       (event) => event.type === 'itemProc'
         && event.item === 'grey-market'
-        && event.text.includes('+1 gold'),
+        && event.text.includes('+3 gold'),
     )).toBe(true);
     const hit = act(miss.state, { type: 'guess', word: 'slate' });
-    expect(hit.state.gold).toBe(gold + 1);
+    expect(hit.state.gold).toBe(gold + 3);
   });
 
   it('Scattershot autoguesses once per round after a disjoint guess', () => {
@@ -2634,7 +2634,7 @@ describe('latest balance pass', () => {
       (event) => event.type === 'itemProc' && event.item === 'grey-market',
     )).toBe(false);
     const miss = act(hidden.state, { type: 'guess', word: 'sloth' });
-    expect(miss.state.gold).toBe(gold + 1);
+    expect(miss.state.gold).toBe(gold + 3);
   });
 
   it('Grey Market pays for all-grey auto-guesses too', () => {
@@ -2651,7 +2651,7 @@ describe('latest balance pass', () => {
       if ([...'eio'].some((ch) => answer.includes(ch))) continue;
       paid = true;
       expect(next.state.round?.guesses.some((guess) => guess.word === 'eieio')).toBe(true);
-      expect(next.state.gold).toBe(gold + 1);
+      expect(next.state.gold).toBe(gold + 3);
     }
     expect(paid).toBe(true);
   });
@@ -2758,7 +2758,7 @@ describe('latest balance pass', () => {
     expect(shopsWithRare).toBeGreaterThan(0);
   });
 
-  it('prices every shop spell at 4 gold', () => {
+  it('prices shop spells at 4 gold, or 2 while on sale', () => {
     let spells = 0;
     for (let index = 0; index < 60; index++) {
       const { state } = start(`spell-price-${index}`);
@@ -2769,7 +2769,8 @@ describe('latest balance pass', () => {
       for (const offer of offers) {
         if (offer.kind === 'spell') {
           spells++;
-          expect(offer.price).toBe(4);
+          expect(offer.price).toBe(offer.sale ? 2 : 4);
+          if (offer.sale) expect(offer.originalPrice).toBe(4);
         }
       }
     }
@@ -3125,14 +3126,17 @@ describe('unique shop items', () => {
 
 describe('autocast and random-guess batch', () => {
   it('ships a non-native guess pool including wharf', () => {
-    expect(CONTENT.nonnative).toHaveLength(204);
+    expect(CONTENT.nonnative).toHaveLength(207);
     expect(CONTENT.nonnative).toContain('wharf');
     expect(CONTENT.nonnative).toContain('rajah');
     expect(CONTENT.nonnative).toContain('guppy');
     expect(CONTENT.nonnative).toContain('glyph');
     expect(CONTENT.nonnative).toContain('lymph');
+    expect(CONTENT.nonnative).toContain('gaunt');
+    expect(CONTENT.nonnative).toContain('jaunt');
+    expect(CONTENT.nonnative).toContain('vaunt');
     expect(CONTENT.nonnative).not.toContain('daisy');
-    expect(new Set(CONTENT.nonnative).size).toBe(204);
+    expect(new Set(CONTENT.nonnative).size).toBe(207);
     for (const word of CONTENT.nonnative) {
       expect(word, word).toMatch(/^[a-z]{5}$/);
     }
@@ -3657,6 +3661,116 @@ describe('spellbroker and ledger additions', () => {
     expect(chosen.state.happening?.resolved).toBeUndefined();
     expect(chosen.state.maxHp).toBe(state.maxHp);
     expect(chosen.events.some((event) => event.type === 'message')).toBe(true);
+  });
+
+  it('Off-Road compares against your previous player guess, not an auto-guess', () => {
+    const { state } = start('offroad-previous-player');
+    state.items.push({ instance: 'i-off', id: 'off-road', data: { used: 0 }, equipped: true });
+    state.spells = [{ instance: 's-phone', id: 'phone-friend' }];
+    state.round!.freeLeft = 0;
+    state.round!.answer = 'crane';
+    const first = act(state, { type: 'guess', word: 'sloth' });
+    expect(first.events.some((event) => event.type === 'itemProc' && event.item === 'off-road'))
+      .toBe(false);
+
+    const phone = act(first.state, { type: 'castSpell', instance: 's-phone' });
+    expect(phone.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
+    expect(phone.events.some((event) => event.type === 'itemProc' && event.item === 'off-road'))
+      .toBe(false);
+
+    const auto = phone.state.round!.guesses.at(-1)!.word;
+    const word = [...CONTENT.valid].find((entry) => (
+      entry.length === 5
+      && !entry.split('').some((ch) => 'sloth'.includes(ch))
+      && entry.split('').some((ch) => auto.includes(ch))
+    ));
+    expect(word, 'a clean word that still shares a letter with the auto-guess').toBeDefined();
+    const second = act(phone.state, { type: 'guess', word: word! });
+    expect(second.events.some((event) => event.type === 'itemProc' && event.item === 'off-road'))
+      .toBe(true);
+  });
+
+  it('Off-Road does not spend its once-per-round charge on auto-guesses', () => {
+    const { state } = start('offroad-auto-only');
+    state.items.push({ instance: 'i-off', id: 'off-road', data: { used: 0 }, equipped: true });
+    state.spells = [{ instance: 's-phone', id: 'phone-friend' }];
+    state.round!.freeLeft = 0;
+    state.round!.answer = 'crane';
+    const phone = act(state, { type: 'castSpell', instance: 's-phone' });
+    expect(phone.events.some((event) => event.type === 'itemProc' && event.item === 'off-road'))
+      .toBe(false);
+    expect(phone.state.items.find((item) => item.id === 'off-road')?.data.used).toBe(0);
+  });
+
+  it('Spell Tithe trades one random spell for knowledge or a purge', () => {
+    let seed = '';
+    for (let index = 0; index < 400 && !seed; index++) {
+      const candidate = `spell-tithe-${index}`;
+      const { state } = start(candidate);
+      state.spells = [{ instance: 's-heal', id: 'heal' }];
+      state.nodes = [
+        { kind: 'round', level: 1 },
+        { kind: 'happening', level: 2 },
+      ];
+      state.nodeIndex = 0;
+      state.phase = 'shop';
+      const opened = act(state, { type: 'continue' });
+      if (opened.state.happening?.id === 'spell-tithe') seed = candidate;
+    }
+    expect(seed).not.toBe('');
+
+    const openTithe = (spells: RunState['spells']) => {
+      const { state } = start(seed);
+      state.spells = spells;
+      state.nodes = [
+        { kind: 'round', level: 1 },
+        { kind: 'happening', level: 2 },
+      ];
+      state.nodeIndex = 0;
+      state.phase = 'shop';
+      return act(state, { type: 'continue' }).state;
+    };
+
+    const paid = openTithe([{ instance: 's-heal', id: 'heal' }]);
+    const know = paid.happening?.options.find((option) => option.id.startsWith('know-'));
+    const purge = paid.happening?.options.find((option) => option.id.startsWith('purge-'));
+    expect(know).toBeDefined();
+    expect(purge).toBeDefined();
+    expect(know?.locked).toBe(false);
+    expect(purge?.locked).toBe(false);
+    expect(know?.description).toContain('Lose a random spell');
+
+    const chosen = act(paid, { type: 'choose', optionId: know!.id });
+    expect(chosen.state.spells).toHaveLength(0);
+    const letter = know!.id.slice('know-'.length);
+    expect(chosen.state.permanentReveals).toContain(letter);
+    expect(chosen.state.happening?.resolved?.success).toBe(true);
+
+    const broke = openTithe([]);
+    const lockedKnow = broke.happening?.options.find((option) => option.id.startsWith('know-'));
+    expect(lockedKnow?.locked).toBe(true);
+    const refused = act(broke, { type: 'choose', optionId: lockedKnow!.id });
+    expect(refused.state.happening?.resolved).toBeUndefined();
+    expect(refused.state.spells).toHaveLength(0);
+  });
+
+  it('marks one random shop offer half price across items, food and spells', () => {
+    const kinds = new Set<string>();
+    for (let index = 0; index < 240; index++) {
+      const { state } = start(`sale-kind-${index}`);
+      state.nodeIndex = 0;
+      state.nodes[1] = { kind: 'shop', level: 1 };
+      state.phase = 'shop';
+      const shop = enterShop(state).state.shop;
+      const sale = shop?.offers.find((offer) => offer.sale);
+      expect(sale, `sale-kind-${index}`).toBeDefined();
+      expect(sale?.originalPrice).toBeGreaterThan(sale!.price);
+      expect(sale?.price).toBe(Math.max(1, Math.floor((sale?.originalPrice ?? 0) / 2)));
+      kinds.add(sale!.kind);
+    }
+    expect(kinds.has('item')).toBe(true);
+    expect(kinds.has('eat')).toBe(true);
+    expect(kinds.has('spell')).toBe(true);
   });
 
   it('Black Market Ledger watches purchases and events', () => {
