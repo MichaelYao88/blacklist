@@ -18,7 +18,9 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Curse drafts offer 3 choices after every 2 levels; levels 47-49 are curse floors
 - Curse drafts draw from the weighted pool; The List and The Clock get a 3x weight until they first appear in a draft, then normal
 - Hover or focus a curse in the HUD to read its rules
-- 50 is the final boss: three rounds back-to-back with no intermission
+- 50 is the final boss: three rounds back-to-back with no intermission. Bosses ignore the **Second Wind** curse
+- **Second Wind** is a curse: after you solve a word, a second word appears with one free guess
+- The Toll, The Tax and The Chained are only offered through level 40
 - Base encounter damage is **3 + the total number of curse stacks** plus **+1 for every 60 gold spent this run**; Heavy Hand multiplies the base by **1.4 per stack**
 - Vision curses include **Take the L** (L hidden), **A-Aron, where are you?** (A hidden), **IP Theft** (I and P hidden), **Hard R** (R hidden), and a silver **RIP Curse**; **Wasting** cuts current max HP by 40% per stack
 - The blacklist is disabled and hidden until **The List** curse is taken; The List is a single curse, never stacks, and arrives stocked with the first guess from every earlier round

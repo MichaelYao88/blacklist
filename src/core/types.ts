@@ -218,6 +218,8 @@ export interface CurseDef {
   goldMult?: number;
   noSell?: boolean;
   noReveal?: boolean;
+  /** After solving, start a second word in the same encounter. Bosses ignore it. */
+  secondPuzzle?: boolean;
 }
 
 export interface CurseStack {

@@ -4049,6 +4049,65 @@ describe('Last Cast', () => {
   });
 });
 
+describe('Second Wind and late curse pool', () => {
+  it('adds a second word with one free guess and one reward', () => {
+    const { state } = start('second-wind');
+    state.curses.push({ id: 'second-wind', stacks: 1 });
+    const started = nextRound(state);
+    expect(started.state.round?.gauntletTotal).toBe(2);
+    setAnswer(started.state, 'crane');
+    started.state.round!.freeLeft = 0;
+    const first = act(started.state, { type: 'guess', word: 'crane' });
+    expect(first.state.phase).toBe('round');
+    expect(first.state.round?.gauntletIndex).toBe(1);
+    expect(first.state.round?.freeLeft).toBe(1);
+    expect(first.state.round?.answer).not.toBe('crane');
+    expect(first.state.round?.gauntletAnswers).toEqual(['crane']);
+
+    setAnswer(first.state, 'trace');
+    const second = act(first.state, { type: 'guess', word: 'trace' });
+    expect(second.state.phase).toBe('summary');
+    expect(second.state.summary?.answers).toEqual(['crane', 'trace']);
+    expect(second.state.summary?.rewardPending).toBe(true);
+  });
+
+  it('does not add a fourth final-boss puzzle or a free guess', () => {
+    const { state } = start('second-wind-boss');
+    state.curses.push({ id: 'second-wind', stacks: 1 });
+    const bossIndex = nodeAt(state, (node) => node.kind === 'boss');
+    state.nodeIndex = bossIndex - 1;
+    state.phase = 'shop';
+    state.shop = shopState();
+    let result = act(state, { type: 'continue' });
+    result = act(result.state, { type: 'continue' });
+    expect(result.state.round?.gauntletTotal).toBe(3);
+    setAnswer(result.state, 'crane');
+    result.state.round!.freeLeft = 0;
+    result = act(result.state, { type: 'guess', word: 'crane' });
+    expect(result.state.round?.gauntletIndex).toBe(1);
+    expect(result.state.round?.freeLeft).toBe(0);
+  });
+
+  it('stops offering shop and economy curses after level 40', () => {
+    for (const id of ['toll', 'chained', 'tax']) {
+      expect(CURSE_BY_ID.get(id)?.maxLevel).toBe(40);
+    }
+    for (let index = 0; index < 40; index++) {
+      const { state } = start(`late-curse-${index}`);
+      state.nodeIndex = 0;
+      state.nodes[1] = { kind: 'curse', level: 41 };
+      state.phase = 'shop';
+      const opened = act(state, { type: 'continue' });
+      if (opened.state.phase !== 'curse') continue;
+      const options = game.view(opened.state).phase;
+      if (options.kind !== 'curse') continue;
+      expect(options.options).not.toContain('toll');
+      expect(options.options).not.toContain('chained');
+      expect(options.options).not.toContain('tax');
+    }
+  });
+});
+
 describe('core purity', () => {
   it('never touches browser globals or ambient randomness', async () => {
     const fs = await import('node:fs/promises');

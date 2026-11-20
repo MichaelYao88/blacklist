@@ -1730,6 +1730,7 @@ export function createCore(content: Content): Core {
     const node = state.nodes[state.nodeIndex];
     if (!node) return;
     const boss = node.boss ? bossById.get(node.boss) : undefined;
+    const secondPuzzle = !boss && curseDefs(state).some((entry) => entry.def.secondPuzzle);
     const answer = chooseAnswer(rt, boss);
 
     const clock = clockLimitMs(state);
@@ -1764,7 +1765,7 @@ export function createCore(content: Content): Core {
       damageTaken: 0,
       bossState: { ...(boss?.initialState ?? {}) },
       gauntletIndex: 0,
-      gauntletTotal: boss?.gauntlet ? boss.gauntlet.puzzles : 1,
+      gauntletTotal: boss?.gauntlet ? boss.gauntlet.puzzles : secondPuzzle ? 2 : 1,
       gauntletAnswers: [],
       totalGuesses: 0,
       playerGuesses: 0,
@@ -2010,7 +2011,7 @@ export function createCore(content: Content): Core {
     if (!round) return;
     const boss = round.boss ? bossById.get(round.boss) : undefined;
 
-    if (boss?.gauntlet && round.gauntletIndex + 1 < round.gauntletTotal) {
+    if (round.gauntletIndex + 1 < round.gauntletTotal) {
       const solvedIndex = round.gauntletIndex + 1;
       emit(rt, {
         type: 'puzzleSolved',
@@ -2044,6 +2045,9 @@ export function createCore(content: Content): Core {
       round.damageTaken = 0;
       round.frozenUntilGuess = false;
       round.answer = chooseAnswer(rt, boss);
+      // Second Wind's extra word starts with one free guess. Boss gauntlets
+      // keep their normal free-guess state and ignore the curse.
+      if (!round.boss) round.freeLeft += 1;
       emit(rt, {
         type: 'gauntletAdvanced',
         index: round.gauntletIndex,
