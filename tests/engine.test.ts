@@ -3179,7 +3179,7 @@ describe('unique shop items', () => {
 
 describe('autocast and random-guess batch', () => {
   it('ships a non-native guess pool including wharf', () => {
-    expect(CONTENT.nonnative).toHaveLength(210);
+    expect(CONTENT.nonnative).toHaveLength(211);
     expect(CONTENT.nonnative).toContain('patsy');
     expect(CONTENT.nonnative).toContain('wharf');
     expect(CONTENT.nonnative).toContain('rajah');
@@ -3191,8 +3191,9 @@ describe('autocast and random-guess batch', () => {
     expect(CONTENT.nonnative).toContain('vaunt');
     expect(CONTENT.nonnative).toContain('lurid');
     expect(CONTENT.nonnative).toContain('torus');
+    expect(CONTENT.nonnative).toContain('bough');
     expect(CONTENT.nonnative).not.toContain('daisy');
-    expect(new Set(CONTENT.nonnative).size).toBe(210);
+    expect(new Set(CONTENT.nonnative).size).toBe(211);
     for (const word of CONTENT.nonnative) {
       expect(word, word).toMatch(/^[a-z]{5}$/);
     }
@@ -4000,6 +4001,36 @@ describe('secret gold-spent damage', () => {
       const guessed = act(state, { type: 'guess', word: 'slate' });
       expect(before - guessed.state.hp, `spent ${spent}`).toBe(expected);
     }
+  });
+});
+
+describe('Last Cast', () => {
+  it('does not trigger on an auto-cast spell', () => {
+    const { state } = start('last-cast-auto');
+    state.items.push({ instance: 'i-last', id: 'last-cast', data: { used: 0 }, equipped: true });
+    state.spells = [];
+    state.permanentRoundStartSpells = ['omen'];
+    const next = nextRound(state);
+    expect(next.events.some(
+      (event) => event.type === 'spellCast' && event.auto && event.spell.id === 'omen',
+    )).toBe(true);
+    expect(next.events.some(
+      (event) => event.type === 'itemProc' && event.item === 'last-cast',
+    )).toBe(false);
+    expect(next.state.items.find((item) => item.id === 'last-cast')?.data.used).toBe(0);
+  });
+
+  it('still triggers after manually casting the last spell', () => {
+    const { state } = start('last-cast-manual');
+    state.items.push({ instance: 'i-last', id: 'last-cast', data: { used: 0 }, equipped: true });
+    state.spells = [{ instance: 's-heal', id: 'heal' }];
+    state.hp = 5;
+    const cast = act(state, { type: 'castSpell', instance: 's-heal' });
+    expect(cast.state.spells).toHaveLength(0);
+    expect(cast.events.some(
+      (event) => event.type === 'itemProc' && event.item === 'last-cast',
+    )).toBe(true);
+    expect(cast.state.items.find((item) => item.id === 'last-cast')?.data.used).toBe(1);
   });
 });
 

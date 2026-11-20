@@ -1158,8 +1158,8 @@ export const ITEMS: ItemDef[] = [
     initial: { used: 0 },
     on: {
       onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
-      onSpellCast: (ctx) => {
-        if (ctx.self.data.used || ctx.state.spells.length > 0) return [];
+      onSpellCast: (ctx, p) => {
+        if (ctx.self.data.used || p.auto || ctx.state.spells.length > 0) return [];
         return [
           { type: 'castSpell', spell: 'random' },
           { type: 'setItemData', stat: 'used', value: 1 },

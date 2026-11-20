@@ -66,6 +66,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Yellow1** autoguesses on your player guess with exactly one yellow and no green; **Green1** does the same for exactly one green and no yellow. Neither has a round limit, and neither counts ally or auto-guesses
 - **Deadline** grants +1 free guess as soon as the clock drops below 30s each round
 - **Second Hand** and **Counterclockwise** (formerly Engine) are 8g items that cross-cast spells on cast at 80%
+- **Last Cast** only reacts to spells you cast manually; autocast spells never trigger it
 - **Genie Summon** is an 8g uncommon item: after your 3rd player guess each round, autocast a random spell
 - **Combustion Engine** is a 10g uncommon item with a 3x appearance weight: after you autocast a spell, it has a 40% chance to autocast a random spell. It does not retrigger itself, and autocast chains cap at 10 spells per step
 - **Encore** now costs 7g
@@ -121,7 +122,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **The Naked Curse** removes all max armor; **Piercing** makes half of every hit bypass armor even while armor remains; curse drafts offer two choices
 - Blacklisted words are never chosen as round targets; if a late run runs out of legal targets, the List releases one
 - The run-over screen and run history record the items you had equipped, and the stats page shows them per run
-- Random guesses pull from a 210-word pool chosen for non-native speakers, including **patsy**, **wharf**, **rajah**, **guppy**, **glyph**, **lymph**, **gaunt**, **jaunt**, **vaunt**, **lurid**, and **torus**; **Dark Echo** avoids letters from your first guess
+- Random guesses pull from a 211-word pool chosen for non-native speakers, including **patsy**, **wharf**, **rajah**, **guppy**, **glyph**, **lymph**, **gaunt**, **jaunt**, **vaunt**, **lurid**, **torus**, and **bough**; **Dark Echo** avoids letters from your first guess
 - Every spell cast plays an animated pop-up, including item autocasts; spell pop-ups appear 2 seconds apart, and every pop-up stays visible for 5 seconds
 - **Cyrniki** is a 3g food: heal 50% of missing HP, then 50% a spell / 50% a shop reroll
 - **The Tax** reduces encounter gold by 40% and is unique; **The Sleeper** adds +2 damage per revealed letter in your first player guess, per stack; **The Curse Broker** charges 12g for a relic or 15g to remove a random curse; **The Confessional** sells 45/75/100% random curse removal for 5/10/15g
