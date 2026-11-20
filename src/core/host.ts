@@ -39,8 +39,8 @@ export class CoreHost {
   }
 
   /** Start a fresh run, replacing any active save. */
-  start(seed: string, ascension = 0): GameEvent[] {
-    const result = this.core.newRun({ seed, ascension });
+  start(seed: string, ascension = 0, character = 'runner'): GameEvent[] {
+    const result = this.core.newRun({ seed, ascension, character });
     this.state = result.state;
     this.store.save(this.core.serialize(result.state));
     return result.events;

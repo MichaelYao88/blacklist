@@ -30,6 +30,8 @@ export interface Meta {
   bestLevel: number;
   /** Highest ascension level unlocked. Beating level N unlocks N+1. */
   ascension: number;
+  /** Character ids the player has unlocked. The Runner is always present. */
+  characters: string[];
   history: RunRecord[];
   itemCounts: Record<string, number>;
   curseCounts: Record<string, number>;
@@ -48,6 +50,7 @@ const DEFAULT_META: Meta = {
   bestAct: 0,
   bestLevel: 0,
   ascension: 0,
+  characters: ['runner'],
   history: [],
   itemCounts: {},
   curseCounts: {},
@@ -107,6 +110,9 @@ export function readMeta(): Meta {
       // stats page has something meaningful before the next run finishes.
       bestLevel: Number(parsed.bestLevel) || (Number(parsed.bestAct) || 0) * 10,
       ascension: Math.max(0, Math.min(ASCENSION_MAX, Number(parsed.ascension) || 0)),
+      characters: Array.isArray(parsed.characters)
+        ? [...new Set(['runner', ...parsed.characters.filter((id) => typeof id === 'string')])]
+        : ['runner'],
       history: Array.isArray(parsed.history)
         ? parsed.history.map((run) => ({
             ...run,
@@ -201,5 +207,14 @@ export function recordRun(input: RunRecordInput): void {
   });
   meta.history = meta.history.slice(0, HISTORY_LIMIT);
   writeMeta(meta);
+}
+
+/** Returns true only when this call newly unlocked the character. */
+export function unlockCharacter(id: string): boolean {
+  const meta = readMeta();
+  if (meta.characters.includes(id)) return false;
+  meta.characters.push(id);
+  writeMeta(meta);
+  return true;
 }
 

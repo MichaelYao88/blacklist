@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it } from 'vitest';
-import { readMeta, recordRun, recordStart } from '../src/ui/store';
+import { readMeta, recordRun, recordStart, unlockCharacter } from '../src/ui/store';
 
 const stats = (overrides: Partial<Parameters<typeof recordRun>[0]['stats']> = {}) => ({
   rounds: 10,
@@ -20,6 +20,13 @@ beforeEach(() => {
 });
 
 describe('run history store', () => {
+  it('starts with only The Runner and unlocks a character once', () => {
+    expect(readMeta().characters).toEqual(['runner']);
+    expect(unlockCharacter('maze-runner')).toBe(true);
+    expect(unlockCharacter('maze-runner')).toBe(false);
+    expect(readMeta().characters).toEqual(['runner', 'maze-runner']);
+  });
+
   it('records runs, totals, favorites and unlocks the next ascension on a win', () => {
     recordStart();
     recordRun({
@@ -116,6 +123,7 @@ describe('run history store', () => {
     expect(meta.history).toEqual([]);
     expect(meta.itemCounts).toEqual({});
     expect(meta.curseCounts).toEqual({});
+    expect(meta.characters).toEqual(['runner']);
     expect(meta.totalSolves).toBe(0);
   });
 

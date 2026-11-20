@@ -1,6 +1,7 @@
 import type {
   BoardView,
   BossDef,
+  CharacterId,
   Content,
   Core,
   CurseDef,
@@ -3056,7 +3057,7 @@ export function createCore(content: Content): Core {
     return dropped;
   }
 
-  function applyCurse(rt: Runtime, id: CurseId): void {
+  function applyCurse(rt: Runtime, id: CurseId, silent = false): void {
     const state = rt.state;
     const def = curseById.get(id);
     if (!def) return;
@@ -3102,8 +3103,10 @@ export function createCore(content: Content): Core {
         emit(rt, { type: 'blacklistChanged', list: state.blacklist.slice() });
       }
     }
-    emit(rt, { type: 'curseChosen', curse: id, stacks: entry.stacks, name: def.name });
-    runHook(rt, 'onCurseGained', { curse: id, stacks: entry.stacks });
+    if (!silent) {
+      emit(rt, { type: 'curseChosen', curse: id, stacks: entry.stacks, name: def.name });
+      runHook(rt, 'onCurseGained', { curse: id, stacks: entry.stacks });
+    }
   }
 
   function chooseCurse(rt: Runtime, curseId: CurseId): void {
@@ -3545,6 +3548,7 @@ export function createCore(content: Content): Core {
       level: state.level,
       act: state.act,
       ascension: state.ascension,
+      character: state.character,
       curses: state.curses.map((entry) => {
         const def = curseById.get(entry.id);
         return {
@@ -3699,17 +3703,20 @@ export function createCore(content: Content): Core {
     state.nodes = nodes;
   }
 
-  function newRun(opts: { seed: string; ascension?: number }): StepResult {
+  function newRun(opts: { seed: string; ascension?: number; character?: CharacterId }): StepResult {
     const seed = String(opts.seed || 'blacklist');
     const ascension = Math.max(0, Math.min(ASCENSION_MAX, Math.floor(opts.ascension ?? 0)));
     const startingCurses = ascensionStartingCurses(ascension);
-    const maxHp = 16;
-    const startArmor = 4;
+    const character = content.characters.find((entry) => entry.id === opts.character)
+      ?? content.characters[0];
+    const maxHp = character.maxHp;
+    const startArmor = character.armor;
     const state: RunState = {
       version: VERSION,
       seed,
       rng: hashSeed(seed),
       nextId: 1,
+      character: character.id,
       ascension,
       nodes: [],
       nodeIndex: 0,
@@ -3777,6 +3784,8 @@ export function createCore(content: Content): Core {
       nodes: clone(state.nodes),
     });
     if (content.spells.length > 0) addSpell(rt, rngPick(state, content.spells).id);
+    for (const item of character.items) addItem(rt, item);
+    for (const curse of character.curses) applyCurse(rt, curse, true);
     if (startingCurses > 0) openCurseDraft(rt, true);
     else enterNode(rt);
     return { state, events: rt.events };
@@ -3798,6 +3807,12 @@ export function createCore(content: Content): Core {
       const state = parsed as RunState;
       const fromVersion = typeof parsed.version === 'number' ? parsed.version : 0;
       state.version = VERSION;
+      if (
+        typeof state.character !== 'string'
+        || !content.characters.some((character) => character.id === state.character)
+      ) {
+        state.character = content.characters[0].id;
+      }
       state.ascension = typeof state.ascension === 'number'
         ? Math.max(0, Math.min(ASCENSION_MAX, Math.floor(state.ascension)))
         : 0;

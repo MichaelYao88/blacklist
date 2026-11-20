@@ -10,6 +10,7 @@ import { BOSSES, BOSS_BY_ID } from './bosses';
 import { CURSES, CURSE_BY_ID } from './curses';
 import { FOODS, FOOD_BY_ID } from './foods';
 import { HAPPENINGS, HAPPENING_BY_ID } from './happenings';
+import { CHARACTERS, CHARACTER_BY_ID } from './characters';
 
 export const CONTENT: Content = {
   items: ITEMS,
@@ -18,6 +19,7 @@ export const CONTENT: Content = {
   curses: CURSES,
   foods: FOODS,
   happenings: HAPPENINGS,
+  characters: CHARACTERS,
   answers,
   valid: new Set(validWords as string[]),
   hardAnswers,
@@ -39,4 +41,6 @@ export {
   FOOD_BY_ID,
   HAPPENINGS,
   HAPPENING_BY_ID,
+  CHARACTERS,
+  CHARACTER_BY_ID,
 };

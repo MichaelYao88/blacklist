@@ -96,6 +96,32 @@ describe('cursed run setup', () => {
     expect(eventTypes(events)).toContain('runStarted');
   });
 
+  it('applies preset character starts', () => {
+    const maze = game.newRun({ seed: 'preset-maze', character: 'maze-runner' }).state;
+    expect(maze.character).toBe('maze-runner');
+    expect(maze.maxHp).toBe(14);
+    expect(maze.maxArmor).toBe(2);
+    expect(maze.armor).toBe(2);
+    expect(maze.items.some((item) => item.id === 'head-start' && item.equipped)).toBe(true);
+    expect(maze.curses.some((curse) => curse.id === 'the-list')).toBe(true);
+
+    const necro = game.newRun({ seed: 'preset-necro', character: 'necromancer' }).state;
+    expect(necro.character).toBe('necromancer');
+    expect(necro.maxHp).toBe(40);
+    expect(necro.maxArmor).toBe(2);
+    expect(necro.armor).toBe(1);
+    expect(necro.items.some((item) => item.id === 'necronomicon' && item.equipped)).toBe(true);
+    expect(necro.curses.some((curse) => curse.id === 'weak-plate')).toBe(true);
+
+    const farmer = game.newRun({ seed: 'preset-farmer', character: 'farmer' }).state;
+    expect(farmer.character).toBe('farmer');
+    expect(farmer.maxHp).toBe(20);
+    expect(farmer.maxArmor).toBe(0);
+    expect(farmer.armor).toBe(0);
+    expect(farmer.items.some((item) => item.id === 'harvest-charm' && item.equipped)).toBe(true);
+    expect(farmer.curses).toEqual([]);
+  });
+
   it('builds a 50-level map with 25 curse drafts and one final boss', () => {
     const { state } = start();
     expect(nodeAt(state, (node) => node.kind === 'boss')).toBeGreaterThan(0);

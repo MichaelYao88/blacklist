@@ -1855,6 +1855,87 @@ button {
   filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 26px rgba(223, 97, 90, 0.18));
 }
 
+.over-fighter .character-sprite {
+  width: 100%;
+}
+
+.unlock-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(5, 4, 9, 0.84);
+  backdrop-filter: blur(4px);
+}
+
+.unlock-card {
+  width: min(440px, 100%);
+  padding: 26px 28px 24px;
+  border: 1px solid rgba(231, 184, 90, 0.45);
+  border-radius: 16px;
+  background: radial-gradient(circle at 50% 0%, rgba(231, 184, 90, 0.13), transparent 62%), rgba(15, 12, 22, 0.98);
+  box-shadow: 0 30px 80px -24px #000;
+  text-align: center;
+  animation: unlock-pop 260ms ease-out;
+}
+
+.unlock-card h2 {
+  margin: 8px 0 6px;
+  font-family: var(--serif);
+  font-size: clamp(1.7rem, 5vw, 2.4rem);
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.unlock-portrait {
+  width: 120px;
+  height: 120px;
+  margin: 8px auto 2px;
+}
+
+.unlock-desc {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.unlock-stats {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin-bottom: 8px;
+  color: var(--faint);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.unlock-stats b {
+  color: var(--gold);
+  font-size: 1rem;
+}
+
+.unlock-kit {
+  margin: 0 0 18px;
+  color: var(--faint);
+  font-size: 0.66rem;
+  letter-spacing: 0.04em;
+}
+
+@keyframes unlock-pop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .over-screen h1 {
   margin: 10px 0;
   font-family: var(--serif);
@@ -2073,6 +2154,99 @@ button {
   border: 1px solid var(--line-2);
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.025);
+}
+
+.character-picker {
+  width: min(720px, 100%);
+  margin: 22px auto 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.character-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.character-current {
+  color: var(--gold);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.character-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.character-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 10px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--muted);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+}
+
+.character-card:hover {
+  border-color: rgba(231, 184, 90, 0.45);
+  background: rgba(231, 184, 90, 0.05);
+}
+
+.character-card.active {
+  border-color: var(--gold);
+  background: rgba(231, 184, 90, 0.09);
+  box-shadow: inset 0 0 0 1px rgba(231, 184, 90, 0.18);
+}
+
+.character-portrait {
+  display: block;
+  width: 72px;
+  height: 72px;
+  background-image: var(--portrait);
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45));
+}
+
+.character-name {
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 0.86rem;
+}
+
+.character-card.active .character-name {
+  color: var(--gold);
+}
+
+.character-stats,
+.character-kit {
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.35;
+}
+
+.character-kit {
+  color: var(--faint);
+  font-weight: 500;
+  letter-spacing: 0.04em;
 }
 
 .ascension-head {
@@ -2776,7 +2950,22 @@ button {
   image-rendering: pixelated;
   animation: sprite-walk 1000ms steps(7) infinite;
   animation-delay: var(--walk-delay, 0ms);
-  filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.55));
+  filter: drop-shadow(0 0 1px rgba(220, 235, 255, 0.35)) drop-shadow(0 10px 14px rgba(0, 0, 0, 0.55));
+}
+
+.character-sprite.maze-runner {
+  width: 150%;
+  aspect-ratio: 4 / 3;
+}
+
+.character-sprite.necromancer {
+  width: 220%;
+  aspect-ratio: 1.25;
+}
+
+.character-sprite.farmer {
+  background-size: 600% 100%;
+  animation: sprite-walk 1000ms steps(5) infinite;
 }
 
 .character-sprite.orc {
@@ -2788,6 +2977,21 @@ button {
   background-size: 600% 100%;
   animation: sprite-attack 800ms steps(5) 1 both;
   animation-delay: var(--attack-delay, 0ms);
+}
+
+.character-sprite.maze-runner.attacking {
+  background-size: 500% 100%;
+  animation: sprite-attack 800ms steps(4) 1 both;
+}
+
+.character-sprite.necromancer.attacking {
+  background-size: 800% 100%;
+  animation: sprite-attack 800ms steps(7) 1 both;
+}
+
+.character-sprite.farmer.attacking {
+  background-size: 600% 100%;
+  animation: sprite-attack 800ms steps(5) 1 both;
 }
 
 @keyframes sprite-walk {
@@ -2804,6 +3008,11 @@ button {
   background-size: 400% 100%;
   animation: sprite-death 700ms steps(3) 1 both;
   animation-delay: var(--death-delay, 0ms);
+}
+
+.character-sprite.necromancer.dead {
+  background-size: 800% 100%;
+  animation: sprite-death 700ms steps(7) 1 both;
 }
 
 @keyframes sprite-death {

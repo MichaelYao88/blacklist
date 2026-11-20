@@ -18,6 +18,7 @@ export type BossId = string;
 export type CurseId = string;
 export type HappeningId = string;
 export type InstanceId = string;
+export type CharacterId = string;
 
 export type TileTruth = 'correct' | 'present' | 'absent';
 export type TileShown = TileTruth | 'hit' | 'hidden';
@@ -225,6 +226,20 @@ export interface CurseDef {
 export interface CurseStack {
   id: CurseId;
   stacks: number;
+}
+
+/** A preset runner with its own starting stats, gear and curses. */
+export interface CharacterDef {
+  id: CharacterId;
+  name: string;
+  description: string;
+  maxHp: number;
+  armor: number;
+  items: string[];
+  curses: CurseId[];
+  /** Sprite family used by the battle rail and title portraits. */
+  sprite: string;
+  unlockHint?: string;
 }
 
 export interface CurseState {
@@ -547,6 +562,7 @@ export interface Content {
   curses: CurseDef[];
   foods: FoodDef[];
   happenings: HappeningDef[];
+  characters: CharacterDef[];
   answers: readonly string[];
   valid: ReadonlySet<string>;
   hardAnswers: readonly string[];
@@ -562,6 +578,7 @@ export interface RunState {
   seed: string;
   rng: number;
   nextId: number;
+  character: CharacterId;
   ascension: number;
   nodes: RunNode[];
   nodeIndex: number;
@@ -722,6 +739,7 @@ export interface RunView {
   level: number;
   act: number;
   ascension: number;
+  character: CharacterId;
   curses: Array<{ id: CurseId; name: string; stacks: number; rules: string[]; tags: CurseTag[] }>;
   pendingCurseRemoval: number;
   hp: number;
@@ -852,7 +870,7 @@ export interface StepResult {
 }
 
 export interface Core {
-  newRun(opts: { seed: string; ascension?: number }): StepResult;
+  newRun(opts: { seed: string; ascension?: number; character?: CharacterId }): StepResult;
   step(state: RunState, cmd: Command): StepResult;
   view(state: RunState): RunView;
   serialize(state: RunState): string;
@@ -865,3 +883,4 @@ export const defineBoss = (d: BossDef): BossDef => d;
 export const defineCurse = (d: CurseDef): CurseDef => d;
 export const defineFood = (d: FoodDef): FoodDef => d;
 export const defineHappening = (d: HappeningDef): HappeningDef => d;
+export const defineCharacter = (d: CharacterDef): CharacterDef => d;

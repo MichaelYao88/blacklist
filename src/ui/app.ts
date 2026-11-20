@@ -11,13 +11,15 @@ import type {
 } from '../game';
 import {
   BOSS_BY_ID,
+  CHARACTERS,
+  CHARACTER_BY_ID,
   CURSE_BY_ID,
   FOOD_BY_ID,
   HAPPENING_BY_ID,
   ITEM_BY_ID,
   SPELL_BY_ID,
 } from '../content';
-import { LocalStore, hasSave, readMeta, recordRun, recordStart } from './store';
+import { LocalStore, hasSave, readMeta, recordRun, recordStart, unlockCharacter } from './store';
 import { escapeHtml, formatTime, reasonText, roman } from './format';
 import { glossaryText } from './glossary';
 import {
@@ -30,13 +32,85 @@ import {
 } from './icons';
 import runnerWalk from '../assets/sprites/runner-walk.png';
 import runnerAttack from '../assets/sprites/runner-attack.png';
+import runnerPortrait from '../assets/sprites/runner-portrait.png';
 import orcWalk from '../assets/sprites/orc-walk.png';
 import orcAttack from '../assets/sprites/orc-attack.png';
 import orcDeath from '../assets/sprites/orc-death.png';
 import runnerDeath from '../assets/sprites/runner-death.png';
+import mazeWalk from '../assets/sprites/maze-walk.png';
+import mazeAttack from '../assets/sprites/maze-attack.png';
+import mazeDeath from '../assets/sprites/maze-death.png';
+import mazePortrait from '../assets/sprites/maze-portrait.png';
+import necroWalk from '../assets/sprites/necro-walk.png';
+import necroAttack from '../assets/sprites/necro-attack.png';
+import necroDeath from '../assets/sprites/necro-death.png';
+import necroPortrait from '../assets/sprites/necro-portrait.png';
+import farmerWalk from '../assets/sprites/farmer-walk.png';
+import farmerAttack from '../assets/sprites/farmer-attack.png';
+import farmerDeath from '../assets/sprites/farmer-death.png';
+import farmerPortrait from '../assets/sprites/farmer-portrait.png';
 import { sfx } from './audio';
 import { music } from './music';
 import { ASCENSION_MAX, ascensionSummary } from '../core/ascension';
+
+interface CharacterSprite {
+  walk: string;
+  attack: string;
+  death: string;
+  portrait: string;
+  walkFrames: number;
+  walkSteps: number;
+  attackFrames: number;
+  attackSteps: number;
+  deathFrames: number;
+  deathSteps: number;
+  aspect: number;
+  width: number;
+}
+
+const CHARACTER_SPRITES: Record<string, CharacterSprite> = {
+  runner: {
+    walk: runnerWalk, attack: runnerAttack, death: runnerDeath, portrait: runnerPortrait,
+    walkFrames: 8, walkSteps: 7, attackFrames: 6, attackSteps: 5,
+    deathFrames: 4, deathSteps: 3, aspect: 1, width: 1,
+  },
+  maze: {
+    walk: mazeWalk, attack: mazeAttack, death: mazeDeath, portrait: mazePortrait,
+    walkFrames: 8, walkSteps: 7, attackFrames: 5, attackSteps: 4,
+    deathFrames: 4, deathSteps: 3, aspect: 4 / 3, width: 1.5,
+  },
+  necromancer: {
+    walk: necroWalk, attack: necroAttack, death: necroDeath, portrait: necroPortrait,
+    walkFrames: 8, walkSteps: 7, attackFrames: 8, attackSteps: 7,
+    deathFrames: 8, deathSteps: 7, aspect: 1.25, width: 1.15,
+  },
+  farmer: {
+    walk: farmerWalk, attack: farmerAttack, death: farmerDeath, portrait: farmerPortrait,
+    walkFrames: 6, walkSteps: 5, attackFrames: 6, attackSteps: 5,
+    deathFrames: 4, deathSteps: 3, aspect: 1, width: 1,
+  },
+};
+
+function characterSprite(characterId: string | undefined): CharacterSprite {
+  const def = characterId ? CHARACTER_BY_ID.get(characterId) : undefined;
+  return CHARACTER_SPRITES[def?.sprite ?? 'runner'] ?? CHARACTER_SPRITES.runner;
+}
+
+function spriteStyle(sprite: CharacterSprite): string {
+  return [
+    `--walk:url('${sprite.walk}')`,
+    `--attack:url('${sprite.attack}')`,
+    `--death:url('${sprite.death}')`,
+    `--walk-frames:${sprite.walkFrames}`,
+    `--walk-steps:${sprite.walkSteps}`,
+    `--attack-frames:${sprite.attackFrames}`,
+    `--attack-steps:${sprite.attackSteps}`,
+    `--death-frames:${sprite.deathFrames}`,
+    `--death-steps:${sprite.deathSteps}`,
+    `--sprite-aspect:${sprite.aspect}`,
+    `--sprite-width:${sprite.width * 100}%`,
+  ].join(';');
+}
 
 const app = document.getElementById('app');
 if (!app) throw new Error('Missing #app root');
@@ -182,6 +256,10 @@ const spritesStartedAt = performance.now();
 let countdownUntil = 0;
 const COUNTDOWN_MS = 2_400;
 let selectedAscension = 0;
+let selectedCharacter = 'runner';
+let characterUnlock: string | null = null;
+let runCurseSeen = false;
+let runCurseOffered = false;
 
 type ChronicleKind = 'info' | 'good' | 'bad' | 'spell' | 'item' | 'guess' | 'curse' | 'food' | 'shop';
 interface ChronicleEntry {
@@ -505,6 +583,24 @@ function processEvents(events: GameEvent[]): void {
   let playerDied = false;
   for (const event of events) {
     logGameEvent(event);
+    const character = host.current?.character ?? 'runner';
+    if (event.type === 'curseChosen' && !runCurseSeen) {
+      runCurseSeen = true;
+      const next = character === 'runner'
+        ? 'maze-runner'
+        : character === 'maze-runner' ? 'necromancer' : null;
+      if (next && unlockCharacter(next)) {
+        characterUnlock = next;
+        sfx.play('win');
+      }
+    }
+    if (event.type === 'curseOffered' && character === 'necromancer' && !runCurseOffered) {
+      runCurseOffered = true;
+      if (unlockCharacter('farmer')) {
+        characterUnlock = 'farmer';
+        sfx.play('win');
+      }
+    }
     if (event.type === 'guessRejected') {
       notify(reasonText(event.reason), 'bad');
       sfx.play('error');
@@ -651,7 +747,11 @@ function startNewRun(): void {
     if (!ok) return;
   }
   const seed = `bl-${Date.now().toString(36)}-${Math.floor(Math.random() * 1_000_000).toString(36)}`;
-  const events = host.start(seed, selectedAscension);
+  const unlocked = readMeta().characters;
+  const character = unlocked.includes(selectedCharacter) ? selectedCharacter : 'runner';
+  runCurseSeen = false;
+  runCurseOffered = false;
+  const events = host.start(seed, selectedAscension, character);
   music.beginRun();
   recordStart();
   screen = 'run';
@@ -684,6 +784,8 @@ function resumeRun(): void {
     render();
     return;
   }
+  runCurseSeen = false;
+  runCurseOffered = false;
   screen = 'run';
   input = '';
   notice = null;
@@ -800,6 +902,16 @@ app.addEventListener('click', (event) => {
       break;
     case 'ascension':
       selectedAscension = Math.max(0, Math.min(ASCENSION_MAX, Number(target.dataset.level) || 0));
+      render();
+      break;
+    case 'character': {
+      const id = target.dataset.id ?? '';
+      if (readMeta().characters.includes(id)) selectedCharacter = id;
+      render();
+      break;
+    }
+    case 'dismiss-unlock':
+      characterUnlock = null;
       render();
       break;
     case 'help':
@@ -1046,6 +1158,7 @@ function render(): void {
     app!.innerHTML = renderRun(view as RunView);
   }
   app!.insertAdjacentHTML('beforeend', noticeHtml());
+  if (characterUnlock) app!.insertAdjacentHTML('beforeend', renderCharacterUnlock());
 
   const damageId = damageFx?.id ?? 0;
   const overRun = screen === 'run' && view?.phase.kind === 'over';
@@ -1140,6 +1253,36 @@ function noticeHtml(): string {
   return `<div class="toast ${notice.kind}">${escapeHtml(notice.text)}</div>`;
 }
 
+function renderCharacterUnlock(): string {
+  if (!characterUnlock) return '';
+  const def = CHARACTER_BY_ID.get(characterUnlock);
+  if (!def) {
+    characterUnlock = null;
+    return '';
+  }
+  const items = def.items.map((id) => ITEM_BY_ID.get(id)?.name ?? id);
+  const curses = def.curses.map((id) => CURSE_BY_ID.get(id)?.name ?? id);
+  const kit = [
+    ...items,
+    ...curses.map((name) => `${name} curse`),
+  ].join(', ');
+  return `
+  <div class="unlock-overlay" role="dialog" aria-modal="true" aria-labelledby="unlock-title">
+    <div class="unlock-card">
+      <p class="kicker">CHARACTER UNLOCKED</p>
+      <i class="character-portrait unlock-portrait ${characterPortraitClass(def.id)}" aria-hidden="true" style="${characterPortraitStyle(def.id)}"></i>
+      <h2 id="unlock-title">${escapeHtml(def.name)}</h2>
+      <p class="unlock-desc">${escapeHtml(def.description)}</p>
+      <div class="unlock-stats">
+        <span><b>${def.maxHp}</b> HP</span>
+        <span><b>${def.armor}</b> ARMOR</span>
+      </div>
+      <p class="unlock-kit">${escapeHtml(kit || 'No starting gear')}</p>
+      <button class="btn primary big" data-action="dismiss-unlock">ADD TO ROSTER</button>
+    </div>
+  </div>`;
+}
+
 // ── keyword tooltips ───────────────────────────────────────────────────────
 
 let tipEl: HTMLDivElement | null = null;
@@ -1197,6 +1340,43 @@ document.addEventListener('focusin', (event) => {
 });
 document.addEventListener('focusout', hideTip);
 
+function characterPortraitStyle(characterId: string): string {
+  const sprite = characterSprite(characterId);
+  return `--portrait:url('${sprite.portrait}')`;
+}
+
+function characterPortraitClass(characterId: string): string {
+  return CHARACTER_BY_ID.get(characterId)?.sprite ?? 'runner';
+}
+
+function renderCharacterPicker(meta: ReturnType<typeof readMeta>): string {
+  const roster = CHARACTERS.filter((character) => meta.characters.includes(character.id));
+  if (roster.length <= 1) return '';
+  if (!roster.some((character) => character.id === selectedCharacter)) selectedCharacter = 'runner';
+  return `
+  <div class="character-picker">
+    <div class="character-head">
+      <span class="panel-kicker">CHARACTER</span>
+      <span class="character-current">${escapeHtml(CHARACTER_BY_ID.get(selectedCharacter)?.name ?? 'The Runner')}</span>
+    </div>
+    <div class="character-grid">
+      ${roster.map((character) => {
+        const items = character.items
+          .map((id) => ITEM_BY_ID.get(id)?.name ?? id);
+        const curses = character.curses
+          .map((id) => CURSE_BY_ID.get(id)?.name ?? id);
+        const kit = [...items, ...curses.map((name) => `${name} curse`)].join(', ');
+        return `<button class="character-card ${character.id === selectedCharacter ? 'active' : ''}" data-action="character" data-id="${escapeHtml(character.id)}">
+          <i class="character-portrait ${characterPortraitClass(character.id)}" aria-hidden="true" style="${characterPortraitStyle(character.id)}"></i>
+          <span class="character-name">${escapeHtml(character.name)}</span>
+          <span class="character-stats">${character.maxHp} HP · ${character.armor} ARMOR</span>
+          <span class="character-kit">${escapeHtml(kit || 'No starting gear')}</span>
+        </button>`;
+      }).join('')}
+    </div>
+  </div>`;
+}
+
 function renderTitle(): string {
   const meta = readMeta();
   const saved = hasSave();
@@ -1219,6 +1399,7 @@ function renderTitle(): string {
         <p class="ascension-note">${escapeHtml(ascensionSummary(selectedAscension))}</p>
       </div>`
     : '';
+  const characterPicker = renderCharacterPicker(meta);
 
   return `
   <div class="title-screen">
@@ -1238,6 +1419,7 @@ function renderTitle(): string {
       <button class="btn ghost big" data-action="help">HOW TO PLAY</button>
       ${meta.runs > 0 ? `<button class="btn ghost big" data-action="stats">STATS</button>` : ''}
     </div>
+    ${characterPicker}
     ${ascensionPicker}
     <div class="title-facts">
       <div><b>50</b><span>levels</span></div>
@@ -1537,6 +1719,9 @@ function renderBattleRail(view: RunView, bossId?: string): string {
   const orcDeathElapsed = orcDead ? Math.max(0, now - (orcDeathStartedAt ?? now)) : 0;
   const orcDeathDelay = -Math.min(orcDeathElapsed, DEATH_MS - 1);
   const enemyAttacking = attackActive && arenaAttack?.who === 'enemy' && !orcDead;
+  const playerSprite = characterSprite(view.character);
+  const playerDef = CHARACTER_BY_ID.get(view.character);
+  const playerLabel = playerDef?.name ?? 'The Runner';
   const facts = board
     ? [
         `<span class="fact">FREE ${board.freeGuessesLeft}</span>`,
@@ -1561,10 +1746,10 @@ function renderBattleRail(view: RunView, bossId?: string): string {
         <div class="mini-side player-side">
           <div class="sprite player-sprite">
             <i
-              class="character-sprite runner ${playerAttacking ? 'attacking' : ''}"
+              class="character-sprite ${escapeHtml(view.character)} ${playerAttacking ? 'attacking' : ''}"
               role="img"
-              aria-label="The Runner"
-              style="--walk:url('${runnerWalk}');--attack:url('${runnerAttack}');--walk-delay:${walkDelay}ms;--attack-delay:-${attackElapsed}ms"
+              aria-label="${escapeHtml(playerLabel)}"
+              style="${spriteStyle(playerSprite)};--walk-delay:${walkDelay}ms;--attack-delay:-${attackElapsed}ms"
             ></i>
           </div>
           <span class="mini-label">YOU</span>
@@ -2161,12 +2346,15 @@ function renderOver(phase: Extract<PhaseView, { kind: 'over' }>): string {
     const name = def?.name ?? id;
     return { name, tip: `${name}\n${def?.description ?? ''}` };
   });
+  const deathCharacter = host.current?.character ?? 'runner';
+  const deathSprite = characterSprite(deathCharacter);
+  const deathLabel = CHARACTER_BY_ID.get(deathCharacter)?.name ?? 'The Runner';
   const deathElapsed = playerDeathStartedAt === null ? DEATH_MS : performance.now() - playerDeathStartedAt;
   const deathDelay = -Math.max(0, Math.min(deathElapsed, DEATH_MS));
   const defeatFighter = victory
     ? ''
     : `<div class="over-fighter" aria-hidden="true">
-        <i class="character-sprite runner dead" style="--death:url('${runnerDeath}');--death-delay:${deathDelay}ms"></i>
+        <i class="character-sprite ${escapeHtml(deathCharacter)} dead" aria-label="${escapeHtml(deathLabel)}" style="${spriteStyle(deathSprite)};--death-delay:${deathDelay}ms"></i>
       </div>`;
   return `
   <div class="over-screen ${victory ? 'victory' : 'defeat'}">

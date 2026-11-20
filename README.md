@@ -187,9 +187,17 @@ Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title s
 
 - Synthwave Retro 80s
 
+## Characters
+
+- **The Runner** is the default: 16 HP, 4 armor, no starting gear or curses.
+- **The Maze Runner** unlocks after you take your first curse as The Runner. He starts with **Head Start**, **The List** curse, 14 HP and 2 armor.
+- **The Necromancer** unlocks after you take your first curse as The Maze Runner. He starts with the **Necronomicon**, **Weak Plate** curse, 40 HP and 2 armor.
+- **The Farmer** unlocks when The Necromancer reaches a curse screen. He starts with the **Harvest Charm**, 20 HP and no armor.
+- Once more than one character is unlocked, the title screen shows character select. Unlocks persist across runs and a large popup announces each new character.
+
 ## Sprites
 
-The Runner (Soldier) and Orc sprites are from **Tiny RPG Character Asset Pack 01** by [Zerie](https://zerie.itch.io/tiny-rpg-character-asset-pack), used under the pack's free asset license. They are included only as part of this game and may not be extracted or redistributed as standalone assets.
+The Runner (Soldier) and Orc sprites are from **Tiny RPG Character Asset Pack 01** by [Zerie](https://zerie.itch.io/tiny-rpg-character-asset-pack), used under the pack's free asset license. The Maze Runner uses the **Sci-Fi Hero** pack by [Printer Not Found](https://printer-not-found.itch.io/sci-fi-hero) (CC0). The Necromancer is from [CreativeKind's Necromancer (Free)](https://creativekind.itch.io/necromancer-free), and the Farmer is from [Kettoman's free farmer base pack](https://kettoman.itch.io/free-pixel-character-base-pack-32x32-top-down-farmer-animations). The character assets are included only as part of this game and may not be extracted or redistributed as standalone assets.
 
 ---
 
@@ -197,8 +205,8 @@ The Runner (Soldier) and Orc sprites are from **Tiny RPG Character Asset Pack 01
 
 | Thing | Value |
 |---|---|
-| Starting HP | 20 |
-| Starting armor | 4 points |
+| Starting HP | 16 for The Runner; preset characters override this |
+| Starting armor | 4 points for The Runner; preset characters override this |
 | Starting item slots | 5 (only equipped gear counts; relics use one slot each) |
 | Free guesses per round | 1, plus every guess made inside a timed shield |
 | Starting gold | 12 |
