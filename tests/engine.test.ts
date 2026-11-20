@@ -424,20 +424,34 @@ describe('timer curses', () => {
     expect(second.state.round?.remainingMs).toBe(180_000);
   });
 
-  it('timeout damage is 10 plus 2 per curse stack', () => {
-    const { state } = start('timeout-damage');
+  it('running out of time ends the run immediately', () => {
+    const { state } = start('timeout-defeat');
     state.curses.push({ id: 'clock', stacks: 1 });
-    state.curses.push({ id: 'heavy-hand', stacks: 2 });
+    state.items.push({ instance: 'i-phoenix', id: 'phoenix-egg', data: {}, equipped: true });
     const started = nextRound(state);
     const view = game.view(started.state);
     if (view.phase.kind !== 'round') throw new Error('expected round');
-    expect(view.phase.board.timeoutDamage).toBe(16);
+    expect('timeoutDamage' in view.phase.board).toBe(false);
+    const answer = started.state.round!.answer;
 
     started.state.hp = 40;
+    started.state.armor = 99;
+    started.state.round!.immuneUntilMs = 60_000;
     started.state.round!.remainingMs = 1;
     const timedOut = act(started.state, { type: 'tick', dtMs: 2_000 });
-    expect(timedOut.state.hp).toBe(24);
-    expect(timedOut.state.phase).toBe('summary');
+    expect(timedOut.state.phase).toBe('over');
+    expect(timedOut.state.over?.result).toBe('defeat');
+    expect(timedOut.state.over?.answer).toBe(answer);
+    expect(timedOut.state.hp).toBe(0);
+    expect(timedOut.state.items.some((item) => item.id === 'phoenix-egg')).toBe(true);
+    expect(timedOut.state.stats.timeouts).toBe(1);
+    expect(timedOut.events.some((event) => event.type === 'timeExpired')).toBe(true);
+    expect(timedOut.events.some(
+      (event) => event.type === 'roundEnded' && event.outcome === 'timeout',
+    )).toBe(true);
+    expect(timedOut.events.some(
+      (event) => event.type === 'runEnded' && event.result === 'defeat',
+    )).toBe(true);
   });
 
   it('shows count-up time when a timer-interest item is equipped', () => {

@@ -705,7 +705,6 @@ export function createCore(content: Content): Core {
     ignoreImmunity?: boolean;
     /** This damage comes from a guess, so the Immunity spell can block it. */
     guess?: boolean;
-    timeout?: boolean;
   }
 
   function dealDamage(rt: Runtime, amount: number, source: Source, options: DamageOptions = {}): void {
@@ -814,30 +813,41 @@ export function createCore(content: Content): Core {
     });
     if (isOver(state)) return;
 
-    if (state.hp <= 0) finishDeath(rt, options.timeout ? 'the clock' : 'damage');
+    if (state.hp <= 0) finishDeath(rt, 'damage');
   }
 
   function finishDeath(rt: Runtime, sourceText: string): void {
+    finishRun(rt, sourceText, 'died', true);
+  }
+
+  function finishRun(
+    rt: Runtime,
+    sourceText: string,
+    outcome: 'died' | 'timeout',
+    allowRevive: boolean,
+  ): void {
     const state = rt.state;
     if (isOver(state) || rt.dying) return;
     rt.dying = true;
     try {
       state.hp = 0;
-      runHook(rt, 'onDeath', { source: sourceText });
-      if (state.hp > 0) return;
+      if (allowRevive) {
+        runHook(rt, 'onDeath', { source: sourceText });
+        if (state.hp > 0) return;
+      }
 
       const round = state.round;
       if (round) {
         state.stats.rounds++;
         state.stats.playMs += round.elapsedMs;
         runHook(rt, 'onRoundEnd', {
-          outcome: 'died',
+          outcome,
           boss: round.boss,
           damageTaken: round.damageTaken,
         });
         emit(rt, {
           type: 'roundEnded',
-          outcome: 'died',
+          outcome,
           answer: round.answer,
           answers: round.gauntletTotal > 1 ? round.gauntletAnswers.slice() : undefined,
           guesses: round.totalGuesses,
@@ -1980,24 +1990,16 @@ export function createCore(content: Content): Core {
     return Math.max(0, Math.round(base + curseBonus));
   }
 
-  function timeoutDamageFor(state: RunState): number {
-    const curseTotal = state.curses.reduce((sum, entry) => sum + entry.stacks, 0);
-    return 10 + 2 * curseTotal;
-  }
-
   function expireRound(rt: Runtime): void {
     const state = rt.state;
     const round = state.round;
     if (!round || state.phase !== 'round') return;
     round.remainingMs = 0;
     emit(rt, { type: 'timeExpired' });
-    dealDamage(rt, timeoutDamageFor(state), RULES, {
-      ignoreArmor: true,
-      ignoreImmunity: true,
-      timeout: true,
-    });
-    if (isOver(state)) return;
-    finishRound(rt, 'timeout');
+    state.stats.timeouts++;
+    // Running out of time is an unconditional loss: armor, immunity and
+    // revive effects cannot save the run.
+    finishRun(rt, 'the clock', 'timeout', false);
   }
 
   // ── guessing ─────────────────────────────────────────────────────────────
@@ -3375,7 +3377,6 @@ export function createCore(content: Content): Core {
     // damageFor describes the hit a wrong guess takes at the round's current
     // progress, so preview the next guess by stepping the counter forward.
     const rawNext = guessDamageFor(state, round, true);
-    const timeoutDamage = timeoutDamageFor(state);
     const noGuessDamage = Boolean(boss?.noGuessDamage);
     const timerInterest = state.items.some((item) => {
       const def = itemById.get(item.id);
@@ -3434,7 +3435,6 @@ export function createCore(content: Content): Core {
       freeGuessesLeft: round.freeLeft,
       nextGuessDamage: round.freeLeft > 0 || noGuessDamage ? 0 : rawNext,
       rawNextGuessDamage: rawNext,
-      timeoutDamage,
       remainingMs: round.remainingMs,
       timerStartMs: round.timerStartMs,
       elapsedMs: round.elapsedMs,

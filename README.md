@@ -22,7 +22,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Base encounter damage is **3 + the total number of curse stacks** plus **+1 for every 60 gold spent this run**; Heavy Hand multiplies the base by **1.4 per stack**
 - Vision curses include **Take the L** (L hidden), **A-Aron, where are you?** (A hidden), **IP Theft** (I and P hidden), **Hard R** (R hidden), and a silver **RIP Curse**; **Wasting** cuts current max HP by 40% per stack
 - The blacklist is disabled and hidden until **The List** curse is taken; The List is a single curse, never stacks, and arrives stocked with the first guess from every earlier round
-- The clock is disabled until **The Clock** curse is taken; the first stack gives 5:00 and each further stack shrinks it by 40%
+- The clock is disabled until **The Clock** curse is taken; the first stack gives 5:00 and each further stack shrinks it by 40%. If the clock reaches zero, the run ends immediately
 - The Clockmaker event only appears once The Clock exists
 - **Phone a Friend** delivers a one- or two-word catchphrase, quietly adds 5 seconds, and spams his words across the screen; the **Pizza Pzazz** set shows a pizza/sparkle callout instead of the word spam. If purges leave fewer than three two-word phrases available, he falls back to single words
 - **Time Freeze** gives a free, unobscured guess that does not count towards solve-count items (Hat Trick, Bloom, Shortcut, etc.); Time Freeze and Immunity lock until your next guess
@@ -135,7 +135,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - A **STATS** page tracks run history (last 50 runs), win rate, best level, average solve time, favorite items and curses, play time, gold and damage totals
 - The top bar shows gold and area; the current level lives in the battle rail, not a level counter
 - Clock-gated items such as **Ticking Fee** never appear in shops or rewards until **The Clock** curse exists
-- Compact battle rail on the left: round timer with a hover tooltip for timeout damage, a wrong-guess damage chip, a side-view mini arena with the runner facing the act's monster (or boss), player HP and armor
+- Compact battle rail on the left: round timer with a hover tooltip for the time limit, a wrong-guess damage chip, a side-view mini arena with the runner facing the act's monster (or boss), player HP and armor
 - Damage numbers slam into the centre of the screen as `N damage`, with a block message when armor or immunity eats the hit
 - Spells and the blacklist sit on the right; the item list sits under the battle rail on desktop and at the bottom of the right column on mobile
 - Pause (Space or Esc), independent music/SFX mutes, synthesized SFX, keyboard and on-screen keyboard, colorblind symbols, reduced-motion-friendly CSS
@@ -206,10 +206,10 @@ The Runner (Soldier) and Orc sprites are from **Tiny RPG Character Asset Pack 01
 | Base damage | `3 + total curse stacks + floor(gold spent / 60)`, then Heavy Hand and other modifiers apply |
 | Paid guess damage | curse-scaled base, modified only by curses |
 | Final boss damage | 3 base plus curses |
-| Timeout damage | `10 + 2 × curse stacks`, bypasses armor, ends the round |
+| Timeout | ends the run immediately; armor, immunity and revives cannot prevent it |
 | Armor | a pool that soaks damage point-for-point before HP; refills each round |
 | Solve gold | random `4-8`, plus `solveGoldBonus` (Midas Touch can double any gain) |
-| Timeout gold | `1`; a death pays nothing |
+| Timeout gold | none; running out of time ends the run |
 | Solve reward | a flat 5 gold plus a spell (65%) or food (35%); gear is an 8% find |
 | Relic source | rare-tier shop/reward finds and the Curse Broker; owned relics never appear again |
 | Shop reroll | starts at 1 gold, doubles after each use |

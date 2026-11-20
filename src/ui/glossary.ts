@@ -18,7 +18,7 @@ const ENTRIES: GlossaryEntry[] = [
   },
   {
     pattern: /\barmor\b/gi,
-    tip: 'Armor soaks damage before HP, point for point. It refills each round. Timeout damage ignores it.',
+    tip: 'Armor soaks damage before HP, point for point. It refills each round. Running out of time ends the run.',
   },
   {
     pattern: /\bfree guesses?\b/gi,
@@ -70,15 +70,15 @@ const ENTRIES: GlossaryEntry[] = [
   },
   {
     pattern: /\btimeouts?\b/gi,
-    tip: 'The clock reached zero. You take 10 damage + 2 per curse stack, ignoring armor, and the round ends.',
+    tip: 'The clock reached zero. The run ends immediately; armor, immunity and revives do not save you.',
   },
   {
     pattern: /\bclock\b/gi,
-    tip: 'The MASSIVE DAMAGE IN countdown. At zero you take 10 damage + 2 per curse stack.',
+    tip: 'The RUN ENDS IN countdown. At zero the run is lost immediately.',
   },
   {
     pattern: /\btimer\b/gi,
-    tip: 'The MASSIVE DAMAGE IN countdown. At zero you take 10 damage + 2 per curse stack.',
+    tip: 'The RUN ENDS IN countdown. At zero the run is lost immediately.',
   },
   {
     pattern: /\bHP\b/gi,

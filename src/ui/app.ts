@@ -1217,11 +1217,11 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>Armor</h3>
-        <p>Armor is a pool of damage reduction. Each point soaks one point of an incoming hit before HP is touched. The pool refills at the start of every round. Timeout damage ignores armor.</p>
+        <p>Armor is a pool of damage reduction. Each point soaks one point of an incoming hit before HP is touched. The pool refills at the start of every round. If the clock reaches zero, the run ends regardless of armor.</p>
       </article>
       <article class="rule-card">
         <h3>The clock</h3>
-        <p>There is no clock until you take <b>The Clock</b> curse. The first stack gives 5:00; each later stack cuts 20%. Reveal-time items show a count-up timer, while clock rounds show a count-down.</p>
+        <p>There is no clock until you take <b>The Clock</b> curse. The first stack gives 5:00; each later stack cuts 40%. Reveal-time items show a count-up timer, while clock rounds show a count-down. If the clock reaches zero, the run ends immediately.</p>
       </article>
       <article class="rule-card">
         <h3>Curses</h3>
@@ -1453,13 +1453,12 @@ function renderTimer(view: RunView, board: BoardView): string {
     ? 'TIME'
     : board.timerFrozen
       ? 'FROZEN'
-      : 'MASSIVE DAMAGE IN';
-  const timeoutHit = board.timeoutDamage;
+      : 'RUN ENDS IN';
   const pct = countUp || !board.timerStartMs || board.remainingMs === null
     ? 100
     : Math.max(0, Math.min(100, (board.remainingMs / board.timerStartMs) * 100));
   const urgent = !countUp && board.remainingMs !== null && board.remainingMs <= 15_000;
-  return `<div class="timer ${urgent ? 'urgent' : ''} ${board.timerFrozen ? 'frozen' : ''}" title="${countUp ? 'No clock limit. Time is shown because an equipped item cares about it.' : `When this reaches zero you take ${timeoutHit} damage.`}">
+  return `<div class="timer ${urgent ? 'urgent' : ''} ${board.timerFrozen ? 'frozen' : ''}" title="${countUp ? 'No clock limit. Time is shown because an equipped item cares about it.' : 'When this reaches zero the run ends.'}">
     <span class="timer-label">${label}</span>
     <b>${time}</b>
     <div class="timer-bar"><i style="width:${pct}%"></i></div>
@@ -1544,7 +1543,7 @@ function renderBattleRail(view: RunView, bossId?: string): string {
           <i style="width:${pct}%"></i>
           <span class="hp-gloss"></span>
         </div>
-        <div class="armor-line" title="Armor soaks damage point-for-point before HP. It refills each round. Timeout damage ignores armor.">
+        <div class="armor-line" title="Armor soaks damage point-for-point before HP. It refills each round. Running out of time ends the run.">
           <span class="armor-bar" role="progressbar" aria-label="Armor" aria-valuemin="0" aria-valuemax="${view.maxArmor}" aria-valuenow="${view.armor}">
             <i style="width:${armorPct}%"></i>
           </span>
