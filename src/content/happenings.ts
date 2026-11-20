@@ -681,6 +681,92 @@ export const HAPPENINGS: HappeningDef[] = [
       },
     ],
   }),
+  defineHappening({
+    id: 'spellbroker',
+    name: 'The Spellbroker',
+    description: 'A merchant with ink-stained cuffs and no interest in gold. He only wants the spells you carry.',
+    options: [
+      {
+        id: 'omen',
+        label: 'Trade Omen',
+        description: 'Lose Omen. Permanently reveal a random letter.',
+        requiresSpell: 'omen',
+        outcomes: [{
+          chancePct: 100,
+          text: 'He folds the Omen into his sleeve and marks a new letter in your book.',
+          effects: [
+            { type: 'removeSpell', spell: 'omen' },
+            { type: 'revealPermanentRandom' },
+          ],
+        }],
+      },
+      {
+        id: 'phone-friend',
+        label: 'Trade Phone a Friend',
+        description: 'Lose Phone a Friend. Permanently reveal a random letter.',
+        requiresSpell: 'phone-friend',
+        outcomes: [{
+          chancePct: 100,
+          text: 'He keeps the phone. In return, one more letter is yours for good.',
+          effects: [
+            { type: 'removeSpell', spell: 'phone-friend' },
+            { type: 'revealPermanentRandom' },
+          ],
+        }],
+      },
+      {
+        id: 'heal',
+        label: 'Trade Heal',
+        description: 'Lose Heal. Gain +10 max HP and heal 10 HP.',
+        requiresSpell: 'heal',
+        outcomes: [{
+          chancePct: 100,
+          text: 'He takes the Heal and leaves you with a sturdier body.',
+          effects: [
+            { type: 'removeSpell', spell: 'heal' },
+            { type: 'maxHp', delta: 10 },
+            { type: 'heal', amount: 10 },
+          ],
+        }],
+      },
+      {
+        id: 'immunity',
+        label: 'Trade Immunity',
+        description: 'Lose Immunity. Gain +5 armor.',
+        requiresSpell: 'immunity',
+        outcomes: [{
+          chancePct: 100,
+          text: 'He pockets the Immunity and straps a plate over your ribs.',
+          effects: [
+            { type: 'removeSpell', spell: 'immunity' },
+            { type: 'maxArmor', delta: 5 },
+            { type: 'armor', delta: 5 },
+          ],
+        }],
+      },
+      {
+        id: 'restore',
+        label: 'Trade Restore',
+        description: 'Lose Restore. Gain +5 armor.',
+        requiresSpell: 'restore',
+        outcomes: [{
+          chancePct: 100,
+          text: 'He takes Restore and leaves you with five more plates.',
+          effects: [
+            { type: 'removeSpell', spell: 'restore' },
+            { type: 'maxArmor', delta: 5 },
+            { type: 'armor', delta: 5 },
+          ],
+        }],
+      },
+      {
+        id: 'leave',
+        label: 'Keep your spells',
+        description: 'Nothing happens.',
+        outcomes: [{ chancePct: 100, text: 'The merchant bows and steps aside.', effects: [] }],
+      },
+    ],
+  }),
 ];
 
 export const HAPPENING_BY_ID = new Map(HAPPENINGS.map((h) => [h.id, h]));

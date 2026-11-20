@@ -60,6 +60,7 @@ export type HookName =
   | 'onMaxHpChanged'
   | 'onReveal'
   | 'onCurseGained'
+  | 'onHappening'
   | 'onShopOpen';
 
 export type RejectReason =
@@ -266,6 +267,10 @@ export interface HappeningOptionView {
   costGold?: number;
   fallbackPct?: number;
   chancePct?: number;
+  /** Spell the merchant requires before this trade can be taken. */
+  requiresSpell?: SpellId;
+  /** True when the required spell is not in the player's spell list. */
+  locked?: boolean;
   outcomes: HappeningOutcomeView[];
 }
 export interface HappeningState {
@@ -307,6 +312,7 @@ export type Effect =
   | { type: 'timedImmunity'; ms: number }
   | { type: 'revealYellow' }
   | { type: 'revealLetter'; letter: Letter }
+  | { type: 'revealPermanentRandom' }
   | { type: 'revealRandom'; count: number }
   | { type: 'revealAbsent'; count: number }
   | { type: 'pendingAbsent'; count: number }
@@ -315,6 +321,7 @@ export type Effect =
   | { type: 'clearBlacklist' }
   | { type: 'randomChoice'; options: Effect[][] }
   | { type: 'giveSpell'; spell: SpellId | 'random'; chancePct?: number }
+  | { type: 'removeSpell'; spell: SpellId }
   | { type: 'castSpell'; spell: SpellId | 'random'; chancePct?: number }
   | { type: 'randomGuesses'; count: number; chancePct?: number; excludeLetters?: string }
   | { type: 'queueRandomGuesses'; count: number }
@@ -401,6 +408,7 @@ export interface HookPayloads {
   onReveal: { letter: Letter; status: 'present' | 'absent' };
   onPuzzleSolved: { index: number; total: number; elapsedMs: number };
   onCurseGained: { curse: CurseId; stacks: number };
+  onHappening: { happening: HappeningId };
   onShopOpen: { offers: Offer[] };
 }
 export type Reactors<C extends Ctx> = Partial<{
@@ -512,6 +520,8 @@ export interface HappeningOptionDef {
   costGold?: number;
   /** If the player cannot pay costGold, take this fraction of their gold instead. */
   fallbackPct?: number;
+  /** This trade consumes one copy of the named spell. */
+  requiresSpell?: SpellId;
   outcomes: HappeningOutcomeDef[];
 }
 export interface HappeningDef {

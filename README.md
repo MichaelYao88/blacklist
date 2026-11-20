@@ -45,7 +45,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Rarity is rolled directly: 35% rare, 50% uncommon, and 15% common for both items and foods. If a tier is empty, it falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 104 items (95 shop items + 9 rare relics), 6 spells, 84 foods and 27 happenings
+- 104 items (95 shop items + 9 rare relics), 6 spells, 85 foods and 28 happenings
 - New foods include **U-nagi**, **Donut Holes**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
@@ -89,7 +89,10 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Tally Lens** is a 12g common-rarity item with an uncommon shop banner and a 3× appearance weight while a vision curse is active; it is no longer guaranteed in a shop and shows correct/misplaced counts. **Tally** is never offered while you already own one
 - **Encore** is unique and appears three times as often as an average common item; **Poppy Seeds** is a common-rarity food that shows an uncommon shop banner
 - **Without U** is a 2g common-rarity unique food that permanently purges U and shows an uncommon shop banner; **Purge the D** is also common-rarity with an uncommon shop banner
+- **Reveal the D** is a 10g common-rarity food with an uncommon shop banner; **Pay Respects to F** is a 5g common-rarity food with an uncommon banner that permanently purges F
 - **A-Steak** is a common-rarity food with a rare shop banner that reveals whether A is in the answer every round
+- **Black Market Ledger** is an 8g item: every shop purchase or event arrival has a 40% chance to add a random spell
+- **The Spellbroker** event trades your spells for permanent value: Omen or Phone a Friend becomes a random permanent letter, Heal becomes +10 max HP and a 10 HP heal, and Immunity or Restore becomes +5 armor
 - **Fortune Cookie** is a 1g food with a hidden 5× appearance weight: it queues one autoguess for the next round
 - **Oracle's Banquet** is an 18g rare unique food: it permanently autoguesses at the start of every round
 - **Tally** counts every guess, including ally and autoguesses
@@ -115,7 +118,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - The Runner and Orc idle in their walk loops; free guesses and the winning guess play the Runner's attack, other guesses alternate Orc → Runner, a fatal guess is always the Orc, and the Orc collapses from the winning blow and stays down until the next round starts
 - Defeat drops the Runner into their death animation on the run-over screen
 - The run path rail is gone; the current level stays in the battle rail
-- Purge is an event (The Redaction) and foods (Poppy Seeds, rare Inkcap, Purge the D); its rest option triggers an eat and a 10% random curse removal
+- Purge is an event (The Redaction) and foods (Poppy Seeds, rare Inkcap, Purge the D, Pay Respects to F); its rest option triggers an eat and a 10% random curse removal
 - One exact-state autosave slot. Defeat clears it. Victory clears it and updates meta stats.
 - A **STATS** page tracks run history (last 50 runs), win rate, best level, average solve time, favorite items and curses, play time, gold and damage totals
 - The top bar shows gold and area; the current level lives in the battle rail, not a level counter

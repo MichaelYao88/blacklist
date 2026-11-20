@@ -426,11 +426,13 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'black-market-ledger',
     name: 'Black Market Ledger',
-    description: 'Shop purchase: 40% chance of a random spell.',
+    description: 'Shop purchase or event: 40% chance of a random spell.',
     price: 8,
     kind: 'gear',
     on: {
       onPurchase: () =>
+        [{ type: 'giveSpell', spell: 'random', chancePct: 40 }],
+      onHappening: () =>
         [{ type: 'giveSpell', spell: 'random', chancePct: 40 }],
     },
   }),

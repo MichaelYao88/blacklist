@@ -1699,6 +1699,10 @@ button {
   background: rgba(255, 255, 255, 0.017);
 }
 
+.happening-option.locked {
+  opacity: 0.55;
+}
+
 .happening-option.resolved {
   opacity: 0.55;
 }
@@ -1896,6 +1900,12 @@ button {
   border-radius: 999px;
   color: var(--muted);
   font-size: 0.66rem;
+  cursor: help;
+}
+
+.over-loadout span:not(.over-answer-label):focus-visible {
+  outline: 1px solid var(--gold);
+  outline-offset: 2px;
 }
 
 .over-actions {

@@ -130,6 +130,7 @@ const FOOD_ICONS: Record<string, string> = {
   'only-u': '🇺',
   'without-u': '🚫',
   'a-steak': '🥩',
+  'pay-respects-f': '🪦',
   'empty-calories': '🍩',
   'one-bo-hue': '🍜',
   'warm-bowl': '🍲',

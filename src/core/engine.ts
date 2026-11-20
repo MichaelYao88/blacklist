@@ -380,6 +380,25 @@ export function createCore(content: Content): Core {
   }
 
   /** Reveal random unknown letters, leaning toward letters not in the answer. */
+  function revealPermanentLetter(rt: Runtime, raw: string): void {
+    const state = rt.state;
+    const letter = raw.toLowerCase();
+    if (!state.permanentReveals) state.permanentReveals = [];
+    const firstTime = !state.permanentReveals.includes(letter);
+    if (firstTime) state.permanentReveals.push(letter);
+    const round = state.round;
+    if (state.phase === 'round' && round) {
+      hintLetter(rt, letter, round.answer.includes(letter) ? 'present' : 'absent');
+    } else {
+      emit(rt, {
+        type: 'message',
+        text: firstTime
+          ? `${letter.toUpperCase()} will be revealed every round from now on.`
+          : `${letter.toUpperCase()} is already revealed every round.`,
+      });
+    }
+  }
+
   function revealRandomLetters(rt: Runtime, count: number): void {    const state = rt.state;
     const round = state.round;
     if (!round || count <= 0) return;
@@ -1047,21 +1066,18 @@ export function createCore(content: Content): Core {
       }
       case 'revealLetter': {
         if (noReveal(state) && (source.kind === 'item' || source.kind === 'spell')) break;
-        const letter = effect.letter.toLowerCase();
-        if (!state.permanentReveals) state.permanentReveals = [];
-        const firstTime = !state.permanentReveals.includes(letter);
-        if (firstTime) state.permanentReveals.push(letter);
-        const round = state.round;
-        if (state.phase === 'round' && round) {
-          hintLetter(rt, letter, round.answer.includes(letter) ? 'present' : 'absent');
-        } else {
-          emit(rt, {
-            type: 'message',
-            text: firstTime
-              ? `${letter.toUpperCase()} will be revealed every round from now on.`
-              : `${letter.toUpperCase()} is already revealed every round.`,
-          });
+        revealPermanentLetter(rt, effect.letter);
+        break;
+      }
+      case 'revealPermanentRandom': {
+        const candidates = ALPHABET.filter(
+          (letter) => !state.purged.includes(letter) && !state.permanentReveals.includes(letter),
+        );
+        if (candidates.length === 0) {
+          emit(rt, { type: 'message', text: 'Every letter is already known or purged.' });
+          break;
         }
+        revealPermanentLetter(rt, rngPick(state, candidates));
         break;
       }
       case 'revealRandom':
@@ -1099,6 +1115,14 @@ export function createCore(content: Content): Core {
           ? (content.spells.length > 0 ? rngPick(state, content.spells).id : null)
           : effect.spell;
         if (id) addSpell(rt, id);
+        break;
+      }
+      case 'removeSpell': {
+        const index = state.spells.findIndex((spell) => spell.id === effect.spell);
+        if (index < 0) break;
+        state.spells.splice(index, 1);
+        const name = spellById.get(effect.spell)?.name ?? effect.spell;
+        emit(rt, { type: 'message', text: `${name} changes hands.` });
         break;
       }
       case 'giveMissingSpells': {
@@ -1812,9 +1836,11 @@ export function createCore(content: Content): Core {
       playRandomGuesses(rt, state.permanentRandomGuesses);
     }
     if (state.nextRoundRandomGuesses > 0) {
-      const count = state.nextRoundRandomGuesses;
-      state.nextRoundRandomGuesses = 0;
-      playRandomGuesses(rt, count);
+      const queued = state.nextRoundRandomGuesses;
+      const played = playRandomGuesses(rt, queued);
+      state.nextRoundRandomGuesses = state.phase === 'round'
+        ? Math.max(0, queued - played)
+        : 0;
     }
   }
 
@@ -2074,10 +2100,11 @@ export function createCore(content: Content): Core {
     }
   }
 
-  function playRandomGuesses(rt: Runtime, count: number, excludeLetters?: string): void {
+  function playRandomGuesses(rt: Runtime, count: number, excludeLetters?: string): number {
     const state = rt.state;
     const round = state.round;
-    if (!round || state.phase !== 'round') return;
+    if (!round || state.phase !== 'round') return 0;
+    let played = 0;
     const blocked = new Set(
       (excludeLetters ?? '').toLowerCase().split('').filter(Boolean),
     );
@@ -2103,7 +2130,9 @@ export function createCore(content: Content): Core {
       if (pool.length === 0) break;
       const word = rngPick(state, pool);
       scorePlayerGuess(rt, word, 'friend');
+      played++;
     }
+    return played;
   }
 
   function scorePlayerGuess(rt: Runtime, raw: string, by: 'player' | 'friend'): void {
@@ -2696,6 +2725,10 @@ export function createCore(content: Content): Core {
       description: option.description,
       costGold: option.costGold,
       fallbackPct: option.fallbackPct,
+      requiresSpell: option.requiresSpell,
+      locked: option.requiresSpell
+        ? !state.spells.some((spell) => spell.id === option.requiresSpell)
+        : undefined,
       chancePct: option.outcomes.length === 1
         ? 100
         : option.outcomes[0]?.chancePct,
@@ -2748,6 +2781,7 @@ export function createCore(content: Content): Core {
       happening: def.id,
       options: clone(state.happening.options),
     });
+    runHook(rt, 'onHappening', { happening: def.id });
   }
 
   function chooseHappening(rt: Runtime, optionId: string): void {
@@ -2788,6 +2822,13 @@ export function createCore(content: Content): Core {
     }
     const option = def.options.find((o) => o.id === optionId);
     if (!option) return;
+    if (
+      option.requiresSpell
+      && !state.spells.some((spell) => spell.id === option.requiresSpell)
+    ) {
+      emit(rt, { type: 'message', text: 'You do not have that spell to trade.' });
+      return;
+    }
 
     if (option.costGold && option.costGold > 0) {
       if (state.gold >= option.costGold) {

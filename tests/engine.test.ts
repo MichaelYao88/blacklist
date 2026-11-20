@@ -2011,7 +2011,9 @@ describe('latest balance pass', () => {
       .toContainEqual({ type: 'revealLetter', letter: 'o' });
     expect(FOOD_BY_ID.get('i-spy')?.price).toBe(9);
     expect(FOOD_BY_ID.get('i-spy')?.name).toBe('I-Cee');
-    expect(FOOD_BY_ID.get('reveal-the-d')?.price).toBe(11);
+    expect(FOOD_BY_ID.get('reveal-the-d')?.price).toBe(10);
+    expect(FOOD_BY_ID.get('reveal-the-d')?.rarity).toBe('common');
+    expect(FOOD_BY_ID.get('reveal-the-d')?.shopRarity).toBe('uncommon');
     expect(FOOD_BY_ID.get('honey-cake')?.price).toBe(6);
     expect(FOOD_BY_ID.get('vitality')?.price).toBe(8);
     expect(FOOD_BY_ID.get('yin-yang')?.name).toBe('NY Cheesecake');
@@ -3010,7 +3012,8 @@ describe('full cursed loop', () => {
           result = act(state, { type: 'continue' });
         } else {
           const options = state.happening?.options ?? [];
-          const choice = options.find((option) => !option.costGold || option.costGold <= state.gold) ?? options.at(-1);
+          const choice = options.find((option) => !option.locked
+            && (!option.costGold || option.costGold <= state.gold)) ?? options.at(-1);
           result = act(state, { type: 'choose', optionId: choice?.id ?? '' });
         }
       } else if (state.phase === 'bossIntro') {
@@ -3302,11 +3305,18 @@ describe('autocast and random-guess batch', () => {
       expect(FOOD_BY_ID.get(id)?.rarity, id).toBe('rare');
     }
     for (const id of [
-      'only-u', 'b-file', 'x-ray', 'q-tip', 'gg-gum', 'reveal-the-d', 'yin-yang',
+      'only-u', 'b-file', 'x-ray', 'q-tip', 'gg-gum', 'yin-yang',
       'j-ello', 'c-urchin', 'f-unnel-cake', 'h-erring', 'w-asabi', 'knafeh',
     ]) {
       expect(FOOD_BY_ID.get(id)?.rarity, id).toBe('uncommon');
     }
+    expect(FOOD_BY_ID.get('reveal-the-d')?.rarity).toBe('common');
+    expect(FOOD_BY_ID.get('reveal-the-d')?.shopRarity).toBe('uncommon');
+    expect(FOOD_BY_ID.get('pay-respects-f')?.rarity).toBe('common');
+    expect(FOOD_BY_ID.get('pay-respects-f')?.shopRarity).toBe('uncommon');
+    expect(FOOD_BY_ID.get('pay-respects-f')?.price).toBe(5);
+    expect(FOOD_BY_ID.get('pay-respects-f')?.effects)
+      .toContainEqual({ type: 'purgeLetter', letter: 'f' });
   });
 
   it('adds the new random-guess and autocast items', () => {
@@ -3601,6 +3611,84 @@ describe('relic uniqueness', () => {
     state.shop = shopState([{ id: 'f0', kind: 'eat', def: 'coveted-cake', price: 11 }]);
     const bought = act(state, { type: 'buy', offerId: 'f0' });
     expect(bought.state.items.some((item) => item.id === 'loose-tongue')).toBe(true);
+  });
+});
+
+describe('spellbroker and ledger additions', () => {
+  it('lets the Spellbroker trade each spell for its payout', () => {
+    const trade = (spell: string, optionId: string) => {
+      const { state } = start(`spellbroker-${optionId}`);
+      state.spells = [{ instance: `s-${spell}`, id: spell }];
+      state.phase = 'happening';
+      state.happening = { id: 'spellbroker', options: [] };
+      return act(state, { type: 'choose', optionId });
+    };
+
+    const omen = trade('omen', 'omen');
+    expect(omen.state.spells.some((spell) => spell.id === 'omen')).toBe(false);
+    expect(omen.state.permanentReveals.length).toBe(1);
+
+    const phone = trade('phone-friend', 'phone-friend');
+    expect(phone.state.spells.some((spell) => spell.id === 'phone-friend')).toBe(false);
+    expect(phone.state.permanentReveals.length).toBe(1);
+
+    const heal = trade('heal', 'heal');
+    expect(heal.state.spells.some((spell) => spell.id === 'heal')).toBe(false);
+    expect(heal.state.maxHp).toBe(26);
+    expect(heal.state.hp).toBe(26);
+
+    const immunity = trade('immunity', 'immunity');
+    expect(immunity.state.spells.some((spell) => spell.id === 'immunity')).toBe(false);
+    expect(immunity.state.maxArmor).toBe(9);
+    expect(immunity.state.armor).toBe(9);
+
+    const restore = trade('restore', 'restore');
+    expect(restore.state.spells.some((spell) => spell.id === 'restore')).toBe(false);
+    expect(restore.state.maxArmor).toBe(9);
+    expect(restore.state.armor).toBe(9);
+  });
+
+  it('will not take a trade without the required spell', () => {
+    const { state } = start('spellbroker-empty');
+    state.spells = [];
+    state.phase = 'happening';
+    state.happening = { id: 'spellbroker', options: [] };
+    const chosen = act(state, { type: 'choose', optionId: 'heal' });
+    expect(chosen.state.happening?.resolved).toBeUndefined();
+    expect(chosen.state.maxHp).toBe(state.maxHp);
+    expect(chosen.events.some((event) => event.type === 'message')).toBe(true);
+  });
+
+  it('Black Market Ledger watches purchases and events', () => {
+    const ledger = ITEM_BY_ID.get('black-market-ledger');
+    expect(ledger?.on?.onPurchase).toBeTypeOf('function');
+    expect(ledger?.on?.onHappening).toBeTypeOf('function');
+    expect(ledger?.description).toContain('event');
+  });
+
+  it('Fortune Cookie survives a second shop before the next round', () => {
+    const { state } = start('fortune-two-shops');
+    state.nodes = [
+      { kind: 'shop', level: 1 },
+      { kind: 'shop', level: 2 },
+      { kind: 'round', level: 3 },
+    ];
+    state.nodeIndex = 0;
+    state.level = 1;
+    state.phase = 'shop';
+    state.gold = 10;
+    state.shop = shopState([{ id: 'f0', kind: 'eat', def: 'fortune-cookie', price: 1 }]);
+    const bought = act(state, { type: 'buy', offerId: 'f0' });
+    expect(bought.state.nextRoundRandomGuesses).toBe(1);
+
+    const toSecond = act(bought.state, { type: 'continue' });
+    expect(toSecond.state.phase).toBe('shopChoice');
+    const secondShop = act(toSecond.state, { type: 'choose', optionId: 'shop' });
+    expect(secondShop.state.nextRoundRandomGuesses).toBe(1);
+
+    const next = act(secondShop.state, { type: 'continue' });
+    expect(next.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
+    expect(next.state.nextRoundRandomGuesses).toBe(0);
   });
 });
 

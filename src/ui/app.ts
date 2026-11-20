@@ -233,7 +233,7 @@ interface ProcEntry {
 let procEntries: ProcEntry[] = [];
 const procTimers = new Map<number, number>();
 let procSeq = 0;
-const PROC_TTL = 2_800;
+const PROC_TTL = 7_800;
 const PROC_MAX = 4;
 
 function renderProcFeed(): void {
@@ -1846,17 +1846,20 @@ function renderHappening(phase: Extract<PhaseView, { kind: 'happening' }>): stri
     <p class="happening-desc">${glossaryText(def?.description ?? '')}</p>
     <div class="option-list">
       ${phase.options.map((option) => `
-        <article class="happening-option ${resolved ? 'resolved' : ''}">
+        <article class="happening-option ${resolved ? 'resolved' : ''} ${option.locked ? 'locked' : ''}">
           <div>
             <b>${escapeHtml(option.label)}</b>
             <p>${glossaryText(option.description)}</p>
             ${happeningPreviews(phase, option.id)}
+            ${option.requiresSpell ? `<span class="warn">${option.locked
+              ? `NEEDS ${escapeHtml((SPELL_BY_ID.get(option.requiresSpell)?.name ?? option.requiresSpell).toUpperCase())}`
+              : 'TRADES ONE SPELL'}</span>` : ''}
             ${option.costGold ? `<span class="warn">Costs ${option.costGold} gold${option.fallbackPct ? ` · or ${Math.round(option.fallbackPct * 100)}% of your gold` : ''}</span>` : ''}
           </div>
           <div class="odds">
             ${option.outcomes.map((outcome) => `<span>${outcome.chancePct}% · ${escapeHtml(outcome.text)}</span>`).join('')}
           </div>
-          <button class="btn" data-action="choose" data-id="${escapeHtml(option.id)}" ${resolved ? 'disabled' : ''}>CHOOSE</button>
+          <button class="btn" data-action="choose" data-id="${escapeHtml(option.id)}" ${resolved || option.locked ? 'disabled' : ''}>CHOOSE</button>
         </article>`).join('')}
     </div>
     ${resolved ? `<div class="resolution ${resolved.success ? 'good' : 'bad'}">${escapeHtml(resolved.text)}</div><button class="btn primary big" data-action="continue">CONTINUE →</button>` : ''}
@@ -1886,8 +1889,11 @@ function renderOver(phase: Extract<PhaseView, { kind: 'over' }>): string {
         ${missed || `<b>${escapeHtml(phase.answer.toUpperCase())}</b>`}
       </div>`
     : '';
-  const equipped = (phase.equippedItems ?? [])
-    .map((id) => ITEM_BY_ID.get(id)?.name ?? id);
+  const equipped = (phase.equippedItems ?? []).map((id) => {
+    const def = ITEM_BY_ID.get(id);
+    const name = def?.name ?? id;
+    return { name, tip: `${name}\n${def?.description ?? ''}` };
+  });
   const deathElapsed = playerDeathStartedAt === null ? DEATH_MS : performance.now() - playerDeathStartedAt;
   const deathDelay = -Math.max(0, Math.min(deathElapsed, DEATH_MS));
   const defeatFighter = victory
@@ -1915,7 +1921,7 @@ function renderOver(phase: Extract<PhaseView, { kind: 'over' }>): string {
     </div>
     ${equipped.length > 0 ? `<div class="over-loadout">
       <span class="over-answer-label">EQUIPPED AT THE END</span>
-      <div>${equipped.map((name) => `<span>${escapeHtml(name)}</span>`).join('')}</div>
+      <div>${equipped.map((entry) => `<span tabindex="0" data-tip="${escapeHtml(entry.tip)}">${escapeHtml(entry.name)}</span>`).join('')}</div>
     </div>` : ''}
     <div class="over-actions">
       <button class="btn primary big" data-action="new-run">NEW RUN</button>
