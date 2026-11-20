@@ -26,12 +26,12 @@ function everyThreeFoodsOrSolves(self: { data: Record<string, number> }): Effect
   ];
 }
 
-/** Every fifth eat/solve pays one item slot. */
-function everyFiveEatsOrSolves(self: { data: Record<string, number> }): Effect[] {
+/** Every sixth eat/solve pays one item slot. */
+function everySixEatsOrSolves(self: { data: Record<string, number> }): Effect[] {
   const total = self.data.progress + 1;
-  const slots = Math.floor(total / 5);
+  const slots = Math.floor(total / 6);
   return [
-    { type: 'setItemData', stat: 'progress', value: total % 5 },
+    { type: 'setItemData', stat: 'progress', value: total % 6 },
     ...Array.from({ length: slots }, () => ({ type: 'slots' as const, delta: 1 })),
   ];
 }
@@ -341,14 +341,14 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'big-belt',
     name: 'Big Belt',
-    description: 'Every 5 eats or solves: +1 item slot.',
+    description: 'Every 6 eats or solves: +1 item slot.',
     price: 12,
     kind: 'gear',
     rarity: 'uncommon',
     initial: { progress: 0 },
     on: {
-      onEat: (ctx) => everyFiveEatsOrSolves(ctx.self),
-      onSolve: (ctx) => everyFiveEatsOrSolves(ctx.self),
+      onEat: (ctx) => everySixEatsOrSolves(ctx.self),
+      onSolve: (ctx) => everySixEatsOrSolves(ctx.self),
     },
   }),
   defineItem({

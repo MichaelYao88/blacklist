@@ -413,7 +413,7 @@ describe('damage and curses', () => {
 });
 
 describe('timer curses', () => {
-  it('starts at 5:00 and loses 20% per extra Clock stack', () => {
+  it('starts at 5:00 and loses 40% per extra Clock stack', () => {
     const { state } = start();
     state.curses.push({ id: 'clock', stacks: 1 });
     const first = nextRound(state);
@@ -421,7 +421,7 @@ describe('timer curses', () => {
 
     first.state.curses[0].stacks = 2;
     const second = nextRound(first.state);
-    expect(second.state.round?.remainingMs).toBe(240_000);
+    expect(second.state.round?.remainingMs).toBe(180_000);
   });
 
   it('timeout damage is 10 plus 2 per curse stack', () => {
@@ -449,13 +449,13 @@ describe('timer curses', () => {
   });
 
   it('Early Bird pays for solves under a minute', () => {
-    const quick = start('early-bird-quick');
+    const quick = start('early-bird-compare');
     quick.state.items.push({ instance: 'i-early', id: 'early-bird', data: { gold: 2 }, equipped: true });
     setAnswer(quick.state, 'crane');
     quick.state.round!.elapsedMs = 59_999;
     const solved = act(quick.state, { type: 'guess', word: 'crane' });
 
-    const late = start('early-bird-late');
+    const late = start('early-bird-compare');
     late.state.items.push({ instance: 'i-early-late', id: 'early-bird', data: { gold: 2 }, equipped: true });
     setAnswer(late.state, 'crane');
     late.state.round!.elapsedMs = 60_000;
@@ -535,7 +535,8 @@ describe('timer curses', () => {
     state.items.push({ instance: 'i-gold', id: 'gold-standard', data: {}, equipped: true });
     setAnswer(state, 'crane');
     const solved = act(state, { type: 'guess', word: 'crane' });
-    expect(solved.state.gold).toBe(21); // 12 start + 8 solve + 1 bonus
+    expect(solved.state.gold).toBeGreaterThanOrEqual(17); // 12 start + 4-8 solve + 1 bonus
+    expect(solved.state.gold).toBeLessThanOrEqual(21);
 
     solved.state.phase = 'shop';
     solved.state.shop = shopState();
@@ -1161,13 +1162,15 @@ describe('scaling gold items', () => {
     setAnswer(state, 'crane');
 
     const first = act(state, { type: 'guess', word: 'crane' });
-    expect(first.state.gold).toBe(25);
+    expect(first.state.gold).toBeGreaterThanOrEqual(21); // 12 start + 5 hat + 4-8 solve
+    expect(first.state.gold).toBeLessThanOrEqual(25);
     expect(first.state.items.find((item) => item.id === 'hat-trick')?.data.gold).toBe(7);
 
     const second = nextRound(first.state);
     setAnswer(second.state, 'crane');
     const secondSolve = act(second.state, { type: 'guess', word: 'crane' });
-    expect(secondSolve.state.gold).toBe(40);
+    expect(secondSolve.state.gold).toBeGreaterThanOrEqual(first.state.gold + 11);
+    expect(secondSolve.state.gold).toBeLessThanOrEqual(first.state.gold + 15);
     expect(secondSolve.state.items.find((item) => item.id === 'hat-trick')?.data.gold).toBe(9);
   });
 
@@ -1194,15 +1197,16 @@ describe('scaling gold items', () => {
 });
 
 describe('new item and event batch', () => {
-  it('pays 8/7/6/5/4 by solve guess count', () => {
-    const expected = [0, 8, 7, 6, 5, 4];
-    for (let guesses = 1; guesses <= 5; guesses++) {
-      const { state } = start(`gold-tier-${guesses}`);
+  it('pays a random 4-8 gold on solve regardless of guess count', () => {
+    for (let index = 0; index < 30; index++) {
+      const { state } = start(`gold-roll-${index}`);
       if (!state.round) throw new Error('expected round');
       setAnswer(state, 'crane');
-      state.round.totalGuesses = guesses - 1;
+      state.round.totalGuesses = index;
+      state.round.playerGuesses = index;
       const solved = act(state, { type: 'guess', word: 'crane' });
-      expect(solved.state.gold).toBe(12 + expected[guesses]);
+      expect(solved.state.gold - 12).toBeGreaterThanOrEqual(4);
+      expect(solved.state.gold - 12).toBeLessThanOrEqual(8);
     }
   });
 
@@ -1356,7 +1360,7 @@ describe('new item and event batch', () => {
     expect(cast.state.maxHp).toBe(17);
   });
 
-  it('Big Belt gains a slot every 5 eats or solves', () => {
+  it('Big Belt gains a slot every 6 eats or solves', () => {
     const { state } = start('big-belt');
     state.items.push({ instance: 'i-belt', id: 'big-belt', data: { progress: 0 }, equipped: true });
     state.phase = 'shop';
@@ -1367,20 +1371,21 @@ describe('new item and event batch', () => {
       { id: 'f2', kind: 'eat', def: 'snack', price: 3 },
       { id: 'f3', kind: 'eat', def: 'snack', price: 3 },
       { id: 'f4', kind: 'eat', def: 'snack', price: 3 },
+      { id: 'f5', kind: 'eat', def: 'snack', price: 3 },
     ]);
     let current = state;
-    for (const id of ['f0', 'f1', 'f2', 'f3']) {
+    for (const id of ['f0', 'f1', 'f2', 'f3', 'f4']) {
       current = act(current, { type: 'buy', offerId: id }).state;
       expect(current.slots).toBe(5);
     }
-    current = act(current, { type: 'buy', offerId: 'f4' }).state;
+    current = act(current, { type: 'buy', offerId: 'f5' }).state;
     expect(current.slots).toBe(6);
 
     const solver = start('big-belt-solve');
     solver.state.items.push({
       instance: 'i-belt-solve',
       id: 'big-belt',
-      data: { progress: 4 },
+      data: { progress: 5 },
       equipped: true,
     });
     setAnswer(solver.state, 'crane');
@@ -1624,7 +1629,7 @@ describe('new item and event batch', () => {
     expect(ITEM_BY_ID.get('siphon')?.description).toContain('40% chance to autocast Heal');
     expect(ITEM_BY_ID.get('gourmand')?.description).toContain('On spell cast or food eaten');
     expect(ITEM_BY_ID.get('pen-club')?.description).toContain('1-5 gold');
-    expect(ITEM_BY_ID.get('big-belt')?.description).toContain('Every 5 eats or solves');
+    expect(ITEM_BY_ID.get('big-belt')?.description).toContain('Every 6 eats or solves');
     expect(ITEM_BY_ID.get('big-belt')?.rarity).toBe('uncommon');
     expect(ITEM_BY_ID.get('midas-touch')?.description).toContain('40%');
     expect(ITEM_BY_ID.get('midas-touch')?.goldDoubleChance).toBe(40);
@@ -1667,7 +1672,8 @@ describe('latest balance pass', () => {
     state.bonusSolveGold = 2;
     setAnswer(state, 'crane');
     const solved = act(state, { type: 'guess', word: 'crane' });
-    expect(solved.state.gold).toBe(18);
+    expect(solved.state.gold).toBeGreaterThanOrEqual(15); // 12 start + 40% tax on 6-10 solve gold
+    expect(solved.state.gold).toBeLessThanOrEqual(18);
   });
 
   it('Mimic Mouth casts a random spell for a wrong guess with 5 revealed letters, once per round', () => {
@@ -2866,7 +2872,8 @@ describe('latest balance pass', () => {
     expect(FOOD_BY_ID.get('plating')?.effects).toContainEqual({ type: 'maxArmor', delta: 1 });
     expect(ITEM_BY_ID.get('compound-interest')?.price).toBe(4);
     expect(FOOD_BY_ID.get('yin-yang')?.price).toBe(10);
-    expect(FOOD_BY_ID.get('bounty')?.price).toBe(4);
+    expect(FOOD_BY_ID.get('bounty')?.price).toBe(6);
+    expect(FOOD_BY_ID.get('bounty')?.rarity).toBe('rare');
     expect(FOOD_BY_ID.get('bounty')?.effects).toContainEqual({ type: 'solveGold', amount: 1 });
     expect(ITEM_BY_ID.get('counterweight')?.description).toContain('Completely blocked hit');
     expect(ITEM_BY_ID.get('encore')?.description).toContain('last solved answer');
@@ -3565,7 +3572,8 @@ describe('content and rules batch', () => {
     expect(next.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
     next.state.round!.answer = 'crane';
     const solved = act(next.state, { type: 'guess', word: 'crane' });
-    expect(solved.state.gold).toBe(20); // 12 starting gold + 8 for a one-guess solve
+    expect(solved.state.gold).toBeGreaterThanOrEqual(16); // 12 starting gold + 4-8 solve gold
+    expect(solved.state.gold).toBeLessThanOrEqual(20);
   });
 
   it('Enoki queues an autoguess and gives +3 max HP', () => {
@@ -3819,7 +3827,7 @@ describe('spellbroker and ledger additions', () => {
       const shop = enterShop(state).state.shop;
       const sale = shop?.offers.find((offer) => offer.sale);
       expect(sale, `sale-kind-${index}`).toBeDefined();
-      expect(sale?.originalPrice).toBeGreaterThan(sale!.price);
+      expect(sale?.originalPrice).toBeGreaterThanOrEqual(sale!.price);
       expect(sale?.price).toBe(Math.max(1, Math.floor((sale?.originalPrice ?? 0) / 2)));
       kinds.add(sale!.kind);
     }

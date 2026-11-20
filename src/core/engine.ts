@@ -108,7 +108,7 @@ export function createCore(content: Content): Core {
   const clockLimitMs = (state: RunState): number | null => {
     const stacks = clockStacks(state);
     if (stacks <= 0) return null;
-    const limit = 300_000 * Math.pow(0.8, Math.max(0, stacks - 1));
+    const limit = 300_000 * Math.pow(0.6, Math.max(0, stacks - 1));
     return Math.max(30_000, Math.floor(limit));
   };
 
@@ -1898,21 +1898,7 @@ export function createCore(content: Content): Core {
     // add on top.
     let baseGold = 0;
     if (outcome === 'solved') {
-      // Auto-guesses are free information and should not downgrade the reward.
-      const rewardGuesses = Math.max(
-        1,
-        round.totalGuesses - round.guesses.filter((guess) => guess.by === 'friend').length,
-      );
-      const rolled = rewardGuesses <= 1
-        ? 8
-        : rewardGuesses === 2
-          ? 7
-          : rewardGuesses === 3
-            ? 6
-            : rewardGuesses === 4
-              ? 5
-              : 4;
-      baseGold = rolled + state.bonusSolveGold;
+      baseGold = 4 + rngInt(state, 5) + state.bonusSolveGold;
     } else if (outcome === 'timeout') {
       baseGold = 1;
     }

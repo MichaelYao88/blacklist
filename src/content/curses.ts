@@ -196,7 +196,7 @@ export const CURSES: CurseDef[] = [
     description: 'Every future round gets a timer. It shrinks as this stacks.',
     rules: [
       'First stack: 5:00 limits.',
-      'Each further stack: current limit -20%.',
+      'Each further stack: current limit -40%.',
       'Minimum limit: 0:30.',
     ],
     art: 'gauntlet',

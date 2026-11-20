@@ -145,6 +145,15 @@ let shake = false;
 let shakeTimer: number | undefined;
 let lastTick = performance.now();
 let paused = false;
+const CHRONICLE_KEY = 'blacklist.chronicle.v1';
+const readChronicle = (): boolean => {
+  try {
+    return localStorage.getItem(CHRONICLE_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
+let chronicleVisible = readChronicle();
 let pointerHeld = 0;
 let renderQueued = false;
 let soundMuted = sfx.muted;
@@ -616,6 +625,15 @@ app.addEventListener('click', (event) => {
       paused = false;
       lastTick = performance.now();
       music.resume();
+      render();
+      break;
+    case 'toggle-chronicle':
+      chronicleVisible = !chronicleVisible;
+      try {
+        localStorage.setItem(CHRONICLE_KEY, chronicleVisible ? '1' : '0');
+      } catch {
+        // Ignore storage failures.
+      }
       render();
       break;
     case 'sound':
@@ -1399,6 +1417,33 @@ function renderBattleRail(view: RunView, bossId?: string): string {
   </aside>`;
 }
 
+function renderChronicle(view: RunView): string {
+  const chips = view.nodes.map((node, index) => {
+    const done = index < view.nodeIndex;
+    const current = index === view.nodeIndex;
+    const boss = node.boss ? BOSS_BY_ID.get(node.boss) : undefined;
+    const icon = node.kind === 'boss' ? '☠' : node.kind === 'shop' ? '$' : node.kind === 'happening' ? '?' : node.kind === 'curse' ? '✦' : '•';
+    const label = boss
+      ? boss.name
+      : node.kind === 'round'
+        ? 'Round'
+        : node.kind === 'shop'
+          ? 'Shop'
+          : node.kind === 'curse'
+            ? 'Curse'
+            : node.kind === 'boss'
+              ? 'Boss'
+              : 'Happening';
+    const classes = ['path-chip', node.kind, done ? 'done' : '', current ? 'current' : ''].filter(Boolean).join(' ');
+    return `<span class="${classes}" title="Level ${node.level ?? index + 1} · ${escapeHtml(label)}">
+      <i>${icon}</i><em>${node.level ?? index + 1}</em>
+    </span>`;
+  }).join('');
+  return `<nav class="panel path chronicle" aria-label="Run chronicle">
+    <span class="path-label">CHRONICLE</span>${chips}
+  </nav>`;
+}
+
 function renderSidePanel(view: RunView): string {
   const stacks = new Map<string, { spell: SpellView; count: number }>();
   for (const spell of view.spells) {
@@ -2067,6 +2112,12 @@ function renderPauseOverlay(view: RunView): string {
         <button class="btn primary big" data-action="unpause">RESUME</button>
         <button class="btn ghost" data-action="help">RULES</button>
       </div>
+      <div class="pause-settings">
+        <span class="panel-kicker">SETTINGS</span>
+        <button class="btn tiny ghost" data-action="toggle-chronicle">
+          CHRONICLE: ${chronicleVisible ? 'SHOWN' : 'HIDDEN'}
+        </button>
+      </div>
       <p class="hint">Space or Esc also resumes.</p>
     </div>
   </div>`;
@@ -2097,6 +2148,7 @@ function renderRun(view: RunView): string {
       : `<main class="layout">
           <div class="rail-column">
             ${renderBattleRail(view, bossId)}
+            ${chronicleVisible ? renderChronicle(view) : ''}
             ${renderItemsPanel(view)}
           </div>
           <section class="center-column">${phasePanel(view)}</section>

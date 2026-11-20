@@ -22,11 +22,11 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Base encounter damage is **3 + the total number of curse stacks**; Heavy Hand multiplies it by **1.4 per stack**
 - Vision curses include **Take the L** (L hidden), **A-Aron, where are you?** (A hidden), **IP Theft** (I and P hidden), **Hard R** (R hidden), and a silver **RIP Curse**; **Wasting** cuts current max HP by 40% per stack
 - The blacklist is disabled and hidden until **The List** curse is taken; The List is a single curse, never stacks, and arrives stocked with the first guess from every earlier round
-- The clock is disabled until **The Clock** curse is taken; the first stack gives 5:00
+- The clock is disabled until **The Clock** curse is taken; the first stack gives 5:00 and each further stack shrinks it by 40%
 - The Clockmaker event only appears once The Clock exists
 - **Phone a Friend** delivers a one- or two-word catchphrase, quietly adds 5 seconds, and spams his words across the screen; the **Pizza Pzazz** set shows a pizza/sparkle callout instead of the word spam
 - **Time Freeze** gives a free, unobscured guess that does not count towards solve-count items (Hat Trick, Bloom, Shortcut, etc.); Time Freeze and Immunity lock until your next guess
-- Within-X solve items count **player guesses only**; solve gold ignores auto-guesses but still counts free player guesses
+- Within-X solve items count **player guesses only**; solve gold is a random 4-8, independent of guess count and auto-guesses
 - Curse Collector, Curse Bulwark and Reliquary trigger on gaining a curse ("Whenever you gain a curse: Gain …")
 - Ascension A1/A2 draft 1/2 starting curses
 - Shops with rerolls that start at 1g and double in price: three items, two foods and one wildcard; the wildcard is always food or a spell, never an item, and one random offer is always 50% off
@@ -84,7 +84,8 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Gold Standard** is an 8g item: every gold gain gives +1 more gold
 - **Guardian Angel** is an 8g item: after every 10 HP damage taken, gain Immunity
 - **Immunity** blocks the next hurting guess and any guess for 4 seconds after it
-- **Big Belt** is a 12g uncommon item: +1 item slot every 5 eats or solves
+- **Big Belt** is a 12g uncommon item: +1 item slot every 6 eats or solves
+- **Bounty** is a 6g rare food: +1 gold per solve
 - **Necronomicon** is a rare item: reveal 3 random letters at round start; every 13 reveals autocasts Omen and costs 3 max HP
 - **Growth Spurt** gives +3 max HP when you solve in 4 guesses or fewer
 - **Midas Touch** has a 40% chance to double every gold gain
@@ -94,7 +95,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Pen Club** pays a random 1-5 gold for guesses starting with PEN; **Gourmand** gains +1 max HP on eat or spell cast
 - **Old McDonald's** is a 15g unique food: EIEIO is guessed for free at the start of every round
 - Shops can show up to 2 copies of the same entry; sell rows are hoverable
-- Solve gold is 8/7/6/5/4 for solves in 1/2/3/4/5+ player guesses; auto-guesses do not lower it
+- Solve gold is a random 4-8 per solve, independent of guess count
 - **The Endless Table** fires every on-eat effect 7 times or pays 7 gold
 - **Tally Lens** is a 12g common-rarity item with an uncommon shop banner and a 3× appearance weight while a vision curse is active; it is no longer guaranteed in a shop and shows correct/misplaced counts. **Tally** is never offered while you already own one
 - **Encore** is unique and appears three times as often as an average common item; **Poppy Seeds** is a common-rarity food that shows an uncommon shop banner
@@ -128,7 +129,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **The Detour** offers a slot, a shop, or both for 7 HP; **The Crossroads** offers a shop or a Heal plus Time Freeze; **The Trade** trades gold for a slot, a slot for gold, or two Heal spells
 - The Runner and Orc idle in their walk loops; free guesses and the winning guess play the Runner's attack, other guesses alternate Orc → Runner, a fatal guess is always the Orc, and the Orc collapses from the winning blow and stays down until the next round starts
 - Defeat drops the Runner into their death animation on the run-over screen
-- The run path rail is gone; the current level stays in the battle rail
+- The run path rail is hidden by default; the pause menu has a **CHRONICLE: SHOWN/HIDDEN** setting that restores it below the battle rail
 - Purge is an event (The Redaction) and foods (Poppy Seeds, rare Inkcap, Purge the D, Pay Respects to F); its rest option triggers an eat and a 10% random curse removal
 - One exact-state autosave slot. Defeat clears it. Victory clears it and updates meta stats.
 - A **STATS** page tracks run history (last 50 runs), win rate, best level, average solve time, favorite items and curses, play time, gold and damage totals
@@ -200,14 +201,14 @@ The Runner (Soldier) and Orc sprites are from **Tiny RPG Character Asset Pack 01
 | Starting spells | 1 random spell |
 | Blacklist | disabled until The List curse; unlimited once active |
 | Normal timer | none until The Clock curse |
-| Clock curse | first stack 5:00, each later stack −20%, floor 0:30 |
+| Clock curse | first stack 5:00, each later stack -40%, floor 0:30 |
 | Final boss | 3 rounds, shared clock if active |
 | Base damage | `3 + total curse stacks`, then Heavy Hand and other modifiers apply |
 | Paid guess damage | curse-scaled base, modified only by curses |
 | Final boss damage | 3 base plus curses |
 | Timeout damage | `10 + 2 × curse stacks`, bypasses armor, ends the round |
 | Armor | a pool that soaks damage point-for-point before HP; refills each round |
-| Solve gold | `8/7/6/5/4` for solves in 1/2/3/4/5+ player guesses (auto-guesses excluded), plus `solveGoldBonus` (Midas Touch can double any gain) |
+| Solve gold | random `4-8`, plus `solveGoldBonus` (Midas Touch can double any gain) |
 | Timeout gold | `1`; a death pays nothing |
 | Solve reward | a flat 5 gold plus a spell (65%) or food (35%); gear is an 8% find |
 | Relic source | rare-tier shop/reward finds and the Curse Broker; owned relics never appear again |
