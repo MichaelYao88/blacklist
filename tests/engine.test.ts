@@ -2360,6 +2360,31 @@ describe('latest balance pass', () => {
     expect(plated.state.maxArmor).toBe(5);
   });
 
+  it('Growth Chart grants a Time Freeze every 3 max HP gained', () => {
+    const { state } = start('growth-chart-threshold');
+    state.items.push({ instance: 'i-chart', id: 'growth-chart', data: {}, equipped: true });
+    state.spells = [];
+    state.phase = 'shop';
+    state.gold = 10;
+    state.shop = shopState([
+      { id: 'o0', kind: 'eat', def: 'potato-chips', price: 1 },
+      { id: 'o1', kind: 'eat', def: 'potato-chips', price: 1 },
+      { id: 'o2', kind: 'eat', def: 'potato-chips', price: 1 },
+    ]);
+    const chart = (s: RunState) => s.items.find((item) => item.id === 'growth-chart');
+    const freezes = (s: RunState) =>
+      s.spells.filter((spell) => spell.id === 'time-freeze').length;
+
+    let current = act(state, { type: 'buy', offerId: 'o0' }).state;
+    current = act(current, { type: 'buy', offerId: 'o1' }).state;
+    expect(chart(current)?.data.grown).toBe(2);
+    expect(freezes(current)).toBe(0);
+
+    current = act(current, { type: 'buy', offerId: 'o2' }).state;
+    expect(chart(current)?.data.grown).toBe(0);
+    expect(freezes(current)).toBe(1);
+  });
+
   it('removes the retired item batch', () => {
     expect(ITEM_BY_ID.get('dead-letter')).toBeUndefined();
     expect(ITEM_BY_ID.get('feast-of-ideas')).toBeUndefined();
@@ -2374,7 +2399,7 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('bloom')?.price).toBe(7);
     expect(ITEM_BY_ID.get('bloom')?.initial).toMatchObject({ hp: 3 });
     expect(ITEM_BY_ID.get('contrapuntal')?.price).toBe(7);
-    expect(ITEM_BY_ID.get('growth-chart')?.price).toBe(6);
+    expect(ITEM_BY_ID.get('growth-chart')?.price).toBe(8);
     expect(ITEM_BY_ID.get('growth-spurt')?.price).toBe(6);
     expect(ITEM_BY_ID.get('growth-spurt')?.description).toContain('+3 max HP');
     expect(ITEM_BY_ID.get('hat-trick')?.initial).toMatchObject({ gold: 1 });

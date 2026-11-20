@@ -91,6 +91,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Bounty** is a 6g rare food: +1 gold per solve
 - **Necronomicon** is a rare item: reveal 3 random letters at round start; every 13 reveals autocasts Omen and costs 3 max HP
 - **Growth Spurt** gives +3 max HP when you solve in 4 guesses or fewer
+- **Growth Chart** is an 8g item: every 3 max HP gained grants +1 Time Freeze
 - **Midas Touch** has a 40% chance to double every gold gain
 - **Oracle Skull** is a 12g uncommon item: every heal autocasts Omen
 - **Loyalty Card** pays +1 item slot after every 9 shop purchases
