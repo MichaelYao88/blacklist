@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it } from 'vitest';
-import { readMeta, recordRun, recordStart, unlockCharacter } from '../src/ui/store';
+import { readMeta, recordPurchase, recordRun, recordStart, unlockCharacter } from '../src/ui/store';
 
 const stats = (overrides: Partial<Parameters<typeof recordRun>[0]['stats']> = {}) => ({
   rounds: 10,
@@ -20,11 +20,35 @@ beforeEach(() => {
 });
 
 describe('run history store', () => {
-  it('starts with only The Runner and unlocks a character once', () => {
+  it('starts with only The Soldier and unlocks a character once', () => {
     expect(readMeta().characters).toEqual(['runner']);
-    expect(unlockCharacter('maze-runner')).toBe(true);
-    expect(unlockCharacter('maze-runner')).toBe(false);
-    expect(readMeta().characters).toEqual(['runner', 'maze-runner']);
+    expect(unlockCharacter('pathfinder')).toBe(true);
+    expect(unlockCharacter('pathfinder')).toBe(false);
+    expect(readMeta().characters).toEqual(['runner', 'pathfinder']);
+  });
+
+  it('counts shop purchases across runs', () => {
+    expect(readMeta().purchases).toEqual({});
+    expect(recordPurchase('double-cheeseburger')).toBe(1);
+    expect(recordPurchase('double-cheeseburger')).toBe(2);
+    expect(recordPurchase('inkcap')).toBe(1);
+    expect(readMeta().purchases).toEqual({
+      'double-cheeseburger': 2,
+      inkcap: 1,
+    });
+  });
+
+  it('migrates Maze Runner to Pathfinder and keeps purchase counts', () => {
+    localStorage.setItem(
+      'blacklist.meta.v1',
+      JSON.stringify({
+        characters: ['maze-runner', 'necromancer'],
+        purchases: { 'poppy-seeds': 3, bogus: 'nope' },
+      }),
+    );
+    const meta = readMeta();
+    expect(meta.characters).toEqual(['runner', 'pathfinder', 'necromancer']);
+    expect(meta.purchases).toEqual({ 'poppy-seeds': 3 });
   });
 
   it('records runs, totals, favorites and unlocks the next ascension on a win', () => {

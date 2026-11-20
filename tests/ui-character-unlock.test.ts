@@ -18,14 +18,15 @@ describe('character unlock popup', () => {
     root.querySelector<HTMLElement>('[data-action="resume"]')!.click();
   });
 
-  it('unlocks the next character on the first curse and shows a large popup', () => {
+  it('unlocks The Pathfinder on reaching the first curse and shows a large popup', () => {
     root.querySelector<HTMLElement>('[data-action="curse"][data-id="censor"]')!.click();
-    expect(readMeta().characters).toContain('maze-runner');
+    expect(readMeta().characters).toContain('pathfinder');
 
     const overlay = root.querySelector<HTMLElement>('.unlock-overlay');
     expect(overlay).not.toBeNull();
     expect(overlay?.textContent).toContain('CHARACTER UNLOCKED');
-    expect(overlay?.textContent).toContain('The Maze Runner');
+    expect(overlay?.textContent).toContain('The Pathfinder');
+    expect(overlay?.textContent).toContain('Spam first, solve later.');
 
     root.querySelector<HTMLElement>('[data-action="dismiss-unlock"]')!.click();
     expect(root.querySelector('.unlock-overlay')).toBeNull();

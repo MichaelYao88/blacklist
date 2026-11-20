@@ -90,7 +90,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Big Belt** is a 12g uncommon item: +1 item slot every 6 eats or solves
 - **Mending Plate** is a rare item: +1 max armor per 7 HP healed
 - **Bounty** is a 6g rare food: +1 gold per solve
-- **Necronomicon** is a rare item: reveal 3 random letters at round start; every 13 reveals autocasts Omen and costs 3 max HP
+- **Necronomicon** is a rare item: reveal 2 random letters at round start, plus 1 more for every 13 max HP paid to the book; every 13 reveals autocasts Omen and costs 3 max HP
 - **Growth Spurt** gives +3 max HP when you solve in 4 guesses or fewer
 - **Growth Chart** is an 8g item: every 3 max HP gained grants +1 Time Freeze
 - **Midas Touch** has a 40% chance to double every gold gain
@@ -131,15 +131,15 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Cyrniki** is a 3g food: heal 50% of missing HP, then 50% a spell / 50% a shop reroll
 - **The Tax** reduces encounter gold by 40% and is unique; **The Sleeper** adds +2 damage per revealed letter in your first player guess, per stack; **The Curse Broker** charges 12g for a relic or 15g to remove a random curse; **The Confessional** sells 45/75/100% random curse removal for 5/10/15g
 - **The Detour** offers a slot, or a trip to the Time Bakery for +8 max HP and a Time Freeze; **The Crossroads** offers a shop or a Heal plus Time Freeze; **The Trade** trades gold for a slot, a slot for gold, or two Heal spells
-- The Runner and Orc idle in their walk loops; free guesses and the winning guess play the Runner's attack, other guesses alternate Orc → Runner, a fatal guess is always the Orc, and the Orc collapses from the winning blow and stays down until the next round starts
-- Defeat drops the Runner into their death animation on the run-over screen
+- The Soldier and Orc idle in their walk loops; free guesses and the winning guess play the Soldier's attack, other guesses alternate Orc → Soldier, a fatal guess is always the Orc, and the Orc collapses from the winning blow and stays down until the next round starts
+- Defeat drops the Soldier into their death animation on the run-over screen
 - The pause menu includes a color-coded **CHRONICLE** of gameplay actions: guesses, rounds, damage, spells, item triggers, gold, food, shop purchases and curses
 - Purge is an event (The Redaction) and foods (Poppy Seeds, rare Inkcap, Purge the D, Pay Respects to F); its rest option triggers an eat and a 10% random curse removal
 - One exact-state autosave slot. Defeat clears it. Victory clears it and updates meta stats.
 - A **STATS** page tracks run history (last 50 runs), win rate, best level, average solve time, favorite items and curses, play time, gold and damage totals
 - The top bar shows gold and area; the current level lives in the battle rail, not a level counter
 - Clock-gated items such as **Ticking Fee** never appear in shops or rewards until **The Clock** curse exists
-- Compact battle rail on the left: round timer with a hover tooltip for the time limit, a wrong-guess damage chip, a side-view mini arena with the runner facing the act's monster (or boss), player HP and armor
+- Compact battle rail on the left: round timer with a hover tooltip for the time limit, a wrong-guess damage chip, a side-view mini arena with your character facing the act's monster (or boss), player HP and armor
 - Damage numbers slam into the centre of the screen as `N damage`, with a block message when armor or immunity eats the hit
 - Spells and the blacklist sit on the right; the item list sits under the battle rail on desktop and at the bottom of the right column on mobile
 - Pause (Space or Esc), independent music/SFX mutes, synthesized SFX, keyboard and on-screen keyboard, colorblind symbols, reduced-motion-friendly CSS
@@ -189,15 +189,17 @@ Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title s
 
 ## Characters
 
-- **The Runner** is the default: 16 HP, 4 armor, no starting gear or curses.
-- **The Maze Runner** unlocks after you take your first curse as The Runner. He starts with **Head Start**, **The List** curse, 14 HP and 2 armor.
-- **The Necromancer** unlocks after you take your first curse as The Maze Runner. He starts with the **Necronomicon**, **Weak Plate** curse, 40 HP and 2 armor.
-- **The Farmer** unlocks when The Necromancer reaches a curse screen. He starts with the **Harvest Charm**, 20 HP and no armor.
-- Once more than one character is unlocked, the title screen shows character select. Unlocks persist across runs and a large popup announces each new character.
+- **The Soldier** is the default: 15 HP, 5 armor, no starting gear or curses.
+- **The Pathfinder** unlocks when The Soldier reaches the first curse screen. They start with **Head Start**, **The List** curse, 14 HP and 3 armor.
+- **The Necromancer** unlocks after buying the **Necronomicon** once from a shop. They start with the **Necronomicon**, **Weak Plate** curse, 40 HP and 3 armor.
+- **The Purgamist** unlocks after buying 2 **Inkcap** or 3 **Poppy Seeds** across any runs. They start with **The Toll** curse, 12 HP, 4 armor and purge 3 letters of your choice before the first round.
+- **The Gourmand** unlocks after buying 3 **Double Cheeseburgers** across any runs. They start with **Potluck**, **Porcupine's Dilemma** curse, 25 HP and 2 armor.
+- **The Farmer** unlocks after winning any run. They start with the **Harvest Charm**, 20 HP and no armor.
+- Once any character is unlocked, the title screen shows all six character cards (locked cards list their unlock hint). Unlocks persist across runs and a large popup announces each new character.
 
 ## Sprites
 
-The Runner (Soldier) and Orc sprites are from **Tiny RPG Character Asset Pack 01** by [Zerie](https://zerie.itch.io/tiny-rpg-character-asset-pack), used under the pack's free asset license. The Maze Runner uses the **Sci-Fi Hero** pack by [Printer Not Found](https://printer-not-found.itch.io/sci-fi-hero) (CC0). The Necromancer is from [CreativeKind's Necromancer (Free)](https://creativekind.itch.io/necromancer-free), and the Farmer is from [Kettoman's free farmer base pack](https://kettoman.itch.io/free-pixel-character-base-pack-32x32-top-down-farmer-animations). The character assets are included only as part of this game and may not be extracted or redistributed as standalone assets.
+The Soldier and Orc sprites are from **Tiny RPG Character Asset Pack 01** by [Zerie](https://zerie.itch.io/tiny-rpg-character-asset-pack), used under the pack's free asset license. The Pathfinder (Maze Runner) uses the **Sci-Fi Hero** pack by [Printer Not Found](https://printer-not-found.itch.io/sci-fi-hero) (CC0). The Necromancer is from [CreativeKind's Necromancer (Free)](https://creativekind.itch.io/necromancer-free), and the Farmer is from [Kettoman's free farmer base pack](https://kettoman.itch.io/free-pixel-character-base-pack-32x32-top-down-farmer-animations). The Purgamist uses the **Kitsune** sprite and the Gourmand uses the **Karasu** (Tengu) sprite from **Free Yokai Pixel Sprite Sheets** by [Free Game Assets / CraftPix](https://free-game-assets.itch.io/free-yokai-pixel-sprite-sheets), used under the pack's free asset license. The character assets are included only as part of this game and may not be extracted or redistributed as standalone assets.
 
 ---
 
@@ -205,8 +207,8 @@ The Runner (Soldier) and Orc sprites are from **Tiny RPG Character Asset Pack 01
 
 | Thing | Value |
 |---|---|
-| Starting HP | 16 for The Runner; preset characters override this |
-| Starting armor | 4 points for The Runner; preset characters override this |
+| Starting HP | 15 for The Soldier; preset characters override this |
+| Starting armor | 5 points for The Soldier; preset characters override this |
 | Starting item slots | 5 (only equipped gear counts; relics use one slot each) |
 | Free guesses per round | 1, plus every guess made inside a timed shield |
 | Starting gold | 12 |

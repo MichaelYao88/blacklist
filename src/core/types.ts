@@ -232,11 +232,14 @@ export interface CurseStack {
 export interface CharacterDef {
   id: CharacterId;
   name: string;
+  tagline: string;
   description: string;
   maxHp: number;
   armor: number;
   items: string[];
   curses: CurseId[];
+  /** Letters the player must purge during setup, before the first round. */
+  startingPurges?: number;
   /** Sprite family used by the battle rail and title portraits. */
   sprite: string;
   unlockHint?: string;
@@ -844,7 +847,7 @@ export type GameEvent =
   | { type: 'spellRejected'; instance: InstanceId; reason: string }
   | { type: 'shopOpened'; offers: Offer[]; rerollCost: number }
   | { type: 'shopRerolled'; offers: Offer[]; rerollCost: number }
-  | { type: 'offerBought'; offerId: string; kind: OfferKind; price: number }
+  | { type: 'offerBought'; offerId: string; kind: OfferKind; def: string; price: number }
   | { type: 'shopRejected'; offerId: string; reason: string }
   | { type: 'happeningOffered'; happening: HappeningId; options: HappeningOptionView[] }
   | {

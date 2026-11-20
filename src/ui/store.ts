@@ -30,8 +30,10 @@ export interface Meta {
   bestLevel: number;
   /** Highest ascension level unlocked. Beating level N unlocks N+1. */
   ascension: number;
-  /** Character ids the player has unlocked. The Runner is always present. */
+  /** Character ids the player has unlocked. The Soldier is always present. */
   characters: string[];
+  /** Shop purchases by definition id, across all runs. */
+  purchases: Record<string, number>;
   history: RunRecord[];
   itemCounts: Record<string, number>;
   curseCounts: Record<string, number>;
@@ -51,6 +53,7 @@ const DEFAULT_META: Meta = {
   bestLevel: 0,
   ascension: 0,
   characters: ['runner'],
+  purchases: {},
   history: [],
   itemCounts: {},
   curseCounts: {},
@@ -110,9 +113,20 @@ export function readMeta(): Meta {
       // stats page has something meaningful before the next run finishes.
       bestLevel: Number(parsed.bestLevel) || (Number(parsed.bestAct) || 0) * 10,
       ascension: Math.max(0, Math.min(ASCENSION_MAX, Number(parsed.ascension) || 0)),
-      characters: Array.isArray(parsed.characters)
-        ? [...new Set(['runner', ...parsed.characters.filter((id) => typeof id === 'string')])]
-        : ['runner'],
+      characters: (() => {
+        const aliases: Record<string, string> = { 'maze-runner': 'pathfinder' };
+        const ids = Array.isArray(parsed.characters)
+          ? parsed.characters.filter((id) => typeof id === 'string').map((id) => aliases[id] ?? id)
+          : [];
+        return [...new Set(['runner', ...ids])];
+      })(),
+      purchases: parsed.purchases && typeof parsed.purchases === 'object'
+        ? Object.fromEntries(
+            Object.entries(parsed.purchases)
+              .filter(([, count]) => typeof count === 'number')
+              .map(([id, count]) => [id, Number(count)]),
+          )
+        : {},
       history: Array.isArray(parsed.history)
         ? parsed.history.map((run) => ({
             ...run,
@@ -216,5 +230,14 @@ export function unlockCharacter(id: string): boolean {
   meta.characters.push(id);
   writeMeta(meta);
   return true;
+}
+
+/** Records a shop purchase and returns its new lifetime count. */
+export function recordPurchase(defId: string): number {
+  const meta = readMeta();
+  const next = (meta.purchases[defId] ?? 0) + 1;
+  meta.purchases[defId] = next;
+  writeMeta(meta);
+  return next;
 }
 

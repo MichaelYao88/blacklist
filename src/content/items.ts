@@ -384,24 +384,38 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'necronomicon',
     name: 'Necronomicon',
-    description: 'Round start: reveal 3 random letters. Every 13 reveals: autocast Omen, -3 max HP.',
+    description: 'Round start: reveal 2 letters, +1 per 13 max HP paid to the book. Every 13 reveals: autocast Omen, pay 3 max HP.',
+    dynamicDescription: (data) =>
+      `Round start: reveal ${2 + Math.floor((data.paid ?? 0) / 13)} letters (+1 per 13 max HP paid). Every 13 reveals: autocast Omen, pay 3 max HP.`,
     price: 13,
     kind: 'gear',
     rarity: 'rare',
-    initial: { reveals: 0 },
+    initial: { reveals: 0, paid: 0 },
     on: {
-      onRoundStart: () => [{ type: 'revealRandom', count: 3 }],
+      onRoundStart: (ctx) => [
+        {
+          type: 'revealRandom',
+          count: 2 + Math.floor((ctx.self.data.paid ?? 0) / 13),
+        },
+      ],
       onReveal: (ctx) => {
         const total = ctx.self.data.reveals + 1;
         const procs = Math.floor(total / 13);
         const effects: Effect[] = [
           { type: 'setItemData', stat: 'reveals', value: total % 13 },
         ];
-        for (let index = 0; index < procs; index++) {
-          effects.push(
-            { type: 'castSpell', spell: 'omen' },
-            { type: 'maxHp', delta: -3 },
-          );
+        if (procs > 0) {
+          effects.push({
+            type: 'setItemData',
+            stat: 'paid',
+            value: (ctx.self.data.paid ?? 0) + procs * 3,
+          });
+          for (let index = 0; index < procs; index++) {
+            effects.push(
+              { type: 'castSpell', spell: 'omen' },
+              { type: 'maxHp', delta: -3 },
+            );
+          }
         }
         return effects;
       },

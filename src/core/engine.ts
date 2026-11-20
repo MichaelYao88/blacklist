@@ -2659,7 +2659,7 @@ export function createCore(content: Content): Core {
 
     shop.purchases++;
     shop.offers = shop.offers.filter((o) => o.id !== offerId);
-    emit(rt, { type: 'offerBought', offerId, kind: offer.kind, price });
+    emit(rt, { type: 'offerBought', offerId, kind: offer.kind, def: offer.def, price });
     runHook(rt, 'onPurchase', { offer });
   }
 
@@ -3786,6 +3786,9 @@ export function createCore(content: Content): Core {
     if (content.spells.length > 0) addSpell(rt, rngPick(state, content.spells).id);
     for (const item of character.items) addItem(rt, item);
     for (const curse of character.curses) applyCurse(rt, curse, true);
+    if ((character.startingPurges ?? 0) > 0) {
+      state.pendingPurge += character.startingPurges ?? 0;
+    }
     if (startingCurses > 0) openCurseDraft(rt, true);
     else enterNode(rt);
     return { state, events: rt.events };
@@ -3807,6 +3810,12 @@ export function createCore(content: Content): Core {
       const state = parsed as RunState;
       const fromVersion = typeof parsed.version === 'number' ? parsed.version : 0;
       state.version = VERSION;
+      const characterAliases: Record<string, string> = {
+        'maze-runner': 'pathfinder',
+      };
+      if (typeof state.character === 'string' && characterAliases[state.character]) {
+        state.character = characterAliases[state.character];
+      }
       if (
         typeof state.character !== 'string'
         || !content.characters.some((character) => character.id === state.character)

@@ -1895,6 +1895,14 @@ button {
   margin: 8px auto 2px;
 }
 
+.unlock-tagline {
+  margin: 0 0 8px;
+  color: var(--gold-soft);
+  font-family: var(--serif);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
 .unlock-desc {
   margin: 0 0 12px;
   color: var(--muted);
@@ -2231,12 +2239,21 @@ button {
   font-size: 0.86rem;
 }
 
+.character-tagline {
+  color: var(--gold-soft);
+  font-family: var(--serif);
+  font-size: 0.64rem;
+  font-style: italic;
+  line-height: 1.25;
+}
+
 .character-card.active .character-name {
   color: var(--gold);
 }
 
 .character-stats,
-.character-kit {
+.character-kit,
+.character-lock {
   font-size: 0.52rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -2247,6 +2264,22 @@ button {
   color: var(--faint);
   font-weight: 500;
   letter-spacing: 0.04em;
+}
+
+.character-card.locked {
+  opacity: 0.52;
+  cursor: not-allowed;
+}
+
+.character-card.locked:hover {
+  border-color: var(--line);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.character-lock {
+  color: #d9a4a0;
+  font-weight: 600;
+  letter-spacing: 0.03em;
 }
 
 .ascension-head {
@@ -2953,7 +2986,7 @@ button {
   filter: drop-shadow(0 0 1px rgba(220, 235, 255, 0.35)) drop-shadow(0 10px 14px rgba(0, 0, 0, 0.55));
 }
 
-.character-sprite.maze-runner {
+.character-sprite.maze {
   width: 150%;
   aspect-ratio: 4 / 3;
 }
@@ -2979,7 +3012,7 @@ button {
   animation-delay: var(--attack-delay, 0ms);
 }
 
-.character-sprite.maze-runner.attacking {
+.character-sprite.maze.attacking {
   background-size: 500% 100%;
   animation: sprite-attack 800ms steps(4) 1 both;
 }
@@ -2990,6 +3023,16 @@ button {
 }
 
 .character-sprite.farmer.attacking {
+  background-size: 600% 100%;
+  animation: sprite-attack 800ms steps(5) 1 both;
+}
+
+.character-sprite.kitsune.attacking {
+  background-size: 800% 100%;
+  animation: sprite-attack 800ms steps(7) 1 both;
+}
+
+.character-sprite.tengu.attacking {
   background-size: 600% 100%;
   animation: sprite-attack 800ms steps(5) 1 both;
 }
@@ -3013,6 +3056,16 @@ button {
 .character-sprite.necromancer.dead {
   background-size: 800% 100%;
   animation: sprite-death 700ms steps(7) 1 both;
+}
+
+.character-sprite.kitsune.dead {
+  background-size: 800% 100%;
+  animation: sprite-death 700ms steps(7) 1 both;
+}
+
+.character-sprite.tengu.dead {
+  background-size: 600% 100%;
+  animation: sprite-death 700ms steps(5) 1 both;
 }
 
 @keyframes sprite-death {
