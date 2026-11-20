@@ -160,6 +160,16 @@ export const FOODS: FoodDef[] = [
     ],
   }),
   defineFood({
+    id: 'corn',
+    name: 'Corn',
+    description: '+2 max HP. Next round: C, O, R and N are revealed. No slot.',
+    price: 3,
+    effects: [
+      { type: 'maxHp', delta: 2 },
+      { type: 'queueNextRoundReveal', letters: ['c', 'o', 'r', 'n'] },
+    ],
+  }),
+  defineFood({
     id: 'oracles-banquet',
     name: "Oracle's Banquet",
     description: 'Each round: autoguess a random word. No slot.',

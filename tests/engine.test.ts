@@ -1157,12 +1157,13 @@ describe('new item and event batch', () => {
     }
   });
 
-  it('Brace pays 2 max armor, Bloom grows max HP, Patch Kit heals 30% +1', () => {
+  it('Brace pays 1 max armor, Bloom grows max HP, Patch Kit heals 30% +1', () => {
     const brace = start('brace');
     brace.state.items.push({ instance: 'i-brace', id: 'brace', data: {}, equipped: true });
     setAnswer(brace.state, 'crane');
     const braced = act(brace.state, { type: 'guess', word: 'crane' });
-    expect(braced.state.maxArmor).toBe(6);
+    expect(braced.state.maxArmor).toBe(5);
+    expect(ITEM_BY_ID.get('brace')?.price).toBe(6);
 
     const bloom = start('bloom');
     bloom.state.items.push({ instance: 'i-bloom', id: 'bloom', data: { hp: 5 }, equipped: true });
@@ -1773,21 +1774,8 @@ describe('latest balance pass', () => {
       .toContainEqual({ type: 'maxArmor', delta: 2 });
   });
 
-  it('Pawn Ticket pays a spell every 2 sales and costs 4', () => {
-    const { state } = start('pawn-ticket');
-    state.items.push(
-      { instance: 'i-pawn', id: 'pawn-ticket', data: { sold: 0 }, equipped: true },
-      { instance: 'i-sell-1', id: 'hourglass', data: {}, equipped: true },
-      { instance: 'i-sell-2', id: 'hourglass', data: {}, equipped: true },
-    );
-    state.phase = 'shop';
-    state.shop = shopState();
-    const first = act(state, { type: 'sell', instance: 'i-sell-1' });
-    expect(first.state.spells).toHaveLength(1);
-    const second = act(first.state, { type: 'sell', instance: 'i-sell-2' });
-    expect(second.state.spells).toHaveLength(2);
-    expect(ITEM_BY_ID.get('pawn-ticket')?.price).toBe(4);
-    expect(ITEM_BY_ID.get('pawn-ticket')?.description).toContain('Every 2 items sold');
+  it('removes Pawn Ticket from the content set', () => {
+    expect(ITEM_BY_ID.get('pawn-ticket')).toBeUndefined();
   });
 
   it('Counterweight pays 2 gold for every fully blocked hit', () => {
@@ -3175,14 +3163,15 @@ describe('autocast and random-guess batch', () => {
     expect(view.phase.board.guesses[0].tiles[0]).not.toBe('hidden');
   });
 
-  it('Naked Curse halves max armor', () => {
-    expect(CURSE_BY_ID.get('naked')?.maxArmorMult).toBe(0.5);
+  it('Naked Curse removes all max armor', () => {
+    expect(CURSE_BY_ID.get('naked')?.maxArmorMult).toBe(0);
     const { state } = start('naked-curse');
     state.phase = 'curse';
     state.curse = { options: ['naked'], starting: false };
     const chosen = act(state, { type: 'chooseCurse', curseId: 'naked' });
     expect(chosen.state.curses.some((curse) => curse.id === 'naked')).toBe(true);
-    expect(chosen.state.maxArmor).toBe(2);
+    expect(chosen.state.maxArmor).toBe(0);
+    expect(chosen.state.armor).toBe(0);
   });
 
   it('Ricochet autoguesses after losing 10 armor', () => {
@@ -3423,6 +3412,25 @@ describe('content and rules batch', () => {
     const next = nextRound(bought.state);
     expect(next.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
     expect(FOOD_BY_ID.get('enoki')?.price).toBe(4);
+  });
+
+  it('Corn gives +2 max HP and reveals C, O, R and N for one round', () => {
+    const { state } = start('corn');
+    state.phase = 'shop';
+    state.gold = 10;
+    state.shop = shopState([{ id: 'f0', kind: 'eat', def: 'corn', price: 3 }]);
+    const hp = state.maxHp;
+    const bought = act(state, { type: 'buy', offerId: 'f0' });
+    expect(bought.state.maxHp).toBe(hp + 2);
+    expect(bought.state.nextRoundReveals.sort()).toEqual(['c', 'n', 'o', 'r']);
+
+    const next = nextRound(bought.state);
+    expect(next.state.nextRoundReveals).toEqual([]);
+    expect(Object.keys(next.state.round?.hints ?? {}).sort()).toEqual(['c', 'n', 'o', 'r']);
+
+    const after = nextRound(next.state);
+    expect(after.state.round?.hints.c).toBeUndefined();
+    expect(FOOD_BY_ID.get('corn')?.price).toBe(3);
   });
 
   it('applies the new food tiers and removals', () => {

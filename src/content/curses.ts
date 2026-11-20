@@ -269,12 +269,12 @@ export const CURSES: CurseDef[] = [
   defineCurse({
     id: 'naked',
     name: 'The Naked Curse',
-    description: 'Lose half of your max armor.',
-    rules: ['Your max armor is halved when this curse is gained.'],
+    description: 'Lose all of your max armor.',
+    rules: ['Your max armor is removed when this curse is gained.'],
     art: 'gauntlet',
     tags: ['body'],
     maxStacks: 1,
-    maxArmorMult: 0.5,
+    maxArmorMult: 0,
   }),
   defineCurse({
     id: 'slow-mending',

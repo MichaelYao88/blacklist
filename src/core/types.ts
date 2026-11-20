@@ -319,6 +319,7 @@ export type Effect =
   | { type: 'permanentRandomGuesses'; count: number }
   | { type: 'permanentRoundStartSpell'; spell: SpellId }
   | { type: 'permanentRoundStartWord'; word: string }
+  | { type: 'queueNextRoundReveal'; letters: Letter[] }
   | { type: 'disableVisionThisRound' }
   | { type: 'friendGuesses'; count: number }
   | { type: 'autoGuess'; word: string }
@@ -576,6 +577,8 @@ export interface RunState {
   permanentRoundStartSpells: SpellId[];
   /** Old McDonald's: a word guessed for free at the start of every round. */
   permanentRoundStartWord?: string;
+  /** Corn: letters revealed once at the start of the next round. */
+  nextRoundReveals: Letter[];
   /** King Mushroom: cap the next round's wrong-guess damage. */
   nextRoundDamageCap?: number;
   /** Midnight Snack: show correct/misplaced counts for this many rounds. */

@@ -82,11 +82,11 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'brace',
     name: 'Brace',
-    description: 'Solve in 3 guesses: +2 max armor.',
-    price: 8,
+    description: 'Solve in 3 guesses: +1 max armor.',
+    price: 6,
     kind: 'gear',
     on: {
-      onSolve: (_ctx, p) => (p.guesses <= 3 ? [{ type: 'maxArmor', delta: 2 }] : []),
+      onSolve: (_ctx, p) => (p.guesses <= 3 ? [{ type: 'maxArmor', delta: 1 }] : []),
     },
   }),
   defineItem({
@@ -1029,25 +1029,6 @@ export const ITEMS: ItemDef[] = [
         const counts = truthCounts(p.guess.truth);
         if (counts.correct !== 1 || counts.present !== 0) return [];
         return [{ type: 'randomGuesses', count: 1 }];
-      },
-    },
-  }),
-  defineItem({
-    id: 'pawn-ticket',
-    name: 'Pawn Ticket',
-    description: 'Every 2 items sold: +1 random spell.',
-    price: 4,
-    kind: 'gear',
-    initial: { sold: 0 },
-    on: {
-      onSell: (ctx) => {
-        const next = ctx.self.data.sold + 1;
-        return [
-          { type: 'grow', stat: 'sold', by: 1 },
-          ...(next % 2 === 0
-            ? [{ type: 'giveSpell' as const, spell: 'random' as const }]
-            : []),
-        ];
       },
     },
   }),

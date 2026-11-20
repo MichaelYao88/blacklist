@@ -29,7 +29,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Within-X solve items count **player guesses only**; solve gold ignores auto-guesses but still counts free player guesses
 - Curse Collector, Curse Bulwark and Reliquary trigger on gaining a curse ("Whenever you gain a curse: Gain …")
 - Ascension A1/A2 draft 1/2 starting curses
-- Shops with rerolls that start at 1g and double in price: three items, two foods and one wildcard; one item is always 50% off
+- Shops with rerolls that start at 1g and double in price: three items, two foods and one wildcard; the wildcard is always food or a spell, never an item, and one item is always 50% off
 - Every spell offered in a shop costs 4g
 - Five item slots by default. Only equipped gear is active, and each shop has a drag-and-drop loadout
 - **Loose Tongue**, a rare relic that lets you guess five-letter nonsense for free-form probes
@@ -44,13 +44,13 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Rarity rolls are quality floors, not exclusive tiers: 40% rare floor pulls from the entire pool, 30% uncommon floor pulls from uncommon + common, and 30% common floor pulls from common only. A missing floor falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 105 items (96 shop items + 9 rare relics), 6 spells, 81 foods and 25 happenings
+- 104 items (95 shop items + 9 rare relics), 6 spells, 82 foods and 25 happenings
 - New foods include **U-nagi**, **Empty Calories**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
 - **Field Kit** reveals exactly 4 letters that are not in the word; **Doggy Bag** reveals 2 and queues another after every food
 - Letter foods cover B, C, D, E, F, G, H, I, J, K, L, O, P, Q, T, U, W, X, and Y+N; each is unique and stops appearing once all its letters are permanently revealed. E-Fu, I-Cee, O-Toro, T-Bone, P-Stachio and L-Bacore Tuna are rare; the rest are uncommon
-- New solve rewards: **Brace** (+2 max armor), **Bloom** (+5 max HP, +1 per trigger), **Patch Kit** (heal 30% of max HP +1)
+- New solve rewards: **Brace** (6g, +1 max armor), **Bloom** (+5 max HP, +1 per trigger), **Patch Kit** (heal 30% of max HP +1)
 - **Four-Leaf Clover** has a 20% chance of a random spell when you eat or cast
 - **Nest Egg** pays 3 gold whenever a shop opens
 - **Frozen Durian** grants +1 Time Freeze every 4 foods eaten
@@ -96,11 +96,12 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Moon Cake** is a 16g rare unique food: autocast Omen at the start of every round
 - **Empty Orb** is a 7g item that autocasts Omen when a round starts with no spells; **Empty Phone** is the 9g Phone a Friend version
 - **Enoki** is a 4g food: +3 max HP and one autoguess next round
+- **Corn** is a 3g food: +2 max HP and reveals C, O, R and N for the next round only
 - **Packed Lunch** is a 3g food: +3 max armor and +7 max HP
 - **Iron Ration** is an 8g rare food: +2 max armor. **One Bo Hue** and **Plating** are uncommon; **Taco Pizza Party** is rare
 - **Clean Slate** gives +1 max HP or +1 max armor at random when its condition triggers, once per round
 - **Double Dip** is Kase's new name; it keeps the +1 max armor and queued-answer effect
-- **The Naked Curse** halves max armor; **Piercing** makes half of every hit bypass armor even while armor remains; curse drafts offer two choices
+- **The Naked Curse** removes all max armor; **Piercing** makes half of every hit bypass armor even while armor remains; curse drafts offer two choices
 - Blacklisted words are never chosen as round targets; if a late run runs out of legal targets, the List releases one
 - The run-over screen and run history record the items you had equipped, and the stats page shows them per run
 - Random guesses pull from a 201-word pool chosen for non-native speakers, including **wharf**; **Dark Echo** avoids letters from your first guess

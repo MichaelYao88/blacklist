@@ -1148,6 +1148,11 @@ export function createCore(content: Content): Core {
       case 'permanentRoundStartWord':
         state.permanentRoundStartWord = effect.word;
         break;
+      case 'queueNextRoundReveal':
+        for (const letter of effect.letters) {
+          if (!state.nextRoundReveals.includes(letter)) state.nextRoundReveals.push(letter);
+        }
+        break;
       case 'disableVisionThisRound':
         if (state.round && !state.round.visionDisabled) {
           state.round.visionDisabled = true;
@@ -1743,6 +1748,13 @@ export function createCore(content: Content): Core {
     state.pendingReveals = [];
     for (const letter of watched) {
       hintLetter(rt, letter, round.answer.includes(letter) ? 'present' : 'absent');
+    }
+    if (state.nextRoundReveals.length > 0) {
+      const letters = state.nextRoundReveals.slice();
+      state.nextRoundReveals = [];
+      for (const letter of letters) {
+        hintLetter(rt, letter, round.answer.includes(letter) ? 'present' : 'absent');
+      }
     }
     if (state.pendingAbsent > 0) {
       revealAbsentLetters(rt, state.pendingAbsent);
@@ -2488,14 +2500,12 @@ export function createCore(content: Content): Core {
     }
     for (let index = 0; index < foodTarget; index++) pickRandomFood();
 
-    const categories = ['spell', 'eat', 'item'] as const;
+    const categories = ['spell', 'eat'] as const;
     const wildcard = categories[rngInt(state, categories.length)];
     if (wildcard === 'spell') {
       if (content.spells.length > 0) pickSpell(rngPick(state, content.spells));
-    } else if (wildcard === 'eat') {
-      pickRandomFood();
     } else {
-      pickRandomItem();
+      pickRandomFood();
     }
 
     return picked.map((pick, index) => ({
@@ -2881,7 +2891,7 @@ export function createCore(content: Content): Core {
         });
       }
     }
-    if (def.maxArmorMult) {
+    if (def.maxArmorMult !== undefined) {
       state.maxArmor = Math.max(0, Math.floor(state.maxArmor * def.maxArmorMult));
       state.armor = Math.min(state.armor, state.maxArmor);
       emit(rt, { type: 'armorChanged', armor: state.armor, max: state.maxArmor });
@@ -3523,6 +3533,7 @@ export function createCore(content: Content): Core {
       nextRoundRandomGuesses: 0,
       permanentRandomGuesses: 0,
       permanentRoundStartSpells: [],
+      nextRoundReveals: [],
       curses: [],
       seenCurses: [],
       pendingStartingCurses: startingCurses,
@@ -3599,6 +3610,7 @@ export function createCore(content: Content): Core {
       if (typeof state.nextRoundRandomGuesses !== 'number') state.nextRoundRandomGuesses = 0;
       if (typeof state.permanentRandomGuesses !== 'number') state.permanentRandomGuesses = 0;
       if (!Array.isArray(state.permanentRoundStartSpells)) state.permanentRoundStartSpells = [];
+      if (!Array.isArray(state.nextRoundReveals)) state.nextRoundReveals = [];
       if (!Array.isArray(state.firstGuesses)) state.firstGuesses = state.blacklist.slice();
       if (typeof state.level !== 'number') {
         state.level = state.nodes[state.nodeIndex]?.level ?? 1;
