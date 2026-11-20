@@ -3447,6 +3447,43 @@ describe('content and rules batch', () => {
   });
 });
 
+describe('letter happenings', () => {
+  it('Know the Letter permanently reveals the chosen letter', () => {
+    const { state } = start('know-letter-event');
+    state.phase = 'happening';
+    state.happening = { id: 'know-the-letter', options: [], letters: ['q', 'x'] };
+    const chosen = act(state, { type: 'choose', optionId: 'q' });
+    expect(chosen.state.permanentReveals).toContain('q');
+    expect(chosen.state.happening?.resolved?.success).toBe(true);
+  });
+
+  it('Purge the Letter permanently purges the chosen letter', () => {
+    const { state } = start('purge-letter-event');
+    state.phase = 'happening';
+    state.happening = { id: 'purge-the-letter', options: [], letters: ['q', 'x', 'z'] };
+    const chosen = act(state, { type: 'choose', optionId: 'q' });
+    expect(chosen.state.purged).toContain('q');
+    expect(chosen.state.happening?.resolved?.success).toBe(true);
+  });
+
+  it('offers two know letters and three purge letters', () => {
+    let know: RunState['happening'];
+    let purge: RunState['happening'];
+    for (let index = 0; index < 400 && (!know || !purge); index++) {
+      const { state } = start(`letter-event-${index}`);
+      const next = nextHappening(state);
+      if (next.state.happening?.id === 'know-the-letter') know = next.state.happening;
+      if (next.state.happening?.id === 'purge-the-letter') purge = next.state.happening;
+    }
+    expect(know?.letters).toHaveLength(2);
+    expect(purge?.letters).toHaveLength(3);
+    expect(new Set(know?.letters).size).toBe(2);
+    expect(new Set(purge?.letters).size).toBe(3);
+    expect(know?.options.filter((option) => option.id !== 'leave')).toHaveLength(2);
+    expect(purge?.options.filter((option) => option.id !== 'leave')).toHaveLength(3);
+  });
+});
+
 describe('relic uniqueness', () => {
   const relicIds = [...ITEM_BY_ID.values()]
     .filter((item) => item.rarity === 'rare')

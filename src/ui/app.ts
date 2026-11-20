@@ -1712,24 +1712,26 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
       const applies = offer.kind === 'item' || offer.kind === 'eat';
       const finalPrice = Math.max(1, offer.price - (applies ? coupon : 0));
       const cannotAfford = view.gold < finalPrice;
-      const isRelic = offer.kind === 'item'
-        && ITEM_BY_ID.get(offer.def)?.rarity === 'rare';
       const rarity = offer.kind === 'item'
         ? ITEM_BY_ID.get(offer.def)?.rarity
         : offer.kind === 'eat' ? FOOD_BY_ID.get(offer.def)?.rarity : undefined;
-      const isUncommon = !isRelic && rarity === 'uncommon';
+      const isRare = rarity === 'rare';
+      const isRelic = offer.kind === 'item' && isRare;
+      const isUncommon = !isRare && rarity === 'uncommon';
       const tag = isRelic
         ? offer.sale ? 'RELIC · 50% OFF' : 'RELIC'
-        : isUncommon
-          ? offer.sale ? 'UNCOMMON · 50% OFF' : 'UNCOMMON'
-          : offer.sale ? 'SALE · 50% OFF' : KIND_LABELS[offer.kind];
+        : isRare
+          ? offer.sale ? 'RARE · 50% OFF' : 'RARE'
+          : isUncommon
+            ? offer.sale ? 'UNCOMMON · 50% OFF' : 'UNCOMMON'
+            : offer.sale ? 'SALE · 50% OFF' : KIND_LABELS[offer.kind];
       const price = offer.sale && offer.originalPrice
         ? `<s>${offer.originalPrice} G</s> ${finalPrice} G`
         : applies && coupon > 0
           ? `<s>${offer.price} G</s> ${finalPrice} G`
           : `${offer.price} G`;
       return `
-      <article class="offer-card ${cannotAfford ? 'unavailable' : ''} ${offer.sale ? 'sale' : ''} ${isRelic ? 'rare' : isUncommon ? 'uncommon' : ''}">
+      <article class="offer-card ${cannotAfford ? 'unavailable' : ''} ${offer.sale ? 'sale' : ''} ${isRare ? 'rare' : isUncommon ? 'uncommon' : ''}">
         <div class="offer-top">
           <span class="item-emoji" aria-hidden="true">${info.icon}</span>
           <span class="tag">${tag}</span>

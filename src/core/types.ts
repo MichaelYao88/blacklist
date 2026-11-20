@@ -271,6 +271,8 @@ export interface HappeningOptionView {
 export interface HappeningState {
   id: HappeningId;
   options: HappeningOptionView[];
+  /** Dynamic letter choices for Know the Letter / Purge the Letter. */
+  letters?: Letter[];
   /** Pre-rolled previews for events such as The Bargain. */
   previewItem?: ItemId;
   previewCurse?: CurseId;

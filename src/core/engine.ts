@@ -8,6 +8,7 @@ import type {
   Effect,
   GameEvent,
   HappeningDef,
+  HappeningOptionView,
   InstanceId,
   ItemDef,
   ItemInstance,
@@ -2688,19 +2689,48 @@ export function createCore(content: Content): Core {
         break;
       }
     }
+    const letterEvent = def.id === 'know-the-letter' || def.id === 'purge-the-letter';
+    const baseOptions: HappeningOptionView[] = def.options.map((option) => ({
+      id: option.id,
+      label: option.label,
+      description: option.description,
+      costGold: option.costGold,
+      fallbackPct: option.fallbackPct,
+      chancePct: option.outcomes.length === 1
+        ? 100
+        : option.outcomes[0]?.chancePct,
+      outcomes: option.outcomes.map((o) => ({ chancePct: o.chancePct, text: o.text })),
+    }));
+    let letters: Letter[] | undefined;
+    let options = baseOptions;
+    if (letterEvent) {
+      const know = def.id === 'know-the-letter';
+      const candidates = ALPHABET.filter((letter) => (
+        !state.purged.includes(letter)
+        && (!know || !state.permanentReveals.includes(letter))
+      ));
+      letters = rngShuffle(state, candidates).slice(0, know ? 2 : 3);
+      const letterOptions: HappeningOptionView[] = letters.map((letter) => ({
+        id: letter,
+        label: `${know ? 'Know' : 'Purge'} ${letter.toUpperCase()}`,
+        description: know
+          ? `Permanently reveal ${letter.toUpperCase()} in every round.`
+          : `Permanently purge ${letter.toUpperCase()} from future answers.`,
+        chancePct: 100,
+        outcomes: [{
+          chancePct: 100,
+          text: know
+            ? `${letter.toUpperCase()} will be known from now on.`
+            : `${letter.toUpperCase()} will be purged from future answers.`,
+        }],
+      }));
+      const leave = baseOptions.find((option) => option.id === 'leave');
+      options = [...letterOptions, ...(leave ? [leave] : [])];
+    }
     state.happening = {
       id: def.id,
-      options: def.options.map((option) => ({
-        id: option.id,
-        label: option.label,
-        description: option.description,
-        costGold: option.costGold,
-        fallbackPct: option.fallbackPct,
-        chancePct: option.outcomes.length === 1
-          ? 100
-          : option.outcomes[0]?.chancePct,
-        outcomes: option.outcomes.map((o) => ({ chancePct: o.chancePct, text: o.text })),
-      })),
+      options,
+      letters,
     };
     if (def.id === 'the-bargain') {
       const items = content.items.filter(
@@ -2726,6 +2756,36 @@ export function createCore(content: Content): Core {
     if (!happening || state.phase !== 'happening' || happening.resolved) return;
     const def = happeningById.get(happening.id);
     if (!def) return;
+    if (happening.letters && def.id === 'know-the-letter' && happening.letters.includes(optionId as Letter)) {
+      const letter = optionId as Letter;
+      applyEffects(rt, [{ type: 'revealLetter', letter }], { kind: 'happening', happening: def.id });
+      const text = `${letter.toUpperCase()} will be known from now on.`;
+      happening.resolved = { option: letter, success: true, text };
+      emit(rt, {
+        type: 'happeningResolved',
+        happening: def.id,
+        option: letter,
+        success: true,
+        text,
+      });
+      return;
+    }
+    if (happening.letters && def.id === 'purge-the-letter' && happening.letters.includes(optionId as Letter)) {
+      const letter = optionId as Letter;
+      const success = purgeLetterNow(rt, letter);
+      const text = success
+        ? `${letter.toUpperCase()} is purged from future answers.`
+        : `${letter.toUpperCase()} could not be purged.`;
+      happening.resolved = { option: letter, success, text };
+      emit(rt, {
+        type: 'happeningResolved',
+        happening: def.id,
+        option: letter,
+        success,
+        text,
+      });
+      return;
+    }
     const option = def.options.find((o) => o.id === optionId);
     if (!option) return;
 

@@ -36,6 +36,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Spells stack by type and come from food, item triggers and the shop wildcard slot
 - **Restore** clears the blacklist, refills armor, and ignores vision curses for the rest of the round; **Contrapuntal** turns into a random relic if you cast all six spell types
 - Happenings with visible odds and persistent consequences
+- **Know the Letter** offers two random letters and permanently reveals the one you pick; **Purge the Letter** offers three random letters and permanently purges one
 - Short item, spell and offer text with hover tooltips for keywords like armor, reveal, ruled out, free guesses, blacklist, relic and timeout
 - Revealed letters stay marked on the keyboard and in a Revealed panel for the puzzle; random reveals lean toward letters that are not in the answer; letter-reveal foods are permanent for the run
 - Vision-hidden letters show the hatched hidden key on the keyboard; reveals and rule-outs take priority over that layer
@@ -44,7 +45,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Rarity rolls are quality floors, not exclusive tiers: 40% rare floor pulls from the entire pool, 30% uncommon floor pulls from uncommon + common, and 30% common floor pulls from common only. A missing floor falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 104 items (95 shop items + 9 rare relics), 6 spells, 82 foods and 25 happenings
+- 104 items (95 shop items + 9 rare relics), 6 spells, 82 foods and 27 happenings
 - New foods include **U-nagi**, **Empty Calories**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
