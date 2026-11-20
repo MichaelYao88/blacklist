@@ -32,7 +32,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Shops with rerolls that start at 1g and double in price: three items, two foods and one wildcard; the wildcard is always food or a spell, never an item, and one random offer is always 50% off
 - Every spell offered in a shop has a 4g base price; the half-price sale can land on it
 - Five item slots by default. Only equipped gear is active, and each shop has a drag-and-drop loadout
-- **Loose Tongue**, a rare relic that lets you guess five-letter nonsense for free-form probes
+- **Loose Tongue**, a 12g uncommon item that lets you guess five-letter nonsense for free-form probes
 - Spells stack by type and come from food, item triggers and the shop wildcard slot
 - **Restore** clears the blacklist, refills armor, and ignores vision curses — including position curses — for the rest of the round; **Contrapuntal** turns into a random relic if you cast all six spell types
 - Happenings with visible odds and persistent consequences
@@ -45,7 +45,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Rarity is rolled directly: 35% rare, 50% uncommon, and 15% common for both items and foods. If a tier is empty, it falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 106 items (97 shop items + 9 rare relics), 6 spells, 85 foods and 29 happenings
+- 106 items (98 shop items + 8 rare relics), 6 spells, 85 foods and 29 happenings
 - New foods include **U-nagi**, **Donut Holes**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
@@ -54,7 +54,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - New solve rewards: **Brace** (6g, +1 max armor), **Bloom** (+5 max HP, +1 per trigger), **Patch Kit** (heal 30% of max HP +1)
 - **Four-Leaf Clover** has a 20% chance of a random spell when you eat or cast
 - **Nest Egg** pays 3 gold whenever a shop opens
-- **Frozen Durian** grants +1 Time Freeze every 4 foods eaten
+- **Frozen Durian** grants +1 Time Freeze every 3 foods eaten or solves
 - **Muffin Tin** is a 2g uncommon food: in that shop, each food eaten gives +1 max armor per Muffin Tin eaten, but a tin does not count itself; the armor is permanent and the counting stops when you leave
 - **Chilaquiles** is a 2g food that doubles the next two sales
 - **Spell Pepper** is a 3g food that doubles your next spell
@@ -70,6 +70,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Combustion Engine** is a 10g uncommon item with a 3x appearance weight: after you autocast a spell, it has a 40% chance to autocast a random spell
 - **Encore** now costs 7g
 - **Panacea Pouch** (formerly Spellhoarder) is a 9g item: every 3rd spell cast casts Heal
+- **Omen** ignores letters whose only revealing tile was hidden by a position curse, so it can still find them
 - **Vowel Tithe** is an 8g item: each spell cast has a 25% chance to cast Omen
 - **Wild Magic** is a 9g item: each spell cast has a 25% chance to cast a random spell and a 25% chance to autoguess a random word
 - **Acquired Taste** is a 7g uncommon item: each different food you eat this run gives +4 max HP
@@ -83,7 +84,13 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Gold Standard** is an 8g item: every gold gain gives +1 more gold
 - **Guardian Angel** is an 8g item: after every 10 HP damage taken, gain Immunity
 - **Immunity** blocks the next hurting guess and any guess for 4 seconds after it
-- **Big Belt** gains +1 item slot every 5 eats or solves
+- **Big Belt** is a 12g uncommon item: +1 item slot every 5 eats or solves
+- **Necronomicon** is a rare item: reveal 3 random letters at round start; every 13 reveals autocasts Omen and costs 3 max HP
+- **Growth Spurt** gives +3 max HP when you solve in 4 guesses or fewer
+- **Midas Touch** has a 40% chance to double every gold gain
+- **Oracle Skull** is a 12g uncommon item: every heal autocasts Omen
+- **Loyalty Card** pays +1 item slot after every 9 shop purchases
+- **Placebo** heals exactly 1 HP on each player guess
 - **Pen Club** pays a random 1-5 gold for guesses starting with PEN; **Gourmand** gains +1 max HP on eat or spell cast
 - **Old McDonald's** is a 15g unique food: EIEIO is guessed for free at the start of every round
 - Shops can show up to 2 copies of the same entry; sell rows are hoverable
@@ -114,7 +121,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **The Naked Curse** removes all max armor; **Piercing** makes half of every hit bypass armor even while armor remains; curse drafts offer two choices
 - Blacklisted words are never chosen as round targets; if a late run runs out of legal targets, the List releases one
 - The run-over screen and run history record the items you had equipped, and the stats page shows them per run
-- Random guesses pull from a 208-word pool chosen for non-native speakers, including **patsy**, **wharf**, **rajah**, **guppy**, **glyph**, **lymph**, **gaunt**, **jaunt**, and **vaunt**; **Dark Echo** avoids letters from your first guess
+- Random guesses pull from a 210-word pool chosen for non-native speakers, including **patsy**, **wharf**, **rajah**, **guppy**, **glyph**, **lymph**, **gaunt**, **jaunt**, **vaunt**, **lurid**, and **torus**; **Dark Echo** avoids letters from your first guess
 - Every spell cast plays an animated pop-up, including item autocasts; spell pop-ups appear 2 seconds apart, and every pop-up stays visible for 5 seconds
 - **Cyrniki** is a 3g food: heal 50% of missing HP, then 50% a spell / 50% a shop reroll
 - **The Tax** reduces encounter gold by 40% and is unique; **The Sleeper** adds +2 damage per revealed letter in your first player guess, per stack; **The Curse Broker** charges 12g for a relic or 15g to remove a random curse; **The Confessional** sells 45/75/100% random curse removal for 5/10/15g

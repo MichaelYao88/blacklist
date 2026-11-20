@@ -13,6 +13,19 @@ const SPELL_BITS: Record<string, number> = {
 
 const FOOD_BITS = new Map(FOODS.map((food, index) => [food.id, index]));
 
+/** Frozen Durian: one Time Freeze for every three eats or solves. */
+function everyThreeFoodsOrSolves(self: { data: Record<string, number> }): Effect[] {
+  const total = (self.data.eaten ?? 0) + 1;
+  const freezes = Math.floor(total / 3);
+  return [
+    { type: 'setItemData', stat: 'eaten', value: total % 3 },
+    ...Array.from({ length: freezes }, () => ({
+      type: 'giveSpell' as const,
+      spell: 'time-freeze' as const,
+    })),
+  ];
+}
+
 /** Every fifth eat/solve pays one item slot. */
 function everyFiveEatsOrSolves(self: { data: Record<string, number> }): Effect[] {
   const total = self.data.progress + 1;
@@ -232,10 +245,10 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'midas-touch',
     name: 'Midas Touch',
-    description: 'Every gold gain: 20% chance to double it.',
+    description: 'Every gold gain: 40% chance to double it.',
     price: 12,
     kind: 'gear',
-    goldDoubleChance: 20,
+    goldDoubleChance: 40,
   }),
   defineItem({
     id: 'gold-standard',
@@ -331,6 +344,7 @@ export const ITEMS: ItemDef[] = [
     description: 'Every 5 eats or solves: +1 item slot.',
     price: 12,
     kind: 'gear',
+    rarity: 'uncommon',
     initial: { progress: 0 },
     on: {
       onEat: (ctx) => everyFiveEatsOrSolves(ctx.self),
@@ -369,12 +383,13 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'necronomicon',
     name: 'Necronomicon',
-    description: 'Round start: reveal 2 letters not in the word. Every 13 reveals: autocast Omen, -3 max HP.',
+    description: 'Round start: reveal 3 random letters. Every 13 reveals: autocast Omen, -3 max HP.',
     price: 13,
     kind: 'gear',
+    rarity: 'rare',
     initial: { reveals: 0 },
     on: {
-      onRoundStart: () => [{ type: 'revealAbsent', count: 2 }],
+      onRoundStart: () => [{ type: 'revealRandom', count: 3 }],
       onReveal: (ctx) => {
         const total = ctx.self.data.reveals + 1;
         const procs = Math.floor(total / 13);
@@ -480,9 +495,9 @@ export const ITEMS: ItemDef[] = [
     id: 'loose-tongue',
     name: 'Loose Tongue',
     description: 'Any five letters are a valid guess. Nonsense still scores.',
-    price: 24,
+    price: 12,
     kind: 'gear',
-    rarity: 'rare',
+    rarity: 'uncommon',
     allowInvalidGuesses: true,
   }),
 
@@ -641,10 +656,10 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'field-kit',
     name: 'Field Kit',
-    description: 'Round start, learn 2 letters not in the word.',
+    description: 'Round start, learn 4 letters not in the word.',
     price: 10,
     kind: 'gear',
-    on: { onRoundStart: () => [{ type: 'revealAbsent', count: 2 }] },
+    on: { onRoundStart: () => [{ type: 'revealAbsent', count: 4 }] },
   }),
   defineItem({
     id: 'doggy-bag',
@@ -903,22 +918,13 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'frozen-durian',
     name: 'Frozen Durian',
-    description: 'Every 4 foods eaten: +1 Time Freeze.',
+    description: 'Every 3 foods eaten or solves: +1 Time Freeze.',
     price: 8,
     kind: 'gear',
     initial: { eaten: 0 },
     on: {
-      onEat: (ctx) => {
-        const total = ctx.self.data.eaten + 1;
-        const freezes = Math.floor(total / 4);
-        return [
-          { type: 'setItemData', stat: 'eaten', value: total % 4 },
-          ...Array.from({ length: freezes }, () => ({
-            type: 'giveSpell' as const,
-            spell: 'time-freeze' as const,
-          })),
-        ];
-      },
+      onEat: (ctx) => everyThreeFoodsOrSolves(ctx.self),
+      onSolve: (ctx) => everyThreeFoodsOrSolves(ctx.self),
     },
   }),
   defineItem({
@@ -1113,7 +1119,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'loyalty-card',
     name: 'Loyalty Card',
-    description: 'Every 7 shop purchases: +1 item slot.',
+    description: 'Every 9 shop purchases: +1 item slot.',
     price: 8,
     kind: 'gear',
     initial: { buys: 0 },
@@ -1122,7 +1128,7 @@ export const ITEMS: ItemDef[] = [
         const next = ctx.self.data.buys + 1;
         return [
           { type: 'grow', stat: 'buys', by: 1 },
-          ...(next % 7 === 0 ? [{ type: 'slots' as const, delta: 1 }] : []),
+          ...(next % 9 === 0 ? [{ type: 'slots' as const, delta: 1 }] : []),
         ];
       },
     },
@@ -1443,11 +1449,11 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'growth-spurt',
     name: 'Growth Spurt',
-    description: 'Solve in 4 guesses or fewer: +2 max HP.',
+    description: 'Solve in 4 guesses or fewer: +3 max HP.',
     price: 6,
     kind: 'gear',
     on: {
-      onSolve: (_ctx, p) => (p.guesses <= 4 ? [{ type: 'maxHp', delta: 2 }] : []),
+      onSolve: (_ctx, p) => (p.guesses <= 4 ? [{ type: 'maxHp', delta: 3 }] : []),
     },
   }),
 
@@ -1501,19 +1507,14 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'oracle-skull',
     name: 'Oracle Skull',
-    description: 'First heal each round: autocast Omen.',
-    price: 26,
+    description: 'Whenever you are healed: autocast Omen.',
+    price: 12,
     kind: 'gear',
-    rarity: 'rare',
-    initial: { used: 0 },
+    rarity: 'uncommon',
     on: {
-      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
-      onHeal: (ctx, p) => {
-        if (ctx.self.data.used || p.amount <= 0) return [];
-        return [
-          { type: 'castSpell', spell: 'omen' },
-          { type: 'setItemData', stat: 'used', value: 1 },
-        ];
+      onHeal: (_ctx, p) => {
+        if (p.amount <= 0) return [];
+        return [{ type: 'castSpell', spell: 'omen' }];
       },
     },
   }),

@@ -1046,8 +1046,13 @@ export function createCore(content: Content): Core {
         if (noReveal(state) && (source.kind === 'item' || source.kind === 'spell')) break;
         const known = new Set<string>();
         for (const guess of round.guesses) {
-          guess.truth.forEach((tile, i) => {
-            if (tile === 'correct' || tile === 'present') known.add(guess.word[i]);
+          const shown = presentGuess(state, guess).tiles;
+          shown.forEach((tile, index) => {
+            // A tile hidden by a vision curse told the player nothing, even if
+            // the underlying letter was actually in the answer.
+            if (tile === 'correct' || tile === 'present' || tile === 'hit') {
+              known.add(guess.word[index]);
+            }
           });
         }
         for (const [letter, status] of Object.entries(round.hints ?? {})) {

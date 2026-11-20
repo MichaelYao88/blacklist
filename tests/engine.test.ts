@@ -1071,14 +1071,14 @@ describe('curse-triggered items', () => {
 });
 
 describe('item and food batch', () => {
-  it('Field Kit reveals 2 letters that are not in the word', () => {
+  it('Field Kit reveals 4 letters that are not in the word', () => {
     const { state } = start('field-kit');
     state.items.push({ instance: 'i-kit', id: 'field-kit', data: {}, equipped: true });
     const next = nextRound(state);
     const round = next.state.round;
     if (!round) throw new Error('expected round');
     const hints = Object.entries(round.hints);
-    expect(hints).toHaveLength(2);
+    expect(hints).toHaveLength(4);
     for (const [letter, status] of hints) {
       expect(status).toBe('absent');
       expect(round.answer).not.toContain(letter);
@@ -1102,6 +1102,20 @@ describe('item and food batch', () => {
     const hint = Object.keys(cast.state.round!.hints ?? {})[0];
     expect(present.has(hint)).toBe(false);
     expect(['c', 'r', 'n']).toContain(hint);
+  });
+
+  it('Omen reveals a letter whose only present tile was hidden by a position curse', () => {
+    const { state } = start('omen-hidden-position');
+    state.curses.push({ id: 'fourth-wall', stacks: 1 });
+    state.round!.answer = 'spear';
+    state.round!.freeLeft = 0;
+    state.round!.hints = { a: 'present', e: 'present' };
+    // CRISP puts S on the fourth tile, which Fourth Wall hides.
+    const guessed = act(state, { type: 'guess', word: 'crisp' });
+    expect(guessed.state.round!.hints.s).toBeUndefined();
+    guessed.state.spells = [{ instance: 's-omen', id: 'omen' }];
+    const cast = act(guessed.state, { type: 'castSpell', instance: 's-omen' });
+    expect(cast.state.round!.hints.s).toBe('present');
   });
 
   it("Old McDonald's food makes a free EIEIO guess every round", () => {
@@ -1599,7 +1613,7 @@ describe('new item and event batch', () => {
     expect(FOOD_BY_ID.get('one-bo-hue')?.rarity).toBe('uncommon');
     expect(FOOD_BY_ID.get('taco-pizza-party')?.rarity).toBe('rare');
     expect(FOOD_BY_ID.get('plating')?.rarity).toBe('uncommon');
-    expect(ITEM_BY_ID.get('growth-spurt')?.description).toContain('+2 max HP');
+    expect(ITEM_BY_ID.get('growth-spurt')?.description).toContain('+3 max HP');
     expect(FOOD_BY_ID.get('muffin-tin')?.description).toContain('+1 max armor');
     expect(CURSE_BY_ID.get('porcupine')?.damagePerGreen).toBe(2);
     expect(CURSE_BY_ID.get('porcupine')?.description)
@@ -1611,6 +1625,9 @@ describe('new item and event batch', () => {
     expect(ITEM_BY_ID.get('gourmand')?.description).toContain('On spell cast or food eaten');
     expect(ITEM_BY_ID.get('pen-club')?.description).toContain('1-5 gold');
     expect(ITEM_BY_ID.get('big-belt')?.description).toContain('Every 5 eats or solves');
+    expect(ITEM_BY_ID.get('big-belt')?.rarity).toBe('uncommon');
+    expect(ITEM_BY_ID.get('midas-touch')?.description).toContain('40%');
+    expect(ITEM_BY_ID.get('midas-touch')?.goldDoubleChance).toBe(40);
     expect(ITEM_BY_ID.get('miser')).toBeUndefined();
     expect(ITEM_BY_ID.get('plate-timer')?.requiresClock).toBe(true);
     expect(ITEM_BY_ID.get('solo-note')?.description)
@@ -1883,6 +1900,21 @@ describe('latest balance pass', () => {
     expect(cast.state.round?.guesses.filter((guess) => guess.by === 'friend')).toHaveLength(2);
     const solved = act(cast.state, { type: 'guess', word: 'crane' });
     expect(solved.state.slots).toBe(6); // one player guess, despite two friend guesses
+  });
+
+  it('Necronomicon reveals 3 random letters at round start', () => {
+    const { state } = start('necronomicon-start');
+    state.items.push({
+      instance: 'i-nec-start',
+      id: 'necronomicon',
+      data: { reveals: 0 },
+      equipped: true,
+    });
+    const next = nextRound(state);
+    const round = next.state.round;
+    if (!round) throw new Error('expected round');
+    expect(Object.keys(round.hints)).toHaveLength(3);
+    expect(ITEM_BY_ID.get('necronomicon')?.rarity).toBe('rare');
   });
 
   it('Necronomicon procs at 13 reveals for an Omen and -3 max HP', () => {
@@ -2333,10 +2365,11 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('contrapuntal')?.price).toBe(7);
     expect(ITEM_BY_ID.get('growth-chart')?.price).toBe(6);
     expect(ITEM_BY_ID.get('growth-spurt')?.price).toBe(6);
-    expect(ITEM_BY_ID.get('growth-spurt')?.description).toContain('+2 max HP');
+    expect(ITEM_BY_ID.get('growth-spurt')?.description).toContain('+3 max HP');
     expect(ITEM_BY_ID.get('hat-trick')?.initial).toMatchObject({ gold: 1 });
     expect(ITEM_BY_ID.get('necronomicon')?.price).toBe(13);
-    expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('not in the word');
+    expect(ITEM_BY_ID.get('necronomicon')?.rarity).toBe('rare');
+    expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('reveal 3 random letters');
     expect(ITEM_BY_ID.get('nest-egg')?.price).toBe(4);
     expect(ITEM_BY_ID.get('nest-egg')?.description).toContain('+3 gold');
     expect(ITEM_BY_ID.get('plate-timer')?.price).toBe(7);
@@ -2451,9 +2484,9 @@ describe('latest balance pass', () => {
     const prices: Record<string, number> = {
       'chrono-anchor': 28,
       counterweight: 10,
-      'loose-tongue': 24,
+      'loose-tongue': 12,
       'mending-plate': 26,
-      'oracle-skull': 26,
+      'oracle-skull': 12,
       'phoenix-egg': 18,
       potluck: 26,
       quickdraw: 24,
@@ -2788,30 +2821,29 @@ describe('latest balance pass', () => {
     expect(next.state.round?.immuneUntilMs).toBe(12_000);
   });
 
-  it('Frozen Durian grants Time Freeze every 4 foods', () => {
+  it('Frozen Durian grants Time Freeze every 3 eats or solves', () => {
     const { state } = start('frozen-durian');
     state.items.push({
       instance: 'i-durian',
       id: 'frozen-durian',
-      data: { eaten: 0 },
+      data: { eaten: 2 },
       equipped: true,
     });
     state.phase = 'shop';
     state.gold = 100;
-    state.shop = shopState([
-      { id: 'f0', kind: 'eat', def: 'snack', price: 3 },
-      { id: 'f1', kind: 'eat', def: 'snack', price: 3 },
-      { id: 'f2', kind: 'eat', def: 'snack', price: 3 },
-      { id: 'f3', kind: 'eat', def: 'snack', price: 3 },
-    ]);
-    let current = state;
-    for (const id of ['f0', 'f1', 'f2']) {
-      current = act(current, { type: 'buy', offerId: id }).state;
-      expect(current.spells).toHaveLength(1);
-    }
-    current = act(current, { type: 'buy', offerId: 'f3' }).state;
-    expect(current.spells).toHaveLength(2);
-    expect(current.items.find((item) => item.id === 'frozen-durian')?.data.eaten).toBe(0);
+    state.shop = shopState([{ id: 'f0', kind: 'eat', def: 'snack', price: 3 }]);
+    const baseline = state.spells.length;
+    const fed = act(state, { type: 'buy', offerId: 'f0' });
+    expect(fed.state.spells).toHaveLength(baseline + 1);
+    expect(fed.state.items.find((item) => item.id === 'frozen-durian')?.data.eaten).toBe(0);
+
+    const durian = fed.state.items.find((item) => item.id === 'frozen-durian')!;
+    durian.data.eaten = 2;
+    const next = nextRound(fed.state);
+    setAnswer(next.state, 'crane');
+    const solved = act(next.state, { type: 'guess', word: 'crane' });
+    expect(solved.state.spells).toHaveLength(baseline + 2);
+    expect(solved.state.items.find((item) => item.id === 'frozen-durian')?.data.eaten).toBe(0);
     expect(ITEM_BY_ID.get('frozen-durian')?.price).toBe(8);
   });
 
@@ -2842,7 +2874,7 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('Every 13 reveals');
     expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('-3 max HP');
     expect(FOOD_BY_ID.get('hearty-meal')?.description).toBe('+5 max HP, heal 5. No slot.');
-    expect(ITEM_BY_ID.get('loyalty-card')?.description).toContain('Every 7 shop purchases');
+    expect(ITEM_BY_ID.get('loyalty-card')?.description).toContain('Every 9 shop purchases');
     expect(ITEM_BY_ID.get('tithe-box')?.description).toContain('10% chance');
     expect(ITEM_BY_ID.get('mimic-mouth')?.description).toContain('Once per round');
     expect(ITEM_BY_ID.get('second-skin')?.description).toContain('half your max armor');
@@ -3126,7 +3158,7 @@ describe('unique shop items', () => {
 
 describe('autocast and random-guess batch', () => {
   it('ships a non-native guess pool including wharf', () => {
-    expect(CONTENT.nonnative).toHaveLength(208);
+    expect(CONTENT.nonnative).toHaveLength(210);
     expect(CONTENT.nonnative).toContain('patsy');
     expect(CONTENT.nonnative).toContain('wharf');
     expect(CONTENT.nonnative).toContain('rajah');
@@ -3136,8 +3168,10 @@ describe('autocast and random-guess batch', () => {
     expect(CONTENT.nonnative).toContain('gaunt');
     expect(CONTENT.nonnative).toContain('jaunt');
     expect(CONTENT.nonnative).toContain('vaunt');
+    expect(CONTENT.nonnative).toContain('lurid');
+    expect(CONTENT.nonnative).toContain('torus');
     expect(CONTENT.nonnative).not.toContain('daisy');
-    expect(new Set(CONTENT.nonnative).size).toBe(208);
+    expect(new Set(CONTENT.nonnative).size).toBe(210);
     for (const word of CONTENT.nonnative) {
       expect(word, word).toMatch(/^[a-z]{5}$/);
     }
@@ -3624,11 +3658,11 @@ describe('relic uniqueness', () => {
     .map((item) => item.id);
 
   it('never offers a relic already in the player inventory', () => {
-    expect(relicIds).toHaveLength(9);
+    expect(relicIds).toHaveLength(8);
     let sawOtherRelic = false;
     for (let index = 0; index < 60; index++) {
       const { state } = start(`relic-owned-${index}`);
-      state.items.push({ instance: 'i-owned', id: 'loose-tongue', data: {}, equipped: true });
+      state.items.push({ instance: 'i-owned', id: 'mending-plate', data: {}, equipped: true });
       state.nodeIndex = 0;
       state.nodes[1] = { kind: 'shop', level: 1 };
       state.phase = 'shop';
@@ -3637,7 +3671,7 @@ describe('relic uniqueness', () => {
         if (offer.kind !== 'item') continue;
         const def = ITEM_BY_ID.get(offer.def);
         if (def?.rarity !== 'rare') continue;
-        expect(offer.def).not.toBe('loose-tongue');
+        expect(offer.def).not.toBe('mending-plate');
         sawOtherRelic = true;
       }
     }
@@ -3647,7 +3681,7 @@ describe('relic uniqueness', () => {
   it('never offers an owned relic as a round reward', () => {
     for (let index = 0; index < 20; index++) {
       const { state } = start(`relic-owned-reward-${index}`);
-      state.items.push({ instance: 'i-owned', id: 'loose-tongue', data: {}, equipped: true });
+      state.items.push({ instance: 'i-owned', id: 'mending-plate', data: {}, equipped: true });
       state.nodes = [
         { kind: 'round', level: 1 },
         { kind: 'round', level: 2 },
@@ -3660,21 +3694,21 @@ describe('relic uniqueness', () => {
       expect(reward.state.phase).toBe('reward');
       for (const option of reward.state.reward?.options ?? []) {
         if (option.kind !== 'item' || !option.def) continue;
-        expect(option.def).not.toBe('loose-tongue');
+        expect(option.def).not.toBe('mending-plate');
       }
     }
   });
 
   it('random relic effects only grant relics the player does not own', () => {
     const { state } = start('relic-cake');
-    for (const id of relicIds.filter((id) => id !== 'loose-tongue')) {
+    for (const id of relicIds.filter((id) => id !== 'mending-plate')) {
       state.items.push({ instance: `i-${id}`, id, data: {}, equipped: true });
     }
     state.phase = 'shop';
     state.gold = 100;
     state.shop = shopState([{ id: 'f0', kind: 'eat', def: 'coveted-cake', price: 11 }]);
     const bought = act(state, { type: 'buy', offerId: 'f0' });
-    expect(bought.state.items.some((item) => item.id === 'loose-tongue')).toBe(true);
+    expect(bought.state.items.some((item) => item.id === 'mending-plate')).toBe(true);
   });
 });
 
@@ -3824,6 +3858,72 @@ describe('spellbroker and ledger additions', () => {
     const next = act(secondShop.state, { type: 'continue' });
     expect(next.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
     expect(next.state.nextRoundRandomGuesses).toBe(0);
+  });
+});
+
+describe('item tuning batch', () => {
+  it('Oracle Skull is a 12g uncommon that casts Omen on every heal', () => {
+    const skull = ITEM_BY_ID.get('oracle-skull');
+    expect(skull?.price).toBe(12);
+    expect(skull?.rarity).toBe('uncommon');
+    expect(skull?.description).toContain('Whenever you are healed');
+
+    const { state } = start('oracle-skull-heals');
+    state.items.push({ instance: 'i-skull', id: 'oracle-skull', data: {}, equipped: true });
+    state.hp = 1;
+    setAnswer(state, 'crane');
+    state.spells = [
+      { instance: 's-heal-1', id: 'heal' },
+      { instance: 's-heal-2', id: 'heal' },
+    ];
+    const first = act(state, { type: 'castSpell', instance: 's-heal-1' });
+    const second = act(first.state, { type: 'castSpell', instance: 's-heal-2' });
+    const omens = [...first.events, ...second.events].filter(
+      (event) => event.type === 'spellCast' && event.auto && event.spell.id === 'omen',
+    );
+    expect(omens).toHaveLength(2);
+  });
+
+  it('Placebo heals exactly 1 HP on a player guess', () => {
+    const { state } = start('placebo-one');
+    state.items.push({ instance: 'i-placebo', id: 'placebo', data: {}, equipped: true });
+    state.hp = 5;
+    setAnswer(state, 'crane');
+    state.round!.freeLeft = 1;
+    const guessed = act(state, { type: 'guess', word: 'slate' });
+    expect(guessed.state.hp).toBe(6);
+    expect(guessed.events.filter(
+      (event) => event.type === 'healed' && event.source.kind === 'item',
+    )).toHaveLength(1);
+  });
+
+  it('Loyalty Card pays a slot after 9 purchases', () => {
+    const { state } = start('loyalty-card-nine');
+    state.items.push({ instance: 'i-loyalty', id: 'loyalty-card', data: { buys: 0 }, equipped: true });
+    state.phase = 'shop';
+    state.gold = 100;
+    state.shop = shopState(
+      Array.from({ length: 9 }, (_, index) => ({
+        id: `o${index}`,
+        kind: 'spell' as const,
+        def: 'heal',
+        price: 1,
+      })),
+    );
+    let current = state;
+    for (let index = 0; index < 8; index++) {
+      current = act(current, { type: 'buy', offerId: `o${index}` }).state;
+    }
+    expect(current.slots).toBe(5);
+    current = act(current, { type: 'buy', offerId: 'o8' }).state;
+    expect(current.slots).toBe(6);
+  });
+
+  it('Loose Tongue is a 12g uncommon', () => {
+    const tongue = ITEM_BY_ID.get('loose-tongue');
+    expect(tongue?.price).toBe(12);
+    expect(tongue?.rarity).toBe('uncommon');
+    expect(tongue?.allowInvalidGuesses).toBe(true);
   });
 });
 
