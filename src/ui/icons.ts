@@ -153,7 +153,6 @@ const FOOD_ICONS: Record<string, string> = {
   'overhealers-delight': '🍰',
   'overhealers-delicacy': '🧁',
   'rusty-plate': '🛡️',
-  'packed-lunch': '🍱',
   'bone-broth': '🥣',
   leftovers: '🥡',
   'pani-puri': '🧆',

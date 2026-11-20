@@ -266,16 +266,6 @@ export const FOODS: FoodDef[] = [
     ],
   }),
   defineFood({
-    id: 'packed-lunch',
-    name: 'Packed Lunch',
-    description: '+3 max armor and +7 max HP. No slot.',
-    price: 3,
-    effects: [
-      { type: 'maxArmor', delta: 3 },
-      { type: 'maxHp', delta: 7 },
-    ],
-  }),
-  defineFood({
     id: 'feast',
     name: 'Feast',
     description: '+5 max HP, heal 5. No slot.',

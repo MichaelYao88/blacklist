@@ -1975,10 +1975,7 @@ describe('latest balance pass', () => {
       .toContainEqual({ type: 'healOverflowMaxHp', amount: 12 });
     expect(FOOD_BY_ID.get('rusty-plate')?.price).toBe(2);
     expect(FOOD_BY_ID.get('spring-tonic')).toBeUndefined();
-    expect(FOOD_BY_ID.get('packed-lunch')?.price).toBe(3);
-    expect(FOOD_BY_ID.get('packed-lunch')?.effects).toContainEqual({ type: 'maxArmor', delta: 3 });
-    expect(FOOD_BY_ID.get('packed-lunch')?.effects).toContainEqual({ type: 'maxHp', delta: 7 });
-    expect(FOOD_BY_ID.get('packed-lunch')?.effects).not.toContainEqual({ type: 'slots', delta: -1 });
+    expect(FOOD_BY_ID.get('packed-lunch')).toBeUndefined();
     expect(ITEM_BY_ID.get('bookend')?.price).toBe(7);
     expect(FOOD_BY_ID.get('gg-gum')?.price).toBe(9);
     expect(ITEM_BY_ID.get('overachiever')).toBeUndefined();
@@ -2329,15 +2326,8 @@ describe('latest balance pass', () => {
     expect(feasted.state.gold).toBe(15);
   });
 
-  it('Packed Lunch gives +3 max armor and +7 max HP', () => {
-    const { state } = start('packed-lunch');
-    state.phase = 'shop';
-    state.gold = 10;
-    state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'packed-lunch', price: 3 }]);
-    const eaten = act(state, { type: 'buy', offerId: 'o0' });
-    expect(eaten.state.slots).toBe(5);
-    expect(eaten.state.maxArmor).toBe(7);
-    expect(eaten.state.maxHp).toBe(23);
+  it('removes Packed Lunch from the content set', () => {
+    expect(FOOD_BY_ID.get('packed-lunch')).toBeUndefined();
   });
 
   it('The Scales doubles max HP and halves current HP, or grants max armor', () => {

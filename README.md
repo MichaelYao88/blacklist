@@ -45,7 +45,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Rarity uses cumulative floors: 40% pulls from rare, uncommon or common, 45% pulls from uncommon or common, and 15% pulls from common only. If a tier is empty, it falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 106 items (98 shop items + 8 rare relics), 6 spells, 85 foods and 29 happenings
+- 106 items (98 shop items + 8 rare relics), 6 spells, 84 foods and 29 happenings
 - New foods include **U-nagi**, **Donut Holes**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
@@ -115,7 +115,6 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Empty Orb** is a 7g item that autocasts Omen when a round starts with no spells; **Empty Phone** is the 9g Phone a Friend version
 - **Enoki** is a 4g food: +3 max HP and one autoguess next round
 - **Corn** is a 3g food: +2 max HP and reveals C, O, R and N for the next round only
-- **Packed Lunch** is a 3g food: +3 max armor and +7 max HP
 - **Iron Ration** is an 8g rare food: +2 max armor. **One Bo Hue** and **Plating** are uncommon; **Taco Pizza Party** is rare
 - **Clean Slate** gives +1 max HP or +1 max armor at random when its condition triggers, once per round
 - **Double Dip** is Kase's new name; it keeps the +1 max armor and queued-answer effect
