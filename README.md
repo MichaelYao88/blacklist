@@ -88,6 +88,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Guardian Angel** is an 8g item: after every 10 HP damage taken, gain Immunity
 - **Immunity** blocks the next hurting guess and any guess for 4 seconds after it
 - **Big Belt** is a 12g uncommon item: +1 item slot every 6 eats or solves
+- **Mending Plate** is a rare item: +1 max armor per 7 HP healed
 - **Bounty** is a 6g rare food: +1 gold per solve
 - **Necronomicon** is a rare item: reveal 3 random letters at round start; every 13 reveals autocasts Omen and costs 3 max HP
 - **Growth Spurt** gives +3 max HP when you solve in 4 guesses or fewer
@@ -95,7 +96,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Midas Touch** has a 40% chance to double every gold gain
 - **Oracle Skull** is a 12g uncommon item: every heal autocasts Omen
 - **Loyalty Card** pays +1 item slot after every 9 shop purchases
-- **Placebo** heals exactly 1 HP on each player guess
+- **Placebo** is a 4g item that heals exactly 1 HP on each player guess
 - **Pen Club** pays a random 1-5 gold for guesses starting with PEN; **Gourmand** gains +1 max HP on eat or spell cast
 - **Old McDonald's** is a 15g unique food: EIEIO is guessed for free at the start of every round
 - Shops can show up to 2 copies of the same entry; sell rows are hoverable

@@ -310,7 +310,7 @@ export const ITEMS: ItemDef[] = [
     id: 'placebo',
     name: 'Placebo',
     description: 'Every guess you make: heal 1 HP.',
-    price: 10,
+    price: 4,
     kind: 'gear',
     on: {
       onGuessScored: (_ctx, p) =>
@@ -810,7 +810,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'mending-plate',
     name: 'Mending Plate',
-    description: '+1 max armor per 5 HP healed.',
+    description: '+1 max armor per 7 HP healed.',
     price: 26,
     kind: 'gear',
     rarity: 'rare',
@@ -818,9 +818,9 @@ export const ITEMS: ItemDef[] = [
     on: {
       onHeal: (ctx, p) => {
         const total = ctx.self.data.healed + p.amount;
-        const armor = Math.floor(total / 5);
+        const armor = Math.floor(total / 7);
         return [
-          { type: 'setItemData', stat: 'healed', value: total % 5 },
+          { type: 'setItemData', stat: 'healed', value: total % 7 },
           ...Array.from({ length: armor }, () => ({ type: 'maxArmor' as const, delta: 1 })),
         ];
       },

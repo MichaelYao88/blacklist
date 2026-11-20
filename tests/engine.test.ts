@@ -2577,7 +2577,7 @@ describe('latest balance pass', () => {
     expect(unshielded.state.hp).toBe(13);
   });
 
-  it('Mending Plate starts with no armor bonus and pays per 5 HP healed', () => {
+  it('Mending Plate starts with no armor bonus and pays per 7 HP healed', () => {
     const { state } = start('mending-plate');
     state.items.push({
       instance: 'i-mend',
@@ -2585,11 +2585,33 @@ describe('latest balance pass', () => {
       data: { healed: 0 },
       equipped: true,
     });
+    expect(ITEM_BY_ID.get('mending-plate')?.description).toContain('per 7 HP');
     expect(state.maxArmor).toBe(4);
-    state.hp = 10;
+    state.hp = 5;
     state.spells = [{ instance: 's-heal', id: 'heal' }];
     const cast = act(state, { type: 'castSpell', instance: 's-heal' });
     expect(cast.state.maxArmor).toBe(5);
+  });
+
+  it('Mending Plate waits for 7 total HP before paying armor', () => {
+    const { state } = start('mending-plate-threshold');
+    state.items.push({
+      instance: 'i-mend-threshold',
+      id: 'mending-plate',
+      data: { healed: 0 },
+      equipped: true,
+    });
+    state.phase = 'shop';
+    state.gold = 10;
+    state.hp = 5;
+    state.shop = shopState([
+      { id: 'g0', kind: 'eat', def: 'gumdrop', price: 2 },
+      { id: 'g1', kind: 'eat', def: 'gumdrop', price: 2 },
+    ]);
+    const first = act(state, { type: 'buy', offerId: 'g0' });
+    expect(first.state.maxArmor).toBe(4);
+    const second = act(first.state, { type: 'buy', offerId: 'g1' });
+    expect(second.state.maxArmor).toBe(5);
   });
 
   it('Acquired Taste gives 4 max HP per new food', () => {
@@ -3994,6 +4016,7 @@ describe('item tuning batch', () => {
   });
 
   it('Placebo heals exactly 1 HP on a player guess', () => {
+    expect(ITEM_BY_ID.get('placebo')?.price).toBe(4);
     const { state } = start('placebo-one');
     state.items.push({ instance: 'i-placebo', id: 'placebo', data: {}, equipped: true });
     state.hp = 5;
