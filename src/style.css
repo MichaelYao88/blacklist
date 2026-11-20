@@ -469,81 +469,50 @@ button {
   min-width: 0;
 }
 
-.path {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 10px 4px 14px;
-  overflow-x: auto;
-  scrollbar-width: thin;
-  min-width: 0;
-  max-width: 100%;
-}
-
-.path-label {
-  font-size: 0.58rem;
-  font-weight: 800;
-  letter-spacing: 0.18em;
-  color: var(--faint);
-  margin-right: 6px;
-}
-
-.path-chip {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  width: 33px;
-  height: 25px;
-  flex: 0 0 auto;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.015);
-  color: var(--muted);
-  font-size: 0.55rem;
-}
-
-.path-chip i {
-  font-style: normal;
-  font-size: 0.62rem;
-}
-
-.path-chip em {
-  font-style: normal;
-  font-size: 0.5rem;
-  opacity: 0.6;
-}
-
-.path-chip.done {
-  border-color: rgba(79, 191, 135, 0.22);
-  color: rgba(79, 191, 135, 0.55);
-  background: rgba(79, 191, 135, 0.04);
-}
-
-.path-chip.current {
-  border-color: var(--gold);
-  color: var(--gold);
-  background: rgba(231, 184, 90, 0.1);
-  box-shadow: 0 0 0 1px rgba(231, 184, 90, 0.15), 0 0 18px -4px rgba(231, 184, 90, 0.5);
-}
-
-.path-chip.boss {
-  width: 40px;
-  border-color: rgba(223, 97, 90, 0.28);
-  color: #c98a86;
-}
-
-.path-chip.boss.current {
-  border-color: var(--red);
-  color: #ff9c96;
-  background: rgba(223, 97, 90, 0.12);
-  box-shadow: 0 0 0 1px rgba(223, 97, 90, 0.18), 0 0 18px -4px rgba(223, 97, 90, 0.6);
-}
-
 .chronicle {
-  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-height: 210px;
+  overflow-y: auto;
+  padding-right: 4px;
+  text-align: left;
+  scrollbar-width: thin;
 }
+
+.chronicle-entry {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 8px;
+  padding: 5px 7px;
+  border-left: 2px solid var(--line-2);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.015);
+  font-size: 0.68rem;
+  line-height: 1.35;
+}
+
+.chronicle-level {
+  color: var(--faint);
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.chronicle-text {
+  min-width: 0;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.chronicle-entry.good { border-left-color: var(--green); }
+.chronicle-entry.bad,
+.chronicle-entry.curse { border-left-color: var(--red); }
+.chronicle-entry.spell { border-left-color: var(--violet); }
+.chronicle-entry.item { border-left-color: var(--gold); }
+.chronicle-entry.guess { border-left-color: var(--cyan); }
+.chronicle-entry.food { border-left-color: var(--yellow); }
+.chronicle-entry.shop { border-left-color: var(--gold-soft); }
 
 .battle-rail {
   grid-column: 1;

@@ -22,5 +22,9 @@ describe('chronicle', () => {
     root.querySelector<HTMLElement>('[data-action="pause"]')!.click();
     expect(root.querySelector('.pause-card .chronicle')).not.toBeNull();
     expect(root.querySelector('.rail-column .chronicle')).toBeNull();
+    const entry = root.querySelector<HTMLElement>('.pause-card .chronicle-entry');
+    expect(entry).not.toBeNull();
+    expect(entry?.className).toContain('info');
+    expect(entry?.textContent).toContain('Run resumed');
   });
 });

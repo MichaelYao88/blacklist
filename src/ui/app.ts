@@ -177,6 +177,32 @@ let countdownUntil = 0;
 const COUNTDOWN_MS = 2_400;
 let selectedAscension = 0;
 
+type ChronicleKind = 'info' | 'good' | 'bad' | 'spell' | 'item' | 'guess' | 'curse' | 'food' | 'shop';
+interface ChronicleEntry {
+  id: number;
+  level: number;
+  kind: ChronicleKind;
+  text: string;
+}
+let chronicleEntries: ChronicleEntry[] = [];
+let chronicleSeq = 0;
+const CHRONICLE_MAX = 120;
+
+function logChronicle(kind: ChronicleKind, text: string): void {
+  chronicleEntries.push({
+    id: ++chronicleSeq,
+    level: host.current?.level ?? 1,
+    kind,
+    text,
+  });
+  if (chronicleEntries.length > CHRONICLE_MAX) chronicleEntries.shift();
+}
+
+function clearChronicle(): void {
+  chronicleEntries = [];
+  chronicleSeq = 0;
+}
+
 const KIND_LABELS: Record<Offer['kind'], string> = {
   item: 'ITEM',
   spell: 'SPELL',
@@ -339,12 +365,140 @@ function clearSpellPopups(): void {
   renderSpellPopups();
 }
 
+function logGameEvent(event: GameEvent): void {
+  switch (event.type) {
+    case 'runStarted':
+      logChronicle('info', `Run started${event.ascension > 0 ? ` · A${event.ascension}` : ''}`);
+      break;
+    case 'nodeEntered':
+      if (event.kind !== 'round') logChronicle('shop', `Entered ${event.kind}`);
+      break;
+    case 'bossIntro':
+      logChronicle('bad', `Boss: ${BOSS_BY_ID.get(event.boss)?.name ?? event.boss}`);
+      break;
+    case 'curseOffered':
+      logChronicle('curse', event.starting ? 'Starting curse draft' : 'Curse draft');
+      break;
+    case 'curseChosen':
+      logChronicle('curse', `Curse: ${event.name}${event.stacks > 1 ? ` x${event.stacks}` : ''}`);
+      break;
+    case 'curseRemoved':
+      logChronicle('good', `Curse removed: ${CURSE_BY_ID.get(event.curse)?.name ?? event.curse}`);
+      break;
+    case 'roundStarted':
+      logChronicle('info', `Round ${event.roundNumber} started${event.boss ? ` · ${BOSS_BY_ID.get(event.boss)?.name ?? event.boss}` : ''}`);
+      break;
+    case 'roundEnded':
+      logChronicle(
+        event.outcome === 'solved' ? 'good' : 'bad',
+        event.outcome === 'solved'
+          ? `Solved: ${event.answer.toUpperCase()}`
+          : `${event.outcome === 'timeout' ? 'Time out' : 'Died'} — ${event.answer.toUpperCase()}`,
+      );
+      break;
+    case 'guessRejected':
+      logChronicle('bad', reasonText(event.reason));
+      break;
+    case 'guessScored': {
+      const correct = event.guess.tiles.filter((tile) => tile === 'correct').length;
+      const present = event.guess.tiles.filter((tile) => tile === 'present').length;
+      const absent = event.guess.tiles.filter((tile) => tile === 'absent').length;
+      const label = event.by === 'friend' ? 'Autoguess' : 'Guess';
+      if (event.solved) {
+        logChronicle('good', `${label} ${event.word.toUpperCase()} solved it`);
+      } else {
+        logChronicle('guess', `${label} ${event.word.toUpperCase()} — ${correct}G ${present}Y ${absent}X${event.free ? ' · free' : ''}`);
+      }
+      break;
+    }
+    case 'blacklistChanged':
+      if (event.added) logChronicle('bad', `Blacklisted ${event.added.toUpperCase()}`);
+      else if (event.list.length === 0) logChronicle('good', 'Blacklist cleared');
+      break;
+    case 'letterPurged':
+      logChronicle('curse', `Purged ${event.letter.toUpperCase()}`);
+      break;
+    case 'damageTaken':
+      if (event.dealt > 0) {
+        logChronicle('bad', `Took ${event.dealt} damage${event.armorUsed > 0 ? ` · ${event.armorUsed} blocked` : ''} · HP ${event.hp}`);
+      } else if (event.incoming > 0) {
+        logChronicle('info', `Blocked ${event.incoming} damage`);
+      }
+      break;
+    case 'healed':
+      logChronicle('good', `Healed ${event.amount} · HP ${event.hp}`);
+      break;
+    case 'revived':
+      logChronicle('good', `Revived at ${event.hp} HP`);
+      break;
+    case 'goldChanged':
+      if (event.delta !== 0) {
+        logChronicle(event.delta > 0 ? 'good' : 'bad', `${event.delta > 0 ? '+' : ''}${event.delta} gold`);
+      }
+      break;
+    case 'itemAcquired':
+      logChronicle('item', `Found ${ITEM_BY_ID.get(event.item.id)?.name ?? event.item.id}`);
+      break;
+    case 'itemProc':
+      logChronicle('item', `${ITEM_BY_ID.get(event.item)?.name ?? event.item}: ${event.text}`);
+      break;
+    case 'spellGained':
+      logChronicle('spell', `Gained ${SPELL_BY_ID.get(event.spell.id)?.name ?? event.spell.id}`);
+      break;
+    case 'spellCast':
+      logChronicle('spell', `${event.auto ? 'Autocast' : 'Cast'} ${SPELL_BY_ID.get(event.spell.id)?.name ?? event.spell.id}`);
+      break;
+    case 'spellRejected':
+      logChronicle('bad', event.reason);
+      break;
+    case 'shopOpened':
+      logChronicle('shop', 'Shop opened');
+      break;
+    case 'shopRerolled':
+      logChronicle('shop', 'Shop rerolled');
+      break;
+    case 'offerBought':
+      logChronicle('shop', `Bought ${KIND_LABELS[event.kind]?.toLowerCase() ?? event.kind} for ${event.price}g`);
+      break;
+    case 'shopRejected':
+      logChronicle('bad', event.reason);
+      break;
+    case 'happeningOffered':
+      logChronicle('info', 'Happening');
+      break;
+    case 'happeningResolved':
+      logChronicle(event.success ? 'good' : 'bad', event.text);
+      break;
+    case 'rewardChosen':
+      logChronicle('good', `Reward: ${event.label}`);
+      break;
+    case 'puzzleSolved':
+      logChronicle('good', `Puzzle ${event.index}/${event.total} solved`);
+      break;
+    case 'gauntletAdvanced':
+      logChronicle('good', `Puzzle ${event.index}/${event.total} cleared`);
+      break;
+    case 'foodEaten':
+      logChronicle('food', `Ate ${event.name}`);
+      break;
+    case 'message':
+      logChronicle('info', event.text);
+      break;
+    case 'runEnded':
+      logChronicle(event.result === 'victory' ? 'good' : 'bad', `Run ${event.result}`);
+      break;
+    default:
+      break;
+  }
+}
+
 function processEvents(events: GameEvent[]): void {
   let playerGuessed = false;
   let playerFreeGuess = false;
   let solvedByPlayer = false;
   let playerDied = false;
   for (const event of events) {
+    logGameEvent(event);
     if (event.type === 'guessRejected') {
       notify(reasonText(event.reason), 'bad');
       sfx.play('error');
@@ -510,6 +664,7 @@ function startNewRun(): void {
   phraseRoot.innerHTML = '';
   clearProcFeed();
   clearSpellPopups();
+  clearChronicle();
   heartbeatSecond = -1;
   processEvents(events);
   lastTick = performance.now();
@@ -538,6 +693,8 @@ function resumeRun(): void {
   playerDeathStartedAt = null;
   clearProcFeed();
   clearSpellPopups();
+  clearChronicle();
+  logChronicle('info', 'Run resumed');
   heartbeatSecond = -1;
   countdownUntil = 0;
   music.resume();
@@ -1399,31 +1556,16 @@ function renderBattleRail(view: RunView, bossId?: string): string {
   </aside>`;
 }
 
-function renderChronicle(view: RunView): string {
-  const chips = view.nodes.map((node, index) => {
-    const done = index < view.nodeIndex;
-    const current = index === view.nodeIndex;
-    const boss = node.boss ? BOSS_BY_ID.get(node.boss) : undefined;
-    const icon = node.kind === 'boss' ? '☠' : node.kind === 'shop' ? '$' : node.kind === 'happening' ? '?' : node.kind === 'curse' ? '✦' : '•';
-    const label = boss
-      ? boss.name
-      : node.kind === 'round'
-        ? 'Round'
-        : node.kind === 'shop'
-          ? 'Shop'
-          : node.kind === 'curse'
-            ? 'Curse'
-            : node.kind === 'boss'
-              ? 'Boss'
-              : 'Happening';
-    const classes = ['path-chip', node.kind, done ? 'done' : '', current ? 'current' : ''].filter(Boolean).join(' ');
-    return `<span class="${classes}" title="Level ${node.level ?? index + 1} · ${escapeHtml(label)}">
-      <i>${icon}</i><em>${node.level ?? index + 1}</em>
-    </span>`;
-  }).join('');
-  return `<nav class="panel path chronicle" aria-label="Run chronicle">
-    <span class="path-label">CHRONICLE</span>${chips}
-  </nav>`;
+function renderChronicle(): string {
+  if (chronicleEntries.length === 0) {
+    return `<div class="chronicle"><p class="empty-note">No actions recorded yet.</p></div>`;
+  }
+  const rows = chronicleEntries.slice().reverse().map((entry) => `
+    <div class="chronicle-entry ${entry.kind}">
+      <span class="chronicle-level">L${entry.level}</span>
+      <span class="chronicle-text">${escapeHtml(entry.text)}</span>
+    </div>`).join('');
+  return `<div class="chronicle" aria-label="Run chronicle" aria-live="polite">${rows}</div>`;
 }
 
 function renderSidePanel(view: RunView): string {
@@ -2095,7 +2237,11 @@ function renderPauseOverlay(view: RunView): string {
         <button class="btn ghost" data-action="help">RULES</button>
       </div>
       <div class="pause-chronicle">
-        ${renderChronicle(view)}
+        <div class="panel-head">
+          <span class="panel-kicker">CHRONICLE</span>
+          <span class="count">${chronicleEntries.length}</span>
+        </div>
+        ${renderChronicle()}
       </div>
       <p class="hint">Space or Esc also resumes.</p>
     </div>
