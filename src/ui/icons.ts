@@ -40,6 +40,8 @@ const ITEM_ICONS: Record<string, string> = {
   'vowel-tithe': '🔠',
   'second-hand': '⏲️',
   engine: '⚙️',
+  'combustion-engine': '🔥',
+  'genie-summon': '🧞',
   adrenaline: '⚡',
   'cracked-orb': '🔮',
   'sticky-fingers': '🖐️',

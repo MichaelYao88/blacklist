@@ -68,37 +68,45 @@ interface SpellPopup {
   icon: string;
   auto: boolean;
 }
-let spellPopups: SpellPopup[] = [];
+let spellPopupQueue: SpellPopup[] = [];
+let activeSpellPopup: SpellPopup | null = null;
 let spellPopupSeq = 0;
-const spellPopupTimers = new Map<number, number>();
+let spellPopupTimer: number | undefined;
+const SPELL_POPUP_MS = 1_000;
 
 function showSpellPopup(spellId: string, auto: boolean): void {
   const def = SPELL_BY_ID.get(spellId);
-  const popup: SpellPopup = {
+  spellPopupQueue.push({
     id: ++spellPopupSeq,
     name: def?.name ?? spellId,
     icon: spellIcon(spellId),
     auto,
-  };
-  spellPopups.push(popup);
+  });
+  pumpSpellPopups();
+}
+
+function pumpSpellPopups(): void {
+  if (activeSpellPopup || spellPopupQueue.length === 0) return;
+  activeSpellPopup = spellPopupQueue.shift() ?? null;
   renderSpellPopups();
-  const timer = window.setTimeout(() => {
-    spellPopups = spellPopups.filter((entry) => entry.id !== popup.id);
-    spellPopupTimers.delete(popup.id);
+  spellPopupTimer = window.setTimeout(() => {
+    activeSpellPopup = null;
+    spellPopupTimer = undefined;
     renderSpellPopups();
-  }, 1_150);
-  spellPopupTimers.set(popup.id, timer);
+    pumpSpellPopups();
+  }, SPELL_POPUP_MS);
 }
 
 function renderSpellPopups(): void {
-  spellRoot.innerHTML = spellPopups.length === 0
-    ? ''
-    : `<div class="spell-popup-stack">${spellPopups.map((popup) => `
-      <div class="spell-popup ${popup.auto ? 'auto' : ''}">
-        <span class="spell-popup-icon" aria-hidden="true">${popup.icon}</span>
-        <span class="spell-popup-name">${escapeHtml(popup.name)}</span>
-        <span class="spell-popup-tag">${popup.auto ? 'AUTOCAST' : 'CAST'}</span>
-      </div>`).join('')}</div>`;
+  spellRoot.innerHTML = activeSpellPopup
+    ? `<div class="spell-popup-stack">
+      <div class="spell-popup ${activeSpellPopup.auto ? 'auto' : ''}">
+        <span class="spell-popup-icon" aria-hidden="true">${activeSpellPopup.icon}</span>
+        <span class="spell-popup-name">${escapeHtml(activeSpellPopup.name)}</span>
+        <span class="spell-popup-tag">${activeSpellPopup.auto ? 'AUTOCAST' : 'CAST'}</span>
+      </div>
+    </div>`
+    : '';
 }
 
 // The Immunity banner lives outside the main render tree so its timer drain is
@@ -288,9 +296,10 @@ function clearProcFeed(): void {
 }
 
 function clearSpellPopups(): void {
-  for (const timer of spellPopupTimers.values()) window.clearTimeout(timer);
-  spellPopupTimers.clear();
-  spellPopups = [];
+  if (spellPopupTimer) window.clearTimeout(spellPopupTimer);
+  spellPopupTimer = undefined;
+  activeSpellPopup = null;
+  spellPopupQueue = [];
   renderSpellPopups();
 }
 

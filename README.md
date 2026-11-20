@@ -45,7 +45,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Rarity is rolled directly: 35% rare, 50% uncommon, and 15% common for both items and foods. If a tier is empty, it falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 104 items (95 shop items + 9 rare relics), 6 spells, 85 foods and 29 happenings
+- 106 items (97 shop items + 9 rare relics), 6 spells, 85 foods and 29 happenings
 - New foods include **U-nagi**, **Donut Holes**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
@@ -65,7 +65,10 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Scattershot** autoguesses once per round after a guess sharing no letters with the previous guess
 - **Yellow1** autoguesses on exactly one yellow and no green; **Green1** does the same for exactly one green and no yellow. Neither has a round limit
 - **Deadline** grants +1 free guess as soon as the clock drops below 30s each round
-- **Second Hand** and **Engine** are 8g items that cross-cast spells on cast at 80%
+- **Second Hand** and **Counterclockwise** (formerly Engine) are 8g items that cross-cast spells on cast at 80%
+- **Genie Summon** is a 12g uncommon item: after the 3rd guess of each round, player or otherwise, it autocasts a random spell
+- **Combustion Engine** is a 10g uncommon item with a 3x appearance weight: after you autocast a spell, it has a 40% chance to autocast a random spell
+- **Encore** now costs 7g
 - **Panacea Pouch** (formerly Spellhoarder) is a 9g item: every 3rd spell cast casts Heal
 - **Vowel Tithe** is an 8g item: each spell cast has a 25% chance to cast Omen
 - **Wild Magic** is a 9g item: each spell cast has a 25% chance to cast a random spell and a 25% chance to autoguess a random word
@@ -94,7 +97,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Black Market Ledger** is an 8g item: every shop purchase or event arrival has a 40% chance to add a random spell
 - **The Spellbroker** event trades your spells for permanent value: Omen or Phone a Friend becomes a random permanent letter, Heal becomes +10 max HP and a 10 HP heal, and Immunity or Restore becomes +5 armor
 - **The Spell Tithe** event trades one random spell for either permanent knowledge of a specific letter or a permanent purge of a specific letter; the trades are locked when you have no spells
-- **Scattershot** and **Clean Slate** only spend their once-per-round charge on player guesses, so auto-guesses cannot trigger or consume them
+- **Clean Slate** only spends its once-per-round charge on your player guess, so round-start auto-guesses such as Encore cannot consume it before you act
 - **Fortune Cookie** is a 1g food with a hidden 5× appearance weight: it queues one autoguess for the next round
 - **Oracle's Banquet** is an 18g rare unique food: it permanently autoguesses at the start of every round
 - **Tally** counts every guess, including ally and autoguesses
@@ -112,8 +115,8 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **The Naked Curse** removes all max armor; **Piercing** makes half of every hit bypass armor even while armor remains; curse drafts offer two choices
 - Blacklisted words are never chosen as round targets; if a late run runs out of legal targets, the List releases one
 - The run-over screen and run history record the items you had equipped, and the stats page shows them per run
-- Random guesses pull from a 207-word pool chosen for non-native speakers, including **wharf**, **rajah**, **guppy**, **glyph**, **lymph**, **gaunt**, **jaunt**, and **vaunt**; **Dark Echo** avoids letters from your first guess
-- Every spell cast plays an animated pop-up, including item autocasts
+- Random guesses pull from a 208-word pool chosen for non-native speakers, including **patsy**, **wharf**, **rajah**, **guppy**, **glyph**, **lymph**, **gaunt**, **jaunt**, and **vaunt**; **Dark Echo** avoids letters from your first guess
+- Every spell cast plays an animated pop-up, including item autocasts; when several trigger at once they queue one second apart
 - **Cyrniki** is a 3g food: heal 50% of missing HP, then 50% a spell / 50% a shop reroll
 - **The Tax** reduces encounter gold by 40% and is unique; **The Sleeper** adds +2 damage per revealed letter in your first player guess, per stack; **The Curse Broker** charges 12g for a relic or 15g to remove a random curse; **The Confessional** sells 45/75/100% random curse removal for 5/10/15g
 - **The Detour** offers a slot, a shop, or both for 7 HP; **The Crossroads** offers a shop or a Heal plus Time Freeze; **The Trade** trades gold for a slot, a slot for gold, or two Heal spells

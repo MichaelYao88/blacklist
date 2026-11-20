@@ -390,7 +390,7 @@ export interface HookPayloads {
     boss?: BossId;
   };
   onRoundEnd: { outcome: RoundOutcome; boss?: BossId; damageTaken: number };
-  onSpellCast: { spell: SpellId };
+  onSpellCast: { spell: SpellId; auto?: boolean };
   onEat: { food: string };
   onHeal: { amount: number; hp: number };
   onTimerTick: { remainingMs: number | null; elapsedMs: number; dtMs: number };

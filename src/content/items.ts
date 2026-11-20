@@ -542,7 +542,7 @@ export const ITEMS: ItemDef[] = [
   }),
   defineItem({
     id: 'engine',
-    name: 'Engine',
+    name: 'Counterclockwise',
     description: 'Casting Restore: 80% chance to autocast Time Freeze. Casting Heal: 80% chance to autocast Immunity.',
     price: 8,
     kind: 'gear',
@@ -555,6 +555,38 @@ export const ITEMS: ItemDef[] = [
           return [{ type: 'castSpell', spell: 'immunity', chancePct: 80 }];
         }
         return [];
+      },
+    },
+  }),
+  defineItem({
+    id: 'combustion-engine',
+    name: 'Combustion Engine',
+    description: 'After you autocast a spell: 40% chance to autocast a random spell.',
+    price: 10,
+    kind: 'gear',
+    rarity: 'uncommon',
+    appearanceWeight: 3,
+    on: {
+      onSpellCast: (_ctx, p) =>
+        p.auto ? [{ type: 'castSpell', spell: 'random', chancePct: 40 }] : [],
+    },
+  }),
+  defineItem({
+    id: 'genie-summon',
+    name: 'Genie Summon',
+    description: 'After your 3rd guess each round, player or otherwise: autocast a random spell.',
+    price: 12,
+    kind: 'gear',
+    rarity: 'uncommon',
+    initial: { guesses: 0 },
+    on: {
+      onRoundStart: () => [{ type: 'setItemData', stat: 'guesses', value: 0 }],
+      onGuessScored: (ctx) => {
+        const next = ctx.self.data.guesses + 1;
+        return [
+          { type: 'grow', stat: 'guesses', by: 1 },
+          ...(next === 3 ? [{ type: 'castSpell' as const, spell: 'random' as const }] : []),
+        ];
       },
     },
   }),
@@ -1376,7 +1408,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'clean-slate',
     name: 'Clean Slate',
-    description: 'Once per round: a guess sharing no letters with the previous guess: +1 max HP or +1 max armor at random.',
+    description: 'Once per round: your guess sharing no letters with the previous guess: +1 max HP or +1 max armor at random.',
     price: 9,
     kind: 'gear',
     initial: { used: 0 },

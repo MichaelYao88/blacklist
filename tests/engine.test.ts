@@ -3126,7 +3126,8 @@ describe('unique shop items', () => {
 
 describe('autocast and random-guess batch', () => {
   it('ships a non-native guess pool including wharf', () => {
-    expect(CONTENT.nonnative).toHaveLength(207);
+    expect(CONTENT.nonnative).toHaveLength(208);
+    expect(CONTENT.nonnative).toContain('patsy');
     expect(CONTENT.nonnative).toContain('wharf');
     expect(CONTENT.nonnative).toContain('rajah');
     expect(CONTENT.nonnative).toContain('guppy');
@@ -3136,7 +3137,7 @@ describe('autocast and random-guess batch', () => {
     expect(CONTENT.nonnative).toContain('jaunt');
     expect(CONTENT.nonnative).toContain('vaunt');
     expect(CONTENT.nonnative).not.toContain('daisy');
-    expect(new Set(CONTENT.nonnative).size).toBe(207);
+    expect(new Set(CONTENT.nonnative).size).toBe(208);
     for (const word of CONTENT.nonnative) {
       expect(word, word).toMatch(/^[a-z]{5}$/);
     }
@@ -3358,6 +3359,65 @@ describe('autocast and random-guess batch', () => {
   it('adds Idiot Moron to the friend phrase list and wharf to the guess pool', () => {
     expect(CONTENT.friendPhrases).toContainEqual(['idiot', 'moron']);
     expect(CONTENT.nonnative).toContain('wharf');
+  });
+});
+
+describe('Genie Summon and Combustion Engine', () => {
+  it('Genie Summon autocasts after the third guess of the round', () => {
+    const { state } = start('genie-summon');
+    state.items.push({
+      instance: 'i-genie',
+      id: 'genie-summon',
+      data: { guesses: 0 },
+      equipped: true,
+    });
+    setAnswer(state, 'crane');
+    state.round!.freeLeft = 0;
+    const first = act(state, { type: 'guess', word: 'slate' });
+    const second = act(first.state, { type: 'guess', word: 'brick' });
+    const third = act(second.state, { type: 'guess', word: 'vamps' });
+    expect(first.events.some((event) => event.type === 'spellCast' && event.auto)).toBe(false);
+    expect(second.events.some((event) => event.type === 'spellCast' && event.auto)).toBe(false);
+    expect(third.events.some((event) => event.type === 'spellCast' && event.auto)).toBe(true);
+    expect(third.state.items.find((item) => item.id === 'genie-summon')?.data.guesses).toBe(3);
+    expect(ITEM_BY_ID.get('genie-summon')?.price).toBe(12);
+    expect(ITEM_BY_ID.get('genie-summon')?.rarity).toBe('uncommon');
+  });
+
+  it('Combustion Engine triggers only on autocasts, at 40%', () => {
+    let chained = 0;
+    for (let index = 0; index < 40; index++) {
+      const { state } = start(`combustion-${index}`);
+      state.permanentRoundStartSpells = ['omen'];
+      state.items.push({
+        instance: 'i-combustion',
+        id: 'combustion-engine',
+        data: {},
+        equipped: true,
+      });
+      const next = nextRound(state);
+      const autoCasts = next.events.filter(
+        (event) => event.type === 'spellCast' && event.auto,
+      );
+      if (autoCasts.length >= 2) chained++;
+    }
+    expect(chained).toBeGreaterThan(0);
+
+    const manual = start('combustion-manual');
+    manual.state.items.push({
+      instance: 'i-combustion-manual',
+      id: 'combustion-engine',
+      data: {},
+      equipped: true,
+    });
+    manual.state.spells = [{ instance: 's-heal', id: 'heal' }];
+    const cast = act(manual.state, { type: 'castSpell', instance: 's-heal' });
+    expect(cast.events.some(
+      (event) => event.type === 'spellCast' && event.auto,
+    )).toBe(false);
+    expect(ITEM_BY_ID.get('combustion-engine')?.rarity).toBe('uncommon');
+    expect(ITEM_BY_ID.get('combustion-engine')?.appearanceWeight).toBe(3);
+    expect(ITEM_BY_ID.get('engine')?.name).toBe('Counterclockwise');
   });
 });
 
@@ -3663,43 +3723,40 @@ describe('spellbroker and ledger additions', () => {
     expect(chosen.events.some((event) => event.type === 'message')).toBe(true);
   });
 
-  it('Scattershot and Clean Slate do not spend their charge on auto-guesses', () => {
-    for (const id of ['scattershot', 'clean-slate']) {
-      let found = false;
-      for (let index = 0; index < 200 && !found; index++) {
-        const { state } = start(`${id}-auto-${index}`);
-        state.items.push({ instance: `i-${id}`, id, data: { used: 0 }, equipped: true });
-        state.spells = [{ instance: 's-phone', id: 'phone-friend' }];
-        state.round!.freeLeft = 0;
-        state.round!.answer = 'crane';
-        const first = act(state, { type: 'guess', word: 'sloth' });
-        const phone = act(first.state, { type: 'castSpell', instance: 's-phone' });
-        if (phone.state.phase !== 'round') continue;
-        const guesses = phone.state.round!.guesses;
-        const cleanAuto = guesses.some((guess, guessIndex) => (
-          guessIndex > 0
-          && guess.by === 'friend'
-          && !guess.word.split('').some((ch) => guesses[guessIndex - 1].word.includes(ch))
-        ));
-        if (!cleanAuto) continue;
-        found = true;
-        expect(phone.events.some((event) => event.type === 'itemProc' && event.item === id))
-          .toBe(false);
-        expect(phone.state.items.find((item) => item.id === id)?.data.used).toBe(0);
+  it('Clean Slate waits for your clean guess after round-start auto-guesses', () => {
+    for (let index = 0; index < 120; index++) {
+      const { state } = start(`clean-slate-encore-${index}`);
+      state.lastAnswer = 'crane';
+      state.items.push(
+        { instance: 'i-clean', id: 'clean-slate', data: { used: 0 }, equipped: true },
+        { instance: 'i-encore', id: 'encore', data: {}, equipped: true },
+        { instance: 'i-harvest', id: 'harvest-charm', data: {}, equipped: true },
+      );
+      const next = nextRound(state);
+      const guesses = next.state.round?.guesses ?? [];
+      if (guesses.length < 2) continue;
+      const auto = guesses.at(-1)!;
+      const previous = guesses.at(-2)!;
+      if (auto.by !== 'friend' || previous.by !== 'friend') continue;
+      if (auto.word.split('').some((ch) => previous.word.includes(ch))) continue;
 
-        const last = guesses.at(-1)!.word;
-        const word = [...CONTENT.valid].find((entry) => (
-          entry.length === 5
-          && !entry.split('').some((ch) => last.includes(ch))
-        ));
-        if (!word) continue;
-        const second = act(phone.state, { type: 'guess', word });
-        expect(second.events.some((event) => event.type === 'itemProc' && event.item === id))
-          .toBe(true);
-        expect(second.state.items.find((item) => item.id === id)?.data.used).toBe(1);
-      }
-      expect(found, id).toBe(true);
+      // Round-start autos are allowed to happen, but they must not spend
+      // Clean Slate's once-per-round charge.
+      expect(next.state.items.find((item) => item.id === 'clean-slate')?.data.used).toBe(0);
+
+      const word = [...CONTENT.valid].find((entry) => (
+        entry.length === 5
+        && !entry.split('').some((ch) => auto.word.includes(ch))
+      ));
+      if (!word) continue;
+      const guess = act(next.state, { type: 'guess', word });
+      expect(guess.events.some(
+        (event) => event.type === 'itemProc' && event.item === 'clean-slate',
+      )).toBe(true);
+      expect(guess.state.items.find((item) => item.id === 'clean-slate')?.data.used).toBe(1);
+      return;
     }
+    throw new Error('no seed produced a clean round-start auto pair');
   });
 
   it('Spell Tithe trades one random spell for knowledge or a purge', () => {

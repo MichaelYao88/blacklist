@@ -3246,7 +3246,7 @@ export function createCore(content: Content): Core {
     emit(rt, { type: 'spellCast', spell: { instance: uid(state, 's'), id: def.id }, auto: true });
     applyEffects(rt, def.cast({ state }), { kind: 'spell', spell: def.id });
     if (isOver(state)) return;
-    runHook(rt, 'onSpellCast', { spell: def.id });
+    runHook(rt, 'onSpellCast', { spell: def.id, auto: true });
   }
 
   function castSpell(rt: Runtime, instance: InstanceId): void {
@@ -3287,7 +3287,7 @@ export function createCore(content: Content): Core {
       applyEffects(rt, def.cast({ state }), { kind: 'spell', spell: def.id });
     }
     if (isOver(state)) return;
-    runHook(rt, 'onSpellCast', { spell: def.id });
+    runHook(rt, 'onSpellCast', { spell: def.id, auto: false });
     if (
       round
       && (def.id === 'immunity' || def.id === 'time-freeze')
