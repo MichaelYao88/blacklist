@@ -1110,7 +1110,7 @@ function renderOpeningShield(view: RunView | null): void {
 
   const quickdraw = view.items.some((item) => item.id === 'quickdraw' && item.equipped);
   const headStart = view.items.some((item) => item.id === 'head-start' && item.equipped);
-  const total = quickdraw ? 12_000 : headStart ? 7_000 : Math.max(1_000, left);
+  const total = quickdraw ? 12_000 : headStart ? 8_000 : Math.max(1_000, left);
   const label = quickdraw ? 'Quickdraw!' : headStart ? 'Head Start!' : 'Opening Shield!';
 
   if (!openingActive || total !== openingTotalMs) {

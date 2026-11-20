@@ -10,7 +10,7 @@ describe('Opening shield banner', () => {
     const { state } = game.newRun({ seed: 'head-start-banner' });
     state.items.push({ instance: 'i-head-start', id: 'head-start', data: {}, equipped: true });
     state.round!.elapsedMs = 0;
-    state.round!.immuneUntilMs = 7_000;
+    state.round!.immuneUntilMs = 8_000;
     localStorage.setItem('blacklist.run.v1', game.serialize(state));
     document.body.innerHTML = '<div id="app"></div>';
     await import('../src/ui/app');
@@ -21,7 +21,7 @@ describe('Opening shield banner', () => {
 
   it('shows Head Start with a numeric timer and draining bar', () => {
     expect(bannerRoot.textContent).toContain('Head Start!');
-    expect(bannerRoot.textContent).toContain('7s');
+    expect(bannerRoot.textContent).toContain('8s');
 
     const bar = bannerRoot.querySelector<HTMLElement>('.opening-banner .immunity-timer i');
     expect(bar).not.toBeNull();

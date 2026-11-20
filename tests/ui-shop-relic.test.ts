@@ -12,7 +12,7 @@ describe('shop relic labelling', () => {
     state.gold = 100;
     state.shop = {
       offers: [
-        { id: 'o0', kind: 'item', def: 'quickdraw', price: 24 },
+        { id: 'o0', kind: 'item', def: 'mending-plate', price: 26 },
         { id: 'o1', kind: 'item', def: 'bloom', price: 7 },
         { id: 'o2', kind: 'eat', def: 'satchel', price: 9 },
         { id: 'o3', kind: 'eat', def: 'plating', price: 3 },
@@ -23,6 +23,7 @@ describe('shop relic labelling', () => {
         { id: 'o8', kind: 'eat', def: 'purge-the-d', price: 8 },
         { id: 'o9', kind: 'eat', def: 'pay-respects-f', price: 5 },
         { id: 'o10', kind: 'eat', def: 'reveal-the-d', price: 10 },
+        { id: 'o11', kind: 'item', def: 'quickdraw', price: 24 },
       ],
       rerollCost: 2,
       rerolls: 0,
@@ -41,10 +42,15 @@ describe('shop relic labelling', () => {
 
   it('marks rare item offers as RELIC and styles the card', () => {
     const relic = [...root.querySelectorAll<HTMLElement>('.offer-card')]
-      .find((card) => card.textContent?.includes('Quickdraw'));
+      .find((card) => card.textContent?.includes('Mending Plate'));
     expect(relic).not.toBeNull();
     expect(relic?.classList.contains('rare')).toBe(true);
     expect(relic?.querySelector('.tag')?.textContent?.trim()).toBe('RELIC');
+
+    const uncommon = [...root.querySelectorAll<HTMLElement>('.offer-card')]
+      .find((card) => card.textContent?.includes('Quickdraw'));
+    expect(uncommon?.classList.contains('uncommon')).toBe(true);
+    expect(uncommon?.querySelector('.tag')?.textContent?.trim()).toBe('UNCOMMON');
 
     const common = [...root.querySelectorAll<HTMLElement>('.offer-card')]
       .find((card) => card.textContent?.includes('Bloom'));

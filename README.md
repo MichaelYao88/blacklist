@@ -43,11 +43,11 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Revealed letters stay marked on the keyboard and in a Revealed panel for the puzzle; random reveals lean toward letters that are not in the answer; letter-reveal foods are permanent for the run
 - Vision-hidden letters show the hatched hidden key on the keyboard; reveals and rule-outs take priority over that layer
 - Every finished encounter pays gold; solves offer coins, usually a spell, and only rarely gear or a meal
-- Opening shields such as **Head Start** and **Quickdraw** make guesses in their window count as free guesses and show a floating timer banner with the remaining seconds
+- Opening shields such as **Head Start** (8s, common) and **Quickdraw** (12s, uncommon) make guesses in their window count as free guesses and show a floating timer banner with the remaining seconds
 - Rarity uses cumulative floors: 40% pulls from rare, uncommon or common, 45% pulls from uncommon or common, and 15% pulls from common only. If a tier is empty, it falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 105 items (97 shop items + 8 rare relics), 6 spells, 84 foods and 29 happenings
+- 105 items (98 shop items + 7 rare relics), 6 spells, 84 foods and 29 happenings
 - New foods include **U-nagi**, **Donut Holes**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout

@@ -2437,7 +2437,7 @@ describe('latest balance pass', () => {
     const second = nextRound(late.state);
     setAnswer(second.state, 'crane');
     second.state.round!.freeLeft = 0;
-    second.state.round!.elapsedMs = 7_000;
+    second.state.round!.elapsedMs = 8_000;
     second.state.armor = 0;
     const unshielded = act(second.state, { type: 'guess', word: 'slate' });
     expect(unshielded.state.round?.guesses[0].free).toBe(false);
@@ -2749,10 +2749,12 @@ describe('latest balance pass', () => {
     expect(paid).toBe(true);
   });
 
-  it('Head Start is 7s and neither it nor Quickdraw is clock-gated', () => {
-    expect(ITEM_BY_ID.get('head-start')?.description).toContain('7s');
+  it('Head Start is 8s and neither it nor Quickdraw is clock-gated', () => {
+    expect(ITEM_BY_ID.get('head-start')?.description).toContain('8s');
+    expect(ITEM_BY_ID.get('head-start')?.rarity).toBe('common');
     expect(ITEM_BY_ID.get('head-start')?.requiresClock).toBeUndefined();
     expect(ITEM_BY_ID.get('quickdraw')?.requiresClock).toBeUndefined();
+    expect(ITEM_BY_ID.get('quickdraw')?.rarity).toBe('uncommon');
     expect(ITEM_BY_ID.get('quickdraw')?.description).toBe('First 12s of each round: guesses are free.');
     expect(ITEM_BY_ID.get('quickdraw')?.on?.onGuessScored).toBeUndefined();
   });
@@ -3747,7 +3749,7 @@ describe('relic uniqueness', () => {
     .map((item) => item.id);
 
   it('never offers a relic already in the player inventory', () => {
-    expect(relicIds).toHaveLength(8);
+    expect(relicIds).toHaveLength(7);
     let sawOtherRelic = false;
     for (let index = 0; index < 60; index++) {
       const { state } = start(`relic-owned-${index}`);
