@@ -476,6 +476,8 @@ button {
   padding: 10px 4px 14px;
   overflow-x: auto;
   scrollbar-width: thin;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .path-label {
@@ -3867,6 +3869,7 @@ button {
   inset: 0;
   z-index: 55;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   place-items: center;
   padding: 20px;
   background: rgba(5, 4, 8, 0.74);
@@ -3876,6 +3879,11 @@ button {
 
 .pause-card {
   width: min(560px, 100%);
+  max-width: 100%;
+  min-width: 0;
+  max-height: min(85vh, 640px);
+  overflow-y: auto;
+  box-sizing: border-box;
   padding: 30px 26px;
   border: 1px solid var(--line-2);
   border-radius: 16px;
@@ -3914,12 +3922,16 @@ button {
 
 .pause-chronicle {
   width: 100%;
+  min-width: 0;
   margin-top: 18px;
   padding-top: 14px;
   border-top: 1px solid var(--line);
+  overflow-x: auto;
 }
 
 .pause-chronicle .chronicle {
+  width: 100%;
+  min-width: 0;
   padding: 0;
   background: none;
   border: 0;
