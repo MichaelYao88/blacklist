@@ -27,7 +27,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Phone a Friend** delivers a one- or two-word catchphrase, quietly adds 5 seconds, and spams his words across the screen; the **Pizza Pzazz** set shows a pizza/sparkle callout instead of the word spam. If purges leave fewer than three two-word phrases available, he falls back to single words
 - **Time Freeze** gives a free, unobscured guess that does not count towards solve-count items (Hat Trick, Bloom, Shortcut, etc.); Time Freeze and Immunity lock until your next guess
 - Within-X solve items count **player guesses only**; solve gold is a random 4-8, independent of guess count and auto-guesses
-- Curse Collector, Curse Bulwark and Reliquary trigger on gaining a curse ("Whenever you gain a curse: Gain …")
+- Curse Collector, Curse Bulwark and Reliquary trigger on gaining a curse ("Whenever you gain a curse: Gain …"). Curse Collector grants +6 max HP and heals 6
 - Ascension A1/A2 draft 1/2 starting curses
 - Shops with rerolls that start at 1g and double in price: three items, two foods and one wildcard; the wildcard is always food or a spell, never an item, and one random offer is always 50% off
 - Every spell offered in a shop has a 4g base price; the half-price sale can land on it
@@ -45,7 +45,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Rarity uses cumulative floors: 40% pulls from rare, uncommon or common, 45% pulls from uncommon or common, and 15% pulls from common only. If a tier is empty, it falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 106 items (98 shop items + 8 rare relics), 6 spells, 84 foods and 29 happenings
+- 105 items (97 shop items + 8 rare relics), 6 spells, 84 foods and 29 happenings
 - New foods include **U-nagi**, **Donut Holes**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout

@@ -370,13 +370,13 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'trophy-hunter',
     name: 'Curse Collector',
-    description: 'Whenever you gain a curse: Gain 4 max HP and heal 4.',
+    description: 'Whenever you gain a curse: Gain 6 max HP and heal 6.',
     price: 9,
     kind: 'gear',
     on: {
       onCurseGained: () => [
-        { type: 'maxHp', delta: 4 },
-        { type: 'heal', amount: 4 },
+        { type: 'maxHp', delta: 6 },
+        { type: 'heal', amount: 6 },
       ],
     },
   }),
@@ -833,24 +833,6 @@ export const ITEMS: ItemDef[] = [
     kind: 'gear',
     on: {
       onRoundStart: () => [{ type: 'randomGuesses', count: 1 }],
-    },
-  }),
-  defineItem({
-    id: 'life-savings',
-    name: 'Life Savings',
-    description: 'Every 6 gold spent: +1 max HP.',
-    price: 9,
-    kind: 'gear',
-    initial: { spent: 0 },
-    on: {
-      onGoldSpent: (ctx, p) => {
-        const total = ctx.self.data.spent + p.amount;
-        const growth = Math.floor(total / 6);
-        return [
-          { type: 'setItemData', stat: 'spent', value: total % 6 },
-          ...Array.from({ length: growth }, () => ({ type: 'maxHp' as const, delta: 1 })),
-        ];
-      },
     },
   }),
   defineItem({

@@ -1057,7 +1057,8 @@ describe('curse-triggered items', () => {
     state.curse = { options: ['censor'], starting: false };
     state.phase = 'curse';
     const chosen = act(state, { type: 'chooseCurse', curseId: 'censor' });
-    expect(chosen.state.maxHp).toBe(20);
+    expect(chosen.state.maxHp).toBe(22);
+    expect(chosen.state.hp).toBe(22);
     expect(chosen.state.maxArmor).toBe(6);
     expect(chosen.state.slots).toBe(6);
     expect(chosen.state.spells).toHaveLength(1);
