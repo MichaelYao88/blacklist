@@ -179,7 +179,7 @@ export const ITEMS: ItemDef[] = [
     on: {
       onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
       onGuessScored: (ctx, p) => {
-        if (ctx.self.data.used || !p.previous || p.guess.by !== 'player') return [];
+        if (ctx.self.data.used || !p.previous) return [];
         if (sharedLetters(p.guess.word, p.previous.word) > 0) return [];
         return [
           { type: 'randomGuesses', count: 1 },
