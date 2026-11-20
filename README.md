@@ -97,7 +97,6 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Black Market Ledger** is an 8g item: every shop purchase or event arrival has a 40% chance to add a random spell
 - **The Spellbroker** event trades your spells for permanent value: Omen or Phone a Friend becomes a random permanent letter, Heal becomes +10 max HP and a 10 HP heal, and Immunity or Restore becomes +5 armor
 - **The Spell Tithe** event trades one random spell for either permanent knowledge of a specific letter or a permanent purge of a specific letter; the trades are locked when you have no spells
-- **Clean Slate** only spends its once-per-round charge on your player guess, so round-start auto-guesses such as Encore cannot consume it before you act
 - **Fortune Cookie** is a 1g food with a hidden 5× appearance weight: it queues one autoguess for the next round
 - **Oracle's Banquet** is an 18g rare unique food: it permanently autoguesses at the start of every round
 - **Tally** counts every guess, including ally and autoguesses

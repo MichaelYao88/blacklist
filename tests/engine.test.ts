@@ -3723,42 +3723,6 @@ describe('spellbroker and ledger additions', () => {
     expect(chosen.events.some((event) => event.type === 'message')).toBe(true);
   });
 
-  it('Clean Slate waits for your clean guess after round-start auto-guesses', () => {
-    for (let index = 0; index < 120; index++) {
-      const { state } = start(`clean-slate-encore-${index}`);
-      state.lastAnswer = 'crane';
-      state.items.push(
-        { instance: 'i-clean', id: 'clean-slate', data: { used: 0 }, equipped: true },
-        { instance: 'i-encore', id: 'encore', data: {}, equipped: true },
-        { instance: 'i-harvest', id: 'harvest-charm', data: {}, equipped: true },
-      );
-      const next = nextRound(state);
-      const guesses = next.state.round?.guesses ?? [];
-      if (guesses.length < 2) continue;
-      const auto = guesses.at(-1)!;
-      const previous = guesses.at(-2)!;
-      if (auto.by !== 'friend' || previous.by !== 'friend') continue;
-      if (auto.word.split('').some((ch) => previous.word.includes(ch))) continue;
-
-      // Round-start autos are allowed to happen, but they must not spend
-      // Clean Slate's once-per-round charge.
-      expect(next.state.items.find((item) => item.id === 'clean-slate')?.data.used).toBe(0);
-
-      const word = [...CONTENT.valid].find((entry) => (
-        entry.length === 5
-        && !entry.split('').some((ch) => auto.word.includes(ch))
-      ));
-      if (!word) continue;
-      const guess = act(next.state, { type: 'guess', word });
-      expect(guess.events.some(
-        (event) => event.type === 'itemProc' && event.item === 'clean-slate',
-      )).toBe(true);
-      expect(guess.state.items.find((item) => item.id === 'clean-slate')?.data.used).toBe(1);
-      return;
-    }
-    throw new Error('no seed produced a clean round-start auto pair');
-  });
-
   it('Spell Tithe trades one random spell for knowledge or a purge', () => {
     let seed = '';
     for (let index = 0; index < 400 && !seed; index++) {

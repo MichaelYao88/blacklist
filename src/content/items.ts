@@ -1408,14 +1408,14 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'clean-slate',
     name: 'Clean Slate',
-    description: 'Once per round: your guess sharing no letters with the previous guess: +1 max HP or +1 max armor at random.',
+    description: 'Once per round: a guess sharing no letters with the previous guess: +1 max HP or +1 max armor at random.',
     price: 9,
     kind: 'gear',
     initial: { used: 0 },
     on: {
       onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
       onGuessScored: (ctx, p) => {
-        if (ctx.self.data.used || !p.previous || p.guess.by !== 'player') return [];
+        if (ctx.self.data.used || !p.previous) return [];
         if (sharedLetters(p.guess.word, p.previous.word) > 0) return [];
         return [
           {
