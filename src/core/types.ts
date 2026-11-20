@@ -696,7 +696,7 @@ export type PhaseView =
   | { kind: 'reward'; options: RewardOption[]; boss: boolean; chosen?: string }
   | { kind: 'bossIntro'; boss: BossId }
   | { kind: 'curse'; options: CurseId[]; starting: boolean }
-  | { kind: 'shopChoice'; heal: number }
+  | { kind: 'shopChoice' }
   | { kind: 'shop'; offers: Offer[]; rerollCost: number; purchases: number }
   | {
       kind: 'happening';

@@ -1938,10 +1938,7 @@ function renderCurseRemovalModal(view: RunView): string {
   </div>`;
 }
 
-function renderShopChoice(phase: Extract<PhaseView, { kind: 'shopChoice' }>): string {
-  const rest = phase.heal > 0
-    ? `Recover ${phase.heal} HP and leave at full health. The shop closes.`
-    : 'You are already at full health. Resting moves on.';
+function renderShopChoice(): string {
   return `
   <div class="phase-card shop-choice">
     <p class="panel-kicker">A LIGHT IN THE ROAD</p>
@@ -1956,10 +1953,10 @@ function renderShopChoice(phase: Extract<PhaseView, { kind: 'shopChoice' }>): st
       <button class="shop-choice-card" data-action="choose" data-id="inn">
         <span class="choice-glyph" aria-hidden="true">🛏️</span>
         <b>Inn</b>
-        <span>${rest}</span>
+        <span>Gain +8 max HP, then heal to full. The shop closes.</span>
       </button>
     </div>
-    <p class="hint">The inn heals you to full. The shop does not.</p>
+    <p class="hint">The inn grants +8 max HP and heals you to full. The shop does not.</p>
   </div>`;
 }
 
@@ -2261,7 +2258,7 @@ function phasePanel(view: RunView): string {
     case 'shop':
       return renderShop(view, phase);
     case 'shopChoice':
-      return renderShopChoice(phase);
+      return renderShopChoice();
     case 'happening':
       return renderHappening(phase);
     case 'over':

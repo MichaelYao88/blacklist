@@ -60,7 +60,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Muffin Tin** is a 2g uncommon food: in that shop, each food eaten gives +1 max armor per Muffin Tin eaten, but a tin does not count itself; the armor is permanent and the counting stops when you leave
 - **Chilaquiles** is a 2g food that doubles the next two sales
 - **Spell Pepper** is a 3g food that doubles your next spell
-- Every shop node offers a choice: visit the shop, or rest at the inn to heal to full HP and move on
+- Every shop node offers a choice: visit the shop, or rest at the inn to gain +8 max HP, heal to full HP, and move on
 - **Hearty Stew** is a 4g food that grants 1-2 casts of Heal; **Hagelslag** gives +3 max HP and heals 20% of missing HP
 - **Bulwark** is an 8g item: every 10 damage blocked by armor, cast a random spell
 - **Ricochet** is a 7g item: every 10 armor lost, autoguess a random word

@@ -981,17 +981,30 @@ describe('shop curses', () => {
     expect(arrived.state.shop).toBeUndefined();
   });
 
-  it('heals to full at the inn and skips the shop', () => {
+  it('grants +8 max HP and heals to full at the inn', () => {
     const { state } = start('inn-heal');
     state.nodeIndex = 0;
     state.nodes[1] = { kind: 'shop', level: 1 };
     state.phase = 'shop';
     state.hp = 3;
+    const startMax = state.maxHp;
     const arrived = act(state, { type: 'continue' });
     const rested = act(arrived.state, { type: 'choose', optionId: 'inn' });
+    expect(rested.state.maxHp).toBe(startMax + 8);
     expect(rested.state.hp).toBe(rested.state.maxHp);
     expect(rested.state.shop).toBeUndefined();
     expect(rested.state.phase).not.toBe('shop');
+
+    // Resting at full health still grants the max HP.
+    const healthy = start('inn-healthy');
+    healthy.state.nodeIndex = 0;
+    healthy.state.nodes[1] = { kind: 'shop', level: 1 };
+    healthy.state.phase = 'shop';
+    const healthyMax = healthy.state.maxHp;
+    const healthyArrived = act(healthy.state, { type: 'continue' });
+    const restedHealthy = act(healthyArrived.state, { type: 'choose', optionId: 'inn' });
+    expect(restedHealthy.state.maxHp).toBe(healthyMax + 8);
+    expect(restedHealthy.state.hp).toBe(restedHealthy.state.maxHp);
   });
 
   it('opens the shop with rerolls starting at 1 gold', () => {

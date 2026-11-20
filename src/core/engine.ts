@@ -2594,6 +2594,7 @@ export function createCore(content: Content): Core {
     if (state.phase !== 'shopChoice') return;
     if (optionId === 'inn') {
       const before = state.hp;
+      changeMaxHp(rt, 8, { kind: 'inn' });
       state.hp = state.maxHp;
       const applied = state.hp - before;
       if (applied > 0) {
@@ -2602,7 +2603,7 @@ export function createCore(content: Content): Core {
       }
       emit(rt, {
         type: 'message',
-        text: applied > 0 ? 'The inn restores you to full health.' : 'The inn has nothing left to mend.',
+        text: 'The inn grants +8 max HP and restores you to full health.',
       });
       advanceNode(rt);
       return;
@@ -3502,7 +3503,7 @@ export function createCore(content: Content): Core {
         };
         break;
       case 'shopChoice':
-        phase = { kind: 'shopChoice', heal: Math.max(0, state.maxHp - state.hp) };
+        phase = { kind: 'shopChoice' };
         break;
       case 'shop':
         phase = {
