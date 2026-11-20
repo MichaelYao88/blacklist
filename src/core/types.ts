@@ -390,7 +390,7 @@ export interface HookPayloads {
     boss?: BossId;
   };
   onRoundEnd: { outcome: RoundOutcome; boss?: BossId; damageTaken: number };
-  onSpellCast: { spell: SpellId; auto?: boolean };
+  onSpellCast: { spell: SpellId; auto?: boolean; sourceItem?: ItemId };
   onEat: { food: string };
   onHeal: { amount: number; hp: number };
   onTimerTick: { remainingMs: number | null; elapsedMs: number; dtMs: number };
@@ -570,6 +570,8 @@ export interface RunState {
   armor: number;
   maxArmor: number;
   gold: number;
+  /** Cumulative gold spent, used for secret encounter damage scaling. */
+  goldSpent: number;
   slots: number;
   bonusTimeMs: number;
   bonusBaseDamage: number;

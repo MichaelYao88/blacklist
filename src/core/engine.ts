@@ -55,6 +55,8 @@ interface Runtime {
   pendingFreeSource?: Source;
   depth: number;
   dying: boolean;
+  autoCasts: number;
+  autoCapped: boolean;
 }
 
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
@@ -297,6 +299,7 @@ export function createCore(content: Content): Core {
     if (amount <= 0) return true;
     if (rt.state.gold < amount) return false;
     changeGold(rt, -amount, source);
+    rt.state.goldSpent = (rt.state.goldSpent ?? 0) + amount;
     runHook(rt, 'onGoldSpent', { amount, total: rt.state.gold });
     return true;
   }
@@ -1974,7 +1977,8 @@ export function createCore(content: Content): Core {
     const base = boss?.damageFor
       ? boss.damageFor(state, next ? { ...round, totalGuesses: round.totalGuesses + 1 } : round)
       : round.baseDamage;
-    return Math.max(0, Math.round(base + curseBonus));
+    const spentDamage = Math.floor((state.goldSpent ?? 0) / 60);
+    return Math.max(0, Math.round(base + curseBonus) + spentDamage);
   }
 
   function timeoutDamageFor(state: RunState): number {
@@ -2074,7 +2078,9 @@ export function createCore(content: Content): Core {
       const phrases = content.friendPhrases.filter(
         ([first, second]) => available(first, taken) && available(second, taken),
       );
-      if (phrases.length > 0) {
+      // When purges shrink the phrase pool below three options, fall back to
+      // single words so Phone a Friend does not repeat the same two phrases.
+      if (phrases.length >= 3) {
         const [first, second] = rngPick(state, phrases);
         if (first === 'pizza' && second === 'pzazz') {
           emit(rt, { type: 'friendSaid', text: 'Pizza Pzazz 🍕✨' });
@@ -2288,10 +2294,10 @@ export function createCore(content: Content): Core {
     const all = [...pools.rare, ...pools.uncommon, ...pools.common];
     if (all.length === 0) return undefined;
     const roll = rngNext(state) * 100;
-    const pool = roll < 35
-      ? pools.rare
+    const pool = roll < 40
+      ? all
       : roll < 85
-        ? pools.uncommon
+        ? [...pools.uncommon, ...pools.common]
         : pools.common;
     return weightedPick(state, pool.length > 0 ? pool : all);
   }
@@ -3233,11 +3239,20 @@ export function createCore(content: Content): Core {
     const def = spellById.get(id);
     if (!def) return;
     if (rt.depth > 12) return;
+    if (rt.autoCasts >= 10) {
+      if (!rt.autoCapped) {
+        rt.autoCapped = true;
+        emit(rt, { type: 'message', text: 'The spell chain fizzles.' });
+      }
+      return;
+    }
+    rt.autoCasts++;
     if (def.usable === 'round' && (state.phase !== 'round' || !state.round)) return;
+    const sourceItem = rt.self ? findItem(state, rt.self)?.id : undefined;
     emit(rt, { type: 'spellCast', spell: { instance: uid(state, 's'), id: def.id }, auto: true });
     applyEffects(rt, def.cast({ state }), { kind: 'spell', spell: def.id });
     if (isOver(state)) return;
-    runHook(rt, 'onSpellCast', { spell: def.id, auto: true });
+    runHook(rt, 'onSpellCast', { spell: def.id, auto: true, sourceItem });
   }
 
   function castSpell(rt: Runtime, instance: InstanceId): void {
@@ -3566,6 +3581,8 @@ export function createCore(content: Content): Core {
       pendingFree: false,
       depth: 0,
       dying: false,
+      autoCasts: 0,
+      autoCapped: false,
     };
     const round = draft.round;
 
@@ -3698,6 +3715,7 @@ export function createCore(content: Content): Core {
       armor: startArmor,
       maxArmor: startArmor,
       gold: 12,
+      goldSpent: 0,
       slots: 5,
       bonusTimeMs: 0,
       bonusBaseDamage: 0,
@@ -3744,6 +3762,8 @@ export function createCore(content: Content): Core {
       pendingFree: false,
       depth: 0,
       dying: false,
+      autoCasts: 0,
+      autoCapped: false,
     };
     emit(rt, {
       type: 'runStarted',
@@ -3784,6 +3804,7 @@ export function createCore(content: Content): Core {
         state.slots = 5;
       }
       state.bonusSolveGold = typeof state.bonusSolveGold === 'number' ? state.bonusSolveGold : 0;
+      if (typeof state.goldSpent !== 'number') state.goldSpent = 0;
       if (typeof state.freeGuessBonus !== 'number') state.freeGuessBonus = 0;
       if (!Array.isArray(state.curses)) state.curses = [];
       if (!Array.isArray(state.seenCurses)) state.seenCurses = [];

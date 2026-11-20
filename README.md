@@ -24,7 +24,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - The blacklist is disabled and hidden until **The List** curse is taken; The List is a single curse, never stacks, and arrives stocked with the first guess from every earlier round
 - The clock is disabled until **The Clock** curse is taken; the first stack gives 5:00 and each further stack shrinks it by 40%
 - The Clockmaker event only appears once The Clock exists
-- **Phone a Friend** delivers a one- or two-word catchphrase, quietly adds 5 seconds, and spams his words across the screen; the **Pizza Pzazz** set shows a pizza/sparkle callout instead of the word spam
+- **Phone a Friend** delivers a one- or two-word catchphrase, quietly adds 5 seconds, and spams his words across the screen; the **Pizza Pzazz** set shows a pizza/sparkle callout instead of the word spam. If purges leave fewer than three two-word phrases available, he falls back to single words
 - **Time Freeze** gives a free, unobscured guess that does not count towards solve-count items (Hat Trick, Bloom, Shortcut, etc.); Time Freeze and Immunity lock until your next guess
 - Within-X solve items count **player guesses only**; solve gold is a random 4-8, independent of guess count and auto-guesses
 - Curse Collector, Curse Bulwark and Reliquary trigger on gaining a curse ("Whenever you gain a curse: Gain …")
@@ -67,7 +67,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Deadline** grants +1 free guess as soon as the clock drops below 30s each round
 - **Second Hand** and **Counterclockwise** (formerly Engine) are 8g items that cross-cast spells on cast at 80%
 - **Genie Summon** is a 12g uncommon item: after the 3rd guess of each round, player or otherwise, it autocasts a random spell
-- **Combustion Engine** is a 10g uncommon item with a 3x appearance weight: after you autocast a spell, it has a 40% chance to autocast a random spell
+- **Combustion Engine** is a 10g uncommon item with a 3x appearance weight: after you autocast a spell, it has a 40% chance to autocast a random spell. It does not retrigger itself, and autocast chains cap at 10 spells per step
 - **Encore** now costs 7g
 - **Panacea Pouch** (formerly Spellhoarder) is a 9g item: every 3rd spell cast casts Heal
 - **Omen** ignores letters whose only revealing tile was hidden by a position curse, so it can still find them

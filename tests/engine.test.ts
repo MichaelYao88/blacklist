@@ -3404,7 +3404,7 @@ describe('autocast and random-guess batch', () => {
 });
 
 describe('Genie Summon and Combustion Engine', () => {
-  it('Genie Summon autocasts after the third guess of the round', () => {
+  it('Genie Summon autocasts after the third player guess of the round', () => {
     const { state } = start('genie-summon');
     state.items.push({
       instance: 'i-genie',
@@ -3412,17 +3412,42 @@ describe('Genie Summon and Combustion Engine', () => {
       data: { guesses: 0 },
       equipped: true,
     });
+    state.spells = [{ instance: 's-phone', id: 'phone-friend' }];
     setAnswer(state, 'crane');
     state.round!.freeLeft = 0;
     const first = act(state, { type: 'guess', word: 'slate' });
-    const second = act(first.state, { type: 'guess', word: 'brick' });
+    const phone = act(first.state, { type: 'castSpell', instance: 's-phone' });
+    expect(phone.state.items.find((item) => item.id === 'genie-summon')?.data.guesses).toBe(1);
+    const second = act(phone.state, { type: 'guess', word: 'brick' });
     const third = act(second.state, { type: 'guess', word: 'vamps' });
     expect(first.events.some((event) => event.type === 'spellCast' && event.auto)).toBe(false);
+    expect(phone.events.some((event) => event.type === 'spellCast' && event.auto)).toBe(false);
     expect(second.events.some((event) => event.type === 'spellCast' && event.auto)).toBe(false);
     expect(third.events.some((event) => event.type === 'spellCast' && event.auto)).toBe(true);
     expect(third.state.items.find((item) => item.id === 'genie-summon')?.data.guesses).toBe(3);
-    expect(ITEM_BY_ID.get('genie-summon')?.price).toBe(12);
+    expect(ITEM_BY_ID.get('genie-summon')?.price).toBe(8);
     expect(ITEM_BY_ID.get('genie-summon')?.rarity).toBe('uncommon');
+  });
+
+  it('caps a round-start autocast chain', () => {
+    const { state } = start('autocast-cap');
+    state.spells = [];
+    state.items.push(
+      { instance: 'i-empty-hand', id: 'empty-hand', data: {}, equipped: true },
+      { instance: 'i-empty-orb', id: 'empty-orb', data: {}, equipped: true },
+      { instance: 'i-empty-phone', id: 'empty-phone', data: {}, equipped: true },
+      { instance: 'i-empty-armor', id: 'empty-armor', data: {}, equipped: true },
+      { instance: 'i-empty-mouth', id: 'empty-mouth', data: {}, equipped: true },
+      { instance: 'i-combustion', id: 'combustion-engine', data: {}, equipped: true },
+      { instance: 'i-second-hand', id: 'second-hand', data: {}, equipped: true },
+      { instance: 'i-counter', id: 'engine', data: {}, equipped: true },
+    );
+    const next = nextRound(state);
+    const autoCasts = next.events.filter(
+      (event) => event.type === 'spellCast' && event.auto,
+    );
+    expect(autoCasts.length).toBeLessThanOrEqual(10);
+    expect(next.state.round?.guesses.length).toBeGreaterThanOrEqual(1);
   });
 
   it('Combustion Engine triggers only on autocasts, at 40%', () => {
@@ -3440,6 +3465,7 @@ describe('Genie Summon and Combustion Engine', () => {
       const autoCasts = next.events.filter(
         (event) => event.type === 'spellCast' && event.auto,
       );
+      expect(autoCasts.length).toBeLessThanOrEqual(2);
       if (autoCasts.length >= 2) chained++;
     }
     expect(chained).toBeGreaterThan(0);
@@ -3932,6 +3958,34 @@ describe('item tuning batch', () => {
     expect(tongue?.price).toBe(12);
     expect(tongue?.rarity).toBe('uncommon');
     expect(tongue?.allowInvalidGuesses).toBe(true);
+  });
+});
+
+describe('secret gold-spent damage', () => {
+  it('tracks gold spent on a purchase', () => {
+    const { state } = start('gold-spent-track');
+    state.phase = 'shop';
+    state.gold = 100;
+    state.shop = shopState([{ id: 'o0', kind: 'item', def: 'bloom', price: 10 }]);
+    const bought = act(state, { type: 'buy', offerId: 'o0' });
+    expect(bought.state.goldSpent).toBe(10);
+  });
+
+  it('adds +1 encounter damage for every 60 gold spent', () => {
+    for (const [spent, expected] of [[0, 3], [59, 3], [60, 4], [120, 5]]) {
+      const { state } = start(`gold-spent-damage-${spent}`);
+      state.goldSpent = spent;
+      state.curses = [];
+      state.bonusBaseDamage = 0;
+      state.maxArmor = 0;
+      state.armor = 0;
+      state.hp = 16;
+      setAnswer(state, 'crane');
+      state.round!.freeLeft = 0;
+      const before = state.hp;
+      const guessed = act(state, { type: 'guess', word: 'slate' });
+      expect(before - guessed.state.hp, `spent ${spent}`).toBe(expected);
+    }
   });
 });
 

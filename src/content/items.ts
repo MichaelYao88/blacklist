@@ -583,20 +583,23 @@ export const ITEMS: ItemDef[] = [
     appearanceWeight: 3,
     on: {
       onSpellCast: (_ctx, p) =>
-        p.auto ? [{ type: 'castSpell', spell: 'random', chancePct: 40 }] : [],
+        p.auto && p.sourceItem !== 'combustion-engine'
+          ? [{ type: 'castSpell', spell: 'random', chancePct: 40 }]
+          : [],
     },
   }),
   defineItem({
     id: 'genie-summon',
     name: 'Genie Summon',
-    description: 'After your 3rd guess each round, player or otherwise: autocast a random spell.',
-    price: 12,
+    description: 'After your 3rd player guess each round: autocast a random spell.',
+    price: 8,
     kind: 'gear',
     rarity: 'uncommon',
     initial: { guesses: 0 },
     on: {
       onRoundStart: () => [{ type: 'setItemData', stat: 'guesses', value: 0 }],
-      onGuessScored: (ctx) => {
+      onGuessScored: (ctx, p) => {
+        if (p.guess.by !== 'player') return [];
         const next = ctx.self.data.guesses + 1;
         return [
           { type: 'grow', stat: 'guesses', by: 1 },
