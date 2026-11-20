@@ -203,7 +203,7 @@ export const ITEMS: ItemDef[] = [
     id: 'encore',
     name: 'Encore',
     description: 'Round start: the last solved answer is guessed for free.',
-    price: 11,
+    price: 7,
     kind: 'gear',
     appearanceWeight: 3,
     unique: true,
