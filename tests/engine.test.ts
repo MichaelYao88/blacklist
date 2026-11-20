@@ -3663,43 +3663,43 @@ describe('spellbroker and ledger additions', () => {
     expect(chosen.events.some((event) => event.type === 'message')).toBe(true);
   });
 
-  it('Off-Road compares against your previous player guess, not an auto-guess', () => {
-    const { state } = start('offroad-previous-player');
-    state.items.push({ instance: 'i-off', id: 'off-road', data: { used: 0 }, equipped: true });
-    state.spells = [{ instance: 's-phone', id: 'phone-friend' }];
-    state.round!.freeLeft = 0;
-    state.round!.answer = 'crane';
-    const first = act(state, { type: 'guess', word: 'sloth' });
-    expect(first.events.some((event) => event.type === 'itemProc' && event.item === 'off-road'))
-      .toBe(false);
+  it('Scattershot and Clean Slate do not spend their charge on auto-guesses', () => {
+    for (const id of ['scattershot', 'clean-slate']) {
+      let found = false;
+      for (let index = 0; index < 200 && !found; index++) {
+        const { state } = start(`${id}-auto-${index}`);
+        state.items.push({ instance: `i-${id}`, id, data: { used: 0 }, equipped: true });
+        state.spells = [{ instance: 's-phone', id: 'phone-friend' }];
+        state.round!.freeLeft = 0;
+        state.round!.answer = 'crane';
+        const first = act(state, { type: 'guess', word: 'sloth' });
+        const phone = act(first.state, { type: 'castSpell', instance: 's-phone' });
+        if (phone.state.phase !== 'round') continue;
+        const guesses = phone.state.round!.guesses;
+        const cleanAuto = guesses.some((guess, guessIndex) => (
+          guessIndex > 0
+          && guess.by === 'friend'
+          && !guess.word.split('').some((ch) => guesses[guessIndex - 1].word.includes(ch))
+        ));
+        if (!cleanAuto) continue;
+        found = true;
+        expect(phone.events.some((event) => event.type === 'itemProc' && event.item === id))
+          .toBe(false);
+        expect(phone.state.items.find((item) => item.id === id)?.data.used).toBe(0);
 
-    const phone = act(first.state, { type: 'castSpell', instance: 's-phone' });
-    expect(phone.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
-    expect(phone.events.some((event) => event.type === 'itemProc' && event.item === 'off-road'))
-      .toBe(false);
-
-    const auto = phone.state.round!.guesses.at(-1)!.word;
-    const word = [...CONTENT.valid].find((entry) => (
-      entry.length === 5
-      && !entry.split('').some((ch) => 'sloth'.includes(ch))
-      && entry.split('').some((ch) => auto.includes(ch))
-    ));
-    expect(word, 'a clean word that still shares a letter with the auto-guess').toBeDefined();
-    const second = act(phone.state, { type: 'guess', word: word! });
-    expect(second.events.some((event) => event.type === 'itemProc' && event.item === 'off-road'))
-      .toBe(true);
-  });
-
-  it('Off-Road does not spend its once-per-round charge on auto-guesses', () => {
-    const { state } = start('offroad-auto-only');
-    state.items.push({ instance: 'i-off', id: 'off-road', data: { used: 0 }, equipped: true });
-    state.spells = [{ instance: 's-phone', id: 'phone-friend' }];
-    state.round!.freeLeft = 0;
-    state.round!.answer = 'crane';
-    const phone = act(state, { type: 'castSpell', instance: 's-phone' });
-    expect(phone.events.some((event) => event.type === 'itemProc' && event.item === 'off-road'))
-      .toBe(false);
-    expect(phone.state.items.find((item) => item.id === 'off-road')?.data.used).toBe(0);
+        const last = guesses.at(-1)!.word;
+        const word = [...CONTENT.valid].find((entry) => (
+          entry.length === 5
+          && !entry.split('').some((ch) => last.includes(ch))
+        ));
+        if (!word) continue;
+        const second = act(phone.state, { type: 'guess', word });
+        expect(second.events.some((event) => event.type === 'itemProc' && event.item === id))
+          .toBe(true);
+        expect(second.state.items.find((item) => item.id === id)?.data.used).toBe(1);
+      }
+      expect(found, id).toBe(true);
+    }
   });
 
   it('Spell Tithe trades one random spell for knowledge or a purge', () => {

@@ -179,7 +179,7 @@ export const ITEMS: ItemDef[] = [
     on: {
       onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
       onGuessScored: (ctx, p) => {
-        if (ctx.self.data.used || !p.previous) return [];
+        if (ctx.self.data.used || !p.previous || p.guess.by !== 'player') return [];
         if (sharedLetters(p.guess.word, p.previous.word) > 0) return [];
         return [
           { type: 'randomGuesses', count: 1 },
@@ -1200,19 +1200,15 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'off-road',
     name: 'Off-Road',
-    description: 'Once per round: your guess sharing no letters with your previous guess autocasts a random spell.',
+    description: 'Once per round: a guess sharing no letters with the previous guess autocasts a random spell.',
     price: 9,
     kind: 'gear',
     initial: { used: 0 },
     on: {
       onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
       onGuessScored: (ctx, p) => {
-        if (ctx.self.data.used || p.guess.by !== 'player') return [];
-        const previousPlayer = ctx.state.round?.guesses
-          .filter((guess) => guess.by === 'player' && guess.index < p.guess.index)
-          .at(-1);
-        if (!previousPlayer) return [];
-        if (sharedLetters(p.guess.word, previousPlayer.word) > 0) return [];
+        if (ctx.self.data.used || !p.previous || p.guess.by !== 'player') return [];
+        if (sharedLetters(p.guess.word, p.previous.word) > 0) return [];
         return [
           { type: 'castSpell', spell: 'random' },
           { type: 'setItemData', stat: 'used', value: 1 },
@@ -1387,7 +1383,7 @@ export const ITEMS: ItemDef[] = [
     on: {
       onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
       onGuessScored: (ctx, p) => {
-        if (ctx.self.data.used || !p.previous) return [];
+        if (ctx.self.data.used || !p.previous || p.guess.by !== 'player') return [];
         if (sharedLetters(p.guess.word, p.previous.word) > 0) return [];
         return [
           {
