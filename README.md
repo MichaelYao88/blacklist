@@ -73,7 +73,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Vowel Tithe** is an 8g item: each spell cast has a 25% chance to cast Omen
 - **Wild Magic** is a 9g item: each spell cast has a 25% chance to cast a random spell and a 25% chance to autoguess a random word
 - **Acquired Taste** is a 7g uncommon item: each different food you eat this run gives +4 max HP
-- Item triggers show a compact proc pop-up with the actual result (for example **Yellow1** calling an autoguess or **Grey Market** paying gold); once-per-round items show **SPENT** after they fire
+- Item triggers show a compact proc pop-up with the actual result (for example **Yellow1** calling an autoguess or **Grey Market** paying gold); item procs queue 2 seconds apart and stay up 3 seconds longer; once-per-round items show **SPENT** after they fire
 - The revealed-letter panel persists between screens; in shops it is labelled **REVEALED**
 - On desktop the item list sits under the battle rail on the left; on mobile it stays at the bottom of the sidebar
 - **Grey Market** is a 7g item: every all-grey guess pays 3 gold, whether you made it or an ally did; an all-dark guess that pays nothing hides a letter
@@ -116,7 +116,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Blacklisted words are never chosen as round targets; if a late run runs out of legal targets, the List releases one
 - The run-over screen and run history record the items you had equipped, and the stats page shows them per run
 - Random guesses pull from a 208-word pool chosen for non-native speakers, including **patsy**, **wharf**, **rajah**, **guppy**, **glyph**, **lymph**, **gaunt**, **jaunt**, and **vaunt**; **Dark Echo** avoids letters from your first guess
-- Every spell cast plays an animated pop-up, including item autocasts; when several trigger at once they queue one second apart
+- Every spell cast plays an animated pop-up, including item autocasts; spell pop-ups queue 2 seconds apart, and the last one stays up 3 seconds longer
 - **Cyrniki** is a 3g food: heal 50% of missing HP, then 50% a spell / 50% a shop reroll
 - **The Tax** reduces encounter gold by 40% and is unique; **The Sleeper** adds +2 damage per revealed letter in your first player guess, per stack; **The Curse Broker** charges 12g for a relic or 15g to remove a random curse; **The Confessional** sells 45/75/100% random curse removal for 5/10/15g
 - **The Detour** offers a slot, a shop, or both for 7 HP; **The Crossroads** offers a shop or a Heal plus Time Freeze; **The Trade** trades gold for a slot, a slot for gold, or two Heal spells

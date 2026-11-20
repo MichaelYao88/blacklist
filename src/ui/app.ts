@@ -67,12 +67,14 @@ interface SpellPopup {
   name: string;
   icon: string;
   auto: boolean;
+  durationMs?: number;
 }
 let spellPopupQueue: SpellPopup[] = [];
 let activeSpellPopup: SpellPopup | null = null;
 let spellPopupSeq = 0;
 let spellPopupTimer: number | undefined;
-const SPELL_POPUP_MS = 1_000;
+const POPUP_GAP_MS = 2_000;
+const POPUP_EXTRA_MS = 3_000;
 
 function showSpellPopup(spellId: string, auto: boolean): void {
   const def = SPELL_BY_ID.get(spellId);
@@ -87,20 +89,22 @@ function showSpellPopup(spellId: string, auto: boolean): void {
 
 function pumpSpellPopups(): void {
   if (activeSpellPopup || spellPopupQueue.length === 0) return;
-  activeSpellPopup = spellPopupQueue.shift() ?? null;
+  const next = spellPopupQueue.shift()!;
+  const durationMs = POPUP_GAP_MS + (spellPopupQueue.length === 0 ? POPUP_EXTRA_MS : 0);
+  activeSpellPopup = { ...next, durationMs };
   renderSpellPopups();
   spellPopupTimer = window.setTimeout(() => {
     activeSpellPopup = null;
     spellPopupTimer = undefined;
     renderSpellPopups();
     pumpSpellPopups();
-  }, SPELL_POPUP_MS);
+  }, durationMs);
 }
 
 function renderSpellPopups(): void {
   spellRoot.innerHTML = activeSpellPopup
     ? `<div class="spell-popup-stack">
-      <div class="spell-popup ${activeSpellPopup.auto ? 'auto' : ''}">
+      <div class="spell-popup ${activeSpellPopup.auto ? 'auto' : ''}" style="--popup-ms:${activeSpellPopup.durationMs ?? POPUP_GAP_MS}ms">
         <span class="spell-popup-icon" aria-hidden="true">${activeSpellPopup.icon}</span>
         <span class="spell-popup-name">${escapeHtml(activeSpellPopup.name)}</span>
         <span class="spell-popup-tag">${activeSpellPopup.auto ? 'AUTOCAST' : 'CAST'}</span>
@@ -239,9 +243,11 @@ interface ProcEntry {
   count: number;
 }
 let procEntries: ProcEntry[] = [];
+let procPending: ProcEntry[] = [];
 const procTimers = new Map<number, number>();
+let procReleaseTimer: number | undefined;
 let procSeq = 0;
-const PROC_TTL = 7_800;
+const PROC_TTL = 7_800 + POPUP_EXTRA_MS;
 const PROC_MAX = 4;
 
 function renderProcFeed(): void {
@@ -264,34 +270,52 @@ function dropProc(id: number): void {
   renderProcFeed();
 }
 
+function releaseNextProc(): void {
+  if (procReleaseTimer !== undefined) return;
+  const entry = procPending.shift();
+  if (!entry) return;
+  procEntries.push(entry);
+  procTimers.set(entry.id, window.setTimeout(() => dropProc(entry.id), PROC_TTL));
+  if (procEntries.length > PROC_MAX) {
+    const dropped = procEntries.shift();
+    if (dropped) {
+      const timer = procTimers.get(dropped.id);
+      if (timer) window.clearTimeout(timer);
+      procTimers.delete(dropped.id);
+    }
+  }
+  renderProcFeed();
+  procReleaseTimer = window.setTimeout(() => {
+    procReleaseTimer = undefined;
+    releaseNextProc();
+  }, POPUP_GAP_MS);
+}
+
 function showProc(itemId: string, text: string): void {
-  const existing = procEntries.find((entry) => entry.itemId === itemId);
+  const existing = procEntries.find((entry) => entry.itemId === itemId)
+    ?? procPending.find((entry) => entry.itemId === itemId);
   if (existing) {
     existing.count += 1;
     existing.text = text;
-    const timer = procTimers.get(existing.id);
-    if (timer) window.clearTimeout(timer);
-    procTimers.set(existing.id, window.setTimeout(() => dropProc(existing.id), PROC_TTL));
-  } else {
-    const entry = { id: ++procSeq, itemId, text, count: 1 };
-    procEntries.push(entry);
-    procTimers.set(entry.id, window.setTimeout(() => dropProc(entry.id), PROC_TTL));
-    if (procEntries.length > PROC_MAX) {
-      const dropped = procEntries.shift();
-      if (dropped) {
-        const timer = procTimers.get(dropped.id);
-        if (timer) window.clearTimeout(timer);
-        procTimers.delete(dropped.id);
-      }
+    if (procEntries.includes(existing)) {
+      const timer = procTimers.get(existing.id);
+      if (timer) window.clearTimeout(timer);
+      procTimers.set(existing.id, window.setTimeout(() => dropProc(existing.id), PROC_TTL));
     }
+  } else {
+    procPending.push({ id: ++procSeq, itemId, text, count: 1 });
   }
+  releaseNextProc();
   renderProcFeed();
 }
 
 function clearProcFeed(): void {
   for (const timer of procTimers.values()) window.clearTimeout(timer);
+  if (procReleaseTimer) window.clearTimeout(procReleaseTimer);
   procTimers.clear();
+  procReleaseTimer = undefined;
   procEntries = [];
+  procPending = [];
   renderProcFeed();
 }
 
