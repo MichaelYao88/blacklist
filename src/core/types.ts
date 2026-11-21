@@ -479,6 +479,8 @@ export interface ItemDef {
   requiresVisionCurse?: number;
   /** Shows the count-up timer while equipped. */
   timerInterest?: boolean;
+  /** Never appears in shops, rewards, or random item pools. Starting kits may still add it. */
+  noSpawn?: boolean;
 }
 
 export interface SpellDef {

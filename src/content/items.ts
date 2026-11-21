@@ -26,16 +26,6 @@ function everyThreeFoodsOrSolves(self: { data: Record<string, number> }): Effect
   ];
 }
 
-/** Every sixth eat/solve pays one item slot. */
-function everySixEatsOrSolves(self: { data: Record<string, number> }): Effect[] {
-  const total = self.data.progress + 1;
-  const slots = Math.floor(total / 6);
-  return [
-    { type: 'setItemData', stat: 'progress', value: total % 6 },
-    ...Array.from({ length: slots }, () => ({ type: 'slots' as const, delta: 1 })),
-  ];
-}
-
 function popcount(value: number): number {
   let count = 0;
   while (value) {
@@ -205,12 +195,12 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'grey-market',
     name: 'Grey Market',
-    description: 'Every all-grey guess pays 3 gold. If one pays nothing, a letter was hidden.',
+    description: 'Every all-grey guess pays 2 gold. If one pays nothing, a letter was hidden.',
     price: 7,
     kind: 'gear',
     on: {
       onGuessScored: (_ctx, p) =>
-        isAllAbsent(p.guess.truth) ? [{ type: 'gold', amount: 3 }] : [],
+        isAllAbsent(p.guess.truth) ? [{ type: 'gold', amount: 2 }] : [],
     },
   }),
   defineItem({
@@ -337,19 +327,6 @@ export const ITEMS: ItemDef[] = [
     on: {
       onEat: () => [{ type: 'maxHp', delta: 1 }],
       onSpellCast: () => [{ type: 'maxHp', delta: 1 }],
-    },
-  }),
-  defineItem({
-    id: 'big-belt',
-    name: 'Big Belt',
-    description: 'Every 6 eats or solves: +1 item slot.',
-    price: 12,
-    kind: 'gear',
-    rarity: 'uncommon',
-    initial: { progress: 0 },
-    on: {
-      onEat: (ctx) => everySixEatsOrSolves(ctx.self),
-      onSolve: (ctx) => everySixEatsOrSolves(ctx.self),
     },
   }),
   defineItem({
@@ -726,7 +703,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'bulwark',
     name: 'Bulwark',
-    description: 'Every 10 damage blocked by armor: +1 random spell.',
+    description: 'Every 10 damage blocked by armor: autocast a random spell.',
     price: 8,
     kind: 'gear',
     initial: { blocked: 0 },
@@ -846,6 +823,7 @@ export const ITEMS: ItemDef[] = [
     description: 'Round start: autoguess a random word.',
     price: 9,
     kind: 'gear',
+    noSpawn: true,
     on: {
       onRoundStart: () => [{ type: 'randomGuesses', count: 1 }],
     },

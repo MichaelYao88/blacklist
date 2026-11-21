@@ -30,6 +30,6 @@ describe('item proc feed', () => {
     const procs = [...document.querySelectorAll<HTMLElement>('#proc-root .proc-pop')];
     const text = procs.map((proc) => proc.textContent ?? '').join(' | ');
     expect(text).toContain('Grey Market');
-    expect(text).toContain('+3 gold');
+    expect(text).toContain('+2 gold');
   });
 });

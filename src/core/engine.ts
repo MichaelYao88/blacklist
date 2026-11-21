@@ -1264,7 +1264,8 @@ export function createCore(content: Content): Core {
           state.items.filter((i) => itemById.get(i.id)?.kind === 'gear').map((i) => i.id),
         );
         const pool = content.items.filter(
-          (i) => i.rarity !== 'rare'
+          (i) => !i.noSpawn
+            && i.rarity !== 'rare'
             && itemAvailable(state, i)
             && (i.kind !== 'gear' || !owned.has(i.id)),
         );
@@ -1278,7 +1279,7 @@ export function createCore(content: Content): Core {
             .map((i) => i.id),
         );
         const rare = content.items.filter(
-          (i) => i.rarity === 'rare' && itemAvailable(state, i),
+          (i) => !i.noSpawn && i.rarity === 'rare' && itemAvailable(state, i),
         );
         const pool = rare.filter((i) => !owned.has(i.id));
         if (pool.length > 0) addItem(rt, rngPick(state, pool).id);
@@ -2363,19 +2364,22 @@ export function createCore(content: Content): Core {
     if (rngChance(state, 8)) {
       const owned = new Set(state.items.map((item) => item.id));
       const common = content.items.filter(
-        (item) => (item.rarity === undefined || item.rarity === 'common')
+        (item) => !item.noSpawn
+          && (item.rarity === undefined || item.rarity === 'common')
           && itemAvailable(state, item)
           && !(item.unique && owned.has(item.id))
           && (item.kind !== 'gear' || !owned.has(item.id)),
       );
       const uncommon = content.items.filter(
-        (item) => item.rarity === 'uncommon'
+        (item) => !item.noSpawn
+          && item.rarity === 'uncommon'
           && itemAvailable(state, item)
           && !(item.unique && owned.has(item.id))
           && (item.kind !== 'gear' || !owned.has(item.id)),
       );
       const rare = content.items.filter(
-        (item) => item.rarity === 'rare'
+        (item) => !item.noSpawn
+          && item.rarity === 'rare'
           && itemAvailable(state, item)
           && !owned.has(item.id),
       );
@@ -2450,7 +2454,9 @@ export function createCore(content: Content): Core {
   function generateOffers(rt: Runtime): Offer[] {
     const state = rt.state;
     const owned = new Set(state.items.map((item) => item.id));
-    const availableItems = content.items.filter((item) => itemAvailable(state, item));
+    const availableItems = content.items.filter(
+      (item) => !item.noSpawn && itemAvailable(state, item),
+    );
     const commonItems = availableItems.filter(
       (item) => (item.rarity === undefined || item.rarity === 'common')
         && !(item.unique && owned.has(item.id)),
@@ -2825,7 +2831,7 @@ export function createCore(content: Content): Core {
     };
     if (def.id === 'the-bargain') {
       const items = content.items.filter(
-        (item) => item.rarity !== 'rare' && itemAvailable(state, item),
+        (item) => !item.noSpawn && item.rarity !== 'rare' && itemAvailable(state, item),
       );
       const curses = eligibleCurses(state, false);
       state.happening.previewItem = items.length > 0 ? rngPick(state, items).id : undefined;

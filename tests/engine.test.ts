@@ -1439,39 +1439,6 @@ describe('new item and event batch', () => {
     expect(cast.state.maxHp).toBe(16);
   });
 
-  it('Big Belt gains a slot every 6 eats or solves', () => {
-    const { state } = start('big-belt');
-    state.items.push({ instance: 'i-belt', id: 'big-belt', data: { progress: 0 }, equipped: true });
-    state.phase = 'shop';
-    state.gold = 100;
-    state.shop = shopState([
-      { id: 'f0', kind: 'eat', def: 'snack', price: 3 },
-      { id: 'f1', kind: 'eat', def: 'snack', price: 3 },
-      { id: 'f2', kind: 'eat', def: 'snack', price: 3 },
-      { id: 'f3', kind: 'eat', def: 'snack', price: 3 },
-      { id: 'f4', kind: 'eat', def: 'snack', price: 3 },
-      { id: 'f5', kind: 'eat', def: 'snack', price: 3 },
-    ]);
-    let current = state;
-    for (const id of ['f0', 'f1', 'f2', 'f3', 'f4']) {
-      current = act(current, { type: 'buy', offerId: id }).state;
-      expect(current.slots).toBe(5);
-    }
-    current = act(current, { type: 'buy', offerId: 'f5' }).state;
-    expect(current.slots).toBe(6);
-
-    const solver = start('big-belt-solve');
-    solver.state.items.push({
-      instance: 'i-belt-solve',
-      id: 'big-belt',
-      data: { progress: 5 },
-      equipped: true,
-    });
-    setAnswer(solver.state, 'crane');
-    const solved = act(solver.state, { type: 'guess', word: 'crane' });
-    expect(solved.state.slots).toBe(6);
-  });
-
   it('Muffin Tin is a 3g food that grants permanent armor for food eaten this shop', () => {
     expect(FOOD_BY_ID.get('muffin-tin')?.price).toBe(3);
     expect(ITEM_BY_ID.get('muffin-tin')).toBeUndefined();
@@ -1576,7 +1543,7 @@ describe('new item and event batch', () => {
     expect(current.maxArmor).toBe(base);
   });
 
-  it('Bulwark casts a random spell every 10 damage blocked by armor and costs 8', () => {
+  it('Bulwark autocasts a random spell every 10 damage blocked by armor and costs 8', () => {
     const { state } = start('bulwark');
     state.items.push({ instance: 'i-bul', id: 'bulwark', data: { blocked: 0 }, equipped: true });
     state.spells = [];
@@ -1596,6 +1563,8 @@ describe('new item and event batch', () => {
     expect(ITEM_BY_ID.get('bulwark')?.price).toBe(8);
     expect(ITEM_BY_ID.get('bulwark')?.description)
       .toContain('Every 10 damage blocked by armor');
+    expect(ITEM_BY_ID.get('bulwark')?.description)
+      .toContain('autocast a random spell');
   });
 
   it('Guardian Angel grants Immunity after 10 HP damage taken', () => {
@@ -1708,8 +1677,6 @@ describe('new item and event batch', () => {
     expect(ITEM_BY_ID.get('siphon')?.description).toContain('40% chance to autocast Heal');
     expect(ITEM_BY_ID.get('gourmand')?.description).toContain('On spell cast or food eaten');
     expect(ITEM_BY_ID.get('pen-club')?.description).toContain('1-5 gold');
-    expect(ITEM_BY_ID.get('big-belt')?.description).toContain('Every 6 eats or solves');
-    expect(ITEM_BY_ID.get('big-belt')?.rarity).toBe('uncommon');
     expect(ITEM_BY_ID.get('midas-touch')?.description).toContain('30%');
     expect(ITEM_BY_ID.get('midas-touch')?.goldDoubleChance).toBe(30);
     expect(ITEM_BY_ID.get('miser')).toBeUndefined();
@@ -2710,7 +2677,7 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('spellhoarder')?.description).toContain('Heal');
     expect(ITEM_BY_ID.get('grey-market')?.price).toBe(7);
     expect(ITEM_BY_ID.get('grey-market')?.description).toContain('all-grey');
-    expect(ITEM_BY_ID.get('grey-market')?.description).toContain('3 gold');
+    expect(ITEM_BY_ID.get('grey-market')?.description).toContain('2 gold');
     expect(ITEM_BY_ID.get('grey-market')?.on?.onGuessScored).toBeDefined();
     expect(ITEM_BY_ID.get('acquired-taste')?.price).toBe(7);
     expect(ITEM_BY_ID.get('acquired-taste')?.rarity).toBe('uncommon');
@@ -2725,21 +2692,21 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('chrono-anchor')?.on?.onDamageTaken).toBeDefined();
   });
 
-  it('Grey Market pays 3 gold for all-grey guesses', () => {
+  it('Grey Market pays 2 gold for all-grey guesses', () => {
     const { state } = start('grey-market');
     state.items.push({ instance: 'i-grey', id: 'grey-market', data: {}, equipped: true });
     state.round!.freeLeft = 0;
     state.round!.answer = 'crane';
     const gold = state.gold;
     const miss = act(state, { type: 'guess', word: 'sloth' });
-    expect(miss.state.gold).toBe(gold + 3);
+    expect(miss.state.gold).toBe(gold + 2);
     expect(miss.events.some(
       (event) => event.type === 'itemProc'
         && event.item === 'grey-market'
-        && event.text.includes('+3 gold'),
+        && event.text.includes('+2 gold'),
     )).toBe(true);
     const hit = act(miss.state, { type: 'guess', word: 'slate' });
-    expect(hit.state.gold).toBe(gold + 3);
+    expect(hit.state.gold).toBe(gold + 2);
   });
 
   it('Scattershot autoguesses once per round after a disjoint guess', () => {
@@ -2834,7 +2801,7 @@ describe('latest balance pass', () => {
       (event) => event.type === 'itemProc' && event.item === 'grey-market',
     )).toBe(false);
     const miss = act(hidden.state, { type: 'guess', word: 'sloth' });
-    expect(miss.state.gold).toBe(gold + 3);
+    expect(miss.state.gold).toBe(gold + 2);
   });
 
   it('Grey Market pays for all-grey auto-guesses too', () => {
@@ -2851,7 +2818,7 @@ describe('latest balance pass', () => {
       if ([...'eio'].some((ch) => answer.includes(ch))) continue;
       paid = true;
       expect(next.state.round?.guesses.some((guess) => guess.word === 'eieio')).toBe(true);
-      expect(next.state.gold).toBe(gold + 3);
+      expect(next.state.gold).toBe(gold + 2);
     }
     expect(paid).toBe(true);
   });
@@ -3363,6 +3330,22 @@ describe('autocast and random-guess batch', () => {
   it('removes Chikn Nuggy from Phone a Friend', () => {
     expect(CONTENT.friendWords).not.toContain('chikn');
     expect(CONTENT.friendWords).not.toContain('nuggy');
+  });
+
+  it('removes Big Belt and keeps Harvest Charm out of shops', () => {
+    expect(ITEM_BY_ID.get('big-belt')).toBeUndefined();
+    expect(ITEM_BY_ID.get('harvest-charm')?.noSpawn).toBe(true);
+
+    for (let index = 0; index < 100; index++) {
+      const { state } = start(`harvest-shop-${index}`);
+      state.nodeIndex = 0;
+      state.nodes[1] = { kind: 'shop', level: 1 };
+      state.phase = 'shop';
+      const shop = enterShop(state).state.shop;
+      expect(
+        shop?.offers.some((offer) => offer.kind === 'item' && offer.def === 'harvest-charm'),
+      ).toBe(false);
+    }
   });
 
   it('Harvest Charm autoguesses a non-native word at round start', () => {

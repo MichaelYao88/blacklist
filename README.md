@@ -47,7 +47,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Rarity uses cumulative floors: 40% pulls from rare, uncommon or common, 45% pulls from uncommon or common, and 15% pulls from common only. If a tier is empty, it falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 104 items (97 shop items + 7 rare relics), 6 spells, 84 foods and 29 happenings
+- 103 items (96 shop items + 7 rare relics), 6 spells, 84 foods and 29 happenings
 - New foods include **U-nagi**, **Donut Holes**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
@@ -62,7 +62,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Spell Pepper** is a 3g food that doubles your next spell
 - Every shop node offers a choice: visit the shop, or rest at the inn to gain +8 max HP, heal to full HP, and move on
 - **Hearty Stew** is a 4g food that grants 1-2 casts of Heal; **Hagelslag** gives +3 max HP and heals 20% of missing HP
-- **Bulwark** is an 8g item: every 10 damage blocked by armor, cast a random spell
+- **Bulwark** is an 8g item: every 10 damage blocked by armor, autocast a random spell
 - **Ricochet** is a 7g item: every 10 armor lost, autoguess a random word
 - **Scattershot** autoguesses once per round after a guess sharing no letters with the previous guess
 - **Yellow1** autoguesses on your player guess with exactly one yellow and no green; **Green1** does the same for exactly one green and no yellow. Neither has a round limit, and neither counts ally or auto-guesses
@@ -80,14 +80,13 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Item triggers show a compact proc pop-up with the actual result (for example **Yellow1** calling an autoguess or **Grey Market** paying gold); item procs queue 2 seconds apart and stay up 3 seconds longer; once-per-round items show **SPENT** after they fire
 - The revealed-letter panel persists between screens; in shops it is labelled **REVEALED**
 - On desktop the item list sits under the battle rail on the left; on mobile it stays at the bottom of the sidebar
-- **Grey Market** is a 7g item: every all-grey guess pays 3 gold, whether you made it or an ally did; an all-dark guess that pays nothing hides a letter
+- **Grey Market** is a 7g item: every all-grey guess pays 2 gold, whether you made it or an ally did; an all-dark guess that pays nothing hides a letter
 - **Photosynthesis** is a 10g item: on solve, +2 max HP and heal 20% max HP
 - **Stopped Clock** is a 6g item: casting Time Freeze grants +5 max HP, once per round
 - **Adrenaline** is a 10g item: dropping below 50% HP grants +1 max HP and +1 max armor, re-arming after healing above 50%
 - **Gold Standard** is an 8g item: every gold gain gives +1 more gold
 - **Guardian Angel** is an 8g item: after every 10 HP damage taken, autocast Immunity
 - **Immunity** blocks the next hurting guess and any guess for 4 seconds after it
-- **Big Belt** is a 12g uncommon item: +1 item slot every 6 eats or solves
 - **Mending Plate** is a rare item: +1 max armor per 7 HP healed
 - **Bounty** is a 9g rare food: +1 gold per solve
 - **Necronomicon** is a rare item: reveal 2 random letters at round start, plus 1 more for every 13 max HP paid to the book; every 13 reveals autocasts Omen and costs 3 max HP
@@ -194,7 +193,7 @@ Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title s
 - **The Necromancer** unlocks after buying the **Necronomicon** once from a shop. They start with the **Necronomicon**, **Weak Plate** curse, 40 HP and 3 armor.
 - **The Purgamist** unlocks after buying 2 **Inkcap** or 3 **Poppy Seeds** across any runs. They start with **The Toll** curse, 12 HP, 4 armor and purge 3 letters of your choice before the first round.
 - **The Gourmand** unlocks after buying 3 **Double Cheeseburgers** across any runs. They start with **Potluck**, **Porcupine's Dilemma** curse, 25 HP and 2 armor.
-- **The Farmer** unlocks after winning any run. They start with the **Harvest Charm**, 20 HP and no armor.
+- **The Farmer** unlocks after winning any run. They start with the **Harvest Charm** (character-only, not found in shops), 20 HP and no armor.
 - Once any character is unlocked, the title screen shows all six character cards (locked cards list their unlock hint). Unlocks persist across runs and a large popup announces each new character.
 
 ## Sprites

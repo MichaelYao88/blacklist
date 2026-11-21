@@ -7,7 +7,6 @@ const ITEM_ICONS: Record<string, string> = {
   'patch-kit': '🩹',
   'four-leaf-clover': '🍀',
   'doggy-bag': '🐶',
-  'big-belt': '🥋',
   'head-start': '🏃',
   quickdraw: '🤠',
   daredevil: '😈',
