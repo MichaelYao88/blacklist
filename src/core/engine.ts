@@ -209,6 +209,16 @@ export function createCore(content: Content): Core {
       0,
     );
 
+  const damageRampEarly = (state: RunState): number =>
+    curseDefs(state).reduce(
+      (sum, entry) => sum + (entry.def.damageRampEarly ?? 0) * entry.stacks,
+      0,
+    );
+
+  /** Guesses made before the damage multiplier starts. */
+  const damageSafeGuesses = (state: RunState): number =>
+    Math.max(0, 6 - damageRampEarly(state));
+
   const itemAvailable = (state: RunState, def: ItemDef): boolean => {
     if (def.requiresClock && !hasClock(state)) return false;
     if (def.requiresVisionCurse && sightCount(state) < def.requiresVisionCurse) return false;
@@ -1888,6 +1898,10 @@ export function createCore(content: Content): Core {
     };
 
     state.round = round;
+    if (damageSafeGuesses(state) <= 0) {
+      round.freeLeft = 0;
+      round.nextFreeUnobscured = false;
+    }
     state.summary = undefined;
     state.reward = undefined;
     state.shop = undefined;
@@ -2122,12 +2136,8 @@ export function createCore(content: Content): Core {
   }
 
   function guessDamageMultiplier(state: RunState, round: RoundState, next = false): number {
-    const early = curseDefs(state).reduce(
-      (sum, entry) => sum + (entry.def.damageRampEarly ?? 0) * entry.stacks,
-      0,
-    );
     const guessNumber = round.guesses.length + (next ? 1 : 0);
-    return Math.max(1, guessNumber - 5 + early);
+    return Math.max(1, guessNumber - 5 + damageRampEarly(state));
   }
 
   function guessDamageFor(state: RunState, round: RoundState, next = false): number {
@@ -2384,6 +2394,19 @@ export function createCore(content: Content): Core {
     const damageMultiplier = guessDamageMultiplier(state, round);
     if (!solved && damageMultiplier > 1) {
       emit(rt, { type: 'damageMultiplier', multiplier: damageMultiplier });
+    }
+    if (
+      !solved
+      && round.guesses.length >= damageSafeGuesses(state)
+      && round.freeLeft > 0
+    ) {
+      round.freeLeft = 0;
+      round.nextFreeUnobscured = false;
+      emit(rt, { type: 'freeGuessesChanged', remaining: 0, source: RULES });
+      emit(rt, {
+        type: 'message',
+        text: 'The guess limit consumes your remaining free guess.',
+      });
     }
 
     const mark = rt.events.length;

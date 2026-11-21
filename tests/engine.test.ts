@@ -4916,6 +4916,57 @@ describe('damage doubling and slots', () => {
     expect(damages).toEqual([3, 3, 3, 3, 3, 3, 6, 9, 12]);
   });
 
+  it('consumes any remaining free guess when the safe guess limit is reached', () => {
+    const { state } = start('multiplier-free-guess');
+    setAnswer(state, 'crane');
+    state.round!.baseDamage = 3;
+    state.round!.freeLeft = 0;
+    state.armor = 0;
+    state.maxArmor = 0;
+    state.hp = 200;
+    state.maxHp = 200;
+    let current = state;
+    for (const word of ['slate', 'brick', 'plumb', 'chunk', 'vamps']) {
+      current = act(current, { type: 'guess', word }).state;
+    }
+
+    // The sixth guess is the last safe guess. It spends one free guess and the
+    // limit consumes the spare.
+    current.round!.freeLeft = 2;
+    const sixth = act(current, { type: 'guess', word: 'fizzy' });
+    expect(sixth.state.round?.freeLeft).toBe(0);
+    expect(sixth.events.some(
+      (event) => event.type === 'freeGuessesChanged' && event.remaining === 0,
+    )).toBe(true);
+  });
+
+  it('moves the free-guess loss earlier with Short Fuse', () => {
+    const { state } = start('short-fuse-free-guess');
+    state.curses.push({ id: 'short-fuse', stacks: 1 });
+    setAnswer(state, 'crane');
+    state.round!.baseDamage = 3;
+    state.round!.freeLeft = 0;
+    state.armor = 0;
+    state.maxArmor = 0;
+    state.hp = 200;
+    state.maxHp = 200;
+    let current = state;
+    for (const word of ['slate', 'brick', 'plumb']) {
+      current = act(current, { type: 'guess', word }).state;
+    }
+    current.round!.freeLeft = 2;
+    const fourth = act(current, { type: 'guess', word: 'chunk' });
+    expect(fourth.state.round?.freeLeft).toBe(0);
+    expect(fourth.events.some(
+      (event) => event.type === 'freeGuessesChanged' && event.remaining === 0,
+    )).toBe(true);
+
+    const three = start('short-fuse-free-guess-three');
+    three.state.curses.push({ id: 'short-fuse', stacks: 3 });
+    const next = nextRound(three.state);
+    expect(next.state.round?.freeLeft).toBe(0);
+  });
+
   it('notifies each time the damage multiplier doubles', () => {
     const { state } = start('damage-doubling-notice');
     setAnswer(state, 'crane');
