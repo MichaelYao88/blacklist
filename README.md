@@ -94,7 +94,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Growth Chart** is an 8g item: every 3 max HP gained grants +1 Time Freeze
 - **Midas Touch** has a 30% chance to double every gold gain
 - **Oracle Skull** is a 12g uncommon item: every heal autocasts Omen
-- **Loyalty Card** pays +1 item slot after every 9 shop purchases
+- **Loyalty Card** pays +1 item slot after every 10 shop purchases
 - **Placebo** is a 4g item that heals exactly 1 HP on each player guess
 - **Pen Club** pays a random 1-5 gold for guesses starting with PEN; **Gourmand** gains +1 max HP on eat or spell cast
 - **Old McDonald's** is a 15g unique food: EIEIO is guessed for free at the start of every round

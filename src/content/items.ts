@@ -1099,7 +1099,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'loyalty-card',
     name: 'Loyalty Card',
-    description: 'Every 9 shop purchases: +1 item slot.',
+    description: 'Every 10 shop purchases: +1 item slot.',
     price: 8,
     kind: 'gear',
     initial: { buys: 0 },
@@ -1108,7 +1108,7 @@ export const ITEMS: ItemDef[] = [
         const next = ctx.self.data.buys + 1;
         return [
           { type: 'grow', stat: 'buys', by: 1 },
-          ...(next % 9 === 0 ? [{ type: 'slots' as const, delta: 1 }] : []),
+          ...(next % 10 === 0 ? [{ type: 'slots' as const, delta: 1 }] : []),
         ];
       },
     },

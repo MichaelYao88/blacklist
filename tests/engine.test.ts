@@ -3010,7 +3010,7 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('Every 13 reveals');
     expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('pay 3 max HP');
     expect(FOOD_BY_ID.get('hearty-meal')?.description).toBe('+5 max HP, heal 5. No slot.');
-    expect(ITEM_BY_ID.get('loyalty-card')?.description).toContain('Every 9 shop purchases');
+    expect(ITEM_BY_ID.get('loyalty-card')?.description).toContain('Every 10 shop purchases');
     expect(ITEM_BY_ID.get('tithe-box')?.description).toContain('10% chance');
     expect(ITEM_BY_ID.get('mimic-mouth')?.description).toContain('Once per round');
     expect(ITEM_BY_ID.get('second-skin')?.description).toContain('half your max armor');
@@ -4094,13 +4094,13 @@ describe('item tuning batch', () => {
     )).toHaveLength(1);
   });
 
-  it('Loyalty Card pays a slot after 9 purchases', () => {
-    const { state } = start('loyalty-card-nine');
+  it('Loyalty Card pays a slot after 10 purchases', () => {
+    const { state } = start('loyalty-card-ten');
     state.items.push({ instance: 'i-loyalty', id: 'loyalty-card', data: { buys: 0 }, equipped: true });
     state.phase = 'shop';
     state.gold = 100;
     state.shop = shopState(
-      Array.from({ length: 9 }, (_, index) => ({
+      Array.from({ length: 10 }, (_, index) => ({
         id: `o${index}`,
         kind: 'spell' as const,
         def: 'heal',
@@ -4108,11 +4108,11 @@ describe('item tuning batch', () => {
       })),
     );
     let current = state;
-    for (let index = 0; index < 8; index++) {
+    for (let index = 0; index < 9; index++) {
       current = act(current, { type: 'buy', offerId: `o${index}` }).state;
     }
     expect(current.slots).toBe(5);
-    current = act(current, { type: 'buy', offerId: 'o8' }).state;
+    current = act(current, { type: 'buy', offerId: 'o9' }).state;
     expect(current.slots).toBe(6);
   });
 
