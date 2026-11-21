@@ -87,7 +87,7 @@ class Music {
   }
 
   get currentName(): string {
-    if (this.boss) return 'More Power · final boss';
+    if (this.boss) return 'More Power · boss';
     return TRACK_BY_ID.get(this.selected)?.name ?? 'Dark Synthwave';
   }
 

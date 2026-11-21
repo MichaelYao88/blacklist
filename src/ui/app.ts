@@ -1598,7 +1598,7 @@ function renderHelp(): string {
     <div class="rules-grid">
       <article class="rule-card">
         <h3>The run</h3>
-        <p>Fifty floors. The loop cycles <b>fight → shop → fight → curse</b>; fights, shops and curses each count as a floor, while events happen between floors and do not. Floor 51 is the <b>Floor Boss</b>: draft <b>3 curses</b>, then beat four words as it revives three times.</p>
+        <p>Fifty floors. The loop cycles <b>fight → shop → fight → curse</b>; fights, shops and curses each count as a floor, while events happen between floors and do not. Floor 27 is the <b>Miniboss</b>: draft <b>1 curse</b>, then beat two words for a slot, a full heal, and a rare choice. Floor 51 is the <b>Floor Boss</b>: draft <b>3 curses</b>, then beat three words.</p>
       </article>
       <article class="rule-card">
         <h3>Damage</h3>
@@ -1626,7 +1626,7 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>Controls</h3>
-        <p>Type letters, <b>Backspace</b> to delete, <b>Enter</b> to submit. <b>Space</b> or <b>Esc</b> pauses. Click the <b>MUSIC</b> name to cycle tracks; the mute button is separate. More Power only plays for the Floor Boss. Non-English keyboard layouts use the physical QWERTY key positions.</p>
+        <p>Type letters, <b>Backspace</b> to delete, <b>Enter</b> to submit. <b>Space</b> or <b>Esc</b> pauses. Click the <b>MUSIC</b> name to cycle tracks; the mute button is separate. More Power only plays for bosses. Non-English keyboard layouts use the physical QWERTY key positions.</p>
       </article>
     </div>
     <div class="help-actions">
@@ -2152,13 +2152,16 @@ function renderKeyboard(board: BoardView): string {
 
 function renderSummary(view: RunView, phase: Extract<PhaseView, { kind: 'summary' }>): string {
   const boss = phase.boss ? BOSS_BY_ID.get(phase.boss) : undefined;
+  const miniboss = phase.boss === 'miniboss';
   const title = phase.outcome === 'solved' ? 'SOLVED' : phase.outcome === 'timeout' ? "TIME'S UP" : 'YOU DIED';
   const answers = phase.answers && phase.answers.length > 1
     ? `<div class="answer-list">${phase.answers.map((answer) => `<span>${escapeHtml(answer.toUpperCase())}</span>`).join('')}</div>`
     : '';
   return `
   <div class="phase-card summary ${phase.outcome}">
-    <p class="panel-kicker">${boss ? `BOSS · ${escapeHtml(boss.name)}` : 'ROUND OVER'}</p>
+    <p class="panel-kicker">${boss
+      ? `${miniboss ? 'MINIBOSS' : 'BOSS'} · ${escapeHtml(boss.name)}`
+      : 'ROUND OVER'}</p>
     <h2>${title}</h2>
     <div class="answer-reveal">${escapeHtml(phase.answer.toUpperCase())}</div>
     ${answers}
@@ -2169,9 +2172,11 @@ function renderSummary(view: RunView, phase: Extract<PhaseView, { kind: 'summary
       <div class="gold-fact"><b>+${phase.gold}</b><span>gold</span></div>
     </div>
     <p class="muted">${phase.outcome === 'solved'
-      ? boss
-        ? 'The Floor Boss is down. Continue to finish the run.'
-        : 'The round is clear. Choose a reward and keep moving.'
+      ? miniboss
+        ? 'The Miniboss is down. You gain an item slot and a full heal. Choose your reward.'
+        : boss
+          ? 'The Floor Boss is down. Continue to finish the run.'
+          : 'The round is clear. Choose a reward and keep moving.'
       : phase.outcome === 'timeout'
         ? 'The clock took its cut, but the encounter still paid. No reward this time. The run continues if you do.'
         : 'The run is over. The save is gone.'}</p>
@@ -2181,13 +2186,16 @@ function renderSummary(view: RunView, phase: Extract<PhaseView, { kind: 'summary
 
 function renderReward(phase: Extract<PhaseView, { kind: 'reward' }>): string {
   const boss = phase.boss;
+  const miniboss = phase.miniboss === true;
   return `
-  <div class="phase-card reward ${boss ? 'boss-reward' : ''}">
-    <p class="panel-kicker">${boss ? 'BOSS RELIC' : 'REWARD'}</p>
-    <h2>${boss ? 'Claim a relic' : 'Take one'}</h2>
-    <p class="muted">${boss
-      ? 'Rare passives. Each relic uses an item slot and lasts for the rest of the run.'
-      : 'Coins plus a spell or a meal. Rarely, a find.'}</p>
+  <div class="phase-card reward ${boss || miniboss ? 'boss-reward' : ''}">
+    <p class="panel-kicker">${miniboss ? 'MINIBOSS REWARD' : boss ? 'BOSS RELIC' : 'REWARD'}</p>
+    <h2>${miniboss ? 'Choose your prize' : boss ? 'Claim a relic' : 'Take one'}</h2>
+    <p class="muted">${miniboss
+      ? 'Pick one: a rare meal or a rare relic. You already gained an item slot and a full heal.'
+      : boss
+        ? 'Rare passives. Each relic uses an item slot and lasts for the rest of the run.'
+        : 'Coins plus a spell or a meal. Rarely, a find.'}</p>
     <div class="reward-grid">
       ${phase.options.map((option) => {
         const icon = option.kind === 'item'
@@ -2235,15 +2243,16 @@ function offerInfo(offer: Offer): { name: string; description: string; slots: nu
 }
 
 function renderCurse(phase: Extract<PhaseView, { kind: 'curse' }>): string {
-  const bossStep = 4 - (phase.remaining ?? 1);
+  const bossTotal = phase.total ?? 3;
+  const bossStep = bossTotal - (phase.remaining ?? 1) + 1;
   return `
   <div class="phase-card curse-draft">
     <p class="panel-kicker">${phase.boss
-      ? `BOSS PREP · CURSE ${bossStep}/3`
+      ? `BOSS PREP · CURSE ${bossStep}/${bossTotal}`
       : phase.starting ? 'STARTING CURSE' : 'CURSE DRAFT'}</p>
     <h2>${phase.boss ? 'Choose a curse for the fight' : 'Choose a burden'}</h2>
     <p class="muted">${phase.boss
-      ? 'The Floor Boss waits. Take this burden, then face something that revives three times.'
+      ? 'The boss waits. Take this burden, then face what comes next.'
       : 'Every curse here affects every future encounter. You must take one.'}</p>
     <div class="curse-grid">
       ${phase.options.map((id) => {
@@ -2575,7 +2584,9 @@ function renderBossIntro(view: RunView, phase: Extract<PhaseView, { kind: 'bossI
   const timer = boss.timerFromCurse ? 'CURSED CLOCK' : boss.timerMs === null ? 'NO TIMER' : formatTime(boss.timerMs);
   const damage = boss.noGuessDamage
     ? 'NO GUESS DAMAGE'
-    : `BASE HIT ${boss.damage ?? 3}`;
+    : boss.damageBonus
+      ? `BASE DAMAGE +${boss.damageBonus}`
+      : `BASE HIT ${boss.damage ?? 3}`;
   return `
   <div class="phase-card boss-intro" style="--enemy:${bossColor(boss.id)}">
     <p class="panel-kicker">BOSS ENCOUNTER · ACT ${roman(view.act + 1)}</p>
@@ -2585,7 +2596,7 @@ function renderBossIntro(view: RunView, phase: Extract<PhaseView, { kind: 'bossI
     <div class="boss-intro-facts">
       <span>${damage}</span>
       <span>${timer}</span>
-      <span>${boss.revives ? `${boss.revives} REVIVES` : boss.gauntlet ? `${boss.gauntlet.puzzles} PUZZLES` : 'ONE WORD'}</span>
+      <span>${boss.gauntlet ? `${boss.gauntlet.puzzles} WORDS` : 'ONE WORD'}</span>
     </div>
     <section class="boss-rulebox">
       <h3>WHAT CHANGES</h3>

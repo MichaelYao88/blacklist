@@ -70,7 +70,7 @@ const ENTRIES: GlossaryEntry[] = [
   },
   {
     pattern: /\btimeouts?\b/gi,
-    tip: 'The clock reached zero. The run ends immediately; armor, immunity and revives do not save you.',
+    tip: 'The clock reached zero. The run ends immediately; armor, immunity and boss mechanics do not save you.',
   },
   {
     pattern: /\bclock\b/gi,

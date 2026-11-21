@@ -2,7 +2,7 @@
 
 A word roguelike about the burdens you choose.
 
-A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle fight → shop → fight → curse; fights, shops and curses each count as a floor, while events happen between floors and do not. Floor 51 is the Floor Boss: draft three final curses, then beat four words as it revives three times. One active save, and defeat wipes it.
+A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle fight → shop → fight → curse; fights, shops and curses each count as a floor, while events happen between floors and do not. Floor 27 is the Miniboss: draft 1 curse, then beat two words for a slot, a full heal, and a rare choice. Floor 51 is the Floor Boss: draft 3 curses, then beat three words. One active save, and defeat wipes it.
 
 **Play:** https://michaelayao88.github.io/blacklist/
 
@@ -13,16 +13,17 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 ## What is in the vertical slice
 
 - Wordle-style scoring with duplicate-letter handling
-- A 50-floor curse run: no bosses until the Floor Boss on floor 51, no starting clock, no starting blacklist
+- A 50-floor curse run: the Miniboss waits on floor 27 and the Floor Boss on floor 51; no starting clock, no starting blacklist
 - Round loop: `round → 55% event → shop`, then `round → 55% event → curse`
-- Floors cycle fight → shop → fight → curse; curses count as floors and events do not. The Floor Boss demands 3 final curse drafts before the fight
+- Floors cycle fight → shop → fight → curse; curses count as floors and events do not. The Miniboss demands 1 curse draft and the Floor Boss demands 3 before their fights
 - Curse drafts draw from the weighted pool; The List and The Clock get a 3x weight until they first appear in a draft, then normal
 - Curse drafts use the same rarity floors as shops (40% rare and below, 45% uncommon and below, 15% common only), but do not display rarity. A common curse becomes uncommon for the rest of the run after it is offered or selected
 - Hover or focus a curse in the HUD to read its rules
-- Floor 51 is the Floor Boss: draft 3 curses, then beat four words as it revives three times. Bosses ignore the **Second Wind** curse
+- Floor 27 is the Miniboss: draft 1 curse, then beat two words. It deals **+5 base damage**, and beating it grants **+1 item slot**, a full heal, and a choice between a random rare food and a random rare relic
+- Floor 51 is the Floor Boss: draft 3 curses, then beat three words. It deals **+10 base damage**. Bosses ignore the **Second Wind** curse
 - **Second Wind** is a rare curse: after you solve a word, a second word appears with one free guess
 - The Toll is only offered through level 40; The Tax and The Chained are only offered through level 20
-- Base encounter damage is **3 + 1.3 per curse stack, rounded down**, plus **+1 for every 60 gold spent this run**; characters that start with curses subtract **1.3 per starting curse stack**, and Heavy Hand multiplies the base by **1.5 per stack**. After the sixth guess in each puzzle, each later wrong guess increases the damage multiplier (**×2, ×3, ×4...**), counting autoguesses; the multiplier resets on Second Wind and each Floor Boss puzzle. Every paid wrong guess adds **+1 per occupied item slot above 5**
+- Base encounter damage is **3 + 1.3 per curse stack, rounded down**, plus **+1 for every 60 gold spent this run**; characters that start with curses subtract **1.3 per starting curse stack**, and Heavy Hand multiplies the base by **1.5 per stack**. After the sixth guess in each puzzle, each later wrong guess increases the damage multiplier (**×2, ×3, ×4...**), counting autoguesses; the multiplier resets on Second Wind and each boss puzzle. Every paid wrong guess adds **+1 per occupied item slot above 5**
 - Vision curses are usually rare. **Take the L** is common, while **Hard R**, **Without the D**, and **IP Theft** are uncommon; the first/second/third/fourth/fifth position curses hide their tile **50% of the time**
 - The blacklist is disabled and hidden until **The List** curse is taken; The List is a single curse, never stacks, and arrives stocked with the first guess from every earlier round
 - The clock is disabled until **The Clock** curse is taken; the first stack gives 5:00 and each further stack shrinks it by 40%. If the clock reaches zero, the run ends immediately
@@ -47,7 +48,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - Opening shields such as **Head Start** (7s, rare) make guesses in their window count as free guesses and show a floating timer banner with the remaining seconds
 - Rarity uses cumulative floors: 40% pulls from rare, uncommon or common, 45% pulls from uncommon or common, and 15% pulls from common only. If a tier is empty, it falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
-- Defeat reveals the answer you missed (all of them, on the Floor Boss)
+- Defeat reveals the answer you missed (all of them, on bosses)
 - 100 items (90 shop items + 10 rare relics), 6 spells, 84 foods and 30 happenings
 - New foods include **U-nagi**, **Donut Holes**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
@@ -151,7 +152,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - Spells and the blacklist sit on the right; the item list sits under the battle rail on desktop and at the bottom of the right column on mobile
 - Pause (Space or Esc), independent music/SFX mutes, synthesized SFX, keyboard and on-screen keyboard, colorblind symbols, reduced-motion-friendly CSS
 - Non-English keyboard layouts fall back to physical QWERTY key positions and show a one-time notice
-- Soundtrack opens every run on Dark Synthwave and rerolls to a random regular track every 7 levels (repeats allowed). Click the **MUSIC** control to cycle manually. More Power is reserved for the Floor Boss and is not in the carousel. Music sits below the SFX mix.
+- Soundtrack opens every run on Dark Synthwave and rerolls to a random regular track every 7 levels (repeats allowed). Click the **MUSIC** control to cycle manually. More Power is reserved for bosses and is not in the carousel. Music sits below the SFX mix.
 
 Not in this version: daily seeds, Ascension above A2, dordle grids, Antiwordle, liar clues, Green Warden. The state and seed plumbing is already there for those.
 
@@ -159,7 +160,7 @@ Not in this version: daily seeds, Ascension above A2, dordle grids, Antiwordle, 
 
 ## Music
 
-Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title screen or top bar to cycle through the twelve regular tracks; the mute button is separate. **More Power** is locked to the Floor Boss and is not available in the carousel.
+Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title screen or top bar to cycle through the twelve regular tracks; the mute button is separate. **More Power** is locked to bosses and is not available in the carousel.
 
 **Liborio Conti** — free to use, no attribution required, via [no-copyright-music.com](https://www.no-copyright-music.com/):
 
@@ -226,11 +227,12 @@ The Soldier and Orc sprites are from **Tiny RPG Character Asset Pack 01** by [Ze
 | Blacklist | disabled until The List curse; unlimited once active |
 | Normal timer | none until The Clock curse |
 | Clock curse | first stack 5:00, each later stack -40%, floor 0:30 |
-| Floor Boss | 4 rounds (3 revives), shared clock if active |
+| Miniboss | floor 27, 2 words, 1 curse draft, +5 base damage |
+| Floor Boss | floor 51, 3 words, 3 curse drafts, shared clock if active |
 | Base damage | `3 + floor(1.3 × total curse stacks) − (1.3 × starting curse stacks) + floor(gold spent / 60)`, then Heavy Hand and other modifiers apply |
 | Paid guess damage | curse-scaled base; after the sixth guess in each puzzle each later wrong guess increases the multiplier (`×2, ×3, ×4...`), counting autoguesses |
-| Floor Boss damage | 3 base plus curses |
-| Timeout | ends the run immediately; armor, immunity and revives cannot prevent it |
+| Boss damage | Miniboss +5 base, Floor Boss +10 base, plus curses |
+| Timeout | ends the run immediately; armor, immunity and boss mechanics cannot prevent it |
 | Armor | a pool that soaks damage point-for-point before HP; refills each round |
 | Solve gold | random `4-8`, plus `solveGoldBonus` (Midas Touch can double any gain) |
 | Timeout gold | none; running out of time ends the run |
@@ -286,7 +288,7 @@ view(state) → RunView
 ```
 src/
   core/        portable engine, types, RNG, scoring, host adapter
-  content/     items, spells, curses, Floor Boss, foods, happenings
+  content/     items, spells, curses, bosses, foods, happenings
   data/        generated word lists
   ui/          vanilla DOM client
   game.ts      core instance wired to content

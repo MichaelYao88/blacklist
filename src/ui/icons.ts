@@ -208,6 +208,8 @@ const BOSS_SIGILS: Record<string, string> = {
   monochrome: '◐',
   gauntlet: '⟳',
   horde: '⁂',
+  miniboss: '⚔',
+  'floor-boss': '☠',
 };
 
 const BOSS_COLORS: Record<string, string> = {
@@ -219,6 +221,8 @@ const BOSS_COLORS: Record<string, string> = {
   monochrome: '#c9c0d8',
   gauntlet: '#e07a4f',
   horde: '#9ec95a',
+  miniboss: '#d08a4a',
+  'floor-boss': '#df615a',
 };
 
 export function itemIcon(id: string): string {

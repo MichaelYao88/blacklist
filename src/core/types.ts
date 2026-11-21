@@ -181,6 +181,8 @@ export interface RewardOption {
 export interface RewardState {
   options: RewardOption[];
   boss: boolean;
+  /** Miniboss rewards are a choice between one rare food and one rare relic. */
+  miniboss?: boolean;
   chosen?: string;
 }
 
@@ -525,8 +527,10 @@ export interface BossDef {
   acts: number[];
   timerMs: number | null;
   gauntlet?: { puzzles: number; timerMs: number };
-  /** Boss revives after a solved word this many times. */
-  revives?: number;
+  /** Curses drafted before the fight begins. */
+  prepCurses?: number;
+  /** Added to the normal encounter base damage. */
+  damageBonus?: number;
   timerFromCurse?: boolean;
   noGuessDamage?: boolean;
   /** Fixed damage for a boss round. Omit to use the act-based default. */
@@ -751,7 +755,13 @@ export type PhaseView =
       rewardPending: boolean;
       gold: number;
     }
-  | { kind: 'reward'; options: RewardOption[]; boss: boolean; chosen?: string }
+  | {
+      kind: 'reward';
+      options: RewardOption[];
+      boss: boolean;
+      miniboss?: boolean;
+      chosen?: string;
+    }
   | { kind: 'bossIntro'; boss: BossId }
   | {
       kind: 'curse';
@@ -759,6 +769,7 @@ export type PhaseView =
       starting: boolean;
       boss?: boolean;
       remaining?: number;
+      total?: number;
     }
   | { kind: 'shopChoice' }
   | { kind: 'shop'; offers: Offer[]; rerollCost: number; purchases: number }

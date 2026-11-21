@@ -1849,13 +1849,14 @@ export function createCore(content: Content): Core {
     const curseDamage = Math.floor((curseTotal * 13) / 10);
     const character = content.characters.find((entry) => entry.id === state.character);
     const startingCursePenalty = (character?.curses.length ?? 0) * 13 / 10;
-    const baseDamage = Math.max(
+    const normalBaseDamage = Math.max(
       0,
       Math.round(
         (3 + curseDamage - startingCursePenalty) * damageMultiplier(state)
           + state.bonusBaseDamage,
       ),
     );
+    const baseDamage = normalBaseDamage + (boss?.damageBonus ?? 0);
 
     const round: RoundState = {
       answer,
@@ -2076,6 +2077,28 @@ export function createCore(content: Content): Core {
     if ((state.visionCountsRounds ?? 0) > 0) {
       state.visionCountsRounds = (state.visionCountsRounds ?? 0) - 1;
     }
+
+    const minibossWin = outcome === 'solved' && round.boss === 'miniboss';
+    if (minibossWin) {
+      state.slots += 1;
+      emit(rt, { type: 'slotsChanged', slots: state.slots });
+      const before = state.hp;
+      state.hp = state.maxHp;
+      if (state.hp > before) {
+        emit(rt, {
+          type: 'healed',
+          amount: state.hp - before,
+          hp: state.hp,
+          source: { kind: 'boss', boss: 'miniboss' },
+        });
+        runHook(rt, 'onHeal', { amount: state.hp - before, hp: state.hp });
+      }
+      emit(rt, {
+        type: 'message',
+        text: 'The Miniboss falls. +1 item slot. You are fully healed.',
+      });
+    }
+
     state.summary = {
       outcome,
       answer: round.answer,
@@ -2083,7 +2106,7 @@ export function createCore(content: Content): Core {
       guesses: round.totalGuesses,
       elapsedMs: round.elapsedMs,
       boss: round.boss,
-      rewardPending: outcome === 'solved' && !round.boss,
+      rewardPending: outcome === 'solved' && (!round.boss || minibossWin),
       gold: goldAward,
     };
     state.phase = 'summary';
@@ -2562,11 +2585,58 @@ export function createCore(content: Content): Core {
     return options;
   }
 
+  function makeMinibossRewards(rt: Runtime): RewardOption[] {
+    const state = rt.state;
+    const options: RewardOption[] = [];
+    const rareFoods = content.foods.filter(
+      (food) => food.rarity === 'rare' && foodAvailable(state, food),
+    );
+    const food = rareFoods.length > 0 ? rngPick(state, rareFoods) : undefined;
+    if (food) {
+      options.push({
+        id: `eat:${food.id}`,
+        kind: 'eat',
+        def: food.id,
+        rarity: 'rare',
+        label: `Rare food: ${food.name}`,
+        description: food.description,
+      });
+    }
+    const rareRelics = content.items.filter(
+      (item) => item.rarity === 'rare'
+        && !item.noSpawn
+        && itemAvailable(state, item)
+        && !state.items.some((owned) => owned.id === item.id),
+    );
+    const relic = rareRelics.length > 0 ? rngPick(state, rareRelics) : undefined;
+    if (relic) {
+      options.push({
+        id: `item:${relic.id}`,
+        kind: 'item',
+        def: relic.id,
+        rarity: 'rare',
+        label: `Rare relic: ${relic.name}`,
+        description: relic.description,
+      });
+    }
+    if (options.length === 0) {
+      options.push({
+        id: 'gold',
+        kind: 'gold',
+        amount: 10,
+        label: '10 gold',
+        description: 'The Miniboss had nothing rarer to give.',
+      });
+    }
+    return options;
+  }
+
   function openReward(rt: Runtime): void {
     const state = rt.state;
-    const options = makeRewards(rt);
-    const boss = Boolean(state.summary?.boss);
-    state.reward = { options, boss };
+    const miniboss = state.summary?.boss === 'miniboss';
+    const options = miniboss ? makeMinibossRewards(rt) : makeRewards(rt);
+    const boss = miniboss ? false : Boolean(state.summary?.boss);
+    state.reward = { options, boss, miniboss };
     state.phase = 'reward';
     emit(rt, { type: 'rewardOffered', options: clone(options), boss });
   }
@@ -3440,8 +3510,14 @@ export function createCore(content: Content): Core {
       return;
     }
     if (node.kind === 'boss' && node.boss) {
-      state.bossCursesLeft = 3;
-      openCurseDraft(rt, false, true);
+      const bossDef = bossById.get(node.boss);
+      const prep = bossDef?.prepCurses ?? 0;
+      if (prep > 0) {
+        state.bossCursesLeft = prep;
+        openCurseDraft(rt, false, true);
+      } else {
+        openBossIntro(rt);
+      }
       return;
     }
     if (node.kind === 'round' || node.kind === 'boss') {
@@ -3759,6 +3835,7 @@ export function createCore(content: Content): Core {
           kind: 'reward',
           options: clone(state.reward?.options ?? []),
           boss: state.reward?.boss ?? false,
+          miniboss: state.reward?.miniboss,
           chosen: state.reward?.chosen,
         };
         break;
@@ -3768,15 +3845,18 @@ export function createCore(content: Content): Core {
           boss: state.bossIntro?.boss ?? state.nodes[state.nodeIndex]?.boss ?? '',
         };
         break;
-      case 'curse':
+      case 'curse': {
+        const bossId = state.nodes[state.nodeIndex]?.boss;
         phase = {
           kind: 'curse',
           options: state.curse?.options.slice() ?? [],
           starting: state.curse?.starting ?? false,
           boss: state.curse?.boss,
           remaining: state.bossCursesLeft,
+          total: bossId ? bossById.get(bossId)?.prepCurses : undefined,
         };
         break;
+      }
       case 'shopChoice':
         phase = { kind: 'shopChoice' };
         break;
@@ -3964,7 +4044,11 @@ export function createCore(content: Content): Core {
     for (let level = 1; level <= MAX_LEVEL; level++) {
       const kind = pattern[(level - 1) % pattern.length];
       if (kind === 'round') {
-        addRound(level);
+        if (level === 27) {
+          nodes.push({ kind: 'boss', level, boss: 'miniboss' });
+        } else {
+          addRound(level);
+        }
       } else {
         nodes.push({ kind, level });
       }
