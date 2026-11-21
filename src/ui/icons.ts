@@ -78,7 +78,6 @@ const ITEM_ICONS: Record<string, string> = {
   'time-lattice': '🧩',
   'frozen-durian': '🥥',
   'omen-loom': '🔮',
-  'mercy-ledger': '📗',
   'ward-engine': '🔰',
   deadline: '⏰',
   'ticking-fee': '🕰️',

@@ -925,24 +925,6 @@ export const ITEMS: ItemDef[] = [
     },
   }),
   defineItem({
-    id: 'mercy-ledger',
-    name: 'Mercy Ledger',
-    description: 'Cast Heal: +4 gold. Once per round.',
-    price: 8,
-    kind: 'gear',
-    initial: { used: 0 },
-    on: {
-      onRoundEnd: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
-      onSpellCast: (ctx, p) => {
-        if (ctx.self.data.used || p.spell !== 'heal') return [];
-        return [
-          { type: 'gold', amount: 4 },
-          { type: 'setItemData', stat: 'used', value: 1 },
-        ];
-      },
-    },
-  }),
-  defineItem({
     id: 'ward-engine',
     name: 'Ward Engine',
     description: 'Cast Immunity: +2 max armor. Once per round.',
