@@ -2380,8 +2380,9 @@ export function createCore(content: Content): Core {
     if (unobscured) round.unobscuredGuesses++;
     if (by === 'player' && round.lockedSpells.length > 0) round.lockedSpells = [];
     round.guesses.push(guess);
+    const solved = word === round.answer;
     const damageMultiplier = guessDamageMultiplier(state, round);
-    if (damageMultiplier > 1) {
+    if (!solved && damageMultiplier > 1) {
       emit(rt, { type: 'damageMultiplier', multiplier: damageMultiplier });
     }
 
@@ -2407,7 +2408,6 @@ export function createCore(content: Content): Core {
     rt.pendingFreeSource = undefined;
 
     const presented = presentGuess(state, guess);
-    const solved = word === round.answer;
     emit(rt, {
       type: 'guessScored',
       by,

@@ -4938,6 +4938,25 @@ describe('damage doubling and slots', () => {
     )).toBe(true);
   });
 
+  it('does not show the multiplier warning on a correct guess', () => {
+    const { state } = start('damage-doubling-correct');
+    setAnswer(state, 'crane');
+    state.round!.baseDamage = 3;
+    state.round!.freeLeft = 0;
+    state.armor = 0;
+    state.maxArmor = 0;
+    state.hp = 200;
+    state.maxHp = 200;
+
+    let current = state;
+    for (const word of ['slate', 'brick', 'plumb', 'chunk', 'vamps', 'fizzy']) {
+      current = act(current, { type: 'guess', word }).state;
+    }
+    const solved = act(current, { type: 'guess', word: 'crane' });
+    expect(solved.state.phase).toBe('summary');
+    expect(solved.events.some((event) => event.type === 'damageMultiplier')).toBe(false);
+  });
+
   it('counts autoguesses toward the sixth-guess threshold', () => {
     let started: ReturnType<typeof nextRound> | undefined;
     for (let index = 0; index < 20 && !started; index++) {
