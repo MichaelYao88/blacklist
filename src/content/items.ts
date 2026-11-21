@@ -26,6 +26,11 @@ function everyThreeFoodsOrSolves(self: { data: Record<string, number> }): Effect
   ];
 }
 
+/** Necronomicon reveals 2 letters plus one for every 13 max HP paid. */
+function necronomiconLetters(self: { data: Record<string, number> }): number {
+  return 2 + Math.floor((self.data.paid ?? 0) / 13);
+}
+
 function popcount(value: number): number {
   let count = 0;
   while (value) {
@@ -362,19 +367,23 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'necronomicon',
     name: 'Necronomicon',
-    description: 'When you cast Omen: reveal 2 letters, +1 per 13 max HP paid to the book. Every 13 reveals: autocast Omen, pay 3 max HP.',
+    description: 'At round start and when you cast Omen: reveal 2 letters. After every 13 reveals: autocast Omen, pay 3 max HP. Every 13 HP paid: increase the amount of letters revealed by 1.',
     dynamicDescription: (data) =>
-      `When you cast Omen: reveal ${2 + Math.floor((data.paid ?? 0) / 13)} letters (+1 per 13 max HP paid). Every 13 reveals: autocast Omen, pay 3 max HP.`,
+      `At round start and when you cast Omen: reveal ${2 + Math.floor((data.paid ?? 0) / 13)} letters. After every 13 reveals: autocast Omen, pay 3 max HP. Every 13 HP paid: increase the amount of letters revealed by 1.`,
     price: 13,
     kind: 'gear',
     rarity: 'rare',
     initial: { reveals: 0, paid: 0 },
     on: {
+      onRoundStart: (ctx) => [{
+        type: 'revealRandom',
+        count: necronomiconLetters(ctx.self),
+      }],
       onSpellCast: (ctx, p) => {
         if (p.spell !== 'omen' || p.sourceItem === 'necronomicon') return [];
         return [{
           type: 'revealRandom',
-          count: 2 + Math.floor((ctx.self.data.paid ?? 0) / 13),
+          count: necronomiconLetters(ctx.self),
         }];
       },
       onReveal: (ctx) => {

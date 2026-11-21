@@ -2185,9 +2185,9 @@ describe('latest balance pass', () => {
     expect(guess.state.gold).toBe(before + 2);
   });
 
-  it('Necronomicon reveals 2 letters when Omen is cast, plus 1 per 13 max HP paid', () => {
+  it('Necronomicon reveals 2 letters at round start and when Omen is cast', () => {
     expect(ITEM_BY_ID.get('necronomicon')?.rarity).toBe('rare');
-    expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('When you cast Omen');
+    expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('At round start and when you cast Omen');
 
     const base = start('necronomicon-start');
     base.state.items.push({
@@ -2197,14 +2197,14 @@ describe('latest balance pass', () => {
       equipped: true,
     });
     const started = nextRound(base.state);
-    expect(Object.keys(started.state.round?.hints ?? {})).toHaveLength(0);
+    const startHints = Object.keys(started.state.round?.hints ?? {}).length;
+    expect(startHints).toBe(2);
 
     started.state.spells = [{ instance: 's-omen', id: 'omen' }];
     setAnswer(started.state, 'crane');
     const cast = act(started.state, { type: 'castSpell', instance: 's-omen' });
     const baseHints = Object.keys(cast.state.round?.hints ?? {}).length;
-    expect(baseHints).toBeGreaterThanOrEqual(2);
-    expect(baseHints).toBeLessThanOrEqual(3);
+    expect(baseHints).toBeGreaterThanOrEqual(startHints + 2);
 
     const scaled = start('necronomicon-scaled');
     scaled.state.items.push({
@@ -3280,8 +3280,9 @@ describe('latest balance pass', () => {
     expect(FOOD_BY_ID.get('bounty')?.effects).toContainEqual({ type: 'solveGold', amount: 1 });
     expect(ITEM_BY_ID.get('counterweight')?.description).toContain('Completely blocked hit');
     expect(ITEM_BY_ID.get('encore')?.description).toContain('last solved answer');
-    expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('Every 13 reveals');
+    expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('After every 13 reveals');
     expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('pay 3 max HP');
+    expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('Every 13 HP paid');
     expect(FOOD_BY_ID.get('hearty-meal')?.description).toBe('+5 max HP, heal 5. No slot.');
     expect(ITEM_BY_ID.get('loyalty-card')?.description).toContain('Every 10 shop purchases');
     expect(ITEM_BY_ID.get('loyalty-card')?.price).toBe(12);

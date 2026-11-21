@@ -90,7 +90,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Immunity** blocks the next hurting guess and any guess for 4 seconds after it
 - **Mending Plate** is a rare item: +1 max armor per 8 HP healed
 - **Bounty** is a 9g rare food: +1 gold per solve
-- **Necronomicon** is a rare item: when you cast Omen, reveal 2 random letters, plus 1 more for every 13 max HP paid to the book; every 13 reveals autocasts Omen and costs 3 max HP
+- **Necronomicon** is a rare item: at round start and when you cast Omen, reveal 2 random letters. After every 13 reveals it autocasts Omen and pays 3 max HP; every 13 max HP paid increases the reveal count by 1
 - **Growth Spurt** gives +3 max HP when you solve in 4 guesses or fewer
 - **Growth Chart** is an 8g item: every 3 max HP gained grants +1 Time Freeze
 - **Midas Touch** has a 30% chance to double every gold gain
