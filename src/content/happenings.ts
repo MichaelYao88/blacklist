@@ -683,19 +683,6 @@ export const HAPPENINGS: HappeningDef[] = [
     ],
   }),
   defineHappening({
-    id: 'know-the-letter',
-    name: 'Know the Letter',
-    description: 'Two letters are circled in the margin. You may keep one.',
-    options: [
-      {
-        id: 'leave',
-        label: 'Leave the page',
-        description: 'Nothing happens.',
-        outcomes: [{ chancePct: 100, text: 'The page closes.', effects: [] }],
-      },
-    ],
-  }),
-  defineHappening({
     id: 'purge-the-letter',
     name: 'Purge the Letter',
     description: 'Two letters are listed for erasure. You may remove one.',

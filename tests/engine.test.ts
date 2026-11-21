@@ -4070,13 +4070,9 @@ describe('content and rules batch', () => {
 });
 
 describe('letter happenings', () => {
-  it('Know the Letter permanently reveals the chosen letter', () => {
-    const { state } = start('know-letter-event');
-    state.phase = 'happening';
-    state.happening = { id: 'know-the-letter', options: [], letters: ['q', 'x'] };
-    const chosen = act(state, { type: 'choose', optionId: 'q' });
-    expect(chosen.state.permanentReveals).toContain('q');
-    expect(chosen.state.happening?.resolved?.success).toBe(true);
+  it('removes Know the Letter and keeps Purge the Letter', () => {
+    expect(HAPPENING_BY_ID.get('know-the-letter')).toBeUndefined();
+    expect(HAPPENING_BY_ID.get('purge-the-letter')).toBeDefined();
   });
 
   it('Purge the Letter permanently purges the chosen letter', () => {
@@ -4088,15 +4084,7 @@ describe('letter happenings', () => {
     expect(chosen.state.happening?.resolved?.success).toBe(true);
   });
 
-  it('lets the 80% letter option fail', () => {
-    const know = start('know-letter-fail').state;
-    know.phase = 'happening';
-    know.happening = { id: 'know-the-letter', options: [], letters: ['q', 'x'] };
-    know.rng = 4; // next rngNext() is 0.9236, so the 80% roll fails
-    const failedKnow = act(know, { type: 'choose', optionId: 'x' });
-    expect(failedKnow.state.permanentReveals).not.toContain('x');
-    expect(failedKnow.state.happening?.resolved?.success).toBe(false);
-
+  it('lets the 80% Purge letter option fail', () => {
     const purge = start('purge-letter-fail').state;
     purge.phase = 'happening';
     purge.happening = { id: 'purge-the-letter', options: [], letters: ['q', 'x'] };
@@ -4106,23 +4094,19 @@ describe('letter happenings', () => {
     expect(failedPurge.state.happening?.resolved?.success).toBe(false);
   });
 
-  it('offers two letters for each event with 100% and 80% odds', () => {
-    let know: RunState['happening'];
+  it('offers two Purge letters with 100% and 80% odds', () => {
     let purge: RunState['happening'];
-    for (let index = 0; index < 400 && (!know || !purge); index++) {
+    for (let index = 0; index < 400 && !purge; index++) {
       const { state } = start(`letter-event-${index}`);
       const next = nextHappening(state);
-      if (next.state.happening?.id === 'know-the-letter') know = next.state.happening;
       if (next.state.happening?.id === 'purge-the-letter') purge = next.state.happening;
     }
-    for (const event of [know, purge]) {
-      expect(event?.letters).toHaveLength(2);
-      expect(new Set(event?.letters).size).toBe(2);
-      const letterOptions = event?.options.filter((option) => option.id !== 'leave') ?? [];
-      expect(letterOptions).toHaveLength(2);
-      expect(letterOptions.map((option) => option.chancePct ?? 0).sort((a, b) => a - b))
-        .toEqual([80, 100]);
-    }
+    expect(purge?.letters).toHaveLength(2);
+    expect(new Set(purge?.letters).size).toBe(2);
+    const letterOptions = purge?.options.filter((option) => option.id !== 'leave') ?? [];
+    expect(letterOptions).toHaveLength(2);
+    expect(letterOptions.map((option) => option.chancePct ?? 0).sort((a, b) => a - b))
+      .toEqual([80, 100]);
   });
 });
 

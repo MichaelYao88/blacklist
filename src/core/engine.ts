@@ -2868,7 +2868,7 @@ export function createCore(content: Content): Core {
         break;
       }
     }
-    const letterEvent = def.id === 'know-the-letter' || def.id === 'purge-the-letter';
+    const letterEvent = def.id === 'purge-the-letter';
     // Floor-scaled events keep the number visible to the player. The token is
     // resolved once when the event opens so the displayed text and the text
     // saved with the resolved event agree.
@@ -2894,33 +2894,21 @@ export function createCore(content: Content): Core {
     let letters: Letter[] | undefined;
     let options = baseOptions;
     if (letterEvent) {
-      const know = def.id === 'know-the-letter';
-      const candidates = ALPHABET.filter((letter) => (
-        !state.purged.includes(letter)
-        && (!know || !state.permanentReveals.includes(letter))
-      ));
+      const candidates = ALPHABET.filter((letter) => !state.purged.includes(letter));
       letters = rngShuffle(state, candidates).slice(0, 2);
       const letterOptions: HappeningOptionView[] = letters.map((letter, index) => {
         const chance = index === 0 ? 100 : 80;
         const upper = letter.toUpperCase();
-        const successText = know
-          ? `${upper} will be known from now on.`
-          : `${upper} will be purged from future answers.`;
-        const failureText = know
-          ? 'The letter fades before you can learn it.'
-          : 'The letter resists erasure.';
         return {
           id: letter,
-          label: `${know ? 'Know' : 'Purge'} ${upper}`,
-          description: know
-            ? `${chance}%: permanently reveal ${upper} in every round.`
-            : `${chance}%: permanently purge ${upper} from future answers.`,
+          label: `Purge ${upper}`,
+          description: `${chance}%: permanently purge ${upper} from future answers.`,
           chancePct: chance,
           outcomes: chance === 100
-            ? [{ chancePct: 100, text: successText }]
+            ? [{ chancePct: 100, text: `${upper} will be purged from future answers.` }]
             : [
-                { chancePct: chance, text: successText },
-                { chancePct: 100 - chance, text: failureText },
+                { chancePct: chance, text: `${upper} will be purged from future answers.` },
+                { chancePct: 100 - chance, text: 'The letter resists erasure.' },
               ],
         };
       });
@@ -3036,33 +3024,6 @@ export function createCore(content: Content): Core {
         type: 'happeningResolved',
         happening: def.id,
         option: optionId,
-        success: true,
-        text,
-      });
-      return;
-    }
-    if (happening.letters && def.id === 'know-the-letter' && happening.letters.includes(optionId as Letter)) {
-      const letter = optionId as Letter;
-      const chance = happening.letters.indexOf(letter) === 1 ? 80 : 100;
-      if (chance < 100 && !rngChance(state, chance)) {
-        const text = 'The letter fades before you can learn it.';
-        happening.resolved = { option: letter, success: false, text };
-        emit(rt, {
-          type: 'happeningResolved',
-          happening: def.id,
-          option: letter,
-          success: false,
-          text,
-        });
-        return;
-      }
-      applyEffects(rt, [{ type: 'revealLetter', letter }], { kind: 'happening', happening: def.id });
-      const text = `${letter.toUpperCase()} will be known from now on.`;
-      happening.resolved = { option: letter, success: true, text };
-      emit(rt, {
-        type: 'happeningResolved',
-        happening: def.id,
-        option: letter,
         success: true,
         text,
       });
