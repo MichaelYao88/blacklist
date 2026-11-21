@@ -296,6 +296,7 @@ let selectedAscension = 0;
 let selectedCharacter = 'runner';
 let characterUnlock: string | null = null;
 let characterUnlockQueue: string[] = [];
+let keyboardLayoutNoticeShown = false;
 
 function queueCharacterUnlock(id: string): void {
   if (characterUnlock === id || characterUnlockQueue.includes(id)) return;
@@ -919,6 +920,27 @@ function submitGuess(): void {
 
 // ── click / keyboard wiring ────────────────────────────────────────────────
 
+/**
+ * Latin layouts send the typed character in event.key. Non-Latin layouts and
+ * active IMEs often send the local character (or "Process") instead, so fall
+ * back to the physical QWERTY position: KeyC -> c. The on-screen keyboard is
+ * QWERTY, which makes the fallback easy to follow.
+ */
+function letterFromKey(event: KeyboardEvent): string | null {
+  if (event.key === 'Dead') return null;
+  if (/^[a-z]$/i.test(event.key)) return event.key.toLowerCase();
+  const physical = /^Key([A-Z])$/.exec(event.code);
+  return physical ? physical[1].toLowerCase() : null;
+}
+
+function noteKeyboardFallback(event: KeyboardEvent, letter: string | null): void {
+  if (!letter || keyboardLayoutNoticeShown) return;
+  if (/^[a-z]$/i.test(event.key)) return;
+  keyboardLayoutNoticeShown = true;
+  notify('Non-English keyboard detected. Using QWERTY key positions.', 'info');
+  render();
+}
+
 document.addEventListener('pointerdown', () => {
   pointerHeld += 1;
 }, true);
@@ -1118,11 +1140,19 @@ window.addEventListener('keydown', (event) => {
   sfx.unlock();
   music.unlock();
   if (screen !== 'run') return;
-  if (event.metaKey || event.ctrlKey || event.altKey) return;
+  const altGraph = (event.getModifierState?.('AltGraph') ?? false)
+    || (event.ctrlKey && event.altKey);
+  if (!altGraph && (event.metaKey || event.ctrlKey || event.altKey)) return;
   const view = host.view();
   if (!view) return;
+  const letter = letterFromKey(event);
 
-  if (event.key === 'Escape' || event.key === ' ') {
+  if (
+    event.key === 'Escape'
+    || event.code === 'Escape'
+    || event.key === ' '
+    || event.code === 'Space'
+  ) {
     if (view.phase.kind !== 'over') {
       event.preventDefault();
       paused = !paused;
@@ -1136,23 +1166,29 @@ window.addEventListener('keydown', (event) => {
 
   if (paused) return;
 
+  noteKeyboardFallback(event, letter);
+
   if (view.pendingPurge > 0) {
-    if (/^[a-z]$/i.test(event.key)) {
+    if (letter) {
       event.preventDefault();
-      dispatchCommand({ type: 'purgeLetter', letter: event.key.toLowerCase() });
+      dispatchCommand({ type: 'purgeLetter', letter });
     }
     return;
   }
 
   if (view.phase.kind !== 'round') return;
-  if (/^[a-z]$/i.test(event.key)) {
+  if (letter) {
     event.preventDefault();
-    addLetter(event.key);
-  } else if (event.key === 'Backspace') {
+    addLetter(letter);
+  } else if (event.key === 'Backspace' || event.code === 'Backspace') {
     event.preventDefault();
     input = input.slice(0, -1);
     render();
-  } else if (event.key === 'Enter') {
+  } else if (
+    event.key === 'Enter'
+    || event.code === 'Enter'
+    || event.code === 'NumpadEnter'
+  ) {
     event.preventDefault();
     submitGuess();
   }
@@ -1556,7 +1592,7 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>Controls</h3>
-        <p>Type letters, <b>Backspace</b> to delete, <b>Enter</b> to submit. <b>Space</b> or <b>Esc</b> pauses. Click the <b>MUSIC</b> name to cycle tracks; the mute button is separate. More Power only plays for the final boss.</p>
+        <p>Type letters, <b>Backspace</b> to delete, <b>Enter</b> to submit. <b>Space</b> or <b>Esc</b> pauses. Click the <b>MUSIC</b> name to cycle tracks; the mute button is separate. More Power only plays for the final boss. Non-English keyboard layouts use the physical QWERTY key positions.</p>
       </article>
     </div>
     <div class="help-actions">
