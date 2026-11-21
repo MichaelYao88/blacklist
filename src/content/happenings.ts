@@ -415,6 +415,40 @@ export const HAPPENINGS: HappeningDef[] = [
     ],
   }),
   defineHappening({
+    id: 'babification',
+    name: 'Babification',
+    description: 'A nursery rhyme crawls into your ears. The room gets bigger, or you do.',
+    requiresCurseCount: 1,
+    options: [
+      {
+        id: 'slots',
+        label: 'Give up your pockets',
+        description: 'Remove a random curse. Item slots drop to their starting value.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'Your gear spills out as the pack shrinks to a child-size satchel.',
+          effects: [
+            { type: 'removeRandomCurse' },
+            { type: 'resetSlotsToStart' },
+          ],
+        }],
+      },
+      {
+        id: 'armor',
+        label: 'Give up your plating',
+        description: 'Remove a random curse. Max armor drops to its starting value.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'The plate peels away like a milk tooth, leaving only the frame you were born with.',
+          effects: [
+            { type: 'removeRandomCurse' },
+            { type: 'resetArmorToStart' },
+          ],
+        }],
+      },
+    ],
+  }),
+  defineHappening({
     id: 'the-bargain',
     name: 'The Bargain',
     description: 'Two objects on a table. One is help. One is a new rule.',

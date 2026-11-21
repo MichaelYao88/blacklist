@@ -21,8 +21,8 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - 50 is the final boss: three rounds back-to-back with no intermission. Bosses ignore the **Second Wind** curse
 - **Second Wind** is a curse: after you solve a word, a second word appears with one free guess
 - The Toll, The Tax and The Chained are only offered through level 40
-- Base encounter damage is **3 + the total number of curse stacks** plus **+1 for every 60 gold spent this run**; Heavy Hand multiplies the base by **1.4 per stack**
-- Vision curses include **Take the L** (L hidden), **A-Aron, where are you?** (A hidden), **IP Theft** (I and P hidden), **Hard R** (R hidden), and a silver **RIP Curse**; **Wasting** cuts current max HP by 40% per stack
+- Base encounter damage is **3 + the total number of curse stacks** plus **+1 for every 60 gold spent this run**; Heavy Hand multiplies the base by **1.5 per stack**
+- Vision curses include **Take the L** (L hidden), **A-Aron, where are you?** (A hidden), **IP Theft** (I and P hidden), **Hard R** (R hidden), and a silver **RIP Curse**; the first/second/third/fourth/fifth position curses hide their tile **50% of the time**
 - The blacklist is disabled and hidden until **The List** curse is taken; The List is a single curse, never stacks, and arrives stocked with the first guess from every earlier round
 - The clock is disabled until **The Clock** curse is taken; the first stack gives 5:00 and each further stack shrinks it by 40%. If the clock reaches zero, the run ends immediately
 - The Clockmaker event only appears once The Clock exists
@@ -31,9 +31,9 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Within-X solve items count **player guesses only**; solve gold is a random 4-8, independent of guess count and auto-guesses
 - Curse Collector, Curse Bulwark and Reliquary trigger on gaining a curse ("Whenever you gain a curse: Gain …"). Curse Collector grants +6 max HP and heals 6
 - Ascension A1/A2 draft 1/2 starting curses
-- Shops with rerolls that start at 1g and double in price: three items, two foods and one wildcard; the wildcard is always food or a spell, never an item, and one random offer is always 50% off
+- Shops with rerolls that start at 1g and double in price: three items, two foods and one wildcard; the wildcard is always food or a spell, never an item, and one random offer is always 50% off. When your item slots are full, one gear offer is replaced by food
 - Every spell offered in a shop has a 4g base price; the half-price sale can land on it
-- Five item slots by default. Only equipped gear is active, and each shop has a drag-and-drop loadout
+- Four item slots by default. Only equipped gear is active, and each shop has a drag-and-drop loadout
 - **Loose Tongue**, a 12g uncommon item that lets you guess five-letter nonsense for free-form probes
 - Spells stack by type and come from food, item triggers and the shop wildcard slot
 - **Restore** clears the blacklist, refills armor, and ignores vision curses — including position curses — for the rest of the round; **Contrapuntal** turns into a random relic if you cast all six spell types
@@ -47,7 +47,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Rarity uses cumulative floors: 40% pulls from rare, uncommon or common, 45% pulls from uncommon or common, and 15% pulls from common only. If a tier is empty, it falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 103 items (96 shop items + 7 rare relics), 6 spells, 84 foods and 29 happenings
+- 103 items (96 shop items + 7 rare relics), 6 spells, 84 foods and 30 happenings
 - New foods include **U-nagi**, **Donut Holes**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
@@ -70,7 +70,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Second Hand** and **Counterclockwise** (formerly Engine) are 8g items that cross-cast spells on cast at 80%
 - **Last Cast** only reacts to spells you cast manually; autocast spells never trigger it
 - **Genie Summon** is an 8g uncommon item: after your 3rd player guess each round, autocast a random spell
-- **Combustion Engine** is a 10g uncommon item with a 3x appearance weight: after you autocast a spell, it has a 40% chance to autocast a random spell. It does not retrigger itself, and autocast chains cap at 10 spells per step
+- **Combustion Engine** is a 10g uncommon item with a 3x appearance weight: after you autocast a spell, it has a 30% chance to autocast a random spell. It does not retrigger itself, and autocast chains cap at 10 spells per step
 - **Encore** now costs 7g
 - **Panacea Pouch** (formerly Spellhoarder) is a 9g item: every 3rd spell cast casts Heal
 - **Omen** ignores letters whose only revealing tile was hidden by a position curse, so it can still find them
@@ -87,9 +87,9 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Gold Standard** is an 8g item: every gold gain gives +1 more gold
 - **Guardian Angel** is an 8g item: after every 10 HP damage taken, autocast Immunity
 - **Immunity** blocks the next hurting guess and any guess for 4 seconds after it
-- **Mending Plate** is a rare item: +1 max armor per 7 HP healed
+- **Mending Plate** is a rare item: +1 max armor per 8 HP healed
 - **Bounty** is a 9g rare food: +1 gold per solve
-- **Necronomicon** is a rare item: reveal 2 random letters at round start, plus 1 more for every 13 max HP paid to the book; every 13 reveals autocasts Omen and costs 3 max HP
+- **Necronomicon** is a rare item: when you cast Omen, reveal 2 random letters, plus 1 more for every 13 max HP paid to the book; every 13 reveals autocasts Omen and costs 3 max HP
 - **Growth Spurt** gives +3 max HP when you solve in 4 guesses or fewer
 - **Growth Chart** is an 8g item: every 3 max HP gained grants +1 Time Freeze
 - **Midas Touch** has a 30% chance to double every gold gain
@@ -122,12 +122,13 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Iron Ration** is a 12g rare food: +2 max armor. **One Bo Hue** and **Plating** are uncommon; **Taco Pizza Party** is rare
 - **Clean Slate** gives +1 max HP or +1 max armor at random when its condition triggers, once per round
 - **Double Dip** is Kase's new name; it keeps the +1 max armor and queued-answer effect
-- **The Naked Curse** removes all max armor; **Piercing** makes half of every hit bypass armor even while armor remains; curse drafts offer two choices
+- **The Naked Curse** removes all max armor; curse drafts offer two choices
 - Blacklisted words are never chosen as round targets; if a late run runs out of legal targets, the List releases one
 - The run-over screen and run history record the items you had equipped, and the stats page shows them per run
-- Random guesses pull from a 212-word pool chosen for non-native speakers, including **patsy**, **wharf**, **rajah**, **guppy**, **glyph**, **lymph**, **gaunt**, **jaunt**, **vaunt**, **lurid**, **torus**, **bough**, and **caput**; **Dark Echo** avoids letters from your first guess
+- Random guesses pull from a 214-word pool chosen for non-native speakers, including **patsy**, **wharf**, **rajah**, **guppy**, **glyph**, **lymph**, **gaunt**, **jaunt**, **vaunt**, **lurid**, **torus**, **bough**, **caput**, **etude**, and **butte**; **Dark Echo** avoids letters from your first guess
 - Every spell cast plays an animated pop-up, including item autocasts; spell pop-ups appear 2 seconds apart, and every pop-up stays visible for 5 seconds
 - **Cyrniki** is a 3g food: heal 50% of missing HP, then 50% a spell / 50% a shop reroll
+- **Babification** removes a random curse, but you must choose between resetting item slots or max armor to their starting values
 - **The Tax** reduces encounter gold by 40% and is unique; **The Sleeper** adds +2 damage per revealed letter in your first player guess, per stack; **The Curse Broker** charges 12g for a relic or 15g to remove a random curse; **The Confessional** sells 45/75/100% random curse removal for 5/10/15g
 - **The Detour** offers a slot, or a trip to the Time Bakery for +8 max HP and a Time Freeze; **The Crossroads** offers a shop or a Heal plus Time Freeze; **The Trade** trades gold for a slot, a slot for gold, or two Heal spells
 - The Soldier and Orc idle in their walk loops; free guesses and the winning guess play the Soldier's attack, other guesses alternate Orc → Soldier, a fatal guess is always the Orc, and the Orc collapses from the winning blow and stays down until the next round starts
@@ -208,7 +209,7 @@ The Soldier and Orc sprites are from **Tiny RPG Character Asset Pack 01** by [Ze
 |---|---|
 | Starting HP | 15 for The Soldier; preset characters override this |
 | Starting armor | 5 points for The Soldier; preset characters override this |
-| Starting item slots | 5 (only equipped gear counts; relics use one slot each) |
+| Starting item slots | 4 (only equipped gear counts; relics use one slot each) |
 | Free guesses per round | 1, plus every guess made inside a timed shield |
 | Starting gold | 12 |
 | Starting spells | 1 random spell |

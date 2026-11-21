@@ -33,6 +33,11 @@ function setAnswer(state: RunState, word: string): void {
   state.round.guesses = [];
 }
 
+function forcePositionHides(state: RunState, ...indices: number[]): void {
+  if (!state.round) return;
+  for (const guess of state.round.guesses) guess.positionHides = indices;
+}
+
 function eventTypes(events: GameEvent[]): string[] {
   return events.map((event) => event.type);
 }
@@ -87,7 +92,7 @@ describe('cursed run setup', () => {
     expect(state.maxHp).toBe(15);
     expect(state.armor).toBe(5);
     expect(state.gold).toBe(12);
-    expect(state.slots).toBe(5);
+    expect(state.slots).toBe(4);
     expect(state.blacklist).toEqual([]);
     expect(state.curses).toEqual([]);
     expect(state.spells).toHaveLength(1);
@@ -220,10 +225,32 @@ describe('vision curses and Tally Lens', () => {
     state.items.push({ instance: 'i-tally', id: 'tally-lens', data: {}, equipped: true });
 
     const guess = act(state, { type: 'guess', word: 'slate' });
+    forcePositionHides(guess.state, 0);
     const view = game.view(guess.state);
     if (view.phase.kind !== 'round') throw new Error('expected round');
     expect(view.phase.board.guesses[0].tiles[0]).toBe('hidden');
     expect(view.phase.board.guesses[0].counts).toBeDefined();
+  });
+
+  it('position curses hide their tile about half the time', () => {
+    expect(CURSE_BY_ID.get('censor')?.description).toContain('50%');
+    expect(CURSE_BY_ID.get('third-eye')?.description).toContain('50%');
+
+    let hidden = 0;
+    let shown = 0;
+    for (let index = 0; index < 40; index++) {
+      const { state } = start(`vision-half-${index}`);
+      setAnswer(state, 'crane');
+      state.curses.push({ id: 'censor', stacks: 1 });
+      state.round!.freeLeft = 0;
+      const guess = act(state, { type: 'guess', word: 'slate' });
+      const view = game.view(guess.state).phase;
+      if (view.kind !== 'round') throw new Error('expected round');
+      if (view.board.guesses[0].tiles[0] === 'hidden') hidden++;
+      else shown++;
+    }
+    expect(hidden).toBeGreaterThan(0);
+    expect(shown).toBeGreaterThan(0);
   });
 
   it('Silver STD makes S, T and D ambiguous', () => {
@@ -383,27 +410,19 @@ describe('blacklist curse', () => {
 });
 
 describe('damage and curses', () => {
-  it('base damage is 3 plus curse stacks, and Heavy Hand adds 40% per stack', () => {
+  it('base damage is 3 plus curse stacks, and Heavy Hand adds 50% per stack', () => {
     const { state } = start();
     expect(state.round?.baseDamage).toBe(3);
     state.curses.push({ id: 'heavy-hand', stacks: 2 });
     const next = nextRound(state);
-    expect(next.state.round?.baseDamage).toBe(10); // (3 + 2) × 1.4² = 9.8
-    expect(CURSE_BY_ID.get('heavy-hand')?.damageMultiplier).toBe(1.4);
-    expect(CURSE_BY_ID.get('heavy-hand')?.description).toContain('40%');
+    expect(next.state.round?.baseDamage).toBe(11);
+    expect(CURSE_BY_ID.get('heavy-hand')?.damageMultiplier).toBe(1.5);
+    expect(CURSE_BY_ID.get('heavy-hand')?.description).toContain('50%');
   });
 
-  it('Wasting cuts current max HP by 40%', () => {
-    const { state } = start('wasting');
-    state.curse = { options: ['wasting'], starting: false };
-    state.phase = 'curse';
-    state.maxHp = 20;
-    state.hp = 20;
-    const chosen = act(state, { type: 'chooseCurse', curseId: 'wasting' });
-    expect(chosen.state.maxHp).toBe(12);
-    expect(chosen.state.hp).toBe(12);
-    expect(CURSE_BY_ID.get('wasting')?.maxHpMult).toBe(0.6);
-    expect(CURSE_BY_ID.get('wasting')?.description).toContain('40%');
+  it('removes Piercing and Wasting from the curse pool', () => {
+    expect(CURSE_BY_ID.get('piercing')).toBeUndefined();
+    expect(CURSE_BY_ID.get('wasting')).toBeUndefined();
   });
 
   it('raises base damage by 1 for every curse stack', () => {
@@ -630,6 +649,7 @@ describe('timer curses', () => {
     expect(view.board.guesses[0].tiles[0]).not.toBe('hidden');
 
     const next = act(guess.state, { type: 'guess', word: 'slate' });
+    forcePositionHides(next.state, 0);
     const after = game.view(next.state).phase;
     if (after.kind !== 'round') throw new Error('expected round');
     expect(after.board.guesses[1].tiles[0]).toBe('hidden');
@@ -866,6 +886,31 @@ describe('shop curses', () => {
     expect(bought.state.pendingCurseRemoval).toBe(0);
   });
 
+  it('Babification removes a curse and forces a starting-value penalty', () => {
+    const event = HAPPENING_BY_ID.get('babification');
+    expect(event?.options.map((option) => option.id)).toEqual(['slots', 'armor']);
+
+    const slotsState = start('babification-slots');
+    slotsState.state.curses.push({ id: 'censor', stacks: 1 }, { id: 'clock', stacks: 1 });
+    slotsState.state.slots = 8;
+    slotsState.state.phase = 'happening';
+    slotsState.state.happening = { id: 'babification', options: [] };
+    const slotsChosen = act(slotsState.state, { type: 'choose', optionId: 'slots' });
+    expect(slotsChosen.state.curses).toHaveLength(1);
+    expect(slotsChosen.state.slots).toBe(4);
+
+    const armorState = start('babification-armor');
+    armorState.state.curses.push({ id: 'censor', stacks: 1 }, { id: 'clock', stacks: 1 });
+    armorState.state.maxArmor = 9;
+    armorState.state.armor = 9;
+    armorState.state.phase = 'happening';
+    armorState.state.happening = { id: 'babification', options: [] };
+    const armorChosen = act(armorState.state, { type: 'choose', optionId: 'armor' });
+    expect(armorChosen.state.curses).toHaveLength(1);
+    expect(armorChosen.state.maxArmor).toBe(5);
+    expect(armorChosen.state.armor).toBe(5);
+  });
+
   it('The Redaction costs 5/10 and its rest option triggers an eat', () => {
     const redaction = HAPPENING_BY_ID.get('redaction');
     expect(redaction?.options.find((option) => option.id === 'one')?.costGold).toBe(5);
@@ -989,7 +1034,7 @@ describe('shop curses', () => {
     state.happening = { id: 'coin-box', options: [] };
     const bought = act(state, { type: 'choose', optionId: 'slot' });
     expect(bought.state.gold).toBe(0);
-    expect(bought.state.slots).toBe(6);
+    expect(bought.state.slots).toBe(5);
   });
 
   it('resolves the Sanctuary heal and the Stone Door shop', () => {
@@ -1179,7 +1224,7 @@ describe('curse-triggered items', () => {
     expect(chosen.state.maxHp).toBe(21);
     expect(chosen.state.hp).toBe(21);
     expect(chosen.state.maxArmor).toBe(7);
-    expect(chosen.state.slots).toBe(6);
+    expect(chosen.state.slots).toBe(5);
     expect(chosen.state.spells).toHaveLength(1);
   });
 
@@ -1233,6 +1278,7 @@ describe('item and food batch', () => {
     state.round!.hints = { a: 'present', e: 'present' };
     // CRISP puts S on the fourth tile, which Fourth Wall hides.
     const guessed = act(state, { type: 'guess', word: 'crisp' });
+    forcePositionHides(guessed.state, 3);
     expect(guessed.state.round!.hints.s).toBeUndefined();
     guessed.state.spells = [{ instance: 's-omen', id: 'omen' }];
     const cast = act(guessed.state, { type: 'castSpell', instance: 's-omen' });
@@ -1422,9 +1468,29 @@ describe('new item and event batch', () => {
     state.curse = { options: ['tight-slots'], starting: false };
     state.phase = 'curse';
     const cursed = act(state, { type: 'chooseCurse', curseId: 'tight-slots' });
-    expect(cursed.state.slots).toBe(3);
-    expect(cursed.state.items.filter((item) => item.equipped)).toHaveLength(3);
-    expect(cursed.state.items.filter((item) => !item.equipped)).toHaveLength(2);
+    expect(cursed.state.slots).toBe(2);
+    expect(cursed.state.items.filter((item) => item.equipped)).toHaveLength(2);
+    expect(cursed.state.items.filter((item) => !item.equipped)).toHaveLength(3);
+  });
+
+  it('replaces a gear offer with food when item slots are full', () => {
+    const { state } = start('shop-full-slots');
+    for (let index = 0; index < 4; index++) {
+      state.items.push({
+        instance: `i-full-${index}`,
+        id: 'hourglass',
+        data: {},
+        equipped: true,
+      });
+    }
+    state.nodeIndex = 0;
+    state.nodes[1] = { kind: 'shop', level: 1 };
+    state.phase = 'shop';
+    const shop = enterShop(state).state.shop;
+    const items = shop?.offers.filter((offer) => offer.kind === 'item') ?? [];
+    const foods = shop?.offers.filter((offer) => offer.kind === 'eat') ?? [];
+    expect(items).toHaveLength(2);
+    expect(foods.length).toBeGreaterThanOrEqual(3);
   });
 
   it('never offers more than 2 copies of a shop entry, and does offer duplicates', () => {
@@ -1798,11 +1864,13 @@ describe('latest balance pass', () => {
     setAnswer(state, 'crane');
 
     const first = act(state, { type: 'guess', word: 'crate' }); // C is green but the tile is hidden
+    forcePositionHides(first.state, 0);
     const alone = game.view(first.state).phase;
     if (alone.kind !== 'round') throw new Error('expected round');
     expect(alone.board.guesses[0]?.tiles[0]).toBe('hidden');
 
     const second = act(first.state, { type: 'guess', word: 'actor' }); // C shows yellow at slot 2
+    forcePositionHides(second.state, 0);
     const after = game.view(second.state).phase;
     if (after.kind !== 'round') throw new Error('expected round');
     expect(after.board.keyboard.c).toBe('present');
@@ -2010,24 +2078,40 @@ describe('latest balance pass', () => {
     expect(guess.state.gold).toBe(before + 2);
   });
 
-  it('Necronomicon reveals 2 random letters at round start, plus 1 per 13 max HP paid', () => {
-    const { state } = start('necronomicon-start');
-    state.items.push({
+  it('Necronomicon reveals 2 letters when Omen is cast, plus 1 per 13 max HP paid', () => {
+    expect(ITEM_BY_ID.get('necronomicon')?.rarity).toBe('rare');
+    expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('When you cast Omen');
+
+    const base = start('necronomicon-start');
+    base.state.items.push({
       instance: 'i-nec-start',
       id: 'necronomicon',
       data: { reveals: 0, paid: 0 },
       equipped: true,
     });
-    const next = nextRound(state);
-    const round = next.state.round;
-    if (!round) throw new Error('expected round');
-    expect(Object.keys(round.hints)).toHaveLength(2);
-    expect(ITEM_BY_ID.get('necronomicon')?.rarity).toBe('rare');
+    const started = nextRound(base.state);
+    expect(Object.keys(started.state.round?.hints ?? {})).toHaveLength(0);
 
-    state.items[0].data.paid = 27;
-    const scaled = nextRound(state);
-    if (!scaled.state.round) throw new Error('expected round');
-    expect(Object.keys(scaled.state.round.hints)).toHaveLength(4);
+    started.state.spells = [{ instance: 's-omen', id: 'omen' }];
+    setAnswer(started.state, 'crane');
+    const cast = act(started.state, { type: 'castSpell', instance: 's-omen' });
+    const baseHints = Object.keys(cast.state.round?.hints ?? {}).length;
+    expect(baseHints).toBeGreaterThanOrEqual(2);
+    expect(baseHints).toBeLessThanOrEqual(3);
+
+    const scaled = start('necronomicon-scaled');
+    scaled.state.items.push({
+      instance: 'i-nec-scaled',
+      id: 'necronomicon',
+      data: { reveals: 0, paid: 27 },
+      equipped: true,
+    });
+    scaled.state.spells = [{ instance: 's-omen-scaled', id: 'omen' }];
+    setAnswer(scaled.state, 'crane');
+    const scaledCast = act(scaled.state, { type: 'castSpell', instance: 's-omen-scaled' });
+    const scaledHints = Object.keys(scaledCast.state.round?.hints ?? {}).length;
+    expect(scaledHints).toBeGreaterThanOrEqual(4);
+    expect(scaledHints).toBeLessThanOrEqual(5);
   });
 
   it('Necronomicon procs at 13 reveals for an Omen and -3 max HP', () => {
@@ -2656,7 +2740,7 @@ describe('latest balance pass', () => {
     expect(unshielded.state.hp).toBe(12);
   });
 
-  it('Mending Plate starts with no armor bonus and pays per 7 HP healed', () => {
+  it('Mending Plate starts with no armor bonus and pays per 8 HP healed', () => {
     const { state } = start('mending-plate');
     state.items.push({
       instance: 'i-mend',
@@ -2664,7 +2748,7 @@ describe('latest balance pass', () => {
       data: { healed: 0 },
       equipped: true,
     });
-    expect(ITEM_BY_ID.get('mending-plate')?.description).toContain('per 7 HP');
+    expect(ITEM_BY_ID.get('mending-plate')?.description).toContain('per 8 HP');
     expect(state.maxArmor).toBe(5);
     state.hp = 5;
     state.spells = [{ instance: 's-heal', id: 'heal' }];
@@ -2672,7 +2756,7 @@ describe('latest balance pass', () => {
     expect(cast.state.maxArmor).toBe(6);
   });
 
-  it('Mending Plate waits for 7 total HP before paying armor', () => {
+  it('Mending Plate waits for 8 total HP before paying armor', () => {
     const { state } = start('mending-plate-threshold');
     state.items.push({
       instance: 'i-mend-threshold',
@@ -2809,7 +2893,8 @@ describe('latest balance pass', () => {
     expect(guessed.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
     expect(ITEM_BY_ID.get('green1')?.initial).toBeUndefined();
     expect(ITEM_BY_ID.get('green1')?.on?.onRoundStart).toBeUndefined();
-    expect(ITEM_BY_ID.get('green1')?.price).toBe(ITEM_BY_ID.get('double-blind')?.price);
+    expect(ITEM_BY_ID.get('green1')?.price).toBe(8);
+    expect(ITEM_BY_ID.get('double-blind')?.price).toBe(10);
   });
 
   it('Deadline grants one free guess when the clock drops below 30s', () => {
@@ -3581,7 +3666,7 @@ describe('autocast and random-guess batch', () => {
     ];
     for (const id of ids) expect(ITEM_BY_ID.get(id), id).toBeDefined();
     expect(ITEM_BY_ID.get('dark-echo')?.rarity).toBe('uncommon');
-    expect(ITEM_BY_ID.get('dark-echo')?.price).toBe(11);
+    expect(ITEM_BY_ID.get('dark-echo')?.price).toBe(13);
     expect(ITEM_BY_ID.get('wild-magic')?.price).toBe(9);
     expect(ITEM_BY_ID.get('panic-button')?.price).toBe(8);
     expect(ITEM_BY_ID.get('black-eye')?.price).toBe(8);
@@ -3658,7 +3743,7 @@ describe('Genie Summon and Combustion Engine', () => {
     expect(next.state.round?.guesses.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('Combustion Engine triggers only on autocasts, at 40%', () => {
+  it('Combustion Engine triggers only on autocasts, at 30%', () => {
     let chained = 0;
     for (let index = 0; index < 40; index++) {
       const { state } = start(`combustion-${index}`);
@@ -3692,6 +3777,7 @@ describe('Genie Summon and Combustion Engine', () => {
     )).toBe(false);
     expect(ITEM_BY_ID.get('combustion-engine')?.rarity).toBe('uncommon');
     expect(ITEM_BY_ID.get('combustion-engine')?.appearanceWeight).toBe(3);
+    expect(ITEM_BY_ID.get('combustion-engine')?.description).toContain('30%');
     expect(ITEM_BY_ID.get('engine')?.name).toBe('Counterclockwise');
   });
 });
@@ -3783,20 +3869,6 @@ describe('content and rules batch', () => {
     state.usedAnswers = CONTENT.answers.filter((word) => word !== last);
     const next = nextRound(state);
     expect(next.state.round?.answer).toBe(last);
-  });
-
-  it('Piercing lets half of each hit bypass armor', () => {
-    const { state } = start('piercing');
-    state.curses.push({ id: 'piercing', stacks: 1 });
-    state.round!.baseDamage = 3;
-    state.round!.freeLeft = 0;
-    state.armor = 10;
-    state.maxArmor = 10;
-    setAnswer(state, 'crane');
-    const hit = act(state, { type: 'guess', word: 'slate' });
-    expect(hit.state.armor).toBe(9);
-    expect(hit.state.hp).toBe(13);
-    expect(CURSE_BY_ID.get('piercing')?.armorPierce).toBe(0.5);
   });
 
   it('auto-guesses do not lower solve gold', () => {
@@ -4157,9 +4229,9 @@ describe('item tuning batch', () => {
     for (let index = 0; index < 9; index++) {
       current = act(current, { type: 'buy', offerId: `o${index}` }).state;
     }
-    expect(current.slots).toBe(5);
+    expect(current.slots).toBe(4);
     current = act(current, { type: 'buy', offerId: 'o9' }).state;
-    expect(current.slots).toBe(6);
+    expect(current.slots).toBe(5);
   });
 
   it('Loose Tongue is a 12g uncommon', () => {

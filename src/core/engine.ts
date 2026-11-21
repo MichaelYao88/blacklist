@@ -43,6 +43,7 @@ const VERSION = 6;
 const WORD_LENGTH = 5;
 const MAX_LEVEL = 50;
 const LEVELS_PER_AREA = 10;
+const STARTING_ITEM_SLOTS = 4;
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyz'.split('');
 
 const RULES: Source = { kind: 'rules' };
@@ -1331,6 +1332,31 @@ export function createCore(content: Content): Core {
           }
         }
         break;
+      case 'resetSlotsToStart': {
+        const target = Math.min(state.slots, STARTING_ITEM_SLOTS);
+        if (target !== state.slots) {
+          state.slots = target;
+          emit(rt, { type: 'slotsChanged', slots: state.slots });
+          const dropped = enforceSlotCapacity(rt, state);
+          if (dropped.length > 0) {
+            emit(rt, {
+              type: 'message',
+              text: `Slots tightened. Moved to the bag: ${dropped.join(', ')}.`,
+            });
+          }
+        }
+        break;
+      }
+      case 'resetArmorToStart': {
+        const character = content.characters.find((entry) => entry.id === state.character);
+        const target = Math.min(state.maxArmor, character?.armor ?? state.maxArmor);
+        if (target !== state.maxArmor) {
+          state.maxArmor = target;
+          state.armor = Math.min(state.armor, target);
+          emit(rt, { type: 'armorChanged', armor: state.armor, max: state.maxArmor });
+        }
+        break;
+      }
       case 'pendingPurge':
         state.pendingPurge += effect.count;
         break;
@@ -1642,10 +1668,17 @@ export function createCore(content: Content): Core {
         }
       }
     }
+    const positionHides = guess.positionHides ? new Set(guess.positionHides) : null;
     for (const entry of vision) {
       for (const effect of entry.def.vision ?? []) {
         if (effect.kind === 'hidePosition') {
-          if (effect.index >= 0 && effect.index < tiles.length) tiles[effect.index] = 'hidden';
+          if (
+            (positionHides ? positionHides.has(effect.index) : true)
+            && effect.index >= 0
+            && effect.index < tiles.length
+          ) {
+            tiles[effect.index] = 'hidden';
+          }
         } else if (effect.kind === 'hideLetters') {
           const letters = new Set(effect.letters.split(''));
           tiles = tiles.map((tile, index) =>
@@ -2185,6 +2218,20 @@ export function createCore(content: Content): Core {
     }
 
     const truth = scoreGuess(round.answer, word);
+    const positionHides: number[] = [];
+    if (!unobscured && !round.visionDisabled) {
+      for (const entry of curseDefs(state)) {
+        for (const effect of entry.def.vision ?? []) {
+          if (
+            effect.kind === 'hidePosition'
+            && rngChance(state, 50)
+            && !positionHides.includes(effect.index)
+          ) {
+            positionHides.push(effect.index);
+          }
+        }
+      }
+    }
     const guess: ScoredGuess = {
       word,
       truth,
@@ -2192,6 +2239,7 @@ export function createCore(content: Content): Core {
       free: naturalFree || shieldedFree,
       by,
       unobscured,
+      positionHides,
     };
 
     round.totalGuesses++;
@@ -2476,8 +2524,9 @@ export function createCore(content: Content): Core {
     );
     const uncommonFoods = availableFoods.filter((food) => food.rarity === 'uncommon');
     const rareFoods = availableFoods.filter((food) => food.rarity === 'rare');
-    const itemTarget = Math.max(0, 3 + shopItemDelta(state));
-    const foodTarget = Math.max(0, 2 + shopFoodDelta(state));
+    const slotsFull = usedSlots(state) >= state.slots;
+    const itemTarget = Math.max(0, 3 + shopItemDelta(state) - (slotsFull ? 1 : 0));
+    const foodTarget = Math.max(0, 2 + shopFoodDelta(state) + (slotsFull ? 1 : 0));
     const picked: Array<{
       kind: Offer['kind'];
       def: string;
@@ -3751,7 +3800,7 @@ export function createCore(content: Content): Core {
       maxArmor: startArmor,
       gold: 12,
       goldSpent: 0,
-      slots: 5,
+      slots: STARTING_ITEM_SLOTS,
       bonusTimeMs: 0,
       bonusBaseDamage: 0,
       bonusSolveGold: 0,
@@ -3853,7 +3902,7 @@ export function createCore(content: Content): Core {
       if (fromVersion < 5) {
         state.slots = (typeof state.slots === 'number' ? state.slots : 4) + 1;
       } else if (typeof state.slots !== 'number') {
-        state.slots = 5;
+        state.slots = STARTING_ITEM_SLOTS;
       }
       state.bonusSolveGold = typeof state.bonusSolveGold === 'number' ? state.bonusSolveGold : 0;
       if (typeof state.goldSpent !== 'number') state.goldSpent = 0;

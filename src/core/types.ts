@@ -111,6 +111,8 @@ export interface ScoredGuess {
   by: 'player' | 'friend';
   /** The free guess from Time Freeze ignores vision curses. */
   unobscured?: boolean;
+  /** Positional tile indices hidden by vision curses for this guess. */
+  positionHides?: number[];
 }
 
 export interface RoundState {
@@ -370,6 +372,8 @@ export type Effect =
   | { type: 'eat'; food: string }
   | { type: 'eatRandom' }
   | { type: 'slots'; delta: number }
+  | { type: 'resetSlotsToStart' }
+  | { type: 'resetArmorToStart' }
   | { type: 'pendingPurge'; count: number }
   | { type: 'addCurse'; curse: CurseId }
   | { type: 'removeRandomCurse'; chancePct?: number }

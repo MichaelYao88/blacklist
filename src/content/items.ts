@@ -361,20 +361,21 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'necronomicon',
     name: 'Necronomicon',
-    description: 'Round start: reveal 2 letters, +1 per 13 max HP paid to the book. Every 13 reveals: autocast Omen, pay 3 max HP.',
+    description: 'When you cast Omen: reveal 2 letters, +1 per 13 max HP paid to the book. Every 13 reveals: autocast Omen, pay 3 max HP.',
     dynamicDescription: (data) =>
-      `Round start: reveal ${2 + Math.floor((data.paid ?? 0) / 13)} letters (+1 per 13 max HP paid). Every 13 reveals: autocast Omen, pay 3 max HP.`,
+      `When you cast Omen: reveal ${2 + Math.floor((data.paid ?? 0) / 13)} letters (+1 per 13 max HP paid). Every 13 reveals: autocast Omen, pay 3 max HP.`,
     price: 13,
     kind: 'gear',
     rarity: 'rare',
     initial: { reveals: 0, paid: 0 },
     on: {
-      onRoundStart: (ctx) => [
-        {
+      onSpellCast: (ctx, p) => {
+        if (p.spell !== 'omen' || p.sourceItem === 'necronomicon') return [];
+        return [{
           type: 'revealRandom',
           count: 2 + Math.floor((ctx.self.data.paid ?? 0) / 13),
-        },
-      ],
+        }];
+      },
       onReveal: (ctx) => {
         const total = ctx.self.data.reveals + 1;
         const procs = Math.floor(total / 13);
@@ -568,7 +569,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'combustion-engine',
     name: 'Combustion Engine',
-    description: 'After you autocast a spell: 40% chance to autocast a random spell.',
+    description: 'After you autocast a spell: 30% chance to autocast a random spell.',
     price: 10,
     kind: 'gear',
     rarity: 'uncommon',
@@ -576,7 +577,7 @@ export const ITEMS: ItemDef[] = [
     on: {
       onSpellCast: (_ctx, p) =>
         p.auto && p.sourceItem !== 'combustion-engine'
-          ? [{ type: 'castSpell', spell: 'random', chancePct: 40 }]
+          ? [{ type: 'castSpell', spell: 'random', chancePct: 30 }]
           : [],
     },
   }),
@@ -801,7 +802,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'mending-plate',
     name: 'Mending Plate',
-    description: '+1 max armor per 7 HP healed.',
+    description: '+1 max armor per 8 HP healed.',
     price: 26,
     kind: 'gear',
     rarity: 'rare',
@@ -809,9 +810,9 @@ export const ITEMS: ItemDef[] = [
     on: {
       onHeal: (ctx, p) => {
         const total = ctx.self.data.healed + p.amount;
-        const armor = Math.floor(total / 7);
+        const armor = Math.floor(total / 8);
         return [
-          { type: 'setItemData', stat: 'healed', value: total % 7 },
+          { type: 'setItemData', stat: 'healed', value: total % 8 },
           ...Array.from({ length: armor }, () => ({ type: 'maxArmor' as const, delta: 1 })),
         ];
       },
@@ -1026,7 +1027,7 @@ export const ITEMS: ItemDef[] = [
     id: 'double-blind',
     name: 'Yellow1',
     description: 'Your guess with exactly one yellow and no green autoguesses a random word.',
-    price: 8,
+    price: 10,
     kind: 'gear',
     on: {
       onGuessScored: (_ctx, p) => {
@@ -1258,7 +1259,7 @@ export const ITEMS: ItemDef[] = [
     id: 'dark-echo',
     name: 'Dark Echo',
     description: 'First player guess each round: autoguess a word sharing no letters with it.',
-    price: 11,
+    price: 13,
     kind: 'gear',
     rarity: 'uncommon',
     initial: { used: 0 },
