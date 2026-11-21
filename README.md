@@ -192,15 +192,17 @@ Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title s
 
 - **The Soldier** is the default: 15 HP, 5 armor, no starting gear or curses.
 - **The Pathfinder** unlocks when The Soldier reaches the first curse screen. They start with **Head Start**, **The List** curse, 14 HP and 3 armor.
-- **The Necromancer** unlocks after buying the **Necronomicon** once from a shop. They start with the **Necronomicon**, **Weak Plate** curse, 40 HP and 3 armor.
-- **The Purgamist** unlocks after buying 2 **Inkcap** or 3 **Poppy Seeds** across any runs. They start with **The Toll** curse, 12 HP, 4 armor and purge 3 letters of your choice before the first round.
+- **The Necromancer** unlocks after buying the **Necronomicon** once from a shop. They start with the **Necronomicon**, **The Sleeper** curse, 40 HP and 2 armor.
+- **The Purgamist** unlocks after buying 3 **Inkcap** across any runs. They start with **The Toll** curse, 12 HP, 4 armor and purge 3 letters of your choice before the first round.
 - **The Gourmand** unlocks after buying 3 **Double Cheeseburgers** across any runs. They start with **Potluck**, **Porcupine's Dilemma** curse, 25 HP and 2 armor.
 - **The Farmer** unlocks after winning any run. They start with the **Harvest Charm** (character-only, not found in shops), 20 HP and no armor.
-- Once any character is unlocked, the title screen shows all six character cards (locked cards list their unlock hint). Unlocks persist across runs and a large popup announces each new character.
+- **The Empty Armor** unlocks after winning a run on **Ascension 1**. It starts with **Bulwark**, 1 HP and 11 armor.
+- **The Werewolf** unlocks after winning a run on **Ascension 2**. It starts with **Dark Echo**, **Thorn Crown**, **Weak Plate** curse, 40 HP and no armor.
+- Once any character is unlocked, the title screen shows all eight character cards (locked cards list their unlock hint). Unlocks persist across runs and a large popup announces each new character.
 
 ## Sprites
 
-The Soldier and Orc sprites are from **Tiny RPG Character Asset Pack 01** by [Zerie](https://zerie.itch.io/tiny-rpg-character-asset-pack), used under the pack's free asset license. The Pathfinder (Maze Runner) uses the **Sci-Fi Hero** pack by [Printer Not Found](https://printer-not-found.itch.io/sci-fi-hero) (CC0). The Necromancer is from [CreativeKind's Necromancer (Free)](https://creativekind.itch.io/necromancer-free), and the Farmer is from [Kettoman's free farmer base pack](https://kettoman.itch.io/free-pixel-character-base-pack-32x32-top-down-farmer-animations). The Purgamist uses the **Kitsune** sprite and the Gourmand uses the **Karasu** (Tengu) sprite from **Free Yokai Pixel Sprite Sheets** by [Free Game Assets / CraftPix](https://free-game-assets.itch.io/free-yokai-pixel-sprite-sheets), used under the pack's free asset license. The character assets are included only as part of this game and may not be extracted or redistributed as standalone assets.
+The Soldier and Orc sprites are from **Tiny RPG Character Asset Pack 01** by [Zerie](https://zerie.itch.io/tiny-rpg-character-asset-pack), used under the pack's free asset license. The Pathfinder (Maze Runner) uses the **Sci-Fi Hero** pack by [Printer Not Found](https://printer-not-found.itch.io/sci-fi-hero) (CC0). The Necromancer is from [CreativeKind's Necromancer (Free)](https://creativekind.itch.io/necromancer-free), and the Farmer is from [Kettoman's free farmer base pack](https://kettoman.itch.io/free-pixel-character-base-pack-32x32-top-down-farmer-animations). The Purgamist uses the **Kitsune** sprite and the Gourmand uses the **Karasu** (Tengu) sprite from **Free Yokai Pixel Sprite Sheets** by [Free Game Assets / CraftPix](https://free-game-assets.itch.io/free-yokai-pixel-sprite-sheets), used under the pack's free asset license. The Empty Armor uses the dark knight from [Free Fantasy Knight](https://free-game-assets.itch.io/free-fantasy-knight), and the Werewolf uses the dark blue non-default variant from [Free Werewolf Sprite Sheets](https://free-game-assets.itch.io/free-werewolf-sprite-sheets-pixel-art), both by Free Game Assets / CraftPix under their free asset licenses. The character assets are included only as part of this game and may not be extracted or redistributed as standalone assets.
 
 ---
 

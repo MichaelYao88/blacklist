@@ -57,6 +57,14 @@ import tenguWalk from '../assets/sprites/tengu-walk.png';
 import tenguAttack from '../assets/sprites/tengu-attack.png';
 import tenguDeath from '../assets/sprites/tengu-death.png';
 import tenguPortrait from '../assets/sprites/tengu-portrait.png';
+import knightWalk from '../assets/sprites/knight-walk.png';
+import knightAttack from '../assets/sprites/knight-attack.png';
+import knightDeath from '../assets/sprites/knight-death.png';
+import knightPortrait from '../assets/sprites/knight-portrait.png';
+import werewolfWalk from '../assets/sprites/werewolf-walk.png';
+import werewolfAttack from '../assets/sprites/werewolf-attack.png';
+import werewolfDeath from '../assets/sprites/werewolf-death.png';
+import werewolfPortrait from '../assets/sprites/werewolf-portrait.png';
 import { sfx } from './audio';
 import { music } from './music';
 import { ASCENSION_MAX, ascensionSummary } from '../core/ascension';
@@ -106,6 +114,16 @@ const CHARACTER_SPRITES: Record<string, CharacterSprite> = {
     walk: tenguWalk, attack: tenguAttack, death: tenguDeath, portrait: tenguPortrait,
     walkFrames: 8, walkSteps: 7, attackFrames: 6, attackSteps: 5,
     deathFrames: 6, deathSteps: 5, aspect: 1, width: 1,
+  },
+  knight: {
+    walk: knightWalk, attack: knightAttack, death: knightDeath, portrait: knightPortrait,
+    walkFrames: 8, walkSteps: 7, attackFrames: 5, attackSteps: 4,
+    deathFrames: 6, deathSteps: 5, aspect: 1, width: 1,
+  },
+  werewolf: {
+    walk: werewolfWalk, attack: werewolfAttack, death: werewolfDeath, portrait: werewolfPortrait,
+    walkFrames: 8, walkSteps: 7, attackFrames: 6, attackSteps: 5,
+    deathFrames: 2, deathSteps: 1, aspect: 1, width: 1,
   },
 };
 
@@ -277,6 +295,19 @@ const COUNTDOWN_MS = 2_400;
 let selectedAscension = 0;
 let selectedCharacter = 'runner';
 let characterUnlock: string | null = null;
+let characterUnlockQueue: string[] = [];
+
+function queueCharacterUnlock(id: string): void {
+  if (characterUnlock === id || characterUnlockQueue.includes(id)) return;
+  characterUnlockQueue.push(id);
+  if (!characterUnlock) {
+    characterUnlock = characterUnlockQueue.shift() ?? null;
+  }
+}
+
+function nextCharacterUnlock(): void {
+  characterUnlock = characterUnlockQueue.shift() ?? null;
+}
 
 type ChronicleKind = 'info' | 'good' | 'bad' | 'spell' | 'item' | 'guess' | 'curse' | 'food' | 'shop';
 interface ChronicleEntry {
@@ -602,27 +633,36 @@ function processEvents(events: GameEvent[]): void {
     logGameEvent(event);
     const character = host.current?.character ?? 'runner';
     if (event.type === 'curseOffered' && character === 'runner' && unlockCharacter('pathfinder')) {
-      characterUnlock = 'pathfinder';
+      queueCharacterUnlock('pathfinder');
       sfx.play('win');
     }
     if (event.type === 'offerBought') {
       const count = recordPurchase(event.def);
       const unlocked = [
         event.def === 'double-cheeseburger' && count >= 3 ? 'gourmand' : null,
-        event.def === 'inkcap' && count >= 2 ? 'purgamist' : null,
-        event.def === 'poppy-seeds' && count >= 3 ? 'purgamist' : null,
+        event.def === 'inkcap' && count >= 3 ? 'purgamist' : null,
         event.def === 'necronomicon' && count >= 1 ? 'necromancer' : null,
       ].filter((id): id is string => Boolean(id));
       for (const id of unlocked) {
         if (unlockCharacter(id)) {
-          characterUnlock = id;
+          queueCharacterUnlock(id);
           sfx.play('win');
         }
       }
     }
-    if (event.type === 'runEnded' && event.result === 'victory' && unlockCharacter('farmer')) {
-      characterUnlock = 'farmer';
-      sfx.play('win');
+    if (event.type === 'runEnded' && event.result === 'victory') {
+      const ascension = host.current?.ascension ?? 0;
+      const unlocked = [
+        'farmer',
+        ...(ascension >= 1 ? ['empty-armor'] : []),
+        ...(ascension >= 2 ? ['werewolf'] : []),
+      ];
+      for (const id of unlocked) {
+        if (unlockCharacter(id)) {
+          queueCharacterUnlock(id);
+          sfx.play('win');
+        }
+      }
     }
     if (event.type === 'guessRejected') {
       notify(reasonText(event.reason), 'bad');
@@ -821,7 +861,7 @@ function resumeRun(): void {
     && resumedView.character === 'runner'
     && unlockCharacter('pathfinder')
   ) {
-    characterUnlock = 'pathfinder';
+    queueCharacterUnlock('pathfinder');
     sfx.play('win');
   }
   screen = 'run';
@@ -950,7 +990,7 @@ app.addEventListener('click', (event) => {
       break;
     }
     case 'dismiss-unlock':
-      characterUnlock = null;
+      nextCharacterUnlock();
       render();
       break;
     case 'help':
@@ -1296,7 +1336,7 @@ function renderCharacterUnlock(): string {
   if (!characterUnlock) return '';
   const def = CHARACTER_BY_ID.get(characterUnlock);
   if (!def) {
-    characterUnlock = null;
+    nextCharacterUnlock();
     return '';
   }
   const items = def.items.map((id) => ITEM_BY_ID.get(id)?.name ?? id);

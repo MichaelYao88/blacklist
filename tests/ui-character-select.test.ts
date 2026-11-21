@@ -15,7 +15,7 @@ describe('character select', () => {
     root = document.getElementById('app') as HTMLElement;
   });
 
-  it('shows all six cards once one character is unlocked and marks locked hints', () => {
+  it('shows all eight cards once one character is unlocked and marks locked hints', () => {
     const cards = [...root.querySelectorAll<HTMLElement>('.character-card')];
     expect(cards.map((card) => card.querySelector('.character-name')?.textContent))
       .toEqual([
@@ -25,11 +25,16 @@ describe('character select', () => {
         'The Purgamist',
         'The Gourmand',
         'The Farmer',
+        'The Empty Armor',
+        'The Werewolf',
       ]);
     expect(cards[0].classList.contains('active')).toBe(true);
-    expect(cards.filter((card) => card.classList.contains('locked'))).toHaveLength(4);
+    expect(cards.filter((card) => card.classList.contains('locked'))).toHaveLength(6);
     expect(cards[2].textContent).toContain('Buy the Necronomicon once');
+    expect(cards[3].textContent).toContain('Buy 3 Inkcap');
     expect(cards[5].textContent).toContain('Win a run');
+    expect(cards[6].textContent).toContain('Ascension 1');
+    expect(cards[7].textContent).toContain('Ascension 2');
     expect((cards[2] as HTMLButtonElement).disabled).toBe(true);
 
     cards[1].click();

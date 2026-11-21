@@ -119,10 +119,10 @@ describe('cursed run setup', () => {
     const necro = game.newRun({ seed: 'preset-necro', character: 'necromancer' }).state;
     expect(necro.character).toBe('necromancer');
     expect(necro.maxHp).toBe(40);
-    expect(necro.maxArmor).toBe(3);
-    expect(necro.armor).toBe(1);
+    expect(necro.maxArmor).toBe(2);
+    expect(necro.armor).toBe(2);
     expect(necro.items.some((item) => item.id === 'necronomicon' && item.equipped)).toBe(true);
-    expect(necro.curses.some((curse) => curse.id === 'weak-plate')).toBe(true);
+    expect(necro.curses.some((curse) => curse.id === 'sleeper')).toBe(true);
 
     const purgamist = game.newRun({ seed: 'preset-purgamist', character: 'purgamist' }).state;
     expect(purgamist.character).toBe('purgamist');
@@ -145,6 +145,23 @@ describe('cursed run setup', () => {
     expect(farmer.armor).toBe(0);
     expect(farmer.items.some((item) => item.id === 'harvest-charm' && item.equipped)).toBe(true);
     expect(farmer.curses).toEqual([]);
+
+    const emptyArmor = game.newRun({ seed: 'preset-empty-armor', character: 'empty-armor' }).state;
+    expect(emptyArmor.character).toBe('empty-armor');
+    expect(emptyArmor.maxHp).toBe(1);
+    expect(emptyArmor.maxArmor).toBe(11);
+    expect(emptyArmor.armor).toBe(11);
+    expect(emptyArmor.items.some((item) => item.id === 'bulwark' && item.equipped)).toBe(true);
+    expect(emptyArmor.curses).toEqual([]);
+
+    const werewolf = game.newRun({ seed: 'preset-werewolf', character: 'werewolf' }).state;
+    expect(werewolf.character).toBe('werewolf');
+    expect(werewolf.maxHp).toBe(40);
+    expect(werewolf.maxArmor).toBe(0);
+    expect(werewolf.armor).toBe(0);
+    expect(werewolf.items.some((item) => item.id === 'dark-echo' && item.equipped)).toBe(true);
+    expect(werewolf.items.some((item) => item.id === 'thorn-crown' && item.equipped)).toBe(true);
+    expect(werewolf.curses.some((curse) => curse.id === 'weak-plate')).toBe(true);
   });
 
   it('builds a 50-level map with 25 curse drafts and one final boss', () => {

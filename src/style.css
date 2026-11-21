@@ -3037,6 +3037,16 @@ button {
   animation: sprite-attack 800ms steps(5) 1 both;
 }
 
+.character-sprite.knight.attacking {
+  background-size: 500% 100%;
+  animation: sprite-attack 800ms steps(4) 1 both;
+}
+
+.character-sprite.werewolf.attacking {
+  background-size: 600% 100%;
+  animation: sprite-attack 800ms steps(5) 1 both;
+}
+
 @keyframes sprite-walk {
   from {
     background-position: 0 0;
@@ -3066,6 +3076,16 @@ button {
 .character-sprite.tengu.dead {
   background-size: 600% 100%;
   animation: sprite-death 700ms steps(5) 1 both;
+}
+
+.character-sprite.knight.dead {
+  background-size: 600% 100%;
+  animation: sprite-death 700ms steps(5) 1 both;
+}
+
+.character-sprite.werewolf.dead {
+  background-size: 200% 100%;
+  animation: sprite-death 700ms steps(1) 1 both;
 }
 
 @keyframes sprite-death {
