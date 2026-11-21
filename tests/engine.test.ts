@@ -2942,15 +2942,18 @@ describe('latest balance pass', () => {
     expect(hit.state.gold).toBe(gold + 2);
   });
 
-  it('Scattershot autoguesses once per round after a disjoint guess', () => {
+  it('Scattershot autocasts a spell once per round after a disjoint guess', () => {
     const { state } = start('scattershot-auto');
     state.items.push({ instance: 'i-scatter', id: 'scattershot', data: { used: 0 }, equipped: true });
     state.round!.answer = 'crane';
     state.round!.freeLeft = 0;
     let current = act(state, { type: 'guess', word: 'sloth' }).state;
     expect(current.round?.guesses.some((guess) => guess.by === 'friend')).toBe(false);
-    current = act(current, { type: 'guess', word: 'brick' }).state;
-    expect(current.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
+    const triggered = act(current, { type: 'guess', word: 'brick' });
+    current = triggered.state;
+    expect(triggered.events.some(
+      (event) => event.type === 'spellCast' && event.auto,
+    )).toBe(true);
     expect(current.items.find((item) => item.id === 'scattershot')?.data.used).toBe(1);
   });
 
@@ -3810,8 +3813,8 @@ describe('autocast and random-guess batch', () => {
     expect(ITEM_BY_ID.get('black-eye')?.description).toContain('80%');
     expect(ITEM_BY_ID.get('palindrome')?.rarity).toBe('rare');
     expect(ITEM_BY_ID.get('palindrome')?.price).toBe(10);
-    expect(ITEM_BY_ID.get('scattershot')?.rarity).toBe('rare');
-    expect(ITEM_BY_ID.get('scattershot')?.price).toBe(12);
+    expect(ITEM_BY_ID.get('scattershot')?.rarity).toBe('uncommon');
+    expect(ITEM_BY_ID.get('scattershot')?.price).toBe(10);
     expect(ITEM_BY_ID.get('empty-orb')?.price).toBe(7);
     expect(ITEM_BY_ID.get('empty-phone')?.price).toBe(9);
   });
@@ -4117,7 +4120,7 @@ describe('relic uniqueness', () => {
     .map((item) => item.id);
 
   it('never offers a relic already in the player inventory', () => {
-    expect(relicIds).toHaveLength(10);
+    expect(relicIds).toHaveLength(9);
     let sawOtherRelic = false;
     for (let index = 0; index < 60; index++) {
       const { state } = start(`relic-owned-${index}`);

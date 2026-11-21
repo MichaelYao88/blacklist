@@ -48,7 +48,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Rarity uses cumulative floors: 40% pulls from rare, uncommon or common, 45% pulls from uncommon or common, and 15% pulls from common only. If a tier is empty, it falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 103 items (96 shop items + 7 rare relics), 6 spells, 84 foods and 29 happenings
+- 103 items (94 shop items + 9 rare relics), 6 spells, 84 foods and 29 happenings
 - New foods include **U-nagi**, **Donut Holes**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
@@ -65,7 +65,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Hearty Stew** is a 4g food that grants 1-2 casts of Heal; **Hagelslag** gives +3 max HP and heals 20% of missing HP
 - **Bulwark** is an 8g item: every 10 damage blocked by armor, autocast a random spell
 - **Ricochet** is a 7g item: every 10 armor lost, autoguess a random word
-- **Scattershot** is a 12g rare item that autoguesses once per round after a guess sharing no letters with the previous guess
+- **Scattershot** is a 10g uncommon item that autocasts a random spell once per round after a guess sharing no letters with the previous guess
 - **Yellow1** is a 14g rare item that autoguesses once per round on your player guess with exactly one yellow and no green; **Green1** is a 14g uncommon item that does the same for exactly one green and no yellow. Neither counts ally or auto-guesses
 - **Deadline** grants +1 free guess as soon as the clock drops below 30s each round
 - **Second Hand** and **Counterclockwise** (formerly Engine) are 8g items that cross-cast spells on cast at 80%

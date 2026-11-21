@@ -176,10 +176,10 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'scattershot',
     name: 'Scattershot',
-    description: 'Once per round: a guess sharing no letters with the previous guess autoguesses a random word.',
-    price: 12,
+    description: 'Once per round: a guess sharing no letters with the previous guess autocasts a random spell.',
+    price: 10,
     kind: 'gear',
-    rarity: 'rare',
+    rarity: 'uncommon',
     initial: { used: 0 },
     on: {
       onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
@@ -187,7 +187,7 @@ export const ITEMS: ItemDef[] = [
         if (ctx.self.data.used || !p.previous) return [];
         if (sharedLetters(p.guess.word, p.previous.word) > 0) return [];
         return [
-          { type: 'randomGuesses', count: 1 },
+          { type: 'castSpell', spell: 'random' },
           { type: 'setItemData', stat: 'used', value: 1 },
         ];
       },
