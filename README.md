@@ -15,14 +15,15 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Wordle-style scoring with duplicate-letter handling
 - A 50-level curse run: no bosses until level 50, no starting clock, no starting blacklist
 - Round loop: `round → 55% event → shop`, then `round → 55% event → curse`
-- Curse drafts offer 3 choices after every 2 levels; levels 47-49 are curse floors
+- Curse drafts offer 2 choices after every 2 levels; levels 47-49 are curse floors
 - Curse drafts draw from the weighted pool; The List and The Clock get a 3x weight until they first appear in a draft, then normal
+- Curse drafts use the same rarity floors as shops (40% rare and below, 45% uncommon and below, 15% common only), but do not display rarity. A common curse becomes uncommon for the rest of the run after it is offered or selected
 - Hover or focus a curse in the HUD to read its rules
 - 50 is the final boss: three rounds back-to-back with no intermission. Bosses ignore the **Second Wind** curse
 - **Second Wind** is a curse: after you solve a word, a second word appears with one free guess
-- The Toll, The Tax and The Chained are only offered through level 40
+- The Toll is only offered through level 40; The Tax and The Chained are only offered through level 20
 - Base encounter damage is **3 + 1.3 per curse stack, rounded down**, plus **+1 for every 60 gold spent this run**; Heavy Hand multiplies the base by **1.5 per stack**
-- Vision curses include **Take the L** (L hidden), **A-Aron, where are you?** (A hidden), **IP Theft** (I and P hidden), **Hard R** (R hidden), and a silver **RIP Curse**; the first/second/third/fourth/fifth position curses hide their tile **50% of the time**
+- Vision curses are usually rare. **Take the L** is common, while **Hard R**, **Without the D**, and **IP Theft** are uncommon; the first/second/third/fourth/fifth position curses hide their tile **50% of the time**
 - The blacklist is disabled and hidden until **The List** curse is taken; The List is a single curse, never stacks, and arrives stocked with the first guess from every earlier round
 - The clock is disabled until **The Clock** curse is taken; the first stack gives 5:00 and each further stack shrinks it by 40%. If the clock reaches zero, the run ends immediately
 - The Clockmaker event only appears once The Clock exists
@@ -130,6 +131,8 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Every spell cast plays an animated pop-up, including item autocasts; spell pop-ups appear 2 seconds apart, and every pop-up stays visible for 5 seconds
 - **Cyrniki** is a 3g food: heal 50% of missing HP, then 50% a spell / 50% a shop reroll
 - **Babification** removes a random curse, but you must choose between resetting item slots or max armor to their starting values
+- **Triggerless** is a common level-20+ curse: item and food autoguesses and round-start guesses fail 50% of the time
+- **Regurgitation** is an uncommon level-20+ curse: food reveals fail 50% of the time
 - **The Tax** reduces encounter gold by 40% and is unique; **The Sleeper** adds +2 damage per revealed letter in your first player guess, per stack; **The Curse Broker** charges 12g for a relic or 15g to remove a random curse; **The Confessional** sells 45/75/100% random curse removal for 5/10/15g
 - **The Detour** offers a slot, or a trip to the Time Bakery for +8 max HP and a Time Freeze; **The Crossroads** offers a shop or a Heal plus Time Freeze; **The Trade** trades gold for a slot, a slot for gold, or two Heal spells
 - The Soldier and Orc idle in their walk loops; free guesses and the winning guess play the Soldier's attack, other guesses alternate Orc → Soldier, a fatal guess is always the Orc, and the Orc collapses from the winning blow and stays down until the next round starts

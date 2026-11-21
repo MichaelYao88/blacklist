@@ -124,11 +124,25 @@ export function createCore(content: Content): Core {
       0,
     );
 
-  const noReveal = (state: RunState): boolean =>
-    curseDefs(state).some((entry) => entry.def.noReveal);
-
   const noSell = (state: RunState): boolean =>
     curseDefs(state).some((entry) => entry.def.noSell);
+
+  const curseChance = (state: RunState, key: 'autoguessFailChance' | 'foodRevealFailChance'): number =>
+    curseDefs(state).reduce(
+      (highest, entry) => Math.max(highest, entry.def[key] ?? 0),
+      0,
+    );
+
+  const foodRevealFails = (state: RunState, source: Source): boolean => {
+    if (source.kind !== 'food') return false;
+    const chance = curseChance(state, 'foodRevealFailChance');
+    return chance > 0 && rngChance(state, chance);
+  };
+
+  const autoguessFails = (state: RunState): boolean => {
+    const chance = curseChance(state, 'autoguessFailChance');
+    return chance > 0 && rngChance(state, chance);
+  };
 
   const shopPrice = (state: RunState, base: number): number => {
     const add = curseDefs(state).reduce(
@@ -681,7 +695,10 @@ export function createCore(content: Content): Core {
     const doubled = hasPotluck && state.potluckLevel !== state.level;
     if (doubled) state.potluckLevel = state.level;
     emit(rt, { type: 'foodEaten', food: def.id, name: def.name });
-    applyEffects(rt, doubled ? [...def.effects, ...def.effects] : def.effects, RULES);
+    applyEffects(rt, doubled ? [...def.effects, ...def.effects] : def.effects, {
+      kind: 'food',
+      food: def.id,
+    });
     const shop = state.shop;
     if (shop && state.phase === 'shop') {
       shop.foodsEaten = (shop.foodsEaten ?? 0) + 1;
@@ -1076,7 +1093,7 @@ export function createCore(content: Content): Core {
       case 'revealYellow': {
         const round = state.round;
         if (!round) break;
-        if (noReveal(state) && (source.kind === 'item' || source.kind === 'spell')) break;
+        if (foodRevealFails(state, source)) break;
         const known = new Set<string>();
         for (const guess of round.guesses) {
           const shown = presentGuess(state, guess).tiles;
@@ -1103,11 +1120,12 @@ export function createCore(content: Content): Core {
         break;
       }
       case 'revealLetter': {
-        if (noReveal(state) && (source.kind === 'item' || source.kind === 'spell')) break;
+        if (foodRevealFails(state, source)) break;
         revealPermanentLetter(rt, effect.letter);
         break;
       }
       case 'revealPermanentRandom': {
+        if (foodRevealFails(state, source)) break;
         const candidates = ALPHABET.filter(
           (letter) => !state.purged.includes(letter) && !state.permanentReveals.includes(letter),
         );
@@ -1119,11 +1137,11 @@ export function createCore(content: Content): Core {
         break;
       }
       case 'revealRandom':
-        if (noReveal(state) && (source.kind === 'item' || source.kind === 'spell')) break;
+        if (foodRevealFails(state, source)) break;
         revealRandomLetters(rt, effect.count);
         break;
       case 'revealAbsent':
-        if (noReveal(state) && (source.kind === 'item' || source.kind === 'spell')) break;
+        if (foodRevealFails(state, source)) break;
         revealAbsentLetters(rt, effect.count);
         break;
       case 'pendingAbsent':
@@ -1223,6 +1241,7 @@ export function createCore(content: Content): Core {
         state.permanentRoundStartWord = effect.word;
         break;
       case 'queueNextRoundReveal':
+        if (foodRevealFails(state, source)) break;
         for (const letter of effect.letters) {
           if (!state.nextRoundReveals.includes(letter)) state.nextRoundReveals.push(letter);
         }
@@ -1239,6 +1258,10 @@ export function createCore(content: Content): Core {
       case 'autoGuess': {
         const round = state.round;
         if (!round || state.phase !== 'round') break;
+        if (autoguessFails(state)) {
+          emit(rt, { type: 'message', text: 'Triggerless swallows the autoguess.' });
+          break;
+        }
         const word = normalizeWord(effect.word);
         if (word.length !== WORD_LENGTH) break;
         if (state.blacklist.includes(word)) break;
@@ -1886,7 +1909,8 @@ export function createCore(content: Content): Core {
       const word = state.nextRoundGuess;
       state.nextRoundGuess = undefined;
       if (
-        word.length === WORD_LENGTH
+        !autoguessFails(state)
+        && word.length === WORD_LENGTH
         && !state.blacklist.includes(word)
         && !word.split('').some((ch) => state.purged.includes(ch))
         && !round.guesses.some((guess) => guess.word === word)
@@ -1899,7 +1923,8 @@ export function createCore(content: Content): Core {
     if (state.permanentRoundStartWord) {
       const word = state.permanentRoundStartWord;
       if (
-        word.length === WORD_LENGTH
+        !autoguessFails(state)
+        && word.length === WORD_LENGTH
         && !state.blacklist.includes(word)
         && !word.split('').some((ch) => state.purged.includes(ch))
         && !round.guesses.some((guess) => guess.word === word)
@@ -2176,6 +2201,10 @@ export function createCore(content: Content): Core {
     const state = rt.state;
     const round = state.round;
     if (!round || state.phase !== 'round') return 0;
+    if (autoguessFails(state)) {
+      emit(rt, { type: 'message', text: 'Triggerless swallows the autoguess.' });
+      return count;
+    }
     let played = 0;
     const blocked = new Set(
       (excludeLetters ?? '').toLowerCase().split('').filter(Boolean),
@@ -3074,6 +3103,17 @@ export function createCore(content: Content): Core {
     return weight;
   }
 
+  function curseRarity(
+    state: RunState,
+    def: CurseDef,
+  ): 'common' | 'uncommon' | 'rare' {
+    const base = def.rarity ?? 'uncommon';
+    if (base === 'common' && (state.upgradedCommonCurses ?? []).includes(def.id)) {
+      return 'uncommon';
+    }
+    return base;
+  }
+
   function eligibleCurses(state: RunState, starting: boolean): CurseDef[] {
     return content.curses.filter((def) => {
       if (curseStacks(state, def.id) >= def.maxStacks) return false;
@@ -3102,7 +3142,18 @@ export function createCore(content: Content): Core {
     const pool = eligibleCurses(state, starting).slice();
     const picks: CurseId[] = [];
     while (picks.length < 2 && pool.length > 0) {
-      const chosen = pickWeighted(state, pool);
+      const common = pool.filter((def) => curseRarity(state, def) === 'common');
+      const uncommon = pool.filter((def) => curseRarity(state, def) === 'uncommon');
+      const rare = pool.filter((def) => curseRarity(state, def) === 'rare');
+      const all = [...rare, ...uncommon, ...common];
+      const roll = rngNext(state) * 100;
+      const tier = roll < 40
+        ? all
+        : roll < 85
+          ? [...uncommon, ...common]
+          : common;
+      const chosenPool = tier.length > 0 ? tier : all;
+      const chosen = pickWeighted(state, chosenPool);
       picks.push(chosen.id);
       pool.splice(pool.indexOf(chosen), 1);
     }
@@ -3204,6 +3255,16 @@ export function createCore(content: Content): Core {
     const state = rt.state;
     const draft = state.curse;
     if (!draft || state.phase !== 'curse' || !draft.options.includes(curseId)) return;
+    for (const id of draft.options) {
+      const def = curseById.get(id);
+      if (
+        def
+        && curseRarity(state, def) === 'common'
+        && !state.upgradedCommonCurses.includes(id)
+      ) {
+        state.upgradedCommonCurses.push(id);
+      }
+    }
     applyCurse(rt, curseId);
     draft.chosen = curseId;
     if (draft.starting && state.pendingStartingCurses > 0) {
@@ -3842,6 +3903,7 @@ export function createCore(content: Content): Core {
       nextRoundReveals: [],
       curses: [],
       seenCurses: [],
+      upgradedCommonCurses: [],
       pendingStartingCurses: startingCurses,
       pendingCurseRemoval: 0,
       phase: 'round',
@@ -3929,9 +3991,25 @@ export function createCore(content: Content): Core {
       if (typeof state.freeGuessBonus !== 'number') state.freeGuessBonus = 0;
       if (!Array.isArray(state.curses)) state.curses = [];
       if (!Array.isArray(state.seenCurses)) state.seenCurses = [];
+      const curseMigrations: Record<string, string> = {
+        'no-help': 'triggerless',
+      };
+      state.curses = state.curses
+        .map((curse) => {
+          const mapped = curseMigrations[curse.id];
+          return mapped ? { ...curse, id: mapped } : curse;
+        })
+        .filter((curse) => curseById.has(curse.id));
+      state.seenCurses = state.seenCurses
+        .map((id) => curseMigrations[id] ?? id)
+        .filter((id) => curseById.has(id));
       for (const curse of state.curses) {
         if (!state.seenCurses.includes(curse.id)) state.seenCurses.push(curse.id);
       }
+      if (!Array.isArray(state.upgradedCommonCurses)) state.upgradedCommonCurses = [];
+      state.upgradedCommonCurses = state.upgradedCommonCurses.filter(
+        (id) => curseById.has(id),
+      );
       if (!Array.isArray(state.eatenFoods)) state.eatenFoods = [];
       if (typeof state.nextRoundRandomGuesses !== 'number') state.nextRoundRandomGuesses = 0;
       if (typeof state.permanentRandomGuesses !== 'number') state.permanentRandomGuesses = 0;

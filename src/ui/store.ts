@@ -32,6 +32,8 @@ export interface Meta {
   ascension: number;
   /** Character ids the player has unlocked. The Soldier is always present. */
   characters: string[];
+  /** Character ids that have won at least one run. */
+  victoriousCharacters: string[];
   /** Shop purchases by definition id, across all runs. */
   purchases: Record<string, number>;
   history: RunRecord[];
@@ -53,6 +55,7 @@ const DEFAULT_META: Meta = {
   bestLevel: 0,
   ascension: 0,
   characters: ['runner'],
+  victoriousCharacters: [],
   purchases: {},
   history: [],
   itemCounts: {},
@@ -120,6 +123,15 @@ export function readMeta(): Meta {
           : [];
         return [...new Set(['runner', ...ids])];
       })(),
+      victoriousCharacters: (() => {
+        const aliases: Record<string, string> = { 'maze-runner': 'pathfinder' };
+        const ids = Array.isArray(parsed.victoriousCharacters)
+          ? parsed.victoriousCharacters
+              .filter((id) => typeof id === 'string')
+              .map((id) => aliases[id] ?? id)
+          : [];
+        return [...new Set(ids)];
+      })(),
       purchases: parsed.purchases && typeof parsed.purchases === 'object'
         ? Object.fromEntries(
             Object.entries(parsed.purchases)
@@ -173,6 +185,7 @@ export interface RunRecordInput {
   level: number;
   act: number;
   ascension: number;
+  character?: string;
   curses: string[];
   items: string[];
   equippedItems: string[];
@@ -184,6 +197,9 @@ export function recordRun(input: RunRecordInput): void {
   if (input.result === 'victory') {
     meta.wins += 1;
     meta.ascension = Math.max(meta.ascension, Math.min(ASCENSION_MAX, input.ascension + 1));
+    if (input.character) {
+      meta.victoriousCharacters = [...new Set([...meta.victoriousCharacters, input.character])];
+    }
   }
   meta.bestAct = Math.max(meta.bestAct, input.act + 1);
   meta.bestLevel = Math.max(meta.bestLevel, input.level);

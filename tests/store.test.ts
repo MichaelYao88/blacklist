@@ -58,6 +58,7 @@ describe('run history store', () => {
       level: 50,
       act: 4,
       ascension: 0,
+      character: 'runner',
       curses: ['clock', 'censor'],
       items: ['hourglass', 'tally-lens', 'bloom'],
       equippedItems: ['hourglass', 'tally-lens'],
@@ -78,6 +79,7 @@ describe('run history store', () => {
     const meta = readMeta();
     expect(meta.runs).toBe(2);
     expect(meta.wins).toBe(1);
+    expect(meta.victoriousCharacters).toEqual(['runner']);
     expect(meta.ascension).toBe(1);
     expect(meta.bestLevel).toBe(50);
     expect(meta.itemCounts).toEqual({ hourglass: 2, 'tally-lens': 1 });
@@ -91,6 +93,23 @@ describe('run history store', () => {
     expect(meta.history[1].result).toBe('victory');
     expect(meta.history[1].curses).toEqual(['clock', 'censor']);
     expect(meta.history[1].equippedItems).toEqual(['hourglass', 'tally-lens']);
+  });
+
+  it('tracks distinct characters that have won runs', () => {
+    for (const character of ['runner', 'farmer', 'runner']) {
+      recordRun({
+        result: 'victory',
+        level: 50,
+        act: 4,
+        ascension: 0,
+        character,
+        curses: [],
+        items: [],
+        equippedItems: [],
+        stats: stats(),
+      });
+    }
+    expect(readMeta().victoriousCharacters).toEqual(['runner', 'farmer']);
   });
 
   it('keeps only the newest 50 runs', () => {
@@ -148,6 +167,7 @@ describe('run history store', () => {
     expect(meta.itemCounts).toEqual({});
     expect(meta.curseCounts).toEqual({});
     expect(meta.characters).toEqual(['runner']);
+    expect(meta.victoriousCharacters).toEqual([]);
     expect(meta.totalSolves).toBe(0);
   });
 

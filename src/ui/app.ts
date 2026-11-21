@@ -762,6 +762,7 @@ function processEvents(events: GameEvent[]): void {
         level: view?.level ?? 1,
         act: view?.act ?? 0,
         ascension: view?.ascension ?? 0,
+        character: finalState?.character ?? 'runner',
         curses: finalState?.curses.map((curse) => curse.id) ?? [],
         items: finalState?.items.map((item) => item.id) ?? [],
         equippedItems: finalState?.items

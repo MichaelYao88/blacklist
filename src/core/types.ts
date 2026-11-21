@@ -34,6 +34,7 @@ export type Source =
   | { kind: 'rules' }
   | { kind: 'item'; instance: InstanceId }
   | { kind: 'spell'; spell: SpellId }
+  | { kind: 'food'; food: string }
   | { kind: 'boss'; boss: BossId }
   | { kind: 'happening'; happening: HappeningId }
   | { kind: 'inn' };
@@ -220,7 +221,12 @@ export interface CurseDef {
   maxHpMult?: number;
   goldMult?: number;
   noSell?: boolean;
-  noReveal?: boolean;
+  /** Base draft rarity. Vision curses are rare unless explicitly overridden. */
+  rarity?: 'common' | 'uncommon' | 'rare';
+  /** Item and food autoguesses fail this percentage of the time. */
+  autoguessFailChance?: number;
+  /** Food reveal effects fail this percentage of the time. */
+  foodRevealFailChance?: number;
   /** After solving, start a second word in the same encounter. Bosses ignore it. */
   secondPuzzle?: boolean;
 }
@@ -654,6 +660,8 @@ export interface RunState {
   curses: CurseStack[];
   /** Curse ids that have appeared in a draft, whether taken or not. */
   seenCurses: CurseId[];
+  /** Common curses that have been offered or taken and now draft as uncommon. */
+  upgradedCommonCurses: CurseId[];
   pendingStartingCurses: number;
   pendingCurseRemoval: number;
   phase: PhaseKind;

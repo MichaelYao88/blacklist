@@ -36,6 +36,8 @@ describe('character unlock victory', () => {
   it('unlocks The Farmer after winning a run', () => {
     root.querySelector<HTMLElement>('[data-action="continue"]')!.click();
     expect(readMeta().characters).toContain('farmer');
+    expect(readMeta().characters).not.toContain('werewolf');
+    expect(readMeta().victoriousCharacters).toEqual(['runner']);
 
     const overlay = root.querySelector<HTMLElement>('.unlock-overlay');
     expect(overlay).not.toBeNull();

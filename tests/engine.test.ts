@@ -162,6 +162,7 @@ describe('cursed run setup', () => {
     expect(werewolf.items.some((item) => item.id === 'dark-echo' && item.equipped)).toBe(true);
     expect(werewolf.items.some((item) => item.id === 'thorn-crown' && item.equipped)).toBe(true);
     expect(werewolf.curses.some((curse) => curse.id === 'weak-plate')).toBe(true);
+    expect(werewolf.curses.some((curse) => curse.id === 'tight-slots')).toBe(false);
   });
 
   it('builds a 50-level map with 25 curse drafts and one final boss', () => {
@@ -4425,12 +4426,24 @@ describe('Second Wind and late curse pool', () => {
     expect(result.state.round?.freeLeft).toBe(0);
   });
 
-  it('stops offering shop and economy curses after level 40', () => {
-    for (const id of ['toll', 'chained', 'tax']) {
-      expect(CURSE_BY_ID.get(id)?.maxLevel).toBe(40);
-    }
+  it('stops offering Chained and Tax after level 20 and Toll after level 40', () => {
+    expect(CURSE_BY_ID.get('toll')?.maxLevel).toBe(40);
+    expect(CURSE_BY_ID.get('chained')?.maxLevel).toBe(20);
+    expect(CURSE_BY_ID.get('tax')?.maxLevel).toBe(20);
     for (let index = 0; index < 40; index++) {
       const { state } = start(`late-curse-${index}`);
+      state.nodeIndex = 0;
+      state.nodes[1] = { kind: 'curse', level: 21 };
+      state.phase = 'shop';
+      const opened = act(state, { type: 'continue' });
+      if (opened.state.phase !== 'curse') continue;
+      const options = game.view(opened.state).phase;
+      if (options.kind !== 'curse') continue;
+      expect(options.options).not.toContain('chained');
+      expect(options.options).not.toContain('tax');
+    }
+    for (let index = 0; index < 40; index++) {
+      const { state } = start(`late-toll-${index}`);
       state.nodeIndex = 0;
       state.nodes[1] = { kind: 'curse', level: 41 };
       state.phase = 'shop';
@@ -4442,6 +4455,96 @@ describe('Second Wind and late curse pool', () => {
       expect(options.options).not.toContain('chained');
       expect(options.options).not.toContain('tax');
     }
+  });
+});
+
+describe('curse rarity and trigger curses', () => {
+  it('assigns the configured rarities and removes retired curses', () => {
+    for (const id of [
+      'censor', 'second-sight', 'third-eye', 'fourth-wall', 'editor',
+      'vowel-fog', 'monochrome', 'a-curse', 'ts-curse', 'rip-curse', 'e-curse',
+    ]) {
+      expect(CURSE_BY_ID.get(id)?.rarity, id).toBe('rare');
+    }
+    for (const id of ['hard-r', 'without-d', 'ip-theft']) {
+      expect(CURSE_BY_ID.get(id)?.rarity, id).toBe('uncommon');
+    }
+    for (const id of ['sleeper', 'porcupine', 'clock', 'the-list', 'la-curse', 'triggerless']) {
+      expect(CURSE_BY_ID.get(id)?.rarity, id).toBe('common');
+    }
+    expect(CURSE_BY_ID.get('no-help')).toBeUndefined();
+    expect(CURSE_BY_ID.get('slow-mending')).toBeUndefined();
+    expect(CURSE_BY_ID.get('triggerless')?.name).toBe('Triggerless');
+    expect(CURSE_BY_ID.get('triggerless')?.minLevel).toBe(20);
+    expect(CURSE_BY_ID.get('regurgitation')?.minLevel).toBe(20);
+    expect(CURSE_BY_ID.get('regurgitation')?.rarity).toBe('uncommon');
+    expect(CURSE_BY_ID.get('chained')?.maxLevel).toBe(20);
+    expect(CURSE_BY_ID.get('tax')?.maxLevel).toBe(20);
+  });
+
+  it('upgrades commons that are passed up or selected', () => {
+    const passed = start('curse-upgrade-pass');
+    passed.state.curse = { options: ['sleeper', 'censor'], starting: false };
+    passed.state.phase = 'curse';
+    const passedResult = act(passed.state, { type: 'chooseCurse', curseId: 'censor' });
+    expect(passedResult.state.upgradedCommonCurses).toContain('sleeper');
+
+    const selected = start('curse-upgrade-selected');
+    selected.state.curse = { options: ['clock', 'censor'], starting: false };
+    selected.state.phase = 'curse';
+    const selectedResult = act(selected.state, { type: 'chooseCurse', curseId: 'clock' });
+    expect(selectedResult.state.upgradedCommonCurses).toContain('clock');
+  });
+
+  it('still drafts when no common curses remain', () => {
+    for (let index = 0; index < 24; index++) {
+      const { state } = start(`no-common-curses-${index}`);
+      state.level = 21;
+      state.upgradedCommonCurses = [
+        'sleeper', 'porcupine', 'clock', 'the-list', 'la-curse', 'triggerless',
+      ];
+      state.nodeIndex = 0;
+      state.nodes[1] = { kind: 'curse', level: 21 };
+      state.phase = 'shop';
+      const opened = act(state, { type: 'continue' });
+      if (opened.state.phase !== 'curse') continue;
+      const view = game.view(opened.state).phase;
+      if (view.kind !== 'curse') continue;
+      expect(view.options).toHaveLength(2);
+    }
+  });
+
+  it('Triggerless makes round-start autoguesses fail sometimes', () => {
+    let succeeded = 0;
+    let failed = 0;
+    for (let index = 0; index < 50; index++) {
+      const { state } = start(`triggerless-${index}`);
+      state.curses.push({ id: 'triggerless', stacks: 1 });
+      state.permanentRandomGuesses = 1;
+      const next = nextRound(state);
+      const guessed = next.state.round?.guesses.some((guess) => guess.by === 'friend');
+      if (guessed) succeeded++;
+      else failed++;
+    }
+    expect(succeeded).toBeGreaterThan(0);
+    expect(failed).toBeGreaterThan(0);
+  });
+
+  it('Regurgitation makes food reveals fail sometimes', () => {
+    let revealed = 0;
+    let failed = 0;
+    for (let index = 0; index < 40; index++) {
+      const { state } = start(`regurgitation-${index}`);
+      state.curses.push({ id: 'regurgitation', stacks: 1 });
+      state.phase = 'shop';
+      state.gold = 20;
+      state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'b-file', price: 11 }]);
+      const eaten = act(state, { type: 'buy', offerId: 'o0' });
+      if (eaten.state.permanentReveals.includes('b')) revealed++;
+      else failed++;
+    }
+    expect(revealed).toBeGreaterThan(0);
+    expect(failed).toBeGreaterThan(0);
   });
 });
 
