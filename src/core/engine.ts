@@ -2098,9 +2098,13 @@ export function createCore(content: Content): Core {
     });
   }
 
-  function guessDamageMultiplier(round: RoundState, next = false): number {
-    const guessNumber = round.totalGuesses + (next ? 1 : 0);
-    return Math.max(1, guessNumber - 5);
+  function guessDamageMultiplier(state: RunState, round: RoundState, next = false): number {
+    const early = curseDefs(state).reduce(
+      (sum, entry) => sum + (entry.def.damageRampEarly ?? 0) * entry.stacks,
+      0,
+    );
+    const guessNumber = round.guesses.length + (next ? 1 : 0);
+    return Math.max(1, guessNumber - 5 + early);
   }
 
   function guessDamageFor(state: RunState, round: RoundState, next = false): number {
@@ -2127,7 +2131,7 @@ export function createCore(content: Content): Core {
     const slotBonus = Math.max(0, usedSlots(state) - 5);
     const goldBonus = Math.floor((state.goldSpent ?? 0) / 60);
     const raw = base + curseBonus + goldBonus + slotBonus;
-    return Math.max(0, Math.round(raw * guessDamageMultiplier(round, next)));
+    return Math.max(0, Math.round(raw * guessDamageMultiplier(state, round, next)));
   }
 
   function expireRound(rt: Runtime): void {
@@ -2353,7 +2357,7 @@ export function createCore(content: Content): Core {
     if (unobscured) round.unobscuredGuesses++;
     if (by === 'player' && round.lockedSpells.length > 0) round.lockedSpells = [];
     round.guesses.push(guess);
-    const damageMultiplier = guessDamageMultiplier(round);
+    const damageMultiplier = guessDamageMultiplier(state, round);
     if (damageMultiplier > 1) {
       emit(rt, {
         type: 'message',

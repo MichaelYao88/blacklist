@@ -4572,9 +4572,13 @@ describe('curse rarity and trigger curses', () => {
     for (const id of ['hard-r', 'without-d', 'ip-theft']) {
       expect(CURSE_BY_ID.get(id)?.rarity, id).toBe('uncommon');
     }
-    for (const id of ['sleeper', 'porcupine', 'clock', 'the-list', 'la-curse', 'triggerless']) {
+    for (const id of [
+      'sleeper', 'porcupine', 'clock', 'the-list', 'la-curse', 'triggerless', 'short-fuse',
+    ]) {
       expect(CURSE_BY_ID.get(id)?.rarity, id).toBe('common');
     }
+    expect(CURSE_BY_ID.get('short-fuse')?.maxStacks).toBe(Infinity);
+    expect(CURSE_BY_ID.get('short-fuse')?.damageRampEarly).toBe(1);
     expect(CURSE_BY_ID.get('no-help')).toBeUndefined();
     expect(CURSE_BY_ID.get('slow-mending')?.noSpawn).toBe(true);
     expect(CURSE_BY_ID.get('slow-mending')?.healMult).toBe(0.5);
@@ -4605,7 +4609,7 @@ describe('curse rarity and trigger curses', () => {
       const { state } = start(`no-common-curses-${index}`);
       state.level = 21;
       state.upgradedCommonCurses = [
-        'sleeper', 'porcupine', 'clock', 'the-list', 'la-curse', 'triggerless',
+        'sleeper', 'porcupine', 'clock', 'the-list', 'la-curse', 'triggerless', 'short-fuse',
       ];
       state.nodeIndex = 0;
       state.nodes[1] = { kind: 'curse', level: 21 };
@@ -4802,7 +4806,8 @@ describe('damage doubling and slots', () => {
     expect(started).toBeDefined();
     const round = started!.state.round!;
     expect(round.totalGuesses).toBe(1);
-    setAnswer(started!.state, 'crane');
+    expect(round.guesses).toHaveLength(1);
+    round.answer = 'crane';
     round.baseDamage = 3;
     round.freeLeft = 0;
     started!.state.armor = 0;
@@ -4817,6 +4822,117 @@ describe('damage doubling and slots', () => {
     const before = current.hp;
     const seventh = act(current, { type: 'guess', word: 'jumpy' });
     expect(before - seventh.state.hp).toBe(6);
+  });
+
+  it('Short Fuse starts the multiplier one guess earlier per stack', () => {
+    const one = start('short-fuse-one');
+    one.state.curses.push({ id: 'short-fuse', stacks: 1 });
+    setAnswer(one.state, 'crane');
+    one.state.round!.baseDamage = 3;
+    one.state.round!.freeLeft = 0;
+    one.state.armor = 0;
+    one.state.maxArmor = 0;
+    one.state.hp = 200;
+    one.state.maxHp = 200;
+    let current = one.state;
+    for (const word of ['slate', 'brick', 'plumb', 'chunk', 'vamps']) {
+      current = act(current, { type: 'guess', word }).state;
+    }
+    const before = current.hp;
+    const sixth = act(current, { type: 'guess', word: 'fizzy' });
+    expect(before - sixth.state.hp).toBe(6);
+    expect(sixth.events.some(
+      (event) => event.type === 'message' && event.text.includes('×2'),
+    )).toBe(true);
+
+    const two = start('short-fuse-two');
+    two.state.curses.push({ id: 'short-fuse', stacks: 2 });
+    setAnswer(two.state, 'crane');
+    two.state.round!.baseDamage = 3;
+    two.state.round!.freeLeft = 0;
+    two.state.armor = 0;
+    two.state.maxArmor = 0;
+    two.state.hp = 200;
+    two.state.maxHp = 200;
+    current = two.state;
+    for (const word of ['slate', 'brick', 'plumb', 'chunk']) {
+      current = act(current, { type: 'guess', word }).state;
+    }
+    const stackedBefore = current.hp;
+    const fifth = act(current, { type: 'guess', word: 'vamps' });
+    expect(stackedBefore - fifth.state.hp).toBe(6);
+  });
+
+  it('resets the damage multiplier on Second Wind puzzles', () => {
+    const { state } = start('second-wind-ramp');
+    state.curses.push({ id: 'second-wind', stacks: 1 });
+    const started = nextRound(state);
+    setAnswer(started.state, 'crane');
+    started.state.round!.baseDamage = 3;
+    started.state.round!.freeLeft = 0;
+    started.state.armor = 0;
+    started.state.maxArmor = 0;
+    started.state.hp = 200;
+    started.state.maxHp = 200;
+
+    let current = started.state;
+    for (const word of ['slate', 'brick', 'plumb', 'chunk', 'vamps', 'fizzy']) {
+      current = act(current, { type: 'guess', word }).state;
+    }
+    const solved = act(current, { type: 'guess', word: 'crane' });
+    expect(solved.state.round?.gauntletIndex).toBe(1);
+    expect(solved.state.round?.guesses).toHaveLength(0);
+
+    solved.state.round!.baseDamage = 3;
+    solved.state.round!.freeLeft = 0;
+    solved.state.armor = 0;
+    solved.state.maxArmor = 0;
+    solved.state.hp = 200;
+    solved.state.maxHp = 200;
+    const wrong = solved.state.round!.answer === 'slate' ? 'brick' : 'slate';
+    const before = solved.state.hp;
+    const hit = act(solved.state, { type: 'guess', word: wrong });
+    expect(before - hit.state.hp).toBe(3);
+    expect(hit.events.some(
+      (event) => event.type === 'message' && event.text.includes('×2'),
+    )).toBe(false);
+  });
+
+  it('resets the damage multiplier on each final-boss puzzle', () => {
+    const { state } = start('boss-ramp');
+    const bossIndex = nodeAt(state, (node) => node.kind === 'boss');
+    state.nodeIndex = bossIndex - 1;
+    state.phase = 'shop';
+    state.shop = shopState();
+    let result = act(state, { type: 'continue' });
+    result = act(result.state, { type: 'continue' });
+    expect(result.state.round?.gauntletTotal).toBe(3);
+
+    result.state.round!.answer = 'crane';
+    result.state.round!.freeLeft = 0;
+    result.state.round!.baseDamage = 3;
+    result.state.armor = 0;
+    result.state.maxArmor = 0;
+    result.state.hp = 200;
+    result.state.maxHp = 200;
+    let current = result.state;
+    for (const word of ['slate', 'brick', 'plumb', 'chunk', 'vamps', 'fizzy']) {
+      current = act(current, { type: 'guess', word }).state;
+    }
+    const solved = act(current, { type: 'guess', word: 'crane' });
+    expect(solved.state.round?.gauntletIndex).toBe(1);
+    expect(solved.state.round?.guesses).toHaveLength(0);
+
+    solved.state.round!.baseDamage = 3;
+    solved.state.round!.freeLeft = 0;
+    solved.state.armor = 0;
+    solved.state.maxArmor = 0;
+    solved.state.hp = 200;
+    solved.state.maxHp = 200;
+    const wrong = solved.state.round!.answer === 'slate' ? 'brick' : 'slate';
+    const before = solved.state.hp;
+    const hit = act(solved.state, { type: 'guess', word: wrong });
+    expect(before - hit.state.hp).toBe(3);
   });
 
   it('adds one damage per equipped slot above five and previews the same number', () => {
