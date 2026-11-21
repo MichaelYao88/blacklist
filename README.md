@@ -20,7 +20,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Curse drafts use the same rarity floors as shops (40% rare and below, 45% uncommon and below, 15% common only), but do not display rarity. A common curse becomes uncommon for the rest of the run after it is offered or selected
 - Hover or focus a curse in the HUD to read its rules
 - 50 is the final boss: three rounds back-to-back with no intermission. Bosses ignore the **Second Wind** curse
-- **Second Wind** is a curse: after you solve a word, a second word appears with one free guess
+- **Second Wind** is a rare curse: after you solve a word, a second word appears with one free guess
 - The Toll is only offered through level 40; The Tax and The Chained are only offered through level 20
 - Base encounter damage is **3 + 1.3 per curse stack, rounded down**, plus **+1 for every 60 gold spent this run**; characters that start with curses subtract **1.3 per starting curse stack**, and Heavy Hand multiplies the base by **1.5 per stack**. After the sixth guess in each puzzle, each later wrong guess increases the damage multiplier (**×2, ×3, ×4...**), counting autoguesses; the multiplier resets on Second Wind and each final-boss puzzle. Every paid wrong guess adds **+1 per occupied item slot above 5**
 - Vision curses are usually rare. **Take the L** is common, while **Hard R**, **Without the D**, and **IP Theft** are uncommon; the first/second/third/fourth/fifth position curses hide their tile **50% of the time**

@@ -4600,6 +4600,7 @@ describe('curse rarity and trigger curses', () => {
     for (const id of [
       'censor', 'second-sight', 'third-eye', 'fourth-wall', 'editor',
       'vowel-fog', 'monochrome', 'a-curse', 'ts-curse', 'rip-curse', 'e-curse',
+      'second-wind',
     ]) {
       expect(CURSE_BY_ID.get(id)?.rarity, id).toBe('rare');
     }

@@ -362,7 +362,7 @@ export const CURSES: CurseDef[] = [
     ],
     art: 'gauntlet',
     tags: ['rule'],
-    rarity: 'uncommon',
+    rarity: 'rare',
     maxStacks: 1,
     secondPuzzle: true,
   }),
