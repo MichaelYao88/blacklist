@@ -170,7 +170,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'scattershot',
     name: 'Scattershot',
-    description: 'Once per round: a guess sharing no letters with the previous guess autocasts a random spell.',
+    description: 'Once per round: a guess sharing no letters with the previous guess autocasts a free random spell.',
     price: 10,
     kind: 'gear',
     rarity: 'uncommon',
@@ -305,7 +305,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'siphon',
     name: 'Siphon',
-    description: 'Casting a spell that isn\'t Heal: 40% chance to autocast Heal.',
+    description: 'Casting a spell that isn\'t Heal: 40% chance to autocast a free Heal.',
     price: 8,
     kind: 'gear',
     on: {
@@ -462,7 +462,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'spellhoarder',
     name: 'Panacea Pouch',
-    description: 'Every 3rd spell cast: autocast Heal.',
+    description: 'Every 3rd spell cast: autocast a free Heal.',
     price: 9,
     kind: 'gear',
     initial: { casts: 0 },
@@ -493,7 +493,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'mimic-mouth',
     name: 'Mimic Mouth',
-    description: 'A wrong guess with 5 revealed letters: autocast a random spell. Once per round.',
+    description: 'A wrong guess with 5 revealed letters: autocast a free random spell. Once per round.',
     price: 7,
     kind: 'gear',
     initial: { used: 0 },
@@ -515,7 +515,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'vowel-tithe',
     name: 'Vowel Tithe',
-    description: 'Spell cast: 25% chance to autocast Omen.',
+    description: 'Spell cast: 25% chance to autocast a free Omen.',
     price: 8,
     kind: 'gear',
     on: {
@@ -525,7 +525,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'second-hand',
     name: 'Second Hand',
-    description: 'Casting Time Freeze: 80% chance to autocast Heal. Casting Immunity: 80% chance to autocast Restore.',
+    description: 'Casting Time Freeze: 80% chance to autocast a free Heal. Casting Immunity: 80% chance to autocast a free Restore.',
     price: 8,
     kind: 'gear',
     on: {
@@ -543,7 +543,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'engine',
     name: 'Counterclockwise',
-    description: 'Casting Restore: 80% chance to autocast Time Freeze. Casting Heal: 80% chance to autocast Immunity.',
+    description: 'Casting Restore: 80% chance to autocast a free Time Freeze. Casting Heal: 80% chance to autocast a free Immunity.',
     price: 8,
     kind: 'gear',
     on: {
@@ -561,7 +561,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'combustion-engine',
     name: 'Combustion Engine',
-    description: 'After you autocast a spell: 30% chance to autocast a random spell.',
+    description: 'After you autocast a spell: 30% chance to autocast a free random spell.',
     price: 10,
     kind: 'gear',
     rarity: 'uncommon',
@@ -576,7 +576,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'genie-summon',
     name: 'Genie Summon',
-    description: 'After your 3rd player guess each round: autocast a random spell.',
+    description: 'After your 3rd player guess each round: autocast a free random spell.',
     price: 8,
     kind: 'gear',
     rarity: 'uncommon',
@@ -596,7 +596,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'cracked-orb',
     name: 'Cracked Orb',
-    description: 'Each round: 25% chance to autocast a random spell.',
+    description: 'Each round: 25% chance to autocast a free random spell.',
     price: 9,
     kind: 'gear',
     on: {
@@ -696,7 +696,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'bulwark',
     name: 'Bulwark',
-    description: 'Every 10 damage blocked by armor: autocast a random spell.',
+    description: 'Every 10 damage blocked by armor: autocast a free random spell.',
     price: 8,
     kind: 'gear',
     initial: { blocked: 0 },
@@ -737,7 +737,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'guardian-angel',
     name: 'Guardian Angel',
-    description: 'After every 10 HP damage taken: autocast Immunity.',
+    description: 'After every 10 HP damage taken: autocast a free Immunity.',
     price: 8,
     kind: 'gear',
     initial: { taken: 0 },
@@ -871,7 +871,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'time-lattice',
     name: 'Time Lattice',
-    description: 'Cast Time Freeze: autocast Restore. Once per round.',
+    description: 'Cast Time Freeze: autocast a free Restore. Once per round.',
     price: 8,
     kind: 'gear',
     initial: { used: 0 },
@@ -901,7 +901,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'omen-loom',
     name: 'Omen Loom',
-    description: 'Cast Omen: autocast a random spell. Once per round.',
+    description: 'Cast Omen: autocast a free random spell. Once per round.',
     price: 9,
     kind: 'gear',
     initial: { used: 0 },
@@ -1115,7 +1115,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'last-cast',
     name: 'Last Cast',
-    description: 'When you cast your only remaining spell: autocast a random spell. Once per round.',
+    description: 'When you cast your only remaining spell: autocast a free random spell. Once per round.',
     price: 9,
     kind: 'gear',
     initial: { used: 0 },
@@ -1133,7 +1133,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'empty-hand',
     name: 'Empty Hand',
-    description: 'Start a round with no spells: autocast a random spell.',
+    description: 'Start a round with no spells: autocast a free random spell.',
     price: 9,
     kind: 'gear',
     on: {
@@ -1159,7 +1159,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'empty-orb',
     name: 'Empty Orb',
-    description: 'Start a round with no spells: autocast Omen.',
+    description: 'Start a round with no spells: autocast a free Omen.',
     price: 7,
     kind: 'gear',
     on: {
@@ -1172,7 +1172,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'empty-phone',
     name: 'Empty Phone',
-    description: 'Start a round with no spells: autocast Phone a Friend.',
+    description: 'Start a round with no spells: autocast a free Phone a Friend.',
     price: 9,
     kind: 'gear',
     on: {
@@ -1185,7 +1185,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'solo-note',
     name: 'Solo Note',
-    description: 'Once per round: a guess with one yellow and no green autocasts Restore.',
+    description: 'Once per round: a guess with one yellow and no green autocasts a free Restore.',
     price: 7,
     kind: 'gear',
     initial: { used: 0 },
@@ -1206,7 +1206,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'off-road',
     name: 'Off-Road',
-    description: 'Once per round: a guess sharing no letters with the previous guess autocasts a random spell.',
+    description: 'Once per round: a guess sharing no letters with the previous guess autocasts a free random spell.',
     price: 9,
     kind: 'gear',
     initial: { used: 0 },
@@ -1346,7 +1346,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'panic-button',
     name: 'Panic Button',
-    description: 'HP drops below half in a round: autocast Phone a Friend. Once per round.',
+    description: 'HP drops below half in a round: autocast a free Phone a Friend. Once per round.',
     price: 8,
     kind: 'gear',
     initial: { used: 0 },
@@ -1365,7 +1365,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'wild-magic',
     name: 'Wild Magic',
-    description: 'Spell cast: 25% chance to autocast a random spell and 25% chance to autoguess a random word.',
+    description: 'Spell cast: 25% chance to autocast a free random spell and 25% chance to autoguess a random word.',
     price: 9,
     kind: 'gear',
     on: {
@@ -1475,7 +1475,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'oracle-skull',
     name: 'Oracle Skull',
-    description: 'Whenever you are healed: autocast Omen.',
+    description: 'Whenever you are healed: autocast a free Omen.',
     price: 12,
     kind: 'gear',
     rarity: 'uncommon',
@@ -1489,7 +1489,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'thorn-crown',
     name: 'Thorn Crown',
-    description: 'A hit gets through: 80% chance to autocast a random spell.',
+    description: 'A hit gets through: 80% chance to autocast a free random spell.',
     price: 14,
     kind: 'gear',
     rarity: 'uncommon',
@@ -1501,7 +1501,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'phoenix-egg',
     name: 'Phoenix Egg',
-    description: 'First death: revive at 50% HP, autocast Restore. Consumed.',
+    description: 'First death: revive at 50% HP, autocast a free Restore. Consumed.',
     price: 18,
     kind: 'gear',
     rarity: 'rare',
@@ -1516,7 +1516,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'speed-dial',
     name: 'Speed Dial',
-    description: 'Round start: autocast Phone a Friend.',
+    description: 'Round start: autocast a free Phone a Friend.',
     price: 28,
     kind: 'gear',
     rarity: 'rare',
@@ -1527,7 +1527,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'chrono-anchor',
     name: 'Chrono Anchor',
-    description: '+20s per round. Taking damage: 30% chance to autocast Time Freeze.',
+    description: '+20s per round. Taking damage: 30% chance to autocast a free Time Freeze.',
     price: 28,
     kind: 'gear',
     rarity: 'uncommon',

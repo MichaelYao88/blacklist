@@ -63,15 +63,15 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Spell Pepper** is a 3g food that doubles your next spell
 - Every shop node offers a choice: visit the shop, or rest at the inn to gain +8 max HP, heal to full HP, and move on
 - **Hearty Stew** is a 4g food that grants 1-2 casts of Heal; **Hagelslag** gives +3 max HP and heals 20% of missing HP
-- **Bulwark** is an 8g item: every 10 damage blocked by armor, autocast a random spell
+- **Bulwark** is an 8g item: every 10 damage blocked by armor, autocast a free random spell
 - **Ricochet** is a 7g item: every 10 armor lost, autoguess a random word
-- **Scattershot** is a 10g uncommon item that autocasts a random spell once per round after a guess sharing no letters with the previous guess
+- **Scattershot** is a 10g uncommon item that autocasts a free random spell once per round after a guess sharing no letters with the previous guess
 - **Yellow1** is a 14g rare item that autoguesses once per round on your player guess with exactly one yellow and no green; **Green1** is a 14g uncommon item that does the same for exactly one green and no yellow. Neither counts ally or auto-guesses
 - **Deadline** grants +1 free guess as soon as the clock drops below 30s each round
 - **Second Hand** and **Counterclockwise** (formerly Engine) are 8g items that cross-cast spells on cast at 80%
 - **Last Cast** only reacts to spells you cast manually; autocast spells never trigger it
-- **Genie Summon** is an 8g uncommon item: after your 3rd player guess each round, autocast a random spell
-- **Combustion Engine** is a 10g uncommon item with a 3x appearance weight: after you autocast a spell, it has a 30% chance to autocast a random spell. It does not retrigger itself, and autocast chains cap at 10 spells per step
+- **Genie Summon** is an 8g uncommon item: after your 3rd player guess each round, autocast a free random spell
+- **Combustion Engine** is a 10g uncommon item with a 3x appearance weight: after you autocast a spell, it has a 30% chance to autocast a free random spell. It does not retrigger itself, and autocast chains cap at 10 spells per step
 - **Encore** now costs 7g
 - **Panacea Pouch** (formerly Spellhoarder) is a 9g item: every 3rd spell cast casts Heal
 - **Omen** ignores letters whose only revealing tile was hidden by a position curse, so it can still find them
@@ -86,7 +86,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Stopped Clock** is a 6g item: casting Time Freeze grants +5 max HP, once per round
 - **Adrenaline** is a 10g item: dropping below 50% HP grants +1 max HP and +1 max armor, re-arming after healing above 50%
 - **Gold Standard** is an 8g item: every gold gain gives +1 more gold
-- **Guardian Angel** is an 8g item: after every 10 HP damage taken, autocast Immunity
+- **Guardian Angel** is an 8g item: after every 10 HP damage taken, autocast a free Immunity
 - **Immunity** blocks the next hurting guess and any guess for 4 seconds after it
 - **Mending Plate** is a rare item: +1 max armor per 8 HP healed
 - **Bounty** is a 9g rare food: +1 gold per solve
@@ -94,7 +94,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Growth Spurt** gives +3 max HP when you solve in 4 guesses or fewer
 - **Growth Chart** is an 8g item: every 3 max HP gained grants +1 Time Freeze
 - **Midas Touch** has a 30% chance to double every gold gain
-- **Oracle Skull** is a 12g uncommon item: every heal autocasts Omen
+- **Oracle Skull** is a 12g uncommon item: every heal autocasts a free Omen
 - **Loyalty Card** is a 12g uncommon item: +1 item slot after every 10 shop purchases
 - **Placebo** is a 4g item that heals exactly 1 HP on each player guess
 - **Pen Club** pays a random 1-5 gold for guesses starting with PEN; **Gourmand** gains +1 max HP on eat or spell cast
@@ -116,11 +116,11 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Oracle's Banquet** is a 28g rare unique food: it permanently autoguesses at the start of every round
 - **Tally** counts every guess, including ally and autoguesses
 - **Harvest Charm**, **Empty Mouth**, **Empty Orb**, **Empty Phone**, **Detour**, **Dark Echo**, **Black Eye**, **Palindrome**, **Oasis 15**, **Shellshock**, **Echo Chamber**, **Panic Button**, and **Wild Magic** are the new autoguess/autocast items
-- **Black Eye** is an 8g item: a hit that deals HP damage has an 80% chance to autoguess a random word; **Thorn Crown** is a 14g item with an 80% chance to autocast a random spell instead
+- **Black Eye** is an 8g item: a hit that deals HP damage has an 80% chance to autoguess a random word; **Thorn Crown** is a 14g item with an 80% chance to autocast a free random spell instead
 - **Turtle Shell** is an 8g item that halves every hit armor does not soak; **Pain au Chocolat** is a 14g rare unique food that halves only the first such hit
 - **Second Skin** is a 9g uncommon item: the first time armor hits 0 each round, restore half your max armor
-- **Moon Cake** is a 25g rare unique food: autocast Omen at the start of every round
-- **Empty Orb** is a 7g item that autocasts Omen when a round starts with no spells; **Empty Phone** is the 9g Phone a Friend version
+- **Moon Cake** is a 25g rare unique food: autocast a free Omen at the start of every round
+- **Empty Orb** is a 7g item that autocasts a free Omen when a round starts with no spells; **Empty Phone** is the 9g Phone a Friend version that does the same
 - **Enoki** is a 4g food: +3 max HP and one autoguess next round
 - **Corn** is a 3g food: +2 max HP and reveals C, O, R and N for the next round only
 - **Iron Ration** is a 12g rare food: +2 max armor. **One Bo Hue** and **Plating** are uncommon; **Taco Pizza Party** is rare

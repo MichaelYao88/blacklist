@@ -1782,7 +1782,7 @@ describe('new item and event batch', () => {
     expect(ITEM_BY_ID.get('bulwark')?.description)
       .toContain('Every 10 damage blocked by armor');
     expect(ITEM_BY_ID.get('bulwark')?.description)
-      .toContain('autocast a random spell');
+      .toContain('autocast a free random spell');
   });
 
   it('Guardian Angel grants Immunity after 10 HP damage taken', () => {
@@ -1802,7 +1802,7 @@ describe('new item and event batch', () => {
     expect(hit.state.round?.immuneGuesses).toBe(1);
     expect(ITEM_BY_ID.get('guardian-angel')?.price).toBe(8);
     expect(ITEM_BY_ID.get('guardian-angel')?.description)
-      .toContain('autocast Immunity');
+      .toContain('autocast a free Immunity');
   });
 
   it('Second Hand and Engine cross-cast spells at 80%', () => {
@@ -1892,7 +1892,7 @@ describe('new item and event batch', () => {
     expect(CURSE_BY_ID.get('tight-slots')?.slotDelta).toBe(-2);
     expect(SPELL_BY_ID.get('restore')?.description)
       .toContain('ignore vision curses');
-    expect(ITEM_BY_ID.get('siphon')?.description).toContain('40% chance to autocast Heal');
+    expect(ITEM_BY_ID.get('siphon')?.description).toContain('40% chance to autocast a free Heal');
     expect(ITEM_BY_ID.get('gourmand')?.description).toContain('On spell cast or food eaten');
     expect(ITEM_BY_ID.get('pen-club')?.description).toContain('1-5 gold');
     expect(ITEM_BY_ID.get('midas-touch')?.description).toContain('30%');

@@ -191,7 +191,7 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'moon-cake',
     name: 'Moon Cake',
-    description: 'Each round: autocast Omen. No slot.',
+    description: 'Each round: autocast a free Omen. No slot.',
     price: 25,
     rarity: 'rare',
     unique: true,
