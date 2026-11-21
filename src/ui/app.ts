@@ -162,6 +162,12 @@ const phraseRoot = document.createElement('div');
 phraseRoot.id = 'phrase-root';
 document.body.appendChild(phraseRoot);
 
+const warningRoot = document.createElement('div');
+warningRoot.id = 'damage-warning-root';
+warningRoot.setAttribute('aria-live', 'assertive');
+document.body.appendChild(warningRoot);
+let warningTimer: number | undefined;
+
 const procRoot = document.createElement('div');
 procRoot.id = 'proc-root';
 procRoot.setAttribute('aria-live', 'polite');
@@ -379,6 +385,18 @@ function triggerArenaAttack(force?: 'player' | 'enemy'): void {
     arenaAttackTimer = undefined;
     render();
   }, ATTACK_CLEAR_MS);
+}
+
+function flashDamageWarning(multiplier: number): void {
+  warningRoot.innerHTML = `<div class="damage-warning" role="alert">
+    <span class="damage-warning-kicker">WATCH OUT!</span>
+    <span class="damage-warning-mult">×${multiplier} MULTIPLIER</span>
+  </div>`;
+  if (warningTimer) window.clearTimeout(warningTimer);
+  warningTimer = window.setTimeout(() => {
+    warningRoot.innerHTML = '';
+    warningTimer = undefined;
+  }, 2_800);
 }
 
 function flashFriendPhrases(words: string[], callout?: string): void {
@@ -678,6 +696,10 @@ function processEvents(events: GameEvent[]): void {
       notify(event.reason, 'bad');
       sfx.play('error');
     }
+    if (event.type === 'damageMultiplier') {
+      flashDamageWarning(event.multiplier);
+      logChronicle('bad', `Damage multiplier ×${event.multiplier}`);
+    }
     if (event.type === 'message') notify(event.text, 'info');
     if (event.type === 'spellCast') showSpellPopup(event.spell.id, Boolean(event.auto));
     if (event.type === 'itemProc') showProc(event.item, event.text);
@@ -837,6 +859,9 @@ function startNewRun(): void {
   orcDeathTimer = undefined;
   playerDeathStartedAt = null;
   phraseRoot.innerHTML = '';
+  if (warningTimer) window.clearTimeout(warningTimer);
+  warningTimer = undefined;
+  warningRoot.innerHTML = '';
   clearProcFeed();
   clearSpellPopups();
   clearChronicle();

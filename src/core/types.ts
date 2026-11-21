@@ -896,6 +896,7 @@ export type GameEvent =
   | { type: 'gauntletAdvanced'; index: number; total: number; timerMs: number | null }
   | { type: 'foodEaten'; food: string; name: string }
   | { type: 'attributeChanged'; stat: string; value: number }
+  | { type: 'damageMultiplier'; multiplier: number }
   | { type: 'message'; text: string }
   | { type: 'runEnded'; result: 'victory' | 'defeat'; stats: RunStats };
 

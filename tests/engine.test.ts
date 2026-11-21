@@ -4787,11 +4787,11 @@ describe('damage doubling and slots', () => {
     }
     const seventh = act(current, { type: 'guess', word: 'jumpy' });
     expect(seventh.events.some(
-      (event) => event.type === 'message' && event.text.includes('×2'),
+      (event) => event.type === 'damageMultiplier' && event.multiplier === 2,
     )).toBe(true);
     const eighth = act(seventh.state, { type: 'guess', word: 'waltz' });
     expect(eighth.events.some(
-      (event) => event.type === 'message' && event.text.includes('×3'),
+      (event) => event.type === 'damageMultiplier' && event.multiplier === 3,
     )).toBe(true);
   });
 
@@ -4842,7 +4842,7 @@ describe('damage doubling and slots', () => {
     const sixth = act(current, { type: 'guess', word: 'fizzy' });
     expect(before - sixth.state.hp).toBe(6);
     expect(sixth.events.some(
-      (event) => event.type === 'message' && event.text.includes('×2'),
+      (event) => event.type === 'damageMultiplier' && event.multiplier === 2,
     )).toBe(true);
 
     const two = start('short-fuse-two');
@@ -4894,7 +4894,7 @@ describe('damage doubling and slots', () => {
     const hit = act(solved.state, { type: 'guess', word: wrong });
     expect(before - hit.state.hp).toBe(3);
     expect(hit.events.some(
-      (event) => event.type === 'message' && event.text.includes('×2'),
+      (event) => event.type === 'damageMultiplier',
     )).toBe(false);
   });
 

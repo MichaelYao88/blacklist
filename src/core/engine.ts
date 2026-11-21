@@ -2359,10 +2359,7 @@ export function createCore(content: Content): Core {
     round.guesses.push(guess);
     const damageMultiplier = guessDamageMultiplier(state, round);
     if (damageMultiplier > 1) {
-      emit(rt, {
-        type: 'message',
-        text: `Damage increases: wrong guesses now deal ×${damageMultiplier}.`,
-      });
+      emit(rt, { type: 'damageMultiplier', multiplier: damageMultiplier });
     }
 
     const mark = rt.events.length;
