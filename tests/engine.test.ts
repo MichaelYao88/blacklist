@@ -425,11 +425,66 @@ describe('damage and curses', () => {
     expect(CURSE_BY_ID.get('wasting')).toBeUndefined();
   });
 
-  it('raises base damage by 1 for every curse stack', () => {
+  it('raises base damage by 1.3 per curse stack, rounded down', () => {
     const { state } = start('curse-damage');
     state.curses.push({ id: 'censor', stacks: 1 });
     state.curses.push({ id: 'clock', stacks: 1 });
     expect(nextRound(state).state.round?.baseDamage).toBe(5);
+
+    for (const [stacks, expected] of [[1, 4], [2, 5], [3, 6], [4, 8]] as const) {
+      const run = start(`curse-damage-${stacks}`);
+      run.state.curses.push({ id: 'censor', stacks });
+      expect(nextRound(run.state).state.round?.baseDamage, String(stacks)).toBe(expected);
+    }
+  });
+
+  it('Turtle Shell halves hits that armor does not soak', () => {
+    const { state } = start('turtle-shell');
+    state.items.push({ instance: 'i-shell', id: 'turtle-shell', data: {}, equipped: true });
+    state.round!.freeLeft = 0;
+    setAnswer(state, 'crane');
+
+    state.armor = 1;
+    const soaked = act(state, { type: 'guess', word: 'slate' });
+    expect(soaked.state.hp).toBe(13); // 1 armor, then 2 HP damage, not halved
+
+    const unarmored = act(soaked.state, { type: 'guess', word: 'brick' });
+    expect(unarmored.state.hp).toBe(12); // 3 unarmored damage, halved to 1
+  });
+
+  it('Pain au Chocolat halves only the first hit armor does not soak', () => {
+    const { state } = start('pain-au-chocolat');
+    state.phase = 'shop';
+    state.gold = 100;
+    state.shop = shopState([{ id: 'f0', kind: 'eat', def: 'pain-au-chocolat', price: 14 }]);
+    const eaten = act(state, { type: 'buy', offerId: 'f0' }).state;
+    expect(eaten.unarmoredHalfCharges).toBe(1);
+    expect(eaten.eatenFoods).toContain('pain-au-chocolat');
+
+    eaten.phase = 'round';
+    eaten.round!.freeLeft = 0;
+    setAnswer(eaten, 'crane');
+    eaten.armor = 1;
+    const soaked = act(eaten, { type: 'guess', word: 'slate' });
+    expect(soaked.state.hp).toBe(13); // armor soaked this one, so the charge remains
+    expect(soaked.state.unarmoredHalfCharges).toBe(1);
+
+    const soft = act(soaked.state, { type: 'guess', word: 'brick' });
+    expect(soft.state.hp).toBe(12); // first unarmored hit is halved
+    expect(soft.state.unarmoredHalfCharges).toBe(0);
+
+    const normal = act(soft.state, { type: 'guess', word: 'vamps' });
+    expect(normal.state.hp).toBe(9); // later unarmored hits are normal
+  });
+
+  it('adds Turtle Shell and Pain au Chocolat', () => {
+    expect(ITEM_BY_ID.get('turtle-shell')?.price).toBe(8);
+    expect(ITEM_BY_ID.get('turtle-shell')?.unarmoredHitMultiplier).toBe(0.5);
+    const food = FOOD_BY_ID.get('pain-au-chocolat');
+    expect(food?.price).toBe(14);
+    expect(food?.rarity).toBe('rare');
+    expect(food?.unique).toBe(true);
+    expect(food?.effects).toContainEqual({ type: 'unarmoredHalfCharges', count: 1 });
   });
 
   it('Porcupine damages the next guess based on previous greens', () => {
@@ -2813,7 +2868,7 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('iron-hide')).toBeUndefined();
     expect(ITEM_BY_ID.get('purge-token')).toBeUndefined();
     expect(ITEM_BY_ID.get('boss-trophy')).toBeUndefined();
-    expect(ITEM_BY_ID.get('thorn-crown')?.description).toContain('30%');
+    expect(ITEM_BY_ID.get('thorn-crown')?.description).toContain('70%');
     expect(ITEM_BY_ID.get('vampire-teeth')).toBeUndefined();
     expect(ITEM_BY_ID.get('chrono-anchor')?.description).toContain('Taking damage: 30% chance');
     expect(ITEM_BY_ID.get('chrono-anchor')?.on?.onSolve).toBeUndefined();
@@ -3670,7 +3725,7 @@ describe('autocast and random-guess batch', () => {
     expect(ITEM_BY_ID.get('wild-magic')?.price).toBe(9);
     expect(ITEM_BY_ID.get('panic-button')?.price).toBe(8);
     expect(ITEM_BY_ID.get('black-eye')?.price).toBe(8);
-    expect(ITEM_BY_ID.get('black-eye')?.description).toContain('40%');
+    expect(ITEM_BY_ID.get('black-eye')?.description).toContain('70%');
     expect(ITEM_BY_ID.get('empty-orb')?.price).toBe(7);
     expect(ITEM_BY_ID.get('empty-phone')?.price).toBe(9);
   });

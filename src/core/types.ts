@@ -381,6 +381,7 @@ export type Effect =
   | { type: 'giveMissingSpells'; chancePct?: number }
   | { type: 'queueLastAnswer' }
   | { type: 'damageCapNextRound'; amount: number }
+  | { type: 'unarmoredHalfCharges'; count: number }
   | { type: 'visionCounts'; rounds: number }
   | { type: 'armSpellDouble' }
   | { type: 'armSaleDouble' }
@@ -473,6 +474,8 @@ export interface ItemDef {
   onAcquire?: (ctx: ItemCtx) => Effect[];
   onUse?: (ctx: ItemCtx) => Effect[];
   modifyDamage?: (ctx: ItemCtx, amount: number) => number;
+  /** Multiplies hits that armor does not soak at all (for example, 0.5). */
+  unarmoredHitMultiplier?: number;
   sellValue?: (ctx: ItemCtx) => number;
   /** Gold taken off the first purchase in each shop. */
   shopDiscount?: number;
@@ -631,6 +634,8 @@ export interface RunState {
   nextRoundReveals: Letter[];
   /** King Mushroom: cap the next round's wrong-guess damage. */
   nextRoundDamageCap?: number;
+  /** Pain au Chocolat: halve this many hits that armor does not soak. */
+  unarmoredHalfCharges: number;
   /** Midnight Snack: show correct/misplaced counts for this many rounds. */
   visionCountsRounds?: number;
   /** Spell Pepper: the next player-cast spell resolves twice. */

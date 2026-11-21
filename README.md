@@ -21,7 +21,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - 50 is the final boss: three rounds back-to-back with no intermission. Bosses ignore the **Second Wind** curse
 - **Second Wind** is a curse: after you solve a word, a second word appears with one free guess
 - The Toll, The Tax and The Chained are only offered through level 40
-- Base encounter damage is **3 + the total number of curse stacks** plus **+1 for every 60 gold spent this run**; Heavy Hand multiplies the base by **1.5 per stack**
+- Base encounter damage is **3 + 1.3 per curse stack, rounded down**, plus **+1 for every 60 gold spent this run**; Heavy Hand multiplies the base by **1.5 per stack**
 - Vision curses include **Take the L** (L hidden), **A-Aron, where are you?** (A hidden), **IP Theft** (I and P hidden), **Hard R** (R hidden), and a silver **RIP Curse**; the first/second/third/fourth/fifth position curses hide their tile **50% of the time**
 - The blacklist is disabled and hidden until **The List** curse is taken; The List is a single curse, never stacks, and arrives stocked with the first guess from every earlier round
 - The clock is disabled until **The Clock** curse is taken; the first stack gives 5:00 and each further stack shrinks it by 40%. If the clock reaches zero, the run ends immediately
@@ -113,7 +113,8 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Oracle's Banquet** is a 28g rare unique food: it permanently autoguesses at the start of every round
 - **Tally** counts every guess, including ally and autoguesses
 - **Harvest Charm**, **Empty Mouth**, **Empty Orb**, **Empty Phone**, **Detour**, **Dark Echo**, **Black Eye**, **Palindrome**, **Oasis 15**, **Shellshock**, **Echo Chamber**, **Panic Button**, and **Wild Magic** are the new autoguess/autocast items
-- **Black Eye** is an 8g item: a hit that deals HP damage has a 40% chance to autoguess a random word
+- **Black Eye** is an 8g item: a hit that deals HP damage has a 70% chance to autoguess a random word; **Thorn Crown** is a 14g item with a 70% chance to autocast a random spell instead
+- **Turtle Shell** is an 8g item that halves every hit armor does not soak; **Pain au Chocolat** is a 14g rare unique food that halves only the first such hit
 - **Second Skin** is a 9g uncommon item: the first time armor hits 0 each round, restore half your max armor
 - **Moon Cake** is a 25g rare unique food: autocast Omen at the start of every round
 - **Empty Orb** is a 7g item that autocasts Omen when a round starts with no spells; **Empty Phone** is the 9g Phone a Friend version
@@ -217,7 +218,7 @@ The Soldier and Orc sprites are from **Tiny RPG Character Asset Pack 01** by [Ze
 | Normal timer | none until The Clock curse |
 | Clock curse | first stack 5:00, each later stack -40%, floor 0:30 |
 | Final boss | 3 rounds, shared clock if active |
-| Base damage | `3 + total curse stacks + floor(gold spent / 60)`, then Heavy Hand and other modifiers apply |
+| Base damage | `3 + floor(1.3 × total curse stacks) + floor(gold spent / 60)`, then Heavy Hand and other modifiers apply |
 | Paid guess damage | curse-scaled base, modified only by curses |
 | Final boss damage | 3 base plus curses |
 | Timeout | ends the run immediately; armor, immunity and revives cannot prevent it |

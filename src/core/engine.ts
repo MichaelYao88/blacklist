@@ -789,7 +789,22 @@ export function createCore(content: Content): Core {
       emit(rt, { type: 'armorChanged', armor: state.armor, max: state.maxArmor });
     }
 
-    const dealt = modified - armorUsed;
+    // Hits that armor does not soak can be softened further. The one-shot food
+    // charge is spent even if an equipped item would also reduce the hit.
+    let dealt = modified - armorUsed;
+    if (dealt > 0 && armorUsed === 0) {
+      if ((state.unarmoredHalfCharges ?? 0) > 0) {
+        state.unarmoredHalfCharges -= 1;
+        dealt = Math.floor(dealt * 0.5);
+      }
+      let multiplier = 1;
+      for (const item of state.items.slice()) {
+        const def = itemById.get(item.id);
+        if (!def?.unarmoredHitMultiplier || !isEquipped(item, def)) continue;
+        multiplier *= def.unarmoredHitMultiplier;
+      }
+      if (multiplier < 1) dealt = Math.floor(dealt * multiplier);
+    }
     if (dealt > 0) {
       state.hp = Math.max(0, state.hp - dealt);
       state.stats.damageTaken += dealt;
@@ -1375,6 +1390,9 @@ export function createCore(content: Content): Core {
       case 'damageCapNextRound':
         state.nextRoundDamageCap = effect.amount;
         break;
+      case 'unarmoredHalfCharges':
+        state.unarmoredHalfCharges = (state.unarmoredHalfCharges ?? 0) + effect.count;
+        break;
       case 'visionCounts':
         state.visionCountsRounds = Math.max(state.visionCountsRounds ?? 0, effect.rounds);
         break;
@@ -1775,12 +1793,13 @@ export function createCore(content: Content): Core {
     const remaining = clock === null ? null : Math.max(30_000, clock + state.bonusTimeMs);
     const timerStart = remaining;
 
-    // Encounter damage is 3 plus one per curse stack. Curses are the only
-    // growth; Heavy Hand still multiplies the total.
+    // Encounter damage is 3 plus 1.3 per curse stack, rounded down. Curses are
+    // the only growth; Heavy Hand still multiplies the total.
     const curseTotal = state.curses.reduce((sum, entry) => sum + entry.stacks, 0);
+    const curseDamage = Math.floor((curseTotal * 13) / 10);
     const baseDamage = Math.max(
       0,
-      Math.round((3 + curseTotal) * damageMultiplier(state) + state.bonusBaseDamage),
+      Math.round((3 + curseDamage) * damageMultiplier(state) + state.bonusBaseDamage),
     );
 
     const round: RoundState = {
@@ -3816,6 +3835,7 @@ export function createCore(content: Content): Core {
       pendingAbsent: 0,
       pendingReveals: [],
       permanentReveals: [],
+      unarmoredHalfCharges: 0,
       nextRoundRandomGuesses: 0,
       permanentRandomGuesses: 0,
       permanentRoundStartSpells: [],
@@ -3924,6 +3944,7 @@ export function createCore(content: Content): Core {
       if (typeof state.pendingStartingCurses !== 'number') state.pendingStartingCurses = 0;
       if (typeof state.pendingCurseRemoval !== 'number') state.pendingCurseRemoval = 0;
       if (typeof state.pendingAbsent !== 'number') state.pendingAbsent = 0;
+      if (typeof state.unarmoredHalfCharges !== 'number') state.unarmoredHalfCharges = 0;
       if (!Array.isArray(state.pendingReveals)) state.pendingReveals = [];
       if (!Array.isArray(state.permanentReveals)) {
         state.permanentReveals = state.pendingReveals.slice();

@@ -263,6 +263,15 @@ export const FOODS: FoodDef[] = [
     ],
   }),
   defineFood({
+    id: 'pain-au-chocolat',
+    name: 'Pain au Chocolat',
+    description: 'The first hit armor does not soak is reduced by 50%. No slot.',
+    price: 14,
+    rarity: 'rare',
+    unique: true,
+    effects: [{ type: 'unarmoredHalfCharges', count: 1 }],
+  }),
+  defineFood({
     id: 'feast',
     name: 'Feast',
     description: '+5 max HP, heal 5. No slot.',

@@ -1278,13 +1278,21 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'black-eye',
     name: 'Black Eye',
-    description: 'A hit gets through: 40% chance to autoguess a random word.',
+    description: 'A hit gets through: 70% chance to autoguess a random word.',
     price: 8,
     kind: 'gear',
     on: {
       onDamageTaken: (_ctx, p) =>
-        p.dealt > 0 ? [{ type: 'randomGuesses', count: 1, chancePct: 40 }] : [],
+        p.dealt > 0 ? [{ type: 'randomGuesses', count: 1, chancePct: 70 }] : [],
     },
+  }),
+  defineItem({
+    id: 'turtle-shell',
+    name: 'Turtle Shell',
+    description: 'Hits that armor does not soak are reduced by 50%.',
+    price: 8,
+    kind: 'gear',
+    unarmoredHitMultiplier: 0.5,
   }),
   defineItem({
     id: 'palindrome',
@@ -1494,13 +1502,13 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'thorn-crown',
     name: 'Thorn Crown',
-    description: 'A hit gets through: 30% chance to autocast a random spell.',
+    description: 'A hit gets through: 70% chance to autocast a random spell.',
     price: 14,
     kind: 'gear',
     rarity: 'uncommon',
     on: {
       onDamageTaken: (_ctx, p) =>
-        p.dealt > 0 ? [{ type: 'castSpell', spell: 'random', chancePct: 30 }] : [],
+        p.dealt > 0 ? [{ type: 'castSpell', spell: 'random', chancePct: 70 }] : [],
     },
   }),
   defineItem({

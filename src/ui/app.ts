@@ -1491,7 +1491,7 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>Damage</h3>
-        <p>Your first guess each round is free. Wrong paid guesses take <b>3 damage</b> before curses. Damage never grows with level; only curses change it. A correct guess never hurts you.</p>
+        <p>Your first guess each round is free. Wrong paid guesses take <b>3 damage</b> before curses, plus <b>1.3 per curse stack</b> rounded down. Damage never grows with level; only curses change it. A correct guess never hurts you.</p>
       </article>
       <article class="rule-card">
         <h3>Armor</h3>
