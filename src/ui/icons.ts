@@ -8,7 +8,6 @@ const ITEM_ICONS: Record<string, string> = {
   'four-leaf-clover': '🍀',
   'doggy-bag': '🐶',
   'head-start': '🏃',
-  quickdraw: '🤠',
   daredevil: '😈',
   encore: '🔁',
   tally: '🧮',

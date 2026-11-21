@@ -91,7 +91,7 @@ export const FOODS: FoodDef[] = [
     id: 'xiaolongbao',
     name: 'Xiaolongbao',
     description: '+2 max HP and heal 20% of max HP. No slot.',
-    price: 5,
+    price: 2,
     effects: [
       { type: 'maxHp', delta: 2 },
       { type: 'healPercent', percent: 20 },
@@ -128,7 +128,7 @@ export const FOODS: FoodDef[] = [
     id: 'plov',
     name: 'Plov',
     description: 'Heal 40% of missing HP. No slot.',
-    price: 4,
+    price: 3,
     effects: [{ type: 'healMissingPercent', percent: 40 }],
   }),
   defineFood({
@@ -155,7 +155,7 @@ export const FOODS: FoodDef[] = [
     id: 'fortune-cookie',
     name: 'Fortune Cookie',
     description: 'Next round: autoguess a random word. No slot.',
-    price: 1,
+    price: 2,
     appearanceWeight: 5,
     effects: [{ type: 'queueRandomGuesses', count: 1 }],
   }),
@@ -224,7 +224,7 @@ export const FOODS: FoodDef[] = [
     id: 'taco-pizza-party',
     name: 'Taco Pizza Party',
     description: 'Heal 12 HP and +1 max armor. No slot.',
-    price: 14,
+    price: 6,
     rarity: 'rare',
     effects: [
       { type: 'heal', amount: 12 },
@@ -450,7 +450,7 @@ export const FOODS: FoodDef[] = [
     id: 'overtime-tea',
     name: 'Overtime Tea',
     description: '+20s this round and heal 4. No slot.',
-    price: 5,
+    price: 2,
     requiresClock: true,
     effects: [
       { type: 'addTime', ms: 20_000 },

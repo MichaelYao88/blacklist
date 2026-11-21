@@ -23,7 +23,7 @@ describe('shop relic labelling', () => {
         { id: 'o8', kind: 'eat', def: 'purge-the-d', price: 12 },
         { id: 'o9', kind: 'eat', def: 'pay-respects-f', price: 8 },
         { id: 'o10', kind: 'eat', def: 'reveal-the-d', price: 18 },
-        { id: 'o11', kind: 'item', def: 'quickdraw', price: 24 },
+        { id: 'o11', kind: 'item', def: 'scattershot', price: 10 },
       ],
       rerollCost: 2,
       rerolls: 0,
@@ -48,7 +48,7 @@ describe('shop relic labelling', () => {
     expect(relic?.querySelector('.tag')?.textContent?.trim()).toBe('RELIC');
 
     const uncommon = [...root.querySelectorAll<HTMLElement>('.offer-card')]
-      .find((card) => card.textContent?.includes('Quickdraw'));
+      .find((card) => card.textContent?.includes('Scattershot'));
     expect(uncommon?.classList.contains('uncommon')).toBe(true);
     expect(uncommon?.querySelector('.tag')?.textContent?.trim()).toBe('UNCOMMON');
 

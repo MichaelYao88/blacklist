@@ -125,6 +125,8 @@ export interface RoundState {
   baseDamage: number;
   /** Extra damage added to each later wrong, non-free guess this round. */
   damageRamp: number;
+  /** Bonus damage banked by free guesses; consumed by the next paid wrong guess. */
+  pendingDamage: number;
   elapsedMs: number;
   remainingMs: number | null;
   timerStartMs: number | null;
@@ -380,6 +382,7 @@ export type Effect =
   | { type: 'addRandomRelic' }
   | { type: 'addRandomCurse' }
   | { type: 'openShop' }
+  | { type: 'startBattle' }
   | { type: 'addPreviewItem' }
   | { type: 'addPreviewCurse' }
   | { type: 'eat'; food: string }

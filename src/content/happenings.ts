@@ -794,6 +794,42 @@ export const HAPPENINGS: HappeningDef[] = [
       },
     ],
   }),
+  defineHappening({
+    id: 'the-spammer',
+    name: 'The Spammer',
+    description: '"TUBES->BLING->CHAMP->WORDY, STARE->WHOMP->FLICK->BUNGY, SLANT->PRICE->DOUGH->BALMY, BLIND->GRUMP->STOVE->WHACK." "I spam these fast and then I solve!"',
+    options: [
+      {
+        id: 'battle',
+        label: 'Take the Head Start',
+        description: 'Gain Head Start and start a battle. Needs a free item slot and no Head Start.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'You take the Head Start. The Spammer grins and throws you into a match.',
+          effects: [
+            { type: 'addItem', item: 'head-start' },
+            { type: 'startBattle' },
+          ],
+        }],
+      },
+      {
+        id: 'fan',
+        label: "I'm already a fan",
+        description: 'Gain 10 gold for already owning Head Start.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'The Spammer tosses you 10 gold for being a fan.',
+          effects: [{ type: 'gold', amount: 10 }],
+        }],
+      },
+      {
+        id: 'leave',
+        label: 'Leave the Spammer',
+        description: 'Nothing happens.',
+        outcomes: [{ chancePct: 100, text: 'The Spammer keeps typing.', effects: [] }],
+      },
+    ],
+  }),
 ];
 
 export const HAPPENING_BY_ID = new Map(HAPPENINGS.map((h) => [h.id, h]));

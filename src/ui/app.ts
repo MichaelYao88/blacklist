@@ -1302,10 +1302,9 @@ function renderOpeningShield(view: RunView | null): void {
     return;
   }
 
-  const quickdraw = view.items.some((item) => item.id === 'quickdraw' && item.equipped);
   const headStart = view.items.some((item) => item.id === 'head-start' && item.equipped);
-  const total = quickdraw ? 12_000 : headStart ? 8_000 : Math.max(1_000, left);
-  const label = quickdraw ? 'Quickdraw!' : headStart ? 'Head Start!' : 'Opening Shield!';
+  const total = headStart ? 7_000 : Math.max(1_000, left);
+  const label = headStart ? 'Head Start!' : 'Opening Shield!';
 
   if (!openingActive || total !== openingTotalMs) {
     openingRoot.innerHTML = `
@@ -1746,7 +1745,7 @@ function guessDamageHtml(board: BoardView): string {
     || board.noGuessDamage
     || board.shielded
     || board.guessImmuneMsLeft > 0;
-  const value = safe ? 0 : board.rawNextGuessDamage;
+  const value = safe ? 0 : board.nextGuessDamage;
   return `<div class="guess-damage ${safe ? 'safe' : ''}" title="Damage a wrong guess deals once your free guesses and shield are gone.">
     <span>WRONG GUESS</span>
     <b>${safe ? 'FREE' : `${value} damage`}</b>
@@ -2391,6 +2390,12 @@ function renderHappening(phase: Extract<PhaseView, { kind: 'happening' }>): stri
               : option.requiresAnySpell
                 ? `<span class="warn">${option.locked ? 'NEEDS A SPELL' : 'TRADES A RANDOM SPELL'}</span>`
                 : ''}
+            ${phase.happening === 'the-spammer' && option.id === 'battle' && option.locked
+              ? '<span class="warn">NEEDS A FREE SLOT AND NO HEAD START</span>'
+              : ''}
+            ${phase.happening === 'the-spammer' && option.id === 'fan' && option.locked
+              ? '<span class="warn">NEEDS HEAD START</span>'
+              : ''}
             ${option.costGold ? `<span class="warn">Costs ${option.costGold} gold${option.fallbackPct ? ` · or ${Math.round(option.fallbackPct * 100)}% of your gold` : ''}</span>` : ''}
           </div>
           <div class="odds">

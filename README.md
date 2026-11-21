@@ -22,7 +22,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - 50 is the final boss: three rounds back-to-back with no intermission. Bosses ignore the **Second Wind** curse
 - **Second Wind** is a curse: after you solve a word, a second word appears with one free guess
 - The Toll is only offered through level 40; The Tax and The Chained are only offered through level 20
-- Base encounter damage is **3 + 1.3 per curse stack, rounded down**, plus **+1 for every 60 gold spent this run**; characters that start with curses subtract **1.3 per starting curse stack**, and Heavy Hand multiplies the base by **1.5 per stack**
+- Base encounter damage is **3 + 1.3 per curse stack, rounded down**, plus **+1 for every 60 gold spent this run**; characters that start with curses subtract **1.3 per starting curse stack**, and Heavy Hand multiplies the base by **1.5 per stack**. Each free guess banks **+0.5 damage per curse stack** for the next paid wrong guess, and every paid wrong guess adds **+1 per occupied item slot above 5**
 - Vision curses are usually rare. **Take the L** is common, while **Hard R**, **Without the D**, and **IP Theft** are uncommon; the first/second/third/fourth/fifth position curses hide their tile **50% of the time**
 - The blacklist is disabled and hidden until **The List** curse is taken; The List is a single curse, never stacks, and arrives stocked with the first guess from every earlier round
 - The clock is disabled until **The Clock** curse is taken; the first stack gives 5:00 and each further stack shrinks it by 40%. If the clock reaches zero, the run ends immediately
@@ -44,11 +44,11 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Revealed letters stay marked on the keyboard and in a Revealed panel for the puzzle; random reveals lean toward letters that are not in the answer; letter-reveal foods are permanent for the run
 - Vision-hidden letters show the hatched hidden key on the keyboard; reveals and rule-outs take priority over that layer
 - Every finished encounter pays gold; solves offer coins, usually a spell, and only rarely gear or a meal
-- Opening shields such as **Head Start** (8s, common) and **Quickdraw** (12s, uncommon) make guesses in their window count as free guesses and show a floating timer banner with the remaining seconds
+- Opening shields such as **Head Start** (7s, rare) make guesses in their window count as free guesses and show a floating timer banner with the remaining seconds
 - Rarity uses cumulative floors: 40% pulls from rare, uncommon or common, 45% pulls from uncommon or common, and 15% pulls from common only. If a tier is empty, it falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the final boss)
-- 103 items (94 shop items + 9 rare relics), 6 spells, 84 foods and 29 happenings
+- 103 items (93 shop items + 10 rare relics), 6 spells, 84 foods and 30 happenings
 - New foods include **U-nagi**, **Donut Holes**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
@@ -111,7 +111,8 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Black Market Ledger** is an 8g item: every shop purchase or event arrival has a 40% chance to add a random spell
 - **The Spellbroker** event trades your spells for permanent value: Omen or Phone a Friend becomes a random permanent letter, Heal becomes +10 max HP and a 10 HP heal, and Immunity or Restore becomes +5 armor
 - **The Spell Tithe** event trades one random spell for either permanent knowledge of a specific letter or a permanent purge of a specific letter; the trades are locked when you have no spells
-- **Fortune Cookie** is a 1g food with a hidden 5× appearance weight: it queues one autoguess for the next round
+- **The Spammer** event offers Head Start plus an immediate battle when you have a free slot, pays 10 gold if you already own Head Start, or lets you leave
+- **Fortune Cookie** is a 2g food with a hidden 5× appearance weight: it queues one autoguess for the next round
 - **Oracle's Banquet** is a 28g rare unique food: it permanently autoguesses at the start of every round
 - **Tally** counts every guess, including ally and autoguesses
 - **Harvest Charm**, **Empty Mouth**, **Empty Orb**, **Empty Phone**, **Detour**, **Dark Echo**, **Black Eye**, **Palindrome**, **Oasis 15**, **Shellshock**, **Echo Chamber**, **Panic Button**, and **Wild Magic** are the new autoguess/autocast items

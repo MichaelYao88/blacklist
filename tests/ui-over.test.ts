@@ -10,7 +10,7 @@ describe('end screen loadout', () => {
     const { state } = game.newRun({ seed: 'over-loadout' });
     state.items = [
       { instance: 'i-bloom', id: 'bloom', data: {}, equipped: true },
-      { instance: 'i-quick', id: 'quickdraw', data: {}, equipped: true },
+      { instance: 'i-quick', id: 'scattershot', data: {}, equipped: true },
     ];
     state.phase = 'over';
     state.over = undefined;
@@ -24,7 +24,7 @@ describe('end screen loadout', () => {
 
   it('shows equipped items as hoverable tooltips', () => {
     const chips = [...root.querySelectorAll<HTMLElement>('.over-loadout span[data-tip]')];
-    expect(chips.map((chip) => chip.textContent?.trim())).toEqual(['Bloom', 'Quickdraw']);
+    expect(chips.map((chip) => chip.textContent?.trim())).toEqual(['Bloom', 'Scattershot']);
     for (const chip of chips) {
       expect(chip.getAttribute('tabindex')).toBe('0');
       expect(chip.dataset.tip).toContain('\n');

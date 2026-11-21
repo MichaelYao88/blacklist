@@ -97,6 +97,9 @@ export function createCore(content: Content): Core {
   const curseStacks = (state: RunState, id: CurseId): number =>
     state.curses.find((entry) => entry.id === id)?.stacks ?? 0;
 
+  const totalCurseStacks = (state: RunState): number =>
+    state.curses.reduce((sum, entry) => sum + entry.stacks, 0);
+
   const curseDefs = (state: RunState): Array<{ def: CurseDef; stacks: number }> =>
     state.curses
       .map((entry) => {
@@ -1201,6 +1204,9 @@ export function createCore(content: Content): Core {
       case 'openShop':
         openShop(rt);
         break;
+      case 'startBattle':
+        startEventBattle(rt);
+        break;
       case 'rerollShop': {
         const shop = state.shop;
         if (!shop || state.phase !== 'shop') break;
@@ -1809,6 +1815,21 @@ export function createCore(content: Content): Core {
 
   // ── round lifecycle ──────────────────────────────────────────────────────
 
+  /**
+   * Events can spend their own node on a normal encounter. The node keeps its
+   * level, stops being a happening, and is consumed when the round ends.
+   */
+  function startEventBattle(rt: Runtime): void {
+    const state = rt.state;
+    if (state.phase !== 'happening') return;
+    const node = state.nodes[state.nodeIndex];
+    if (!node) return;
+    node.kind = 'round';
+    node.boss = undefined;
+    state.happening = undefined;
+    startRound(rt);
+  }
+
   function startRound(rt: Runtime): void {
     const state = rt.state;
     const node = state.nodes[state.nodeIndex];
@@ -1844,6 +1865,7 @@ export function createCore(content: Content): Core {
       paidGuesses: 0,
       baseDamage,
       damageRamp: 0,
+      pendingDamage: 0,
       elapsedMs: 0,
       remainingMs: remaining,
       timerStartMs: timerStart,
@@ -2096,7 +2118,14 @@ export function createCore(content: Content): Core {
     const base = boss?.damageFor
       ? boss.damageFor(state, next ? { ...round, totalGuesses: round.totalGuesses + 1 } : round)
       : round.baseDamage;
-    return Math.max(0, Math.round(base + curseBonus));
+    // Every paid wrong guess also takes one hit per occupied slot beyond five.
+    // Preview and the real hit share this calculation so the HUD cannot drift.
+    const slotBonus = Math.max(0, usedSlots(state) - 5);
+    const goldBonus = Math.floor((state.goldSpent ?? 0) / 60);
+    return Math.max(
+      0,
+      Math.round(base + curseBonus + goldBonus + slotBonus + round.pendingDamage),
+    );
   }
 
   function expireRound(rt: Runtime): void {
@@ -2151,6 +2180,7 @@ export function createCore(content: Content): Core {
       round.hints = {};
       round.paidGuesses = 0;
       round.damageTaken = 0;
+      round.pendingDamage = 0;
       round.frozenUntilGuess = false;
       round.answer = chooseAnswer(rt, boss);
       // Knowledge foods promise a reveal every round, including Second Wind's
@@ -2344,6 +2374,13 @@ export function createCore(content: Content): Core {
     rt.pendingFree = false;
     rt.pendingFreeSource = undefined;
 
+    // Free guesses (including autoguesses, round-start guesses and friend
+    // guesses) bank damage for the next paid wrong guess. They still take no
+    // damage themselves.
+    if (guess.free) {
+      round.pendingDamage += totalCurseStacks(state) * 0.5;
+    }
+
     const presented = presentGuess(state, guess);
     const solved = word === round.answer;
     emit(rt, {
@@ -2380,8 +2417,9 @@ export function createCore(content: Content): Core {
       const boss = round.boss ? bossById.get(round.boss) : undefined;
       if (!boss?.noGuessDamage) {
         round.paidGuesses++;
-        const raw = guessDamageFor(state, round)
-          + Math.floor((state.goldSpent ?? 0) / 60);
+        const raw = guessDamageFor(state, round);
+        // The banked free-guess bonus belongs to exactly one paid wrong guess.
+        round.pendingDamage = 0;
         const amount = state.nextRoundDamageCap !== undefined
           ? Math.min(raw, state.nextRoundDamageCap)
           : raw;
@@ -2955,6 +2993,21 @@ export function createCore(content: Content): Core {
       const leave = baseOptions.find((option) => option.id === 'leave');
       options = [...trades, ...(leave ? [leave] : [])];
     }
+    if (def.id === 'the-spammer') {
+      const ownsHeadStart = state.items.some((item) => item.id === 'head-start');
+      const headStartDef = itemById.get('head-start');
+      const headStartSlots = headStartDef ? itemSlots(headStartDef) : 1;
+      const hasFreeSlot = usedSlots(state) + headStartSlots <= state.slots;
+      options = options.map((option) => {
+        if (option.id === 'battle') {
+          return { ...option, locked: ownsHeadStart || !hasFreeSlot };
+        }
+        if (option.id === 'fan') {
+          return { ...option, locked: !ownsHeadStart };
+        }
+        return option;
+      });
+    }
     state.happening = {
       id: def.id,
       options,
@@ -3058,6 +3111,10 @@ export function createCore(content: Content): Core {
       emit(rt, { type: 'message', text: 'You do not have that spell to trade.' });
       return;
     }
+    if (happening.options.find((entry) => entry.id === option.id)?.locked) {
+      emit(rt, { type: 'message', text: 'That option is locked.' });
+      return;
+    }
 
     if (option.costGold && option.costGold > 0) {
       if (state.gold >= option.costGold) {
@@ -3087,6 +3144,8 @@ export function createCore(content: Content): Core {
     const outcomeText = shown?.outcomes[chosen]?.text ?? outcome.text;
 
     applyEffects(rt, outcome.effects, { kind: 'happening', happening: def.id });
+    // Some options start a battle and leave the happening phase entirely.
+    if (state.phase !== 'happening') return;
     happening.resolved = {
       option: option.id,
       success,
@@ -3552,6 +3611,9 @@ export function createCore(content: Content): Core {
     // damageFor describes the hit a wrong guess takes at the round's current
     // progress, so preview the next guess by stepping the counter forward.
     const rawNext = guessDamageFor(state, round, true);
+    const previewNext = state.nextRoundDamageCap !== undefined
+      ? Math.min(rawNext, state.nextRoundDamageCap)
+      : rawNext;
     const noGuessDamage = Boolean(boss?.noGuessDamage);
     const timerInterest = state.items.some((item) => {
       const def = itemById.get(item.id);
@@ -3616,7 +3678,7 @@ export function createCore(content: Content): Core {
     return {
       guesses,
       freeGuessesLeft: round.freeLeft,
-      nextGuessDamage: round.freeLeft > 0 || noGuessDamage ? 0 : rawNext,
+      nextGuessDamage: round.freeLeft > 0 || noGuessDamage ? 0 : previewNext,
       rawNextGuessDamage: rawNext,
       remainingMs: round.remainingMs,
       timerStartMs: round.timerStartMs,
@@ -4108,6 +4170,9 @@ export function createCore(content: Content): Core {
         }
         if (typeof state.round.damageRamp !== 'number') {
           state.round.damageRamp = 0;
+        }
+        if (typeof state.round.pendingDamage !== 'number') {
+          state.round.pendingDamage = 0;
         }
       }
       // Older saves can still have the retired upgrade offer kind. Drop those

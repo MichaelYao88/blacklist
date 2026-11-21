@@ -2320,7 +2320,7 @@ describe('latest balance pass', () => {
     expect(FOOD_BY_ID.get('pho-dac-biet')?.price).toBe(6);
     expect(FOOD_BY_ID.get('pho-dac-biet')?.effects)
       .toContainEqual({ type: 'healPercent', percent: 100 });
-    expect(FOOD_BY_ID.get('xiaolongbao')?.price).toBe(5);
+    expect(FOOD_BY_ID.get('xiaolongbao')?.price).toBe(2);
     expect(FOOD_BY_ID.get('cheeseburger')?.price).toBe(3);
     expect(FOOD_BY_ID.get('double-cheeseburger')?.price).toBe(4);
     expect(FOOD_BY_ID.get('pani-puri')?.price).toBe(1);
@@ -2362,7 +2362,7 @@ describe('latest balance pass', () => {
     expect(FOOD_BY_ID.get('arepa')?.price).toBe(2);
     expect(FOOD_BY_ID.get('arepa')?.effects)
       .toContainEqual({ type: 'healPercent', percent: 20 });
-    expect(FOOD_BY_ID.get('plov')?.price).toBe(4);
+    expect(FOOD_BY_ID.get('plov')?.price).toBe(3);
     expect(FOOD_BY_ID.get('plov')?.effects)
       .toContainEqual({ type: 'healMissingPercent', percent: 40 });
     expect(FOOD_BY_ID.get('cheeseburger')?.effects)
@@ -2544,7 +2544,7 @@ describe('latest balance pass', () => {
 
   it('Taco Pizza Party heals 12 and adds 1 max armor', () => {
     const def = FOOD_BY_ID.get('taco-pizza-party');
-    expect(def?.price).toBe(14);
+    expect(def?.price).toBe(6);
     expect(def?.effects).toContainEqual({ type: 'heal', amount: 12 });
     expect(def?.effects).toContainEqual({ type: 'maxArmor', delta: 1 });
 
@@ -2553,11 +2553,11 @@ describe('latest balance pass', () => {
     state.gold = 20;
     state.hp = 5;
     const armorBefore = state.maxArmor;
-    state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'taco-pizza-party', price: 14 }]);
+    state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'taco-pizza-party', price: 6 }]);
     const eaten = act(state, { type: 'buy', offerId: 'o0' });
     expect(eaten.state.hp).toBe(15);
     expect(eaten.state.maxArmor).toBe(armorBefore + 1);
-    expect(eaten.state.gold).toBe(6);
+    expect(eaten.state.gold).toBe(14);
   });
 
   it('Coveted Cake trades an item slot for a random rare relic', () => {
@@ -2726,7 +2726,7 @@ describe('latest balance pass', () => {
     const second = nextRound(late.state);
     setAnswer(second.state, 'crane');
     second.state.round!.freeLeft = 0;
-    second.state.round!.elapsedMs = 8_000;
+    second.state.round!.elapsedMs = 7_000;
     second.state.armor = 0;
     const unshielded = act(second.state, { type: 'guess', word: 'slate' });
     expect(unshielded.state.round?.guesses[0].free).toBe(false);
@@ -2814,7 +2814,6 @@ describe('latest balance pass', () => {
       'oracle-skull': 12,
       'phoenix-egg': 18,
       potluck: 26,
-      quickdraw: 24,
       'speed-dial': 28,
       spellplate: 16,
       'thorn-crown': 14,
@@ -2823,30 +2822,6 @@ describe('latest balance pass', () => {
     for (const [id, price] of Object.entries(prices)) {
       expect(ITEM_BY_ID.get(id)?.price, id).toBe(price);
     }
-  });
-
-  it('Quickdraw uses a 12s window and pays gold inside it', () => {
-    const early = start('quickdraw-early');
-    early.state.items.push({ instance: 'i-q', id: 'quickdraw', data: {}, equipped: true });
-    const first = nextRound(early.state);
-    setAnswer(first.state, 'crane');
-    first.state.round!.freeLeft = 0;
-    first.state.round!.elapsedMs = 11_000;
-    const shielded = act(first.state, { type: 'guess', word: 'slate' });
-    expect(shielded.state.round?.guesses[0].free).toBe(true);
-    expect(shielded.state.hp).toBe(15);
-    expect(shielded.state.gold).toBe(12);
-
-    const late = start('quickdraw-late');
-    late.state.items.push({ instance: 'i-q', id: 'quickdraw', data: {}, equipped: true });
-    const second = nextRound(late.state);
-    setAnswer(second.state, 'crane');
-    second.state.round!.freeLeft = 0;
-    second.state.round!.elapsedMs = 13_000;
-    second.state.armor = 0;
-    const unshielded = act(second.state, { type: 'guess', word: 'slate' });
-    expect(unshielded.state.round?.guesses[0].free).toBe(false);
-    expect(unshielded.state.hp).toBe(12);
   });
 
   it('Mending Plate starts with no armor bonus and pays per 8 HP healed', () => {
@@ -3096,14 +3071,11 @@ describe('latest balance pass', () => {
     expect(paid).toBe(true);
   });
 
-  it('Head Start is 8s and neither it nor Quickdraw is clock-gated', () => {
-    expect(ITEM_BY_ID.get('head-start')?.description).toContain('8s');
-    expect(ITEM_BY_ID.get('head-start')?.rarity).toBe('common');
+  it('Head Start is a 7s rare opening shield and Quickdraw is gone', () => {
+    expect(ITEM_BY_ID.get('head-start')?.description).toContain('7s');
+    expect(ITEM_BY_ID.get('head-start')?.rarity).toBe('rare');
     expect(ITEM_BY_ID.get('head-start')?.requiresClock).toBeUndefined();
-    expect(ITEM_BY_ID.get('quickdraw')?.requiresClock).toBeUndefined();
-    expect(ITEM_BY_ID.get('quickdraw')?.rarity).toBe('uncommon');
-    expect(ITEM_BY_ID.get('quickdraw')?.description).toBe('First 12s of each round: guesses are free.');
-    expect(ITEM_BY_ID.get('quickdraw')?.on?.onGuessScored).toBeUndefined();
+    expect(ITEM_BY_ID.get('quickdraw')).toBeUndefined();
   });
 
   it('refuses stale clock-gated shop and reward offers after the clock is gone', () => {
@@ -3220,14 +3192,13 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('stopped-clock')?.price).toBe(6);
   });
 
-  it('Head Start and Quickdraw do not stack their windows', () => {
+  it('Head Start sets a 7 second opening window', () => {
     const { state } = start('shield-stack');
     state.items.push(
       { instance: 'i-hs', id: 'head-start', data: {}, equipped: true },
-      { instance: 'i-qd', id: 'quickdraw', data: {}, equipped: true },
     );
     const next = nextRound(state);
-    expect(next.state.round?.immuneUntilMs).toBe(12_000);
+    expect(next.state.round?.immuneUntilMs).toBe(7_000);
   });
 
   it('Frozen Durian grants Time Freeze every 3 eats or solves', () => {
@@ -3948,14 +3919,14 @@ describe('round-start autoguess foods', () => {
     const { state } = start('fortune-cookie');
     state.phase = 'shop';
     state.gold = 10;
-    state.shop = shopState([{ id: 'f0', kind: 'eat', def: 'fortune-cookie', price: 1 }]);
+    state.shop = shopState([{ id: 'f0', kind: 'eat', def: 'fortune-cookie', price: 2 }]);
     const bought = act(state, { type: 'buy', offerId: 'f0' });
     expect(bought.state.nextRoundRandomGuesses).toBe(1);
     const next = nextRound(bought.state);
     expect(next.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
     expect(next.state.nextRoundRandomGuesses).toBe(0);
 
-    expect(FOOD_BY_ID.get('fortune-cookie')?.price).toBe(1);
+    expect(FOOD_BY_ID.get('fortune-cookie')?.price).toBe(2);
     expect(FOOD_BY_ID.get('fortune-cookie')?.appearanceWeight).toBe(5);
     expect(FOOD_BY_ID.get('fortune-cookie')?.effects)
       .toContainEqual({ type: 'queueRandomGuesses', count: 1 });
@@ -4125,7 +4096,7 @@ describe('relic uniqueness', () => {
     .map((item) => item.id);
 
   it('never offers a relic already in the player inventory', () => {
-    expect(relicIds).toHaveLength(9);
+    expect(relicIds).toHaveLength(10);
     let sawOtherRelic = false;
     for (let index = 0; index < 60; index++) {
       const { state } = start(`relic-owned-${index}`);
@@ -4313,7 +4284,7 @@ describe('spellbroker and ledger additions', () => {
     state.level = 1;
     state.phase = 'shop';
     state.gold = 10;
-    state.shop = shopState([{ id: 'f0', kind: 'eat', def: 'fortune-cookie', price: 1 }]);
+    state.shop = shopState([{ id: 'f0', kind: 'eat', def: 'fortune-cookie', price: 2 }]);
     const bought = act(state, { type: 'buy', offerId: 'f0' });
     expect(bought.state.nextRoundRandomGuesses).toBe(1);
 
@@ -4626,6 +4597,194 @@ describe('curse rarity and trigger curses', () => {
     }
     expect(revealed).toBeGreaterThan(0);
     expect(failed).toBeGreaterThan(0);
+  });
+});
+
+describe('balance pass', () => {
+  it('applies the food prices and Head Start tuning', () => {
+    expect(FOOD_BY_ID.get('xiaolongbao')?.price).toBe(2);
+    expect(FOOD_BY_ID.get('overtime-tea')?.price).toBe(2);
+    expect(FOOD_BY_ID.get('taco-pizza-party')?.price).toBe(6);
+    expect(FOOD_BY_ID.get('plov')?.price).toBe(3);
+    expect(FOOD_BY_ID.get('fortune-cookie')?.price).toBe(2);
+    expect(ITEM_BY_ID.get('head-start')?.price).toBe(8);
+    expect(ITEM_BY_ID.get('head-start')?.rarity).toBe('rare');
+    expect(ITEM_BY_ID.get('quickdraw')).toBeUndefined();
+  });
+});
+
+describe('The Spammer', () => {
+  function findSpammer(
+    prefix: string,
+    setup?: (state: RunState) => void,
+  ): StepResult {
+    for (let index = 0; index < 900; index++) {
+      const run = start(`${prefix}-${index}`);
+      setup?.(run.state);
+      const next = nextHappening(run.state);
+      if (next.state.happening?.id === 'the-spammer') return next;
+    }
+    throw new Error('could not find The Spammer');
+  }
+
+  it('uses the spammed words as its dialogue', () => {
+    const def = HAPPENING_BY_ID.get('the-spammer');
+    expect(def?.description).toContain(
+      'TUBES->BLING->CHAMP->WORDY, STARE->WHOMP->FLICK->BUNGY, SLANT->PRICE->DOUGH->BALMY, BLIND->GRUMP->STOVE->WHACK.',
+    );
+    expect(def?.description).toContain('I spam these fast and then I solve!');
+  });
+
+  it('offers the battle only without Head Start and with a free slot', () => {
+    const spammer = findSpammer('spammer-open');
+    const options = spammer.state.happening!.options;
+    expect(options.find((option) => option.id === 'battle')?.locked).toBe(false);
+    expect(options.find((option) => option.id === 'fan')?.locked).toBe(true);
+    expect(options.find((option) => option.id === 'leave')?.locked).toBeFalsy();
+  });
+
+  it('locks the battle when Head Start is owned and opens the fan reward', () => {
+    const spammer = findSpammer('spammer-owned', (state) => {
+      state.items.push({ instance: 'i-owned', id: 'head-start', data: {}, equipped: true });
+    });
+    const options = spammer.state.happening!.options;
+    expect(options.find((option) => option.id === 'battle')?.locked).toBe(true);
+    expect(options.find((option) => option.id === 'fan')?.locked).toBe(false);
+  });
+
+  it('locks the battle when every item slot is occupied', () => {
+    const spammer = findSpammer('spammer-full', (state) => {
+      for (let index = 0; index < state.slots; index++) {
+        state.items.push({
+          instance: `i-fill-${index}`,
+          id: 'hourglass',
+          data: {},
+          equipped: true,
+        });
+      }
+    });
+    expect(spammer.state.happening!.options.find((option) => option.id === 'battle')?.locked)
+      .toBe(true);
+  });
+
+  it('grants Head Start and starts the current-level battle immediately', () => {
+    const spammer = findSpammer('spammer-battle');
+    const level = spammer.state.level;
+    const chosen = act(spammer.state, { type: 'choose', optionId: 'battle' });
+    expect(chosen.state.phase).toBe('round');
+    expect(chosen.state.level).toBe(level);
+    expect(chosen.state.nodes[chosen.state.nodeIndex].kind).toBe('round');
+    expect(chosen.state.items.some(
+      (item) => item.id === 'head-start' && item.equipped,
+    )).toBe(true);
+    expect(chosen.state.round?.immuneUntilMs).toBe(7_000);
+  });
+
+  it('pays 10 gold when the player already owns Head Start', () => {
+    const spammer = findSpammer('spammer-fan', (state) => {
+      state.items.push({ instance: 'i-fan', id: 'head-start', data: {}, equipped: true });
+    });
+    const gold = spammer.state.gold;
+    const chosen = act(spammer.state, { type: 'choose', optionId: 'fan' });
+    expect(chosen.state.gold).toBe(gold + 10);
+    expect(chosen.state.phase).toBe('happening');
+  });
+});
+
+describe('free-guess and slot damage', () => {
+  it('banks 0.5 damage per curse stack per free guess and spends it on the next paid miss', () => {
+    const { state } = start('free-guess-bank');
+    state.curses = [{ id: 'censor', stacks: 2 }];
+    setAnswer(state, 'crane');
+    state.round!.baseDamage = 3;
+    state.round!.freeLeft = 1;
+    state.armor = 0;
+    state.maxArmor = 0;
+
+    const free = act(state, { type: 'guess', word: 'slate' });
+    expect(free.state.hp).toBe(15);
+    expect(free.state.round?.pendingDamage).toBe(1);
+
+    const paid = act(free.state, { type: 'guess', word: 'brick' });
+    expect(paid.state.hp).toBe(11);
+    expect(paid.state.round?.pendingDamage).toBe(0);
+  });
+
+  it('stacks every free trigger and applies the total to one paid miss', () => {
+    const { state } = start('free-guess-stack');
+    state.curses = [{ id: 'censor', stacks: 2 }];
+    setAnswer(state, 'crane');
+    state.round!.baseDamage = 3;
+    state.round!.freeLeft = 3;
+    state.armor = 0;
+    state.maxArmor = 0;
+
+    let current = act(state, { type: 'guess', word: 'slate' }).state;
+    current = act(current, { type: 'guess', word: 'brick' }).state;
+    current = act(current, { type: 'guess', word: 'plumb' }).state;
+    expect(current.round?.pendingDamage).toBe(3);
+
+    const paid = act(current, { type: 'guess', word: 'chunk' });
+    expect(paid.state.hp).toBe(9);
+    expect(paid.state.round?.pendingDamage).toBe(0);
+  });
+
+  it('adds one damage per equipped slot above five and previews the same number', () => {
+    const { state } = start('slot-damage');
+    state.slots = 7;
+    for (let index = 0; index < 6; index++) {
+      state.items.push({
+        instance: `i-slot-${index}`,
+        id: 'hourglass',
+        data: {},
+        equipped: true,
+      });
+    }
+    setAnswer(state, 'crane');
+    state.round!.baseDamage = 3;
+    state.round!.freeLeft = 0;
+    state.armor = 0;
+    state.maxArmor = 0;
+
+    const phase = game.view(state).phase;
+    if (phase.kind !== 'round') throw new Error('expected round');
+    expect(phase.board.rawNextGuessDamage).toBe(4);
+
+    const guessed = act(state, { type: 'guess', word: 'slate' });
+    expect(guessed.state.hp).toBe(11);
+  });
+
+  it('counts equipped slots only, not unused capacity', () => {
+    const { state } = start('slot-capacity');
+    state.slots = 10;
+    for (let index = 0; index < 4; index++) {
+      state.items.push({
+        instance: `i-slot-${index}`,
+        id: 'hourglass',
+        data: {},
+        equipped: true,
+      });
+    }
+    setAnswer(state, 'crane');
+    state.round!.baseDamage = 3;
+    state.round!.freeLeft = 0;
+    state.armor = 0;
+    state.maxArmor = 0;
+
+    const guessed = act(state, { type: 'guess', word: 'slate' });
+    expect(guessed.state.hp).toBe(12);
+  });
+
+  it('resets banked damage when Second Wind starts its second word', () => {
+    const { state } = start('free-guess-second-wind');
+    state.curses.push({ id: 'second-wind', stacks: 1 });
+    const started = nextRound(state);
+    setAnswer(started.state, 'crane');
+    started.state.round!.freeLeft = 0;
+    started.state.round!.pendingDamage = 4;
+    const solved = act(started.state, { type: 'guess', word: 'crane' });
+    expect(solved.state.round?.gauntletIndex).toBe(1);
+    expect(solved.state.round?.pendingDamage).toBe(0);
   });
 });
 
