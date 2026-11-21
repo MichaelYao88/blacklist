@@ -26,7 +26,7 @@ function everyThreeFoodsOrSolves(self: { data: Record<string, number> }): Effect
   ];
 }
 
-/** Necronomicon permanently reveals one extra random letter per 13 HP paid. */
+/** Necronomicon reveals one extra random letter per 13 HP paid when Omen is cast. */
 function necronomiconLetters(self: { data: Record<string, number> }): number {
   return Math.floor((self.data.paid ?? 0) / 13);
 }
@@ -356,7 +356,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'necronomicon',
     name: 'Necronomicon',
-    description: 'Click to pay 13% of your max HP and cast Omen. Each Omen cast permanently reveals an extra random letter for every 13 HP paid to the book.',
+    description: 'Click to pay 13% of your max HP and cast Omen. Each Omen cast reveals an extra random letter this round for every 13 HP paid to the book.',
     price: 13,
     kind: 'gear',
     rarity: 'rare',
@@ -387,10 +387,8 @@ export const ITEMS: ItemDef[] = [
       onRoundStart: () => [{ type: 'setItemData', stat: '_uses', value: 0 }],
       onSpellCast: (ctx, p) => {
         if (p.spell !== 'omen') return [];
-        return Array.from(
-          { length: necronomiconLetters(ctx.self) },
-          () => ({ type: 'revealPermanentRandom' as const }),
-        );
+        const count = necronomiconLetters(ctx.self);
+        return count > 0 ? [{ type: 'revealRandom', count }] : [];
       },
     },
   }),

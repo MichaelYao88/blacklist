@@ -2236,7 +2236,8 @@ describe('latest balance pass', () => {
     expect(def?.rarity).toBe('rare');
     expect(def?.onUse).toBeDefined();
     expect(def?.description).toContain('pay 13% of your max HP');
-    expect(def?.description).toContain('permanently');
+    expect(def?.description).not.toContain('permanently');
+    expect(def?.description).toContain('extra random letter');
     expect(def?.description).not.toContain('round up');
 
     const { state } = start('necronomicon-use');
@@ -2257,7 +2258,7 @@ describe('latest balance pass', () => {
     expect(used.state.permanentReveals).toHaveLength(0);
   });
 
-  it('Necronomicon makes Omen permanently reveal 1 letter per 13 HP paid', () => {
+  it('Necronomicon makes Omen reveal 1 extra random letter per 13 HP paid', () => {
     const { state } = start('necronomicon-paid');
     state.items.push({
       instance: 'i-nec-paid',
@@ -2268,7 +2269,8 @@ describe('latest balance pass', () => {
     state.spells = [{ instance: 's-omen', id: 'omen' }];
     setAnswer(state, 'crane');
     const cast = act(state, { type: 'castSpell', instance: 's-omen' });
-    expect(cast.state.permanentReveals).toHaveLength(2);
+    expect(cast.state.permanentReveals).toHaveLength(0);
+    expect(Object.keys(cast.state.round?.hints ?? {})).toHaveLength(3);
     expect(cast.events.some(
       (event) => event.type === 'spellCast' && event.spell.id === 'omen',
     )).toBe(true);
@@ -2286,7 +2288,8 @@ describe('latest balance pass', () => {
     const used = act(state, { type: 'useItem', instance: 'i-nec-cross' });
     expect(used.state.maxHp).toBe(13);
     expect(used.state.items.find((item) => item.id === 'necronomicon')?.data.paid).toBe(13);
-    expect(used.state.permanentReveals).toHaveLength(1);
+    expect(used.state.permanentReveals).toHaveLength(0);
+    expect(Object.keys(used.state.round?.hints ?? {})).toHaveLength(2);
   });
 
   it('Necronomicon cannot be used for free at 1 max HP', () => {
@@ -3356,7 +3359,8 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('counterweight')?.description).toContain('Completely blocked hit');
     expect(ITEM_BY_ID.get('encore')?.description).toContain('last solved answer');
     expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('pay 13% of your max HP');
-    expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('permanently reveals an extra random letter');
+    expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('reveals an extra random letter this round');
+    expect(ITEM_BY_ID.get('necronomicon')?.description).not.toContain('permanently');
     expect(ITEM_BY_ID.get('necronomicon')?.description).not.toContain('round up');
     expect(FOOD_BY_ID.get('hearty-meal')?.description).toBe('+5 max HP, heal 5. No slot.');
     expect(ITEM_BY_ID.get('loyalty-card')?.description).toContain('Every 10 shop purchases');
