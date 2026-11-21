@@ -194,14 +194,14 @@ Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title s
 
 ## Characters
 
-- **The Soldier** is the default: 15 HP, 5 armor, no starting gear or curses.
-- **The Pathfinder** unlocks when The Soldier reaches the first curse screen. They start with **Head Start**, **The List** curse, 14 HP, 3 armor and 15 gold.
+- **The Soldier** is the default: 15 HP, 5 armor, 12 gold, no starting gear or curses.
+- **The Pathfinder** unlocks when The Soldier reaches the first curse screen. They start with **Head Start**, **The List** curse, 14 HP, 3 armor and 9 gold.
 - **The Necromancer** unlocks after buying the **Necronomicon** once from a shop. They start with the **Necronomicon**, **The Sleeper** curse, 40 HP, 2 armor and 16 gold.
-- **The Purgamist** unlocks after buying 3 **Inkcap** across any runs. They start with **The Toll** curse, 12 HP, 4 armor, 17 gold, and purge 3 letters of your choice before the first round.
-- **The Gourmand** unlocks after buying 3 **Double Cheeseburgers** across any runs. They start with **Potluck**, **Porcupine's Dilemma** curse, 25 HP and 2 armor.
-- **The Farmer** unlocks after winning any run. They start with the **Harvest Charm** (character-only, not found in shops), 20 HP and 1 armor.
-- **The Empty Armor** unlocks after winning a run on **Ascension 1**. It starts with **Bulwark**, the character-only **Slow Mending** curse, 1 HP, 11 armor and one extra item slot.
-- **The Werewolf** unlocks after winning runs with **2 different characters**. It starts with **Dark Echo**, **Thorn Crown**, the **Weak Plate** and **Tight Slots** curses, 69 HP and no armor.
+- **The Purgamist** unlocks after buying 2 **Inkcap** across any runs. They start with **The Toll** curse, 12 HP, 4 armor, 17 gold, and purge 3 letters of your choice before the first round.
+- **The Gourmand** unlocks after buying 3 **Double Cheeseburgers** across any runs. They start with **Potluck**, **Porcupine's Dilemma** curse, 25 HP, 2 armor and 6 gold.
+- **The Farmer** unlocks after winning any run. They start with the **Harvest Charm** (character-only, not found in shops), 20 HP, 1 armor and 6 gold.
+- **The Empty Armor** unlocks after winning a run on **Ascension 1**. It starts with **Bulwark**, the character-only **Slow Mending** curse, 1 HP, 11 armor, one extra item slot and 6 gold.
+- **The Werewolf** unlocks after winning runs with **2 different characters**. It starts with **Dark Echo**, **Thorn Crown**, the **Weak Plate** and **Tight Slots** curses, 69 HP, no armor and 6 gold.
 - Once any character is unlocked, the title screen shows all eight character cards (locked cards list their unlock hint). Unlocks persist across runs and a large popup announces each new character.
 
 ## Sprites

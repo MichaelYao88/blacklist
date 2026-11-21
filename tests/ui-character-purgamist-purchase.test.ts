@@ -10,7 +10,7 @@ describe('Purgamist unlock purchases', () => {
     localStorage.clear();
     localStorage.setItem('blacklist.meta.v1', JSON.stringify({
       characters: ['runner'],
-      purchases: { inkcap: 2, 'poppy-seeds': 2 },
+      purchases: { inkcap: 1, 'poppy-seeds': 2 },
     }));
     const { state } = game.newRun({ seed: 'purgamist-purchase', character: 'runner' });
     state.phase = 'shop';
@@ -34,13 +34,13 @@ describe('Purgamist unlock purchases', () => {
     root.querySelector<HTMLElement>('[data-action="resume"]')!.click();
   });
 
-  it('requires three Inkcap purchases and ignores Poppy Seeds', () => {
+  it('requires two Inkcap purchases and ignores Poppy Seeds', () => {
     root.querySelector<HTMLElement>('[data-action="buy"][data-id="o0"]')!.click();
     expect(readMeta().purchases['poppy-seeds']).toBe(3);
     expect(readMeta().characters).not.toContain('purgamist');
 
     root.querySelector<HTMLElement>('[data-action="buy"][data-id="o1"]')!.click();
-    expect(readMeta().purchases.inkcap).toBe(3);
+    expect(readMeta().purchases.inkcap).toBe(2);
     expect(readMeta().characters).toContain('purgamist');
 
     const overlay = root.querySelector<HTMLElement>('.unlock-overlay');

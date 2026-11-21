@@ -640,7 +640,7 @@ function processEvents(events: GameEvent[]): void {
       const count = recordPurchase(event.def);
       const unlocked = [
         event.def === 'double-cheeseburger' && count >= 3 ? 'gourmand' : null,
-        event.def === 'inkcap' && count >= 3 ? 'purgamist' : null,
+        event.def === 'inkcap' && count >= 2 ? 'purgamist' : null,
         event.def === 'necronomicon' && count >= 1 ? 'necromancer' : null,
       ].filter((id): id is string => Boolean(id));
       for (const id of unlocked) {

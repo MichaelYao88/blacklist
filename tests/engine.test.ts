@@ -114,7 +114,7 @@ describe('cursed run setup', () => {
     expect(pathfinder.maxHp).toBe(14);
     expect(pathfinder.maxArmor).toBe(3);
     expect(pathfinder.armor).toBe(3);
-    expect(pathfinder.gold).toBe(15);
+    expect(pathfinder.gold).toBe(9);
     expect(pathfinder.items.some((item) => item.id === 'head-start' && item.equipped)).toBe(true);
     expect(pathfinder.curses.some((curse) => curse.id === 'the-list')).toBe(true);
 
@@ -139,6 +139,7 @@ describe('cursed run setup', () => {
     expect(gourmand.character).toBe('gourmand');
     expect(gourmand.maxHp).toBe(25);
     expect(gourmand.maxArmor).toBe(2);
+    expect(gourmand.gold).toBe(6);
     expect(gourmand.items.some((item) => item.id === 'potluck' && item.equipped)).toBe(true);
     expect(gourmand.curses.some((curse) => curse.id === 'porcupine')).toBe(true);
 
@@ -147,6 +148,7 @@ describe('cursed run setup', () => {
     expect(farmer.maxHp).toBe(20);
     expect(farmer.maxArmor).toBe(1);
     expect(farmer.armor).toBe(1);
+    expect(farmer.gold).toBe(6);
     expect(farmer.items.some((item) => item.id === 'harvest-charm' && item.equipped)).toBe(true);
     expect(farmer.curses).toEqual([]);
 
@@ -156,6 +158,7 @@ describe('cursed run setup', () => {
     expect(emptyArmor.maxArmor).toBe(11);
     expect(emptyArmor.armor).toBe(11);
     expect(emptyArmor.slots).toBe(5);
+    expect(emptyArmor.gold).toBe(6);
     expect(emptyArmor.items.some((item) => item.id === 'bulwark' && item.equipped)).toBe(true);
     expect(emptyArmor.curses.some((curse) => curse.id === 'slow-mending')).toBe(true);
 
@@ -165,6 +168,7 @@ describe('cursed run setup', () => {
     expect(werewolf.maxArmor).toBe(0);
     expect(werewolf.armor).toBe(0);
     expect(werewolf.slots).toBe(2);
+    expect(werewolf.gold).toBe(6);
     expect(werewolf.items.some((item) => item.id === 'dark-echo' && item.equipped)).toBe(true);
     expect(werewolf.items.some((item) => item.id === 'thorn-crown' && item.equipped)).toBe(true);
     expect(werewolf.curses.some((curse) => curse.id === 'weak-plate')).toBe(true);
