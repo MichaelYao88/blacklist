@@ -2306,10 +2306,10 @@ function renderShopChoice(): string {
       <button class="shop-choice-card" data-action="choose" data-id="inn">
         <span class="choice-glyph" aria-hidden="true">🛏️</span>
         <b>Inn</b>
-        <span>Gain +8 max HP, then heal to full. 40% chance the shop stays open.</span>
+        <span>Gain +4 max HP, then heal to full. 30% chance the shop stays open.</span>
       </button>
     </div>
-    <p class="hint">The inn grants +8 max HP and heals you to full. 40% of the time, you can visit the shop afterward.</p>
+    <p class="hint">The inn grants +4 max HP and heals you to full. 30% of the time, you can visit the shop afterward.</p>
   </div>`;
 }
 

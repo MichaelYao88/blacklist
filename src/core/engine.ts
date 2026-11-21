@@ -2840,7 +2840,7 @@ export function createCore(content: Content): Core {
     if (state.phase !== 'shopChoice') return;
     if (optionId === 'inn') {
       const before = state.hp;
-      changeMaxHp(rt, 8, { kind: 'inn' });
+      changeMaxHp(rt, 4, { kind: 'inn' });
       state.hp = state.maxHp;
       const applied = state.hp - before;
       if (applied > 0) {
@@ -2849,9 +2849,9 @@ export function createCore(content: Content): Core {
       }
       emit(rt, {
         type: 'message',
-        text: 'The inn grants +8 max HP and restores you to full health.',
+        text: 'The inn grants +4 max HP and restores you to full health.',
       });
-      if (rngChance(state, 40)) {
+      if (rngChance(state, 30)) {
         emit(rt, {
           type: 'message',
           text: 'The merchant is still packing up. You can visit the shop too.',

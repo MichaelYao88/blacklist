@@ -1209,7 +1209,7 @@ describe('shop curses', () => {
     expect(arrived.state.shop).toBeUndefined();
   });
 
-  it('grants +8 max HP and heals to full at the inn', () => {
+  it('grants +4 max HP and heals to full at the inn', () => {
     const { state } = start('inn-heal');
     state.nodeIndex = 0;
     state.nodes[1] = { kind: 'shop', level: 1 };
@@ -1219,7 +1219,7 @@ describe('shop curses', () => {
     const arrived = act(state, { type: 'continue' });
     arrived.state.rng = 1; // next roll is 62.7%, so the shop stays closed
     const rested = act(arrived.state, { type: 'choose', optionId: 'inn' });
-    expect(rested.state.maxHp).toBe(startMax + 8);
+    expect(rested.state.maxHp).toBe(startMax + 4);
     expect(rested.state.hp).toBe(rested.state.maxHp);
     expect(rested.state.shop).toBeUndefined();
     expect(rested.state.phase).not.toBe('shop');
@@ -1233,7 +1233,7 @@ describe('shop curses', () => {
     const healthyArrived = act(healthy.state, { type: 'continue' });
     healthyArrived.state.rng = 1;
     const restedHealthy = act(healthyArrived.state, { type: 'choose', optionId: 'inn' });
-    expect(restedHealthy.state.maxHp).toBe(healthyMax + 8);
+    expect(restedHealthy.state.maxHp).toBe(healthyMax + 4);
     expect(restedHealthy.state.hp).toBe(restedHealthy.state.maxHp);
   });
 
@@ -1246,7 +1246,7 @@ describe('shop curses', () => {
     const arrived = act(state, { type: 'continue' });
     arrived.state.rng = 0; // next roll is 26.6%, so the shop stays open
     const rested = act(arrived.state, { type: 'choose', optionId: 'inn' });
-    expect(rested.state.maxHp).toBe(startMax + 8);
+    expect(rested.state.maxHp).toBe(startMax + 4);
     expect(rested.state.hp).toBe(rested.state.maxHp);
     expect(rested.state.phase).toBe('shop');
     expect(rested.state.shop?.offers.length).toBeGreaterThan(0);
