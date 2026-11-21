@@ -120,7 +120,7 @@ describe('cursed run setup', () => {
 
     const necro = game.newRun({ seed: 'preset-necro', character: 'necromancer' }).state;
     expect(necro.character).toBe('necromancer');
-    expect(necro.maxHp).toBe(40);
+    expect(necro.maxHp).toBe(13);
     expect(necro.maxArmor).toBe(2);
     expect(necro.armor).toBe(2);
     expect(necro.gold).toBe(16);
@@ -2185,57 +2185,80 @@ describe('latest balance pass', () => {
     expect(guess.state.gold).toBe(before + 2);
   });
 
-  it('Necronomicon reveals 2 letters at round start and when Omen is cast', () => {
-    expect(ITEM_BY_ID.get('necronomicon')?.rarity).toBe('rare');
-    expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('At round start and when you cast Omen');
+  it('Necronomicon pays 13% max HP and casts Omen when used', () => {
+    const def = ITEM_BY_ID.get('necronomicon');
+    expect(def?.rarity).toBe('rare');
+    expect(def?.onUse).toBeDefined();
+    expect(def?.description).toContain('pay 13% of your max HP');
+    expect(def?.description).toContain('permanently');
+    expect(def?.description).not.toContain('round up');
 
-    const base = start('necronomicon-start');
-    base.state.items.push({
-      instance: 'i-nec-start',
-      id: 'necronomicon',
-      data: { reveals: 0, paid: 0 },
-      equipped: true,
-    });
-    const started = nextRound(base.state);
-    const startHints = Object.keys(started.state.round?.hints ?? {}).length;
-    expect(startHints).toBe(2);
-
-    started.state.spells = [{ instance: 's-omen', id: 'omen' }];
-    setAnswer(started.state, 'crane');
-    const cast = act(started.state, { type: 'castSpell', instance: 's-omen' });
-    const baseHints = Object.keys(cast.state.round?.hints ?? {}).length;
-    expect(baseHints).toBeGreaterThanOrEqual(startHints + 2);
-
-    const scaled = start('necronomicon-scaled');
-    scaled.state.items.push({
-      instance: 'i-nec-scaled',
-      id: 'necronomicon',
-      data: { reveals: 0, paid: 27 },
-      equipped: true,
-    });
-    scaled.state.spells = [{ instance: 's-omen-scaled', id: 'omen' }];
-    setAnswer(scaled.state, 'crane');
-    const scaledCast = act(scaled.state, { type: 'castSpell', instance: 's-omen-scaled' });
-    const scaledHints = Object.keys(scaledCast.state.round?.hints ?? {}).length;
-    expect(scaledHints).toBeGreaterThanOrEqual(4);
-    expect(scaledHints).toBeLessThanOrEqual(5);
-  });
-
-  it('Necronomicon procs at 13 reveals for an Omen and -3 max HP', () => {
-    const { state } = start('necronomicon');
+    const { state } = start('necronomicon-use');
     state.items.push({
       instance: 'i-nec',
       id: 'necronomicon',
-      data: { reveals: 12, paid: 0 },
+      data: { paid: 0 },
+      equipped: true,
+    });
+    state.spells = [];
+    setAnswer(state, 'crane');
+    const used = act(state, { type: 'useItem', instance: 'i-nec' });
+    expect(used.state.maxHp).toBe(13); // ceil(15 * 0.13) = 2
+    expect(used.state.items.find((item) => item.id === 'necronomicon')?.data.paid).toBe(2);
+    expect(used.events.some(
+      (event) => event.type === 'spellCast' && event.spell.id === 'omen',
+    )).toBe(true);
+    expect(used.state.permanentReveals).toHaveLength(0);
+  });
+
+  it('Necronomicon makes Omen permanently reveal 1 letter per 13 HP paid', () => {
+    const { state } = start('necronomicon-paid');
+    state.items.push({
+      instance: 'i-nec-paid',
+      id: 'necronomicon',
+      data: { paid: 26 },
       equipped: true,
     });
     state.spells = [{ instance: 's-omen', id: 'omen' }];
     setAnswer(state, 'crane');
     const cast = act(state, { type: 'castSpell', instance: 's-omen' });
-    expect(cast.state.maxHp).toBe(12);
-    expect(cast.state.items.find((item) => item.id === 'necronomicon')?.data.paid).toBe(3);
+    expect(cast.state.permanentReveals).toHaveLength(2);
     expect(cast.events.some(
-      (event) => event.type === 'spellCast' && event.auto && event.spell.id === 'omen',
+      (event) => event.type === 'spellCast' && event.spell.id === 'omen',
+    )).toBe(true);
+  });
+
+  it('Necronomicon applies newly paid HP to its own Omen cast', () => {
+    const { state } = start('necronomicon-cross');
+    state.items.push({
+      instance: 'i-nec-cross',
+      id: 'necronomicon',
+      data: { paid: 11 },
+      equipped: true,
+    });
+    setAnswer(state, 'crane');
+    const used = act(state, { type: 'useItem', instance: 'i-nec-cross' });
+    expect(used.state.maxHp).toBe(13);
+    expect(used.state.items.find((item) => item.id === 'necronomicon')?.data.paid).toBe(13);
+    expect(used.state.permanentReveals).toHaveLength(1);
+  });
+
+  it('Necronomicon cannot be used for free at 1 max HP', () => {
+    const { state } = start('necronomicon-empty');
+    state.maxHp = 1;
+    state.hp = 1;
+    state.items.push({
+      instance: 'i-nec-empty',
+      id: 'necronomicon',
+      data: { paid: 0 },
+      equipped: true,
+    });
+    setAnswer(state, 'crane');
+    const used = act(state, { type: 'useItem', instance: 'i-nec-empty' });
+    expect(used.state.maxHp).toBe(1);
+    expect(used.state.items.find((item) => item.id === 'necronomicon')?.data.paid).toBe(0);
+    expect(used.events.some(
+      (event) => event.type === 'message' && event.text.includes('more life'),
     )).toBe(true);
   });
 
@@ -2694,7 +2717,7 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('hat-trick')?.initial).toMatchObject({ gold: 1 });
     expect(ITEM_BY_ID.get('necronomicon')?.price).toBe(13);
     expect(ITEM_BY_ID.get('necronomicon')?.rarity).toBe('rare');
-    expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('reveal 2 letters');
+    expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('pay 13% of your max HP');
     expect(ITEM_BY_ID.get('nest-egg')?.price).toBe(4);
     expect(ITEM_BY_ID.get('nest-egg')?.description).toContain('+3 gold');
     expect(ITEM_BY_ID.get('plate-timer')?.price).toBe(7);
@@ -3251,9 +3274,9 @@ describe('latest balance pass', () => {
     expect(FOOD_BY_ID.get('bounty')?.effects).toContainEqual({ type: 'solveGold', amount: 1 });
     expect(ITEM_BY_ID.get('counterweight')?.description).toContain('Completely blocked hit');
     expect(ITEM_BY_ID.get('encore')?.description).toContain('last solved answer');
-    expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('After every 13 reveals');
-    expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('pay 3 max HP');
-    expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('Every 13 HP paid');
+    expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('pay 13% of your max HP');
+    expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('permanently reveals an extra random letter');
+    expect(ITEM_BY_ID.get('necronomicon')?.description).not.toContain('round up');
     expect(FOOD_BY_ID.get('hearty-meal')?.description).toBe('+5 max HP, heal 5. No slot.');
     expect(ITEM_BY_ID.get('loyalty-card')?.description).toContain('Every 10 shop purchases');
     expect(ITEM_BY_ID.get('loyalty-card')?.price).toBe(12);

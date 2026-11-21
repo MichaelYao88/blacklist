@@ -90,7 +90,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Immunity** blocks the next hurting guess and any guess for 4 seconds after it
 - **Mending Plate** is a rare item: +1 max armor per 8 HP healed
 - **Bounty** is a 9g rare food: +1 gold per solve
-- **Necronomicon** is a rare item: at round start and when you cast Omen, reveal 2 random letters. After every 13 reveals it autocasts Omen and pays 3 max HP; every 13 max HP paid increases the reveal count by 1
+- **Necronomicon** is a rare item: click it to pay 13% of your max HP and cast Omen. Each Omen cast permanently reveals an extra random letter for every 13 HP paid to the book
 - **Growth Spurt** gives +3 max HP when you solve in 4 guesses or fewer
 - **Growth Chart** is an 8g item: every 3 max HP gained grants +1 Time Freeze
 - **Midas Touch** has a 30% chance to double every gold gain
@@ -197,7 +197,7 @@ Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title s
 
 - **The Soldier** is the default: 15 HP, 5 armor, 12 gold, no starting gear or curses.
 - **The Pathfinder** unlocks when The Soldier reaches the first curse screen. They start with **Head Start**, **The List** curse, 14 HP, 3 armor and 9 gold.
-- **The Necromancer** unlocks after buying the **Necronomicon** once from a shop. They start with the **Necronomicon**, **The Sleeper** curse, 40 HP, 2 armor and 16 gold.
+- **The Necromancer** unlocks after buying the **Necronomicon** once from a shop. They start with the **Necronomicon**, **The Sleeper** curse, 13 HP, 2 armor and 16 gold.
 - **The Purgamist** unlocks after buying 2 **Inkcap** across any runs. They start with **The Toll** curse, 12 HP, 4 armor, 17 gold, and purge 3 letters of your choice before the first round.
 - **The Gourmand** unlocks after buying 3 **Double Cheeseburgers** across any runs. They start with **Potluck**, **Porcupine's Dilemma** curse, 25 HP, 2 armor and 6 gold.
 - **The Farmer** unlocks after winning any run. They start with the **Harvest Charm** (character-only, not found in shops), 20 HP, 1 armor and 6 gold.

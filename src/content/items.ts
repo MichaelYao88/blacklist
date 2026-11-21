@@ -26,9 +26,9 @@ function everyThreeFoodsOrSolves(self: { data: Record<string, number> }): Effect
   ];
 }
 
-/** Necronomicon reveals 2 letters plus one for every 13 max HP paid. */
+/** Necronomicon permanently reveals one extra random letter per 13 HP paid. */
 function necronomiconLetters(self: { data: Record<string, number> }): number {
-  return 2 + Math.floor((self.data.paid ?? 0) / 13);
+  return Math.floor((self.data.paid ?? 0) / 13);
 }
 
 function popcount(value: number): number {
@@ -356,45 +356,38 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'necronomicon',
     name: 'Necronomicon',
-    description: 'At round start and when you cast Omen: reveal 2 letters. After every 13 reveals: autocast Omen, pay 3 max HP. Every 13 HP paid: increase the amount of letters revealed by 1.',
-    dynamicDescription: (data) =>
-      `At round start and when you cast Omen: reveal ${2 + Math.floor((data.paid ?? 0) / 13)} letters. After every 13 reveals: autocast Omen, pay 3 max HP. Every 13 HP paid: increase the amount of letters revealed by 1.`,
+    description: 'Click to pay 13% of your max HP and cast Omen. Each Omen cast permanently reveals an extra random letter for every 13 HP paid to the book.',
     price: 13,
     kind: 'gear',
     rarity: 'rare',
-    initial: { reveals: 0, paid: 0 },
+    initial: { paid: 0 },
+    onUse: (ctx) => {
+      if (!ctx.self.equipped) {
+        return [{ type: 'message', text: 'Equip the book first.' }];
+      }
+      if (ctx.state.phase !== 'round' || !ctx.state.round) {
+        return [{ type: 'message', text: 'The book only answers during a round.' }];
+      }
+      const cost = Math.min(
+        Math.ceil(ctx.state.maxHp * 0.13),
+        Math.max(0, ctx.state.maxHp - 1),
+      );
+      if (cost <= 0) {
+        return [{ type: 'message', text: 'The book needs more life to take.' }];
+      }
+      return [
+        { type: 'maxHp', delta: -cost },
+        { type: 'setItemData', stat: 'paid', value: (ctx.self.data.paid ?? 0) + cost },
+        { type: 'castSpell', spell: 'omen' },
+      ];
+    },
     on: {
-      onRoundStart: (ctx) => [{
-        type: 'revealRandom',
-        count: necronomiconLetters(ctx.self),
-      }],
       onSpellCast: (ctx, p) => {
-        if (p.spell !== 'omen' || p.sourceItem === 'necronomicon') return [];
-        return [{
-          type: 'revealRandom',
-          count: necronomiconLetters(ctx.self),
-        }];
-      },
-      onReveal: (ctx) => {
-        const total = ctx.self.data.reveals + 1;
-        const procs = Math.floor(total / 13);
-        const effects: Effect[] = [
-          { type: 'setItemData', stat: 'reveals', value: total % 13 },
-        ];
-        if (procs > 0) {
-          effects.push({
-            type: 'setItemData',
-            stat: 'paid',
-            value: (ctx.self.data.paid ?? 0) + procs * 3,
-          });
-          for (let index = 0; index < procs; index++) {
-            effects.push(
-              { type: 'castSpell', spell: 'omen' },
-              { type: 'maxHp', delta: -3 },
-            );
-          }
-        }
-        return effects;
+        if (p.spell !== 'omen') return [];
+        return Array.from(
+          { length: necronomiconLetters(ctx.self) },
+          () => ({ type: 'revealPermanentRandom' as const }),
+        );
       },
     },
   }),
