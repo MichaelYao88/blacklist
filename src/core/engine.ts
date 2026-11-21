@@ -3587,9 +3587,13 @@ export function createCore(content: Content): Core {
     const keyboard: Partial<Record<Letter, KeyboardStatus>> = {};
     const rank: Record<string, number> = { absent: 0, hit: 1, present: 2, correct: 3 };
     const guesses = round.guesses.map((guess) => presentGuess(state, guess));
+    const hiddenTileLetters = new Set<string>();
     for (const shown of guesses) {
       shown.tiles.forEach((tile, index) => {
-        if (tile === 'hidden') return;
+        if (tile === 'hidden') {
+          hiddenTileLetters.add(shown.word[index]);
+          return;
+        }
         const letter = shown.word[index];
         const current = keyboard[letter];
         const nextStatus = tile as KeyboardStatus;
@@ -3600,12 +3604,16 @@ export function createCore(content: Content): Core {
         }
       });
     }
+    for (const letter of hiddenTileLetters) {
+      const current = keyboard[letter];
+      if (!current || current === 'absent') keyboard[letter] = 'hidden';
+    }
     for (const [letter, status] of Object.entries(round.hints ?? {})) {
       const current = keyboard[letter];
       if (current === 'correct') continue;
       if (status === 'present') {
         if (current !== 'present') keyboard[letter] = 'present';
-      } else if (!current || current === 'absent') {
+      } else if (!current || current === 'absent' || current === 'hidden') {
         keyboard[letter] = 'absent';
       }
     }
