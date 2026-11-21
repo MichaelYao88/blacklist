@@ -1176,6 +1176,15 @@ window.addEventListener('keydown', (event) => {
     return;
   }
 
+  const enter = event.key === 'Enter'
+    || event.code === 'Enter'
+    || event.code === 'NumpadEnter';
+  if (enter && view.phase.kind === 'summary' && view.phase.outcome !== 'died') {
+    event.preventDefault();
+    dispatchCommand({ type: 'continue' });
+    return;
+  }
+
   if (view.phase.kind !== 'round') return;
   if (letter) {
     event.preventDefault();
@@ -2248,7 +2257,7 @@ function renderShopChoice(): string {
   <div class="phase-card shop-choice">
     <p class="panel-kicker">A LIGHT IN THE ROAD</p>
     <h2>Shop or rest?</h2>
-    <p class="muted">A merchant has set out a stall beside an inn. You only have time for one.</p>
+    <p class="muted">A merchant has set out a stall beside an inn. The inn might leave you time for both.</p>
     <div class="shop-choice-grid">
       <button class="shop-choice-card" data-action="choose" data-id="shop">
         <span class="choice-glyph" aria-hidden="true">🛒</span>
@@ -2258,10 +2267,10 @@ function renderShopChoice(): string {
       <button class="shop-choice-card" data-action="choose" data-id="inn">
         <span class="choice-glyph" aria-hidden="true">🛏️</span>
         <b>Inn</b>
-        <span>Gain +8 max HP, then heal to full. The shop closes.</span>
+        <span>Gain +8 max HP, then heal to full. 40% chance the shop stays open.</span>
       </button>
     </div>
-    <p class="hint">The inn grants +8 max HP and heals you to full. The shop does not.</p>
+    <p class="hint">The inn grants +8 max HP and heals you to full. 40% of the time, you can visit the shop afterward.</p>
   </div>`;
 }
 

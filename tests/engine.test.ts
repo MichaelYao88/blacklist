@@ -1175,6 +1175,7 @@ describe('shop curses', () => {
     state.hp = 3;
     const startMax = state.maxHp;
     const arrived = act(state, { type: 'continue' });
+    arrived.state.rng = 1; // next roll is 62.7%, so the shop stays closed
     const rested = act(arrived.state, { type: 'choose', optionId: 'inn' });
     expect(rested.state.maxHp).toBe(startMax + 8);
     expect(rested.state.hp).toBe(rested.state.maxHp);
@@ -1188,9 +1189,25 @@ describe('shop curses', () => {
     healthy.state.phase = 'shop';
     const healthyMax = healthy.state.maxHp;
     const healthyArrived = act(healthy.state, { type: 'continue' });
+    healthyArrived.state.rng = 1;
     const restedHealthy = act(healthyArrived.state, { type: 'choose', optionId: 'inn' });
     expect(restedHealthy.state.maxHp).toBe(healthyMax + 8);
     expect(restedHealthy.state.hp).toBe(restedHealthy.state.maxHp);
+  });
+
+  it('sometimes leaves the shop open after resting at the inn', () => {
+    const { state } = start('inn-shop-open');
+    state.nodeIndex = 0;
+    state.nodes[1] = { kind: 'shop', level: 1 };
+    state.phase = 'shop';
+    const startMax = state.maxHp;
+    const arrived = act(state, { type: 'continue' });
+    arrived.state.rng = 0; // next roll is 26.6%, so the shop stays open
+    const rested = act(arrived.state, { type: 'choose', optionId: 'inn' });
+    expect(rested.state.maxHp).toBe(startMax + 8);
+    expect(rested.state.hp).toBe(rested.state.maxHp);
+    expect(rested.state.phase).toBe('shop');
+    expect(rested.state.shop?.offers.length).toBeGreaterThan(0);
   });
 
   it('opens the shop with rerolls starting at 1 gold', () => {

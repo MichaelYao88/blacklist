@@ -2781,6 +2781,14 @@ export function createCore(content: Content): Core {
         type: 'message',
         text: 'The inn grants +8 max HP and restores you to full health.',
       });
+      if (rngChance(state, 40)) {
+        emit(rt, {
+          type: 'message',
+          text: 'The merchant is still packing up. You can visit the shop too.',
+        });
+        openShop(rt);
+        return;
+      }
       advanceNode(rt);
       return;
     }
