@@ -1865,7 +1865,6 @@ export function createCore(content: Content): Core {
       paidGuesses: 0,
       baseDamage,
       damageRamp: 0,
-      pendingDamage: 0,
       elapsedMs: 0,
       remainingMs: remaining,
       timerStartMs: timerStart,
@@ -2099,6 +2098,11 @@ export function createCore(content: Content): Core {
     });
   }
 
+  function guessDamageMultiplier(round: RoundState, next = false): number {
+    const guessNumber = round.totalGuesses + (next ? 1 : 0);
+    return 2 ** Math.max(0, guessNumber - 6);
+  }
+
   function guessDamageFor(state: RunState, round: RoundState, next = false): number {
     const boss = round.boss ? bossById.get(round.boss) : undefined;
     if (boss?.noGuessDamage) return 0;
@@ -2122,10 +2126,8 @@ export function createCore(content: Content): Core {
     // Preview and the real hit share this calculation so the HUD cannot drift.
     const slotBonus = Math.max(0, usedSlots(state) - 5);
     const goldBonus = Math.floor((state.goldSpent ?? 0) / 60);
-    return Math.max(
-      0,
-      Math.round(base + curseBonus + goldBonus + slotBonus + round.pendingDamage),
-    );
+    const raw = base + curseBonus + goldBonus + slotBonus;
+    return Math.max(0, Math.round(raw * guessDamageMultiplier(round, next)));
   }
 
   function expireRound(rt: Runtime): void {
@@ -2180,7 +2182,6 @@ export function createCore(content: Content): Core {
       round.hints = {};
       round.paidGuesses = 0;
       round.damageTaken = 0;
-      round.pendingDamage = 0;
       round.frozenUntilGuess = false;
       round.answer = chooseAnswer(rt, boss);
       // Knowledge foods promise a reveal every round, including Second Wind's
@@ -2352,6 +2353,13 @@ export function createCore(content: Content): Core {
     if (unobscured) round.unobscuredGuesses++;
     if (by === 'player' && round.lockedSpells.length > 0) round.lockedSpells = [];
     round.guesses.push(guess);
+    const damageMultiplier = guessDamageMultiplier(round);
+    if (damageMultiplier > 1) {
+      emit(rt, {
+        type: 'message',
+        text: `Damage doubles: wrong guesses now deal ×${damageMultiplier}.`,
+      });
+    }
 
     const mark = rt.events.length;
     rt.pendingFree = false;
@@ -2373,13 +2381,6 @@ export function createCore(content: Content): Core {
     const freeSource = rt.pendingFreeSource;
     rt.pendingFree = false;
     rt.pendingFreeSource = undefined;
-
-    // Free guesses (including autoguesses, round-start guesses and friend
-    // guesses) bank damage for the next paid wrong guess. They still take no
-    // damage themselves.
-    if (guess.free) {
-      round.pendingDamage += totalCurseStacks(state) * 0.5;
-    }
 
     const presented = presentGuess(state, guess);
     const solved = word === round.answer;
@@ -2418,8 +2419,6 @@ export function createCore(content: Content): Core {
       if (!boss?.noGuessDamage) {
         round.paidGuesses++;
         const raw = guessDamageFor(state, round);
-        // The banked free-guess bonus belongs to exactly one paid wrong guess.
-        round.pendingDamage = 0;
         const amount = state.nextRoundDamageCap !== undefined
           ? Math.min(raw, state.nextRoundDamageCap)
           : raw;
@@ -4178,9 +4177,6 @@ export function createCore(content: Content): Core {
         }
         if (typeof state.round.damageRamp !== 'number') {
           state.round.damageRamp = 0;
-        }
-        if (typeof state.round.pendingDamage !== 'number') {
-          state.round.pendingDamage = 0;
         }
       }
       // Older saves can still have the retired upgrade offer kind. Drop those

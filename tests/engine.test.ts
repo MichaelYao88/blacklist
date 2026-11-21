@@ -4731,42 +4731,78 @@ describe('The Spammer', () => {
   });
 });
 
-describe('free-guess and slot damage', () => {
-  it('banks 0.5 damage per curse stack per free guess and spends it on the next paid miss', () => {
-    const { state } = start('free-guess-bank');
-    state.curses = [{ id: 'censor', stacks: 2 }];
+describe('damage doubling and slots', () => {
+  it('doubles wrong-guess damage after the sixth guess', () => {
+    const { state } = start('damage-doubling');
     setAnswer(state, 'crane');
     state.round!.baseDamage = 3;
-    state.round!.freeLeft = 1;
+    state.round!.freeLeft = 0;
     state.armor = 0;
     state.maxArmor = 0;
+    state.hp = 200;
+    state.maxHp = 200;
 
-    const free = act(state, { type: 'guess', word: 'slate' });
-    expect(free.state.hp).toBe(15);
-    expect(free.state.round?.pendingDamage).toBe(1);
-
-    const paid = act(free.state, { type: 'guess', word: 'brick' });
-    expect(paid.state.hp).toBe(11);
-    expect(paid.state.round?.pendingDamage).toBe(0);
+    let current = state;
+    const damages: number[] = [];
+    for (const word of ['slate', 'brick', 'plumb', 'chunk', 'vamps', 'fizzy', 'jumpy', 'waltz']) {
+      const before = current.hp;
+      const result = act(current, { type: 'guess', word });
+      damages.push(before - result.state.hp);
+      current = result.state;
+    }
+    expect(damages).toEqual([3, 3, 3, 3, 3, 3, 6, 12]);
   });
 
-  it('stacks every free trigger and applies the total to one paid miss', () => {
-    const { state } = start('free-guess-stack');
-    state.curses = [{ id: 'censor', stacks: 2 }];
+  it('notifies each time the damage multiplier doubles', () => {
+    const { state } = start('damage-doubling-notice');
     setAnswer(state, 'crane');
     state.round!.baseDamage = 3;
-    state.round!.freeLeft = 3;
+    state.round!.freeLeft = 0;
     state.armor = 0;
     state.maxArmor = 0;
+    state.hp = 200;
+    state.maxHp = 200;
 
-    let current = act(state, { type: 'guess', word: 'slate' }).state;
-    current = act(current, { type: 'guess', word: 'brick' }).state;
-    current = act(current, { type: 'guess', word: 'plumb' }).state;
-    expect(current.round?.pendingDamage).toBe(3);
+    let current = state;
+    for (const word of ['slate', 'brick', 'plumb', 'chunk', 'vamps', 'fizzy']) {
+      current = act(current, { type: 'guess', word }).state;
+    }
+    const seventh = act(current, { type: 'guess', word: 'jumpy' });
+    expect(seventh.events.some(
+      (event) => event.type === 'message' && event.text.includes('×2'),
+    )).toBe(true);
+    const eighth = act(seventh.state, { type: 'guess', word: 'waltz' });
+    expect(eighth.events.some(
+      (event) => event.type === 'message' && event.text.includes('×4'),
+    )).toBe(true);
+  });
 
-    const paid = act(current, { type: 'guess', word: 'chunk' });
-    expect(paid.state.hp).toBe(9);
-    expect(paid.state.round?.pendingDamage).toBe(0);
+  it('counts autoguesses toward the sixth-guess threshold', () => {
+    let started: ReturnType<typeof nextRound> | undefined;
+    for (let index = 0; index < 20 && !started; index++) {
+      const run = start(`autoguess-double-${index}`);
+      run.state.permanentRoundStartWord = 'slate';
+      const next = nextRound(run.state);
+      if (next.state.phase === 'round') started = next;
+    }
+    expect(started).toBeDefined();
+    const round = started!.state.round!;
+    expect(round.totalGuesses).toBe(1);
+    setAnswer(started!.state, 'crane');
+    round.baseDamage = 3;
+    round.freeLeft = 0;
+    started!.state.armor = 0;
+    started!.state.maxArmor = 0;
+    started!.state.hp = 200;
+    started!.state.maxHp = 200;
+
+    let current = started!.state;
+    for (const word of ['brick', 'plumb', 'chunk', 'vamps', 'fizzy']) {
+      current = act(current, { type: 'guess', word }).state;
+    }
+    const before = current.hp;
+    const seventh = act(current, { type: 'guess', word: 'jumpy' });
+    expect(before - seventh.state.hp).toBe(6);
   });
 
   it('adds one damage per equipped slot above five and previews the same number', () => {
@@ -4815,17 +4851,6 @@ describe('free-guess and slot damage', () => {
     expect(guessed.state.hp).toBe(12);
   });
 
-  it('resets banked damage when Second Wind starts its second word', () => {
-    const { state } = start('free-guess-second-wind');
-    state.curses.push({ id: 'second-wind', stacks: 1 });
-    const started = nextRound(state);
-    setAnswer(started.state, 'crane');
-    started.state.round!.freeLeft = 0;
-    started.state.round!.pendingDamage = 4;
-    const solved = act(started.state, { type: 'guess', word: 'crane' });
-    expect(solved.state.round?.gauntletIndex).toBe(1);
-    expect(solved.state.round?.pendingDamage).toBe(0);
-  });
 });
 
 describe('core purity', () => {
