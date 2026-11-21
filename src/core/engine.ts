@@ -898,6 +898,9 @@ export function createCore(content: Content): Core {
       case 'damage':
         dealDamage(rt, effect.amount, source, { ignoreArmor: effect.ignoreArmor });
         break;
+      case 'damageLevel':
+        dealDamage(rt, state.level, source);
+        break;
       case 'heal':
         heal(rt, effect.amount, source);
         break;
@@ -2743,10 +2746,14 @@ export function createCore(content: Content): Core {
       }
     }
     const letterEvent = def.id === 'know-the-letter' || def.id === 'purge-the-letter';
+    // Floor-scaled events keep the number visible to the player. The token is
+    // resolved once when the event opens so the displayed text and the text
+    // saved with the resolved event agree.
+    const formatText = (text: string): string => text.split('{level}').join(String(state.level));
     const baseOptions: HappeningOptionView[] = def.options.map((option) => ({
       id: option.id,
       label: option.label,
-      description: option.description,
+      description: formatText(option.description),
       costGold: option.costGold,
       fallbackPct: option.fallbackPct,
       requiresSpell: option.requiresSpell,
@@ -2756,7 +2763,10 @@ export function createCore(content: Content): Core {
       chancePct: option.outcomes.length === 1
         ? 100
         : option.outcomes[0]?.chancePct,
-      outcomes: option.outcomes.map((o) => ({ chancePct: o.chancePct, text: o.text })),
+      outcomes: option.outcomes.map((o) => ({
+        chancePct: o.chancePct,
+        text: formatText(o.text),
+      })),
     }));
     let letters: Letter[] | undefined;
     let options = baseOptions;
@@ -2962,19 +2972,21 @@ export function createCore(content: Content): Core {
     }
     const outcome = option.outcomes[chosen];
     const success = chosen === 0;
+    const shown = happening.options.find((entry) => entry.id === option.id);
+    const outcomeText = shown?.outcomes[chosen]?.text ?? outcome.text;
 
     applyEffects(rt, outcome.effects, { kind: 'happening', happening: def.id });
     happening.resolved = {
       option: option.id,
       success,
-      text: outcome.text,
+      text: outcomeText,
     };
     emit(rt, {
       type: 'happeningResolved',
       happening: def.id,
       option: option.id,
       success,
-      text: outcome.text,
+      text: outcomeText,
     });
   }
 

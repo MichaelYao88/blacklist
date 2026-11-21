@@ -1100,7 +1100,8 @@ export const ITEMS: ItemDef[] = [
     id: 'loyalty-card',
     name: 'Loyalty Card',
     description: 'Every 10 shop purchases: +1 item slot.',
-    price: 8,
+    price: 12,
+    rarity: 'uncommon',
     kind: 'gear',
     initial: { buys: 0 },
     on: {

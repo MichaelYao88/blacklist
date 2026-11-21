@@ -958,7 +958,7 @@ describe('shop curses', () => {
         { type: 'giveSpell', spell: 'heal' },
         { type: 'giveSpell', spell: 'heal' },
       ]);
-    expect(coin?.options.find((option) => option.id === 'slot')?.costGold).toBe(6);
+    expect(coin?.options.find((option) => option.id === 'slot')?.costGold).toBe(10);
     expect(coin?.options.find((option) => option.id === 'slot')?.outcomes[0].effects)
       .toEqual([{ type: 'slots', delta: 1 }]);
 
@@ -982,13 +982,13 @@ describe('shop curses', () => {
     expect(paid.state.gold).toBe(18);
   });
 
-  it('The Coin Box charges 1 gold for two Heals or 6 gold for a slot', () => {
+  it('The Coin Box charges 1 gold for two Heals or 10 gold for a slot', () => {
     const { state } = start('coin-box');
     state.gold = 10;
     state.phase = 'happening';
     state.happening = { id: 'coin-box', options: [] };
     const bought = act(state, { type: 'choose', optionId: 'slot' });
-    expect(bought.state.gold).toBe(4);
+    expect(bought.state.gold).toBe(0);
     expect(bought.state.slots).toBe(6);
   });
 
@@ -1100,6 +1100,48 @@ describe('shop curses', () => {
     const sold = act(state, { type: 'sell', instance: 'i-hour' });
     expect(sold.state.items).toHaveLength(1);
     expect(eventTypes(sold.events)).toContain('message');
+  });
+});
+
+describe('event balance pass', () => {
+  it('The Scavenger trades a 40% slot for a 60% ten-damage bite', () => {
+    const reach = HAPPENING_BY_ID.get('scavenger')?.options.find((option) => option.id === 'reach');
+    expect(reach?.description).toBe('40%: +1 slot. 60%: −10 HP.');
+    expect(reach?.outcomes.map((outcome) => outcome.chancePct)).toEqual([40, 60]);
+    expect(reach?.outcomes[0].effects).toEqual([{ type: 'slots', delta: 1 }]);
+    expect(reach?.outcomes[1].effects).toEqual([{ type: 'damage', amount: 10 }]);
+  });
+
+  it('The Letter Garden prints the floor level and scales its damage to it', () => {
+    const pull = HAPPENING_BY_ID.get('letter-garden')?.options.find((option) => option.id === 'pull');
+    expect(pull?.outcomes.map((outcome) => outcome.chancePct)).toEqual([50, 50]);
+    expect(pull?.outcomes[1].effects).toEqual([{ type: 'damageLevel' }]);
+
+    for (let index = 0; index < 400; index++) {
+      const { state } = start(`letter-garden-${index}`);
+      state.nodeIndex = 0;
+      state.nodes[1] = { kind: 'happening', level: 12 };
+      state.phase = 'shop';
+      state.shop = shopState();
+      const arrived = act(state, { type: 'continue' });
+      if (arrived.state.happening?.id !== 'letter-garden') continue;
+
+      const shown = arrived.state.happening.options.find((option) => option.id === 'pull');
+      expect(shown?.description).toContain('−12 HP');
+      expect(shown?.description).not.toContain('{level}');
+      expect(shown?.outcomes[1].text).toContain('−12 HP');
+
+      arrived.state.armor = 0;
+      arrived.state.maxArmor = 0;
+      const hpBefore = arrived.state.hp;
+      const chosen = act(arrived.state, { type: 'choose', optionId: 'pull' });
+      if (chosen.state.hp !== hpBefore - 12) continue;
+
+      expect(chosen.state.happening?.resolved?.text).toContain('−12 HP');
+      expect(chosen.state.happening?.resolved?.text).not.toContain('{level}');
+      return;
+    }
+    throw new Error('never saw the Letter Garden damage outcome');
   });
 });
 
@@ -2103,11 +2145,13 @@ describe('latest balance pass', () => {
       .toContainEqual({ type: 'healMissingPercent', percent: 50 });
     expect(FOOD_BY_ID.get('menemen')?.price).toBe(4);
     expect(FOOD_BY_ID.get('big-eggplant')?.price).toBe(4);
+    expect(FOOD_BY_ID.get('big-eggplant')?.effects)
+      .toContainEqual({ type: 'maxArmor', delta: -3 });
     expect(FOOD_BY_ID.get('jumbo-hot-dog')?.price).toBe(3);
     expect(FOOD_BY_ID.get('juicy-peach')?.price).toBe(4);
     expect(FOOD_BY_ID.get('cherries')?.price).toBe(2);
     expect(FOOD_BY_ID.get('satchel')?.price).toBe(19);
-    expect(FOOD_BY_ID.get('satchel')?.rarity).toBe('rare');
+    expect(FOOD_BY_ID.get('satchel')?.rarity).toBe('uncommon');
     expect(FOOD_BY_ID.get('o-toro')?.price).toBe(16);
     expect(FOOD_BY_ID.get('o-toro')?.effects)
       .toContainEqual({ type: 'revealLetter', letter: 'o' });
@@ -2325,7 +2369,7 @@ describe('latest balance pass', () => {
 
   it('Coveted Cake trades an item slot for a random rare relic', () => {
     const def = FOOD_BY_ID.get('coveted-cake');
-    expect(def?.price).toBe(17);
+    expect(def?.price).toBe(2);
     expect(def?.rarity).toBe('rare');
     expect(def?.effects).toContainEqual({ type: 'slots', delta: -1 });
     expect(def?.effects).toContainEqual({ type: 'addRandomRelic' });
@@ -2334,9 +2378,9 @@ describe('latest balance pass', () => {
     state.phase = 'shop';
     state.gold = 20;
     const slotsBefore = state.slots;
-    state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'coveted-cake', price: 17 }]);
+    state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'coveted-cake', price: 2 }]);
     const eaten = act(state, { type: 'buy', offerId: 'o0' });
-    expect(eaten.state.gold).toBe(3);
+    expect(eaten.state.gold).toBe(18);
     expect(eaten.state.slots).toBe(slotsBefore - 1);
     const relic = eaten.state.items.find((item) => ITEM_BY_ID.get(item.id)?.rarity === 'rare');
     expect(relic).toBeDefined();
@@ -3011,6 +3055,8 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('pay 3 max HP');
     expect(FOOD_BY_ID.get('hearty-meal')?.description).toBe('+5 max HP, heal 5. No slot.');
     expect(ITEM_BY_ID.get('loyalty-card')?.description).toContain('Every 10 shop purchases');
+    expect(ITEM_BY_ID.get('loyalty-card')?.price).toBe(12);
+    expect(ITEM_BY_ID.get('loyalty-card')?.rarity).toBe('uncommon');
     expect(ITEM_BY_ID.get('tithe-box')?.description).toContain('10% chance');
     expect(ITEM_BY_ID.get('mimic-mouth')?.description).toContain('Once per round');
     expect(ITEM_BY_ID.get('second-skin')?.description).toContain('half your max armor');

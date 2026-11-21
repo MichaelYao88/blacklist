@@ -60,12 +60,12 @@ describe('shop relic labelling', () => {
 
   it('styles rare and uncommon foods like items', () => {
     const rareFood = [...root.querySelectorAll<HTMLElement>('.offer-card')]
-      .find((card) => card.textContent?.includes('Satchel'));
+      .find((card) => card.textContent?.includes('Reveal the D'));
     expect(rareFood?.classList.contains('rare')).toBe(true);
     expect(rareFood?.querySelector('.tag')?.textContent?.trim()).toBe('RARE');
 
     const uncommonFood = [...root.querySelectorAll<HTMLElement>('.offer-card')]
-      .find((card) => card.textContent?.includes('Plating'));
+      .find((card) => card.textContent?.includes('Satchel'));
     expect(uncommonFood?.classList.contains('uncommon')).toBe(true);
     expect(uncommonFood?.querySelector('.tag')?.textContent?.trim()).toBe('UNCOMMON');
   });

@@ -482,17 +482,17 @@ export const FOODS: FoodDef[] = [
     name: 'Satchel',
     description: '+1 slot. No slot.',
     price: 19,
-    rarity: 'rare',
+    rarity: 'uncommon',
     effects: [{ type: 'slots', delta: 1 }],
   }),
   defineFood({
     id: 'big-eggplant',
     name: 'Big Eggplant',
-    description: '+1 item slot, -1 max armor. No slot.',
+    description: '+1 item slot, -3 max armor. No slot.',
     price: 4,
     effects: [
       { type: 'slots', delta: 1 },
-      { type: 'maxArmor', delta: -1 },
+      { type: 'maxArmor', delta: -3 },
     ],
   }),
   defineFood({
@@ -738,7 +738,7 @@ export const FOODS: FoodDef[] = [
     id: 'coveted-cake',
     name: 'Coveted Cake',
     description: '-1 item slot. Gain a random rare relic. No slot.',
-    price: 17,
+    price: 2,
     rarity: 'rare',
     effects: [
       { type: 'slots', delta: -1 },

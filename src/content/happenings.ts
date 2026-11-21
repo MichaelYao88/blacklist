@@ -9,10 +9,10 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'reach',
         label: 'Reach into the bag',
-        description: '50%: +1 slot. 50%: −6 HP.',
+        description: '40%: +1 slot. 60%: −10 HP.',
         outcomes: [
-          { chancePct: 50, text: 'You find a sturdy strap. +1 item slot.', effects: [{ type: 'slots', delta: 1 }] },
-          { chancePct: 50, text: 'Something bites you. −6 HP.', effects: [{ type: 'damage', amount: 6 }] },
+          { chancePct: 40, text: 'You find a sturdy strap. +1 item slot.', effects: [{ type: 'slots', delta: 1 }] },
+          { chancePct: 60, text: 'Something bites you. −10 HP.', effects: [{ type: 'damage', amount: 10 }] },
         ],
       },
       { id: 'leave', label: 'Decline', description: 'Nothing happens.', outcomes: [{ chancePct: 100, text: 'The Scavenger shrugs.', effects: [] }] },
@@ -114,10 +114,10 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'pull',
         label: 'Pull a root',
-        description: '50%: +1 slot. 50%: −4 HP.',
+        description: '50%: +1 slot. 50%: −{level} HP.',
         outcomes: [
           { chancePct: 50, text: 'A leather strap comes up with the root. +1 item slot.', effects: [{ type: 'slots', delta: 1 }] },
-          { chancePct: 50, text: 'The root pulls back. −4 HP.', effects: [{ type: 'damage', amount: 4 }] },
+          { chancePct: 50, text: 'The root pulls back. −{level} HP.', effects: [{ type: 'damageLevel' }] },
         ],
       },
       {
@@ -581,8 +581,8 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'slot',
         label: 'Buy the pocket',
-        description: '6 gold: +1 item slot.',
-        costGold: 6,
+        description: '10 gold: +1 item slot.',
+        costGold: 10,
         outcomes: [{
           chancePct: 100,
           text: 'The box opens on a folded pocket with room to spare.',

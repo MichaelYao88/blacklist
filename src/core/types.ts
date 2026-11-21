@@ -308,6 +308,7 @@ export interface HappeningState {
 
 export type Effect =
   | { type: 'damage'; amount: number; ignoreArmor?: boolean }
+  | { type: 'damageLevel' }
   | { type: 'heal'; amount: number }
   | { type: 'healPercent'; percent: number }
   | { type: 'healMissingPercent'; percent: number }
