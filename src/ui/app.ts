@@ -1576,7 +1576,7 @@ function renderTitle(): string {
     ${characterPicker}
     ${ascensionPicker}
     <div class="title-facts">
-      <div><b>30</b><span>levels</span></div>
+      <div><b>50</b><span>levels</span></div>
       <div><b>2</b><span>curse choices</span></div>
       <div><b>3</b><span>base damage</span></div>
       <div><b>1</b><span>free guess</span></div>
@@ -1598,7 +1598,7 @@ function renderHelp(): string {
     <div class="rules-grid">
       <article class="rule-card">
         <h3>The run</h3>
-        <p>Thirty levels. The loop is <b>round → event chance → shop</b>, then <b>round → event chance → curse</b>. After level 30, draft <b>3 curses</b>, then face the <b>Floor Boss</b>, which revives three times. You must choose one of two curses every time a curse is offered.</p>
+        <p>Fifty floors. The loop cycles <b>fight → shop → fight → curse</b>; fights, shops and curses each count as a floor, while events happen between floors and do not. Floor 51 is the <b>Floor Boss</b>: draft <b>3 curses</b>, then beat four words as it revives three times.</p>
       </article>
       <article class="rule-card">
         <h3>Damage</h3>
@@ -2527,7 +2527,7 @@ function renderOver(phase: Extract<PhaseView, { kind: 'over' }>): string {
     <p class="kicker">RUN OVER</p>
     <h1>${victory ? 'THE LIST IS YOURS' : 'THE LIST CLOSES'}</h1>
     <p class="tagline">${victory
-      ? 'Thirty levels. Every curse. The words you gave up are the ones that carried you.'
+      ? 'Fifty floors. Every curse. The words you gave up are the ones that carried you.'
       : 'The word that ended you is written below. It will not be so kind next time.'}</p>
     ${ascNote ? `<p class="ascension-result">${ascNote}</p>` : ''}
     ${reveal}

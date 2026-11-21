@@ -191,15 +191,29 @@ describe('cursed run setup', () => {
     expect(werewolf.curses.some((curse) => curse.id === 'tight-slots')).toBe(true);
   });
 
-  it('builds a 30-level map with 14 curse drafts and one Floor Boss', () => {
+  it('builds a 50-floor map and puts the Floor Boss on floor 51', () => {
     const { state } = start();
     expect(nodeAt(state, (node) => node.kind === 'boss')).toBeGreaterThan(0);
     expect(state.nodes.filter((node) => node.kind === 'boss')).toHaveLength(1);
-    expect(state.nodes.filter((node) => node.kind === 'round')).toHaveLength(30);
-    expect(state.nodes.filter((node) => node.kind === 'curse')).toHaveLength(14);
-    expect(state.nodes.find((node) => node.kind === 'boss')?.level).toBe(30);
-    expect(state.nodes.some((node) => node.kind === 'curse' && node.level === 28)).toBe(true);
-    expect(state.nodes.some((node) => node.kind === 'curse' && node.level === 30)).toBe(false);
+    expect(state.nodes.filter((node) => node.kind === 'round')).toHaveLength(25);
+    expect(state.nodes.filter((node) => node.kind === 'shop')).toHaveLength(13);
+    expect(state.nodes.filter((node) => node.kind === 'curse')).toHaveLength(12);
+    expect(state.nodes.find((node) => node.kind === 'boss')?.level).toBe(51);
+
+    const labeled = state.nodes
+      .filter((node) => node.kind !== 'happening')
+      .slice(0, 8)
+      .map((node) => `${node.kind}:${node.level}`);
+    expect(labeled).toEqual([
+      'round:1', 'shop:2', 'round:3', 'curse:4',
+      'round:5', 'shop:6', 'round:7', 'curse:8',
+    ]);
+
+    for (const event of state.nodes.filter((node) => node.kind === 'happening')) {
+      const index = state.nodes.indexOf(event);
+      expect(state.nodes[index - 1].kind).toBe('round');
+      expect(state.nodes[index - 1].level).toBe(event.level);
+    }
   });
 
   it('opens a starting curse draft for Ascension 1 and 2', () => {

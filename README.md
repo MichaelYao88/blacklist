@@ -2,7 +2,7 @@
 
 A word roguelike about the burdens you choose.
 
-A 30-level curse run. The blacklist and the clock start disabled. Every two levels you choose one of two permanent curses, and those curses become the difficulty. After level 30, draft three final curses and face the Floor Boss, which revives three times. One active save, and defeat wipes it.
+A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle fight → shop → fight → curse; fights, shops and curses each count as a floor, while events happen between floors and do not. Floor 51 is the Floor Boss: draft three final curses, then beat four words as it revives three times. One active save, and defeat wipes it.
 
 **Play:** https://michaelayao88.github.io/blacklist/
 
@@ -13,13 +13,13 @@ A 30-level curse run. The blacklist and the clock start disabled. Every two leve
 ## What is in the vertical slice
 
 - Wordle-style scoring with duplicate-letter handling
-- A 30-level curse run: no bosses until the Floor Boss after level 30, no starting clock, no starting blacklist
+- A 50-floor curse run: no bosses until the Floor Boss on floor 51, no starting clock, no starting blacklist
 - Round loop: `round → 55% event → shop`, then `round → 55% event → curse`
-- Curse drafts offer 2 choices after every 2 levels; the Floor Boss demands 3 final curse drafts before the fight
+- Floors cycle fight → shop → fight → curse; curses count as floors and events do not. The Floor Boss demands 3 final curse drafts before the fight
 - Curse drafts draw from the weighted pool; The List and The Clock get a 3x weight until they first appear in a draft, then normal
 - Curse drafts use the same rarity floors as shops (40% rare and below, 45% uncommon and below, 15% common only), but do not display rarity. A common curse becomes uncommon for the rest of the run after it is offered or selected
 - Hover or focus a curse in the HUD to read its rules
-- The Floor Boss waits after level 30: draft 3 curses, then beat four words as it revives three times. Bosses ignore the **Second Wind** curse
+- Floor 51 is the Floor Boss: draft 3 curses, then beat four words as it revives three times. Bosses ignore the **Second Wind** curse
 - **Second Wind** is a rare curse: after you solve a word, a second word appears with one free guess
 - The Toll is only offered through level 40; The Tax and The Chained are only offered through level 20
 - Base encounter damage is **3 + 1.3 per curse stack, rounded down**, plus **+1 for every 60 gold spent this run**; characters that start with curses subtract **1.3 per starting curse stack**, and Heavy Hand multiplies the base by **1.5 per stack**. After the sixth guess in each puzzle, each later wrong guess increases the damage multiplier (**×2, ×3, ×4...**), counting autoguesses; the multiplier resets on Second Wind and each Floor Boss puzzle. Every paid wrong guess adds **+1 per occupied item slot above 5**

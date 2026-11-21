@@ -41,7 +41,7 @@ import { ASCENSION_MAX, ascensionStartingCurses } from './ascension';
 
 const VERSION = 6;
 const WORD_LENGTH = 5;
-const MAX_LEVEL = 30;
+const MAX_LEVEL = 50;
 const LEVELS_PER_AREA = 10;
 const STARTING_ITEM_SLOTS = 4;
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyz'.split('');
@@ -3426,7 +3426,7 @@ export function createCore(content: Content): Core {
     }
     const node = state.nodes[state.nodeIndex];
     state.level = node.level ?? state.nodeIndex + 1;
-    state.act = Math.floor((state.level - 1) / LEVELS_PER_AREA);
+    state.act = Math.min(4, Math.floor((state.level - 1) / LEVELS_PER_AREA));
     emit(rt, {
       type: 'nodeEntered',
       index: state.nodeIndex,
@@ -3958,18 +3958,20 @@ export function createCore(content: Content): Core {
       if (rngChance(state, 55)) nodes.push({ kind: 'happening', level });
     };
 
+    // Every fight, shop and curse is its own floor. Events are inserted after
+    // fights but share the fight's floor number, so they do not advance it.
+    const pattern: Array<'round' | 'shop' | 'curse'> = ['round', 'shop', 'round', 'curse'];
     for (let level = 1; level <= MAX_LEVEL; level++) {
-      addRound(level);
-      if (level >= MAX_LEVEL) continue;
-      if (level % 2 === 1) {
-        nodes.push({ kind: 'shop', level });
+      const kind = pattern[(level - 1) % pattern.length];
+      if (kind === 'round') {
+        addRound(level);
       } else {
-        nodes.push({ kind: 'curse', level });
+        nodes.push({ kind, level });
       }
     }
 
-    // The Floor Boss drafts three curses before the fight.
-    nodes.push({ kind: 'boss', level: MAX_LEVEL, boss: 'floor-boss' });
+    // Floor 51: three final curse drafts, then the Floor Boss fight.
+    nodes.push({ kind: 'boss', level: MAX_LEVEL + 1, boss: 'floor-boss' });
     state.nodes = nodes;
   }
 
