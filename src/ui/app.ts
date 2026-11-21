@@ -390,7 +390,7 @@ function triggerArenaAttack(force?: 'player' | 'enemy'): void {
 function flashDamageWarning(multiplier: number): void {
   warningRoot.innerHTML = `<div class="damage-warning" role="alert">
     <span class="damage-warning-kicker">WATCH OUT!</span>
-    <span class="damage-warning-mult">×${multiplier} MULTIPLIER</span>
+    <span class="damage-warning-mult">×${multiplier} DAMAGE</span>
   </div>`;
   if (warningTimer) window.clearTimeout(warningTimer);
   warningTimer = window.setTimeout(() => {
@@ -698,7 +698,7 @@ function processEvents(events: GameEvent[]): void {
     }
     if (event.type === 'damageMultiplier') {
       flashDamageWarning(event.multiplier);
-      logChronicle('bad', `Damage multiplier ×${event.multiplier}`);
+      logChronicle('bad', `Damage ×${event.multiplier}`);
     }
     if (event.type === 'message') notify(event.text, 'info');
     if (event.type === 'spellCast') showSpellPopup(event.spell.id, Boolean(event.auto));

@@ -40,6 +40,6 @@ describe('damage multiplier warning', () => {
     const warning = document.querySelector<HTMLElement>('.damage-warning');
     expect(warning).not.toBeNull();
     expect(warning?.querySelector('.damage-warning-kicker')?.textContent).toContain('WATCH OUT!');
-    expect(warning?.querySelector('.damage-warning-mult')?.textContent).toContain('×2 MULTIPLIER');
+    expect(warning?.querySelector('.damage-warning-mult')?.textContent).toContain('×2 DAMAGE');
   });
 });
