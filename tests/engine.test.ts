@@ -4732,7 +4732,7 @@ describe('The Spammer', () => {
 });
 
 describe('damage doubling and slots', () => {
-  it('doubles wrong-guess damage after the sixth guess', () => {
+  it('increases wrong-guess damage after the sixth guess', () => {
     const { state } = start('damage-doubling');
     setAnswer(state, 'crane');
     state.round!.baseDamage = 3;
@@ -4744,13 +4744,15 @@ describe('damage doubling and slots', () => {
 
     let current = state;
     const damages: number[] = [];
-    for (const word of ['slate', 'brick', 'plumb', 'chunk', 'vamps', 'fizzy', 'jumpy', 'waltz']) {
+    for (const word of [
+      'slate', 'brick', 'plumb', 'chunk', 'vamps', 'fizzy', 'jumpy', 'waltz', 'jumbo',
+    ]) {
       const before = current.hp;
       const result = act(current, { type: 'guess', word });
       damages.push(before - result.state.hp);
       current = result.state;
     }
-    expect(damages).toEqual([3, 3, 3, 3, 3, 3, 6, 12]);
+    expect(damages).toEqual([3, 3, 3, 3, 3, 3, 6, 9, 12]);
   });
 
   it('notifies each time the damage multiplier doubles', () => {
@@ -4773,7 +4775,7 @@ describe('damage doubling and slots', () => {
     )).toBe(true);
     const eighth = act(seventh.state, { type: 'guess', word: 'waltz' });
     expect(eighth.events.some(
-      (event) => event.type === 'message' && event.text.includes('×4'),
+      (event) => event.type === 'message' && event.text.includes('×3'),
     )).toBe(true);
   });
 

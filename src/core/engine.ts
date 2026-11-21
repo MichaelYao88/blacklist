@@ -2100,7 +2100,7 @@ export function createCore(content: Content): Core {
 
   function guessDamageMultiplier(round: RoundState, next = false): number {
     const guessNumber = round.totalGuesses + (next ? 1 : 0);
-    return 2 ** Math.max(0, guessNumber - 6);
+    return Math.max(1, guessNumber - 5);
   }
 
   function guessDamageFor(state: RunState, round: RoundState, next = false): number {
@@ -2357,7 +2357,7 @@ export function createCore(content: Content): Core {
     if (damageMultiplier > 1) {
       emit(rt, {
         type: 'message',
-        text: `Damage doubles: wrong guesses now deal ×${damageMultiplier}.`,
+        text: `Damage increases: wrong guesses now deal ×${damageMultiplier}.`,
       });
     }
 
