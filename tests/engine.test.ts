@@ -4720,8 +4720,8 @@ describe('curse rarity and trigger curses', () => {
     ]) {
       expect(CURSE_BY_ID.get(id)?.rarity, id).toBe('common');
     }
-    expect(CURSE_BY_ID.get('short-fuse')?.maxStacks).toBe(Infinity);
-    expect(CURSE_BY_ID.get('short-fuse')?.damageRampEarly).toBe(1);
+    expect(CURSE_BY_ID.get('short-fuse')?.maxStacks).toBe(3);
+    expect(CURSE_BY_ID.get('short-fuse')?.damageRampEarly).toBe(2);
     expect(CURSE_BY_ID.get('no-help')).toBeUndefined();
     expect(CURSE_BY_ID.get('slow-mending')?.noSpawn).toBe(true);
     expect(CURSE_BY_ID.get('slow-mending')?.healMult).toBe(0.5);
@@ -4986,7 +4986,7 @@ describe('damage doubling and slots', () => {
     expect(before - seventh.state.hp).toBe(6);
   });
 
-  it('Short Fuse starts the multiplier one guess earlier per stack', () => {
+  it('Short Fuse starts the multiplier two guesses earlier per stack', () => {
     const one = start('short-fuse-one');
     one.state.curses.push({ id: 'short-fuse', stacks: 1 });
     setAnswer(one.state, 'crane');
@@ -4997,13 +4997,13 @@ describe('damage doubling and slots', () => {
     one.state.hp = 200;
     one.state.maxHp = 200;
     let current = one.state;
-    for (const word of ['slate', 'brick', 'plumb', 'chunk', 'vamps']) {
+    for (const word of ['slate', 'brick', 'plumb', 'chunk']) {
       current = act(current, { type: 'guess', word }).state;
     }
     const before = current.hp;
-    const sixth = act(current, { type: 'guess', word: 'fizzy' });
-    expect(before - sixth.state.hp).toBe(6);
-    expect(sixth.events.some(
+    const fifth = act(current, { type: 'guess', word: 'vamps' });
+    expect(before - fifth.state.hp).toBe(6);
+    expect(fifth.events.some(
       (event) => event.type === 'damageMultiplier' && event.multiplier === 2,
     )).toBe(true);
 
@@ -5017,12 +5017,30 @@ describe('damage doubling and slots', () => {
     two.state.hp = 200;
     two.state.maxHp = 200;
     current = two.state;
-    for (const word of ['slate', 'brick', 'plumb', 'chunk']) {
+    for (const word of ['slate', 'brick']) {
       current = act(current, { type: 'guess', word }).state;
     }
     const stackedBefore = current.hp;
-    const fifth = act(current, { type: 'guess', word: 'vamps' });
-    expect(stackedBefore - fifth.state.hp).toBe(6);
+    const third = act(current, { type: 'guess', word: 'plumb' });
+    expect(stackedBefore - third.state.hp).toBe(6);
+    expect(third.events.some(
+      (event) => event.type === 'damageMultiplier' && event.multiplier === 2,
+    )).toBe(true);
+
+    const three = start('short-fuse-three');
+    three.state.curses.push({ id: 'short-fuse', stacks: 3 });
+    setAnswer(three.state, 'crane');
+    three.state.round!.baseDamage = 3;
+    three.state.round!.freeLeft = 0;
+    three.state.armor = 0;
+    three.state.maxArmor = 0;
+    three.state.hp = 200;
+    three.state.maxHp = 200;
+    const first = act(three.state, { type: 'guess', word: 'slate' });
+    expect(three.state.hp - first.state.hp).toBe(6);
+    expect(first.events.some(
+      (event) => event.type === 'damageMultiplier' && event.multiplier === 2,
+    )).toBe(true);
   });
 
   it('resets the damage multiplier on Second Wind puzzles', () => {

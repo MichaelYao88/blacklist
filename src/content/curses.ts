@@ -209,13 +209,16 @@ export const CURSES: CurseDef[] = [
   defineCurse({
     id: 'short-fuse',
     name: 'Short Fuse',
-    description: 'The damage multiplier starts 1 guess earlier per stack.',
-    rules: ['Each stack starts the post-sixth-guess multiplier 1 guess earlier.'],
+    description: 'The damage multiplier starts 2 guesses earlier per stack.',
+    rules: [
+      'Each stack starts the damage multiplier 2 guesses earlier.',
+      'Stacks up to 3 times.',
+    ],
     art: 'gauntlet',
     tags: ['damage'],
     rarity: 'common',
-    maxStacks: Infinity,
-    damageRampEarly: 1,
+    maxStacks: 3,
+    damageRampEarly: 2,
   }),
 
   // ── clock / list ────────────────────────────────────────────────────────
