@@ -98,7 +98,7 @@ const CHARACTER_SPRITES: Record<string, CharacterSprite> = {
   necromancer: {
     walk: necroWalk, attack: necroAttack, death: necroDeath, portrait: necroPortrait,
     walkFrames: 8, walkSteps: 7, attackFrames: 8, attackSteps: 7,
-    deathFrames: 8, deathSteps: 7, aspect: 1.25, width: 1.15,
+    deathFrames: 8, deathSteps: 7, aspect: 1, width: 1,
   },
   farmer: {
     walk: farmerWalk, attack: farmerAttack, death: farmerDeath, portrait: farmerPortrait,

@@ -2991,11 +2991,6 @@ button {
   aspect-ratio: 4 / 3;
 }
 
-.character-sprite.necromancer {
-  width: 220%;
-  aspect-ratio: 1.25;
-}
-
 .character-sprite.farmer {
   background-size: 600% 100%;
   animation: sprite-walk 1000ms steps(5) infinite;
