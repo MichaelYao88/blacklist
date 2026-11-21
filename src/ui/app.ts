@@ -1854,6 +1854,18 @@ function renderTimer(view: RunView, board: BoardView): string {
   </div>`;
 }
 
+function renderLevelBadge(view: RunView): string {
+  const maxLevel = view.nodes.reduce((max, node) => Math.max(max, node.level ?? 0), view.level);
+  const pct = Math.max(0, Math.min(100, (view.level / Math.max(1, maxLevel)) * 100));
+  return `<div class="rail-level" aria-label="Current level ${view.level} of ${maxLevel}">
+    <div class="rail-level-top">
+      <span class="rail-level-kicker">LEVEL</span>
+      <span class="rail-level-value">${view.level}<i>/${maxLevel}</i></span>
+    </div>
+    <div class="rail-level-bar"><i style="width:${pct}%"></i></div>
+  </div>`;
+}
+
 function renderBattleRail(view: RunView, bossId?: string): string {
   const phase = view.phase;
   const enemy = arenaEnemy(view, bossId);
@@ -1887,6 +1899,7 @@ function renderBattleRail(view: RunView, bossId?: string): string {
 
   return `
   <aside class="panel battle-rail ${low ? 'critical' : ''} ${hit ? 'hit' : ''}" style="--enemy:${enemy.color}" aria-label="Battle status">
+    ${renderLevelBadge(view)}
     ${board ? renderTimer(view, board) : ''}
     ${board ? guessDamageHtml(board) : ''}
     <section class="mini-arena ${phase.kind === 'summary' ? 'settled' : ''}">
