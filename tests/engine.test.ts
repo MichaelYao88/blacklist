@@ -2291,6 +2291,40 @@ describe('latest balance pass', () => {
     )).toBe(true);
   });
 
+  it('secretly limits Necronomicon to 3 uses per round', () => {
+    const { state } = start('necronomicon-three');
+    state.maxHp = 100;
+    state.hp = 100;
+    state.items.push({
+      instance: 'i-nec-three',
+      id: 'necronomicon',
+      data: { paid: 0, _uses: 0 },
+      equipped: true,
+    });
+    setAnswer(state, 'crane');
+
+    let current = state;
+    for (let index = 0; index < 3; index++) {
+      const before = current.maxHp;
+      const used = act(current, { type: 'useItem', instance: 'i-nec-three' });
+      expect(used.state.maxHp).toBeLessThan(before);
+      current = used.state;
+    }
+    expect(current.items.find((item) => item.id === 'necronomicon')?.data._uses).toBe(3);
+
+    const paid = current.items.find((item) => item.id === 'necronomicon')?.data.paid;
+    const maxHp = current.maxHp;
+    const fourth = act(current, { type: 'useItem', instance: 'i-nec-three' });
+    expect(fourth.state.maxHp).toBe(maxHp);
+    expect(fourth.state.items.find((item) => item.id === 'necronomicon')?.data.paid).toBe(paid);
+    expect(fourth.events.some((event) => event.type === 'spellCast')).toBe(false);
+
+    const next = nextRound(fourth.state);
+    expect(next.state.items.find((item) => item.id === 'necronomicon')?.data._uses).toBe(0);
+    const usedAgain = act(next.state, { type: 'useItem', instance: 'i-nec-three' });
+    expect(usedAgain.state.maxHp).toBeLessThan(next.state.maxHp);
+  });
+
   it('Hearty Meal gives 5 max HP and heals 5', () => {
     const meal = FOOD_BY_ID.get('hearty-meal');
     expect(meal?.effects).toEqual([

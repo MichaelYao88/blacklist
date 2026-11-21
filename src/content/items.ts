@@ -360,7 +360,7 @@ export const ITEMS: ItemDef[] = [
     price: 13,
     kind: 'gear',
     rarity: 'rare',
-    initial: { paid: 0 },
+    initial: { paid: 0, _uses: 0 },
     onUse: (ctx) => {
       if (!ctx.self.equipped) {
         return [{ type: 'message', text: 'Equip the book first.' }];
@@ -368,6 +368,7 @@ export const ITEMS: ItemDef[] = [
       if (ctx.state.phase !== 'round' || !ctx.state.round) {
         return [{ type: 'message', text: 'The book only answers during a round.' }];
       }
+      if ((ctx.self.data._uses ?? 0) >= 3) return [];
       const cost = Math.min(
         Math.ceil(ctx.state.maxHp * 0.13),
         Math.max(0, ctx.state.maxHp - 1),
@@ -378,10 +379,12 @@ export const ITEMS: ItemDef[] = [
       return [
         { type: 'maxHp', delta: -cost },
         { type: 'setItemData', stat: 'paid', value: (ctx.self.data.paid ?? 0) + cost },
+        { type: 'setItemData', stat: '_uses', value: (ctx.self.data._uses ?? 0) + 1 },
         { type: 'castSpell', spell: 'omen' },
       ];
     },
     on: {
+      onRoundStart: () => [{ type: 'setItemData', stat: '_uses', value: 0 }],
       onSpellCast: (ctx, p) => {
         if (p.spell !== 'omen') return [];
         return Array.from(
