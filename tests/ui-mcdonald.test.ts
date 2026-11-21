@@ -2,13 +2,13 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { game } from '../src/game';
 
-describe('Old McDonald round start', () => {
+describe('Old McDonald next-round guess', () => {
   let root: HTMLElement;
 
   beforeAll(async () => {
     localStorage.clear();
     const { state } = game.newRun({ seed: 'mcdonald-ui' });
-    state.permanentRoundStartWord = 'eieio';
+    state.nextRoundWord = 'eieio';
     state.nodes[1] = { kind: 'round', level: 2 };
     state.phase = 'shop';
     state.shop = {

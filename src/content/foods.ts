@@ -200,10 +200,10 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'old-mcdonald',
     name: "Old McDonald's",
-    description: 'Each round: EIEIO is guessed for free. No slot.',
-    price: 15,
+    description: 'Next round: EIEIO is guessed for free. No slot.',
+    price: 4,
     unique: true,
-    effects: [{ type: 'permanentRoundStartWord', word: 'eieio' }],
+    effects: [{ type: 'queueNextRoundWord', word: 'eieio' }],
   }),
   defineFood({
     id: 'king-mushroom',

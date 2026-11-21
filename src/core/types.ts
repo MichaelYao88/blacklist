@@ -366,6 +366,7 @@ export type Effect =
   | { type: 'permanentRandomGuesses'; count: number }
   | { type: 'permanentRoundStartSpell'; spell: SpellId }
   | { type: 'permanentRoundStartWord'; word: string }
+  | { type: 'queueNextRoundWord'; word: string }
   | { type: 'queueNextRoundReveal'; letters: Letter[] }
   | { type: 'disableVisionThisRound' }
   | { type: 'friendGuesses'; count: number }
@@ -634,6 +635,8 @@ export interface RunState {
   lastAnswer?: string;
   /** Knafeh: guess this word for free at the start of the next round. */
   nextRoundGuess?: string;
+  /** Old McDonald's: a free guess queued for the next round only. */
+  nextRoundWord?: string;
   /** Fortune Cookie: autoguesses queued for the next round. */
   nextRoundRandomGuesses: number;
   /** Oracle's Banquet: autoguesses at the start of every round. */

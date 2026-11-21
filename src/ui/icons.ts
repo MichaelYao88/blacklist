@@ -184,7 +184,7 @@ const FOOD_ICONS: Record<string, string> = {
   'purge-the-d': '♀️',
   'poppy-seeds': '🥯',
   'snake-oil': '🐍',
-  'old-mcdonald': '🚜',
+  'old-mcdonald': '🍟',
   'spell-pepper': '🌶️',
   kase: '🧀',
   'fortune-cookie': '🥠',

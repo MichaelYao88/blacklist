@@ -1240,6 +1240,9 @@ export function createCore(content: Content): Core {
       case 'permanentRoundStartWord':
         state.permanentRoundStartWord = effect.word;
         break;
+      case 'queueNextRoundWord':
+        state.nextRoundWord = effect.word;
+        break;
       case 'queueNextRoundReveal':
         if (foodRevealFails(state, source)) break;
         for (const letter of effect.letters) {
@@ -1927,7 +1930,22 @@ export function createCore(content: Content): Core {
       }
     }
 
-    // Old McDonald's guesses its word for free every round.
+    // Old McDonald's queues EIEIO for the next round only.
+    if (state.nextRoundWord) {
+      const word = state.nextRoundWord;
+      state.nextRoundWord = undefined;
+      if (
+        !autoguessFails(state)
+        && word.length === WORD_LENGTH
+        && !state.blacklist.includes(word)
+        && !word.split('').some((ch) => state.purged.includes(ch))
+        && !round.guesses.some((guess) => guess.word === word)
+      ) {
+        scorePlayerGuess(rt, word, 'friend');
+      }
+    }
+
+    // Permanent round-start words are scored as free friend guesses.
     if (state.permanentRoundStartWord) {
       const word = state.permanentRoundStartWord;
       if (

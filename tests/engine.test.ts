@@ -1372,24 +1372,26 @@ describe('item and food batch', () => {
     expect(cast.state.round!.hints.s).toBe('present');
   });
 
-  it("Old McDonald's food makes a free EIEIO guess every round", () => {
+  it("Old McDonald's queues one free EIEIO guess for the next round", () => {
     const { state } = start('old-mcdonald');
     state.phase = 'shop';
     state.gold = 20;
-    state.shop = shopState([{ id: 'f0', kind: 'eat', def: 'old-mcdonald', price: 15 }]);
+    state.shop = shopState([{ id: 'f0', kind: 'eat', def: 'old-mcdonald', price: 4 }]);
     const bought = act(state, { type: 'buy', offerId: 'f0' });
+    expect(bought.state.nextRoundWord).toBe('eieio');
     const next = nextRound(bought.state);
     const guess = next.state.round?.guesses.find((entry) => entry.word === 'eieio');
     expect(guess).toBeDefined();
     expect(guess?.free).toBe(true);
     expect(next.state.hp).toBe(15);
+    expect(next.state.nextRoundWord).toBeUndefined();
     const second = nextRound(next.state);
-    expect(second.state.round?.guesses.some((entry) => entry.word === 'eieio')).toBe(true);
+    expect(second.state.round?.guesses.some((entry) => entry.word === 'eieio')).toBe(false);
     expect(FOOD_BY_ID.get('old-mcdonald')?.name).toBe("Old McDonald's");
-    expect(FOOD_BY_ID.get('old-mcdonald')?.price).toBe(15);
+    expect(FOOD_BY_ID.get('old-mcdonald')?.price).toBe(4);
     expect(FOOD_BY_ID.get('old-mcdonald')?.unique).toBe(true);
     expect(FOOD_BY_ID.get('old-mcdonald')?.effects)
-      .toContainEqual({ type: 'permanentRoundStartWord', word: 'eieio' });
+      .toContainEqual({ type: 'queueNextRoundWord', word: 'eieio' });
   });
 
   it('removes the damage cap and prices letter foods by rarity', () => {

@@ -98,7 +98,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Loyalty Card** is a 12g uncommon item: +1 item slot after every 10 shop purchases
 - **Placebo** is a 4g item that heals exactly 1 HP on each player guess
 - **Pen Club** pays a random 1-5 gold for guesses starting with PEN; **Gourmand** gains +1 max HP on eat or spell cast
-- **Old McDonald's** is a 15g unique food: EIEIO is guessed for free at the start of every round
+- **Old McDonald's** is a 4g unique food: EIEIO is guessed for free once, at the start of the next round
 - Shops can show up to 2 copies of the same entry; sell rows are hoverable
 - Solve gold is a random 4-8 per solve, independent of guess count
 - **The Endless Table** fires every on-eat effect 7 times or pays 7 gold
