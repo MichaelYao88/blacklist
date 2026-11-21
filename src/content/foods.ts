@@ -482,7 +482,7 @@ export const FOODS: FoodDef[] = [
     id: 'chronos',
     name: 'Chronos',
     description: '+12s per round. No slot.',
-    price: 8,
+    price: 6,
     requiresClock: true,
     effects: [{ type: 'timeBonus', ms: 12_000 }],
   }),

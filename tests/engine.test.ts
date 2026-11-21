@@ -720,12 +720,12 @@ describe('timer curses', () => {
 
     const hit = act(state, { type: 'guess', word: 'slate' }); // 3 damage -> 6 HP
     expect(hit.state.hp).toBe(6);
-    expect(hit.state.maxHp).toBe(16);
+    expect(hit.state.maxHp).toBe(18);
     expect(hit.state.maxArmor).toBe(1);
     expect(hit.state.items.find((item) => item.id === 'adrenaline')?.data.armed).toBe(0);
 
     const again = act(hit.state, { type: 'guess', word: 'brick' });
-    expect(again.state.maxHp).toBe(16);
+    expect(again.state.maxHp).toBe(18);
     expect(again.state.maxArmor).toBe(1);
 
     again.state.spells = [{ instance: 's-heal', id: 'heal' }];
@@ -737,9 +737,10 @@ describe('timer curses', () => {
     healed.state.armor = 0;
     const second = act(healed.state, { type: 'guess', word: 'fizzy' });
     expect(second.state.hp).toBe(7);
-    expect(second.state.maxHp).toBe(17);
+    expect(second.state.maxHp).toBe(21);
     expect(second.state.maxArmor).toBe(2);
     expect(ITEM_BY_ID.get('adrenaline')?.price).toBe(10);
+    expect(ITEM_BY_ID.get('adrenaline')?.description).toContain('+3 max HP');
   });
 
   it('Gold Standard adds 1 gold to every gain and costs 8', () => {
@@ -3511,6 +3512,7 @@ describe('spells and foods', () => {
   it('gives Coffee +5s for 2 gold and Chronos +12s', () => {
     expect(FOOD_BY_ID.get('coffee')?.price).toBe(2);
     expect(FOOD_BY_ID.get('coffee')?.effects).toContainEqual({ type: 'timeBonus', ms: 5_000 });
+    expect(FOOD_BY_ID.get('chronos')?.price).toBe(6);
     expect(FOOD_BY_ID.get('chronos')?.effects).toContainEqual({ type: 'timeBonus', ms: 12_000 });
   });
 

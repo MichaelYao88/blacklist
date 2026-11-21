@@ -260,7 +260,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'adrenaline',
     name: 'Adrenaline',
-    description: 'When HP drops below 50%: +1 max HP and +1 max armor. Re-arms after healing above 50%.',
+    description: 'When HP drops below 50%: +3 max HP and +1 max armor. Re-arms after healing above 50%.',
     price: 10,
     kind: 'gear',
     initial: { armed: 1 },
@@ -275,7 +275,7 @@ export const ITEMS: ItemDef[] = [
         if (ctx.state.hp >= ctx.state.maxHp / 2) return [];
         return [
           { type: 'setItemData', stat: 'armed', value: 0 },
-          { type: 'maxHp', delta: 1 },
+          { type: 'maxHp', delta: 3 },
           { type: 'maxArmor', delta: 1 },
         ];
       },
