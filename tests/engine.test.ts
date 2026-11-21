@@ -1968,7 +1968,7 @@ describe('latest balance pass', () => {
     expect(solved.state.spells).toHaveLength(exactBefore);
   });
 
-  it('does not mark a position-hidden letter absent when its only match is hidden', () => {
+  it('lets a visible absent tile win over a hidden tile', () => {
     const { state } = start('third-eye-hidden-keyboard');
     state.curses.push({ id: 'third-eye', stacks: 1 });
     setAnswer(state, 'paste');
@@ -1978,8 +1978,20 @@ describe('latest balance pass', () => {
     const view = game.view(guessed.state).phase;
     if (view.kind !== 'round') throw new Error('expected round');
     expect(view.board.guesses[0].tiles[2]).toBe('hidden');
-    expect(view.board.keyboard.s).not.toBe('absent');
-    expect(view.board.keyboard.s).toBe('hidden');
+    expect(view.board.keyboard.s).toBe('absent');
+  });
+
+  it('keeps a letter hidden when it appears only behind a hidden tile', () => {
+    const { state } = start('third-eye-hidden-only');
+    state.curses.push({ id: 'third-eye', stacks: 1 });
+    setAnswer(state, 'paste');
+    state.round!.freeLeft = 0;
+    const guessed = act(state, { type: 'guess', word: 'crane' });
+    forcePositionHides(guessed.state, 2);
+    const view = game.view(guessed.state).phase;
+    if (view.kind !== 'round') throw new Error('expected round');
+    expect(view.board.guesses[0].tiles[2]).toBe('hidden');
+    expect(view.board.keyboard.a).toBe('hidden');
   });
 
   it('a hidden tile stays hidden while the keyboard learns its letter', () => {

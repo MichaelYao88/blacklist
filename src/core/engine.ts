@@ -3654,7 +3654,7 @@ export function createCore(content: Content): Core {
     }
     for (const letter of hiddenTileLetters) {
       const current = keyboard[letter];
-      if (!current || current === 'absent') keyboard[letter] = 'hidden';
+      if (!current) keyboard[letter] = 'hidden';
     }
     for (const [letter, status] of Object.entries(round.hints ?? {})) {
       const current = keyboard[letter];

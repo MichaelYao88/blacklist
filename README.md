@@ -42,7 +42,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Purge the Letter** offers two random letters: the first has a 100% chance to purge and the second has an 80% chance; you may also leave
 - Short item, spell and offer text with hover tooltips for keywords like armor, reveal, ruled out, free guesses, blacklist, relic and timeout
 - Revealed letters stay marked on the keyboard and in a Revealed panel for the puzzle; random reveals lean toward letters that are not in the answer; letter-reveal foods are permanent for the run
-- Vision-hidden letters show the hatched hidden key on the keyboard; reveals and rule-outs take priority over that layer
+- Vision-hidden letters show the hatched hidden key only when the letter has no other visible status; visible results, reveals and rule-outs take priority over that layer
 - Every finished encounter pays gold; solves offer coins, usually a spell, and only rarely gear or a meal
 - Opening shields such as **Head Start** (7s, rare) make guesses in their window count as free guesses and show a floating timer banner with the remaining seconds
 - Rarity uses cumulative floors: 40% pulls from rare, uncommon or common, 45% pulls from uncommon or common, and 15% pulls from common only. If a tier is empty, it falls back to the entire pool
