@@ -2391,23 +2391,6 @@ export function createCore(content: Content): Core {
     if (by === 'player' && round.lockedSpells.length > 0) round.lockedSpells = [];
     round.guesses.push(guess);
     const solved = word === round.answer;
-    const damageMultiplier = guessDamageMultiplier(state, round);
-    if (!solved && damageMultiplier > 1) {
-      emit(rt, { type: 'damageMultiplier', multiplier: damageMultiplier });
-    }
-    if (
-      !solved
-      && round.guesses.length >= damageSafeGuesses(state)
-      && round.freeLeft > 0
-    ) {
-      round.freeLeft = 0;
-      round.nextFreeUnobscured = false;
-      emit(rt, { type: 'freeGuessesChanged', remaining: 0, source: RULES });
-      emit(rt, {
-        type: 'message',
-        text: 'The guess limit consumes your remaining free guess.',
-      });
-    }
 
     const mark = rt.events.length;
     rt.pendingFree = false;
@@ -2481,6 +2464,21 @@ export function createCore(content: Content): Core {
     }
 
     if (isOver(state)) return;
+    if (!solved && round.guesses.length >= damageSafeGuesses(state)) {
+      const nextMultiplier = guessDamageMultiplier(state, round, true);
+      if (nextMultiplier > 1) {
+        emit(rt, { type: 'damageMultiplier', multiplier: nextMultiplier });
+      }
+      if (round.freeLeft > 0) {
+        round.freeLeft = 0;
+        round.nextFreeUnobscured = false;
+        emit(rt, { type: 'freeGuessesChanged', remaining: 0, source: RULES });
+        emit(rt, {
+          type: 'message',
+          text: 'The guess limit consumes your remaining free guess.',
+        });
+      }
+    }
     if (solved) handleSolved(rt);
   }
 

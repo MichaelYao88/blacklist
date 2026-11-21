@@ -17,7 +17,7 @@ describe('damage multiplier warning', () => {
     state.maxHp = 200;
 
     let current = state;
-    for (const word of ['slate', 'brick', 'plumb', 'chunk', 'vamps', 'fizzy']) {
+    for (const word of ['slate', 'brick', 'plumb', 'chunk', 'vamps']) {
       current = game.step(current, { type: 'guess', word }).state;
     }
 
