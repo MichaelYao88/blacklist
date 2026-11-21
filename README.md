@@ -22,7 +22,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - 50 is the final boss: three rounds back-to-back with no intermission. Bosses ignore the **Second Wind** curse
 - **Second Wind** is a curse: after you solve a word, a second word appears with one free guess
 - The Toll is only offered through level 40; The Tax and The Chained are only offered through level 20
-- Base encounter damage is **3 + 1.3 per curse stack, rounded down**, plus **+1 for every 60 gold spent this run**; Heavy Hand multiplies the base by **1.5 per stack**
+- Base encounter damage is **3 + 1.3 per curse stack, rounded down**, plus **+1 for every 60 gold spent this run**; characters that start with curses subtract **1.3 per starting curse stack**, and Heavy Hand multiplies the base by **1.5 per stack**
 - Vision curses are usually rare. **Take the L** is common, while **Hard R**, **Without the D**, and **IP Theft** are uncommon; the first/second/third/fourth/fifth position curses hide their tile **50% of the time**
 - The blacklist is disabled and hidden until **The List** curse is taken; The List is a single curse, never stacks, and arrives stocked with the first guess from every earlier round
 - The clock is disabled until **The Clock** curse is taken; the first stack gives 5:00 and each further stack shrinks it by 40%. If the clock reaches zero, the run ends immediately
@@ -194,13 +194,13 @@ Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title s
 ## Characters
 
 - **The Soldier** is the default: 15 HP, 5 armor, no starting gear or curses.
-- **The Pathfinder** unlocks when The Soldier reaches the first curse screen. They start with **Head Start**, **The List** curse, 14 HP and 3 armor.
-- **The Necromancer** unlocks after buying the **Necronomicon** once from a shop. They start with the **Necronomicon**, **The Sleeper** curse, 40 HP and 2 armor.
-- **The Purgamist** unlocks after buying 3 **Inkcap** across any runs. They start with **The Toll** curse, 12 HP, 4 armor and purge 3 letters of your choice before the first round.
+- **The Pathfinder** unlocks when The Soldier reaches the first curse screen. They start with **Head Start**, **The List** curse, 14 HP, 3 armor and 15 gold.
+- **The Necromancer** unlocks after buying the **Necronomicon** once from a shop. They start with the **Necronomicon**, **The Sleeper** curse, 40 HP, 2 armor and 16 gold.
+- **The Purgamist** unlocks after buying 3 **Inkcap** across any runs. They start with **The Toll** curse, 12 HP, 4 armor, 17 gold, and purge 3 letters of your choice before the first round.
 - **The Gourmand** unlocks after buying 3 **Double Cheeseburgers** across any runs. They start with **Potluck**, **Porcupine's Dilemma** curse, 25 HP and 2 armor.
-- **The Farmer** unlocks after winning any run. They start with the **Harvest Charm** (character-only, not found in shops), 20 HP and no armor.
-- **The Empty Armor** unlocks after winning a run on **Ascension 1**. It starts with **Bulwark**, 1 HP and 11 armor.
-- **The Werewolf** unlocks after winning a run on **Ascension 2**. It starts with **Dark Echo**, **Thorn Crown**, **Weak Plate** curse, 40 HP and no armor.
+- **The Farmer** unlocks after winning any run. They start with the **Harvest Charm** (character-only, not found in shops), 20 HP and 1 armor.
+- **The Empty Armor** unlocks after winning a run on **Ascension 1**. It starts with **Bulwark**, the character-only **Slow Mending** curse, 1 HP, 11 armor and one extra item slot.
+- **The Werewolf** unlocks after winning runs with **2 different characters**. It starts with **Dark Echo**, **Thorn Crown**, the **Weak Plate** and **Tight Slots** curses, 69 HP and no armor.
 - Once any character is unlocked, the title screen shows all eight character cards (locked cards list their unlock hint). Unlocks persist across runs and a large popup announces each new character.
 
 ## Sprites
@@ -223,7 +223,7 @@ The Soldier and Orc sprites are from **Tiny RPG Character Asset Pack 01** by [Ze
 | Normal timer | none until The Clock curse |
 | Clock curse | first stack 5:00, each later stack -40%, floor 0:30 |
 | Final boss | 3 rounds, shared clock if active |
-| Base damage | `3 + floor(1.3 × total curse stacks) + floor(gold spent / 60)`, then Heavy Hand and other modifiers apply |
+| Base damage | `3 + floor(1.3 × total curse stacks) − (1.3 × starting curse stacks) + floor(gold spent / 60)`, then Heavy Hand and other modifiers apply |
 | Paid guess damage | curse-scaled base, modified only by curses |
 | Final boss damage | 3 base plus curses |
 | Timeout | ends the run immediately; armor, immunity and revives cannot prevent it |

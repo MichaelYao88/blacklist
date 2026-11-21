@@ -652,10 +652,11 @@ function processEvents(events: GameEvent[]): void {
     }
     if (event.type === 'runEnded' && event.result === 'victory') {
       const ascension = host.current?.ascension ?? 0;
+      const winners = new Set([...readMeta().victoriousCharacters, character]);
       const unlocked = [
         'farmer',
         ...(ascension >= 1 ? ['empty-armor'] : []),
-        ...(ascension >= 2 ? ['werewolf'] : []),
+        ...(winners.size >= 2 ? ['werewolf'] : []),
       ];
       for (const id of unlocked) {
         if (unlockCharacter(id)) {

@@ -34,9 +34,11 @@ describe('victorious character tracking', () => {
     root.querySelector<HTMLElement>('[data-action="resume"]')!.click();
   });
 
-  it('records a second winning character without bypassing Ascension 2', () => {
+  it('unlocks The Werewolf after wins with two different characters', () => {
     root.querySelector<HTMLElement>('[data-action="continue"]')!.click();
-    expect(readMeta().characters).not.toContain('werewolf');
+    expect(readMeta().characters).toContain('werewolf');
     expect(readMeta().victoriousCharacters).toEqual(['runner', 'farmer']);
+    expect(root.querySelector<HTMLElement>('.unlock-overlay')?.textContent)
+      .toContain('The Werewolf');
   });
 });

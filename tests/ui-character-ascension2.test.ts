@@ -32,18 +32,18 @@ describe('Ascension 2 character unlock', () => {
     root.querySelector<HTMLElement>('[data-action="resume"]')!.click();
   });
 
-  it('unlocks The Farmer, The Empty Armor, and The Werewolf', () => {
+  it('unlocks The Farmer and The Empty Armor but not The Werewolf', () => {
     root.querySelector<HTMLElement>('[data-action="continue"]')!.click();
     const unlocked = readMeta().characters;
     expect(unlocked).toContain('farmer');
     expect(unlocked).toContain('empty-armor');
-    expect(unlocked).toContain('werewolf');
+    expect(unlocked).not.toContain('werewolf');
     expect(root.querySelector<HTMLElement>('.unlock-overlay')?.textContent).toContain('The Farmer');
 
     root.querySelector<HTMLElement>('[data-action="dismiss-unlock"]')!.click();
     expect(root.querySelector<HTMLElement>('.unlock-overlay')?.textContent).toContain('The Empty Armor');
 
     root.querySelector<HTMLElement>('[data-action="dismiss-unlock"]')!.click();
-    expect(root.querySelector<HTMLElement>('.unlock-overlay')?.textContent).toContain('The Werewolf');
+    expect(root.querySelector<HTMLElement>('.unlock-overlay')).toBeNull();
   });
 });

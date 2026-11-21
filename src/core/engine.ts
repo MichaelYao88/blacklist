@@ -1371,7 +1371,9 @@ export function createCore(content: Content): Core {
         }
         break;
       case 'resetSlotsToStart': {
-        const target = Math.min(state.slots, STARTING_ITEM_SLOTS);
+        const character = content.characters.find((entry) => entry.id === state.character);
+        const startSlots = STARTING_ITEM_SLOTS + (character?.bonusSlots ?? 0);
+        const target = Math.min(state.slots, startSlots);
         if (target !== state.slots) {
           state.slots = target;
           emit(rt, { type: 'slotsChanged', slots: state.slots });
@@ -1816,13 +1818,19 @@ export function createCore(content: Content): Core {
     const remaining = clock === null ? null : Math.max(30_000, clock + state.bonusTimeMs);
     const timerStart = remaining;
 
-    // Encounter damage is 3 plus 1.3 per curse stack, rounded down. Curses are
+    // Encounter damage is 3 plus 1.3 per curse stack, rounded down. Characters
+    // that start with curses subtract 1.3 per starting curse stack. Curses are
     // the only growth; Heavy Hand still multiplies the total.
     const curseTotal = state.curses.reduce((sum, entry) => sum + entry.stacks, 0);
     const curseDamage = Math.floor((curseTotal * 13) / 10);
+    const character = content.characters.find((entry) => entry.id === state.character);
+    const startingCursePenalty = (character?.curses.length ?? 0) * 13 / 10;
     const baseDamage = Math.max(
       0,
-      Math.round((3 + curseDamage) * damageMultiplier(state) + state.bonusBaseDamage),
+      Math.round(
+        (3 + curseDamage - startingCursePenalty) * damageMultiplier(state)
+          + state.bonusBaseDamage,
+      ),
     );
 
     const round: RoundState = {
@@ -2873,21 +2881,31 @@ export function createCore(content: Content): Core {
         !state.purged.includes(letter)
         && (!know || !state.permanentReveals.includes(letter))
       ));
-      letters = rngShuffle(state, candidates).slice(0, know ? 2 : 3);
-      const letterOptions: HappeningOptionView[] = letters.map((letter) => ({
-        id: letter,
-        label: `${know ? 'Know' : 'Purge'} ${letter.toUpperCase()}`,
-        description: know
-          ? `Permanently reveal ${letter.toUpperCase()} in every round.`
-          : `Permanently purge ${letter.toUpperCase()} from future answers.`,
-        chancePct: 100,
-        outcomes: [{
-          chancePct: 100,
-          text: know
-            ? `${letter.toUpperCase()} will be known from now on.`
-            : `${letter.toUpperCase()} will be purged from future answers.`,
-        }],
-      }));
+      letters = rngShuffle(state, candidates).slice(0, 2);
+      const letterOptions: HappeningOptionView[] = letters.map((letter, index) => {
+        const chance = index === 0 ? 100 : 80;
+        const upper = letter.toUpperCase();
+        const successText = know
+          ? `${upper} will be known from now on.`
+          : `${upper} will be purged from future answers.`;
+        const failureText = know
+          ? 'The letter fades before you can learn it.'
+          : 'The letter resists erasure.';
+        return {
+          id: letter,
+          label: `${know ? 'Know' : 'Purge'} ${upper}`,
+          description: know
+            ? `${chance}%: permanently reveal ${upper} in every round.`
+            : `${chance}%: permanently purge ${upper} from future answers.`,
+          chancePct: chance,
+          outcomes: chance === 100
+            ? [{ chancePct: 100, text: successText }]
+            : [
+                { chancePct: chance, text: successText },
+                { chancePct: 100 - chance, text: failureText },
+              ],
+        };
+      });
       const leave = baseOptions.find((option) => option.id === 'leave');
       options = [...letterOptions, ...(leave ? [leave] : [])];
     }
@@ -3007,6 +3025,19 @@ export function createCore(content: Content): Core {
     }
     if (happening.letters && def.id === 'know-the-letter' && happening.letters.includes(optionId as Letter)) {
       const letter = optionId as Letter;
+      const chance = happening.letters.indexOf(letter) === 1 ? 80 : 100;
+      if (chance < 100 && !rngChance(state, chance)) {
+        const text = 'The letter fades before you can learn it.';
+        happening.resolved = { option: letter, success: false, text };
+        emit(rt, {
+          type: 'happeningResolved',
+          happening: def.id,
+          option: letter,
+          success: false,
+          text,
+        });
+        return;
+      }
       applyEffects(rt, [{ type: 'revealLetter', letter }], { kind: 'happening', happening: def.id });
       const text = `${letter.toUpperCase()} will be known from now on.`;
       happening.resolved = { option: letter, success: true, text };
@@ -3021,10 +3052,14 @@ export function createCore(content: Content): Core {
     }
     if (happening.letters && def.id === 'purge-the-letter' && happening.letters.includes(optionId as Letter)) {
       const letter = optionId as Letter;
-      const success = purgeLetterNow(rt, letter);
-      const text = success
-        ? `${letter.toUpperCase()} is purged from future answers.`
-        : `${letter.toUpperCase()} could not be purged.`;
+      const chance = happening.letters.indexOf(letter) === 1 ? 80 : 100;
+      const rolled = chance === 100 || rngChance(state, chance);
+      const success = rolled && purgeLetterNow(rt, letter);
+      const text = !rolled
+        ? 'The letter resists erasure.'
+        : success
+          ? `${letter.toUpperCase()} is purged from future answers.`
+          : `${letter.toUpperCase()} could not be purged.`;
       happening.resolved = { option: letter, success, text };
       emit(rt, {
         type: 'happeningResolved',
@@ -3116,6 +3151,7 @@ export function createCore(content: Content): Core {
 
   function eligibleCurses(state: RunState, starting: boolean): CurseDef[] {
     return content.curses.filter((def) => {
+      if (def.noSpawn) return false;
       if (curseStacks(state, def.id) >= def.maxStacks) return false;
       if (starting && def.startingEligible === false) return false;
       if (def.minLevel && state.level < def.minLevel) return false;
@@ -3878,9 +3914,9 @@ export function createCore(content: Content): Core {
       maxHp,
       armor: startArmor,
       maxArmor: startArmor,
-      gold: 12,
+      gold: character.startingGold ?? 12,
       goldSpent: 0,
-      slots: STARTING_ITEM_SLOTS,
+      slots: STARTING_ITEM_SLOTS + (character.bonusSlots ?? 0),
       bonusTimeMs: 0,
       bonusBaseDamage: 0,
       bonusSolveGold: 0,

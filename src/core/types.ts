@@ -221,6 +221,8 @@ export interface CurseDef {
   maxHpMult?: number;
   goldMult?: number;
   noSell?: boolean;
+  /** Character-only curses never appear in drafts. */
+  noSpawn?: boolean;
   /** Base draft rarity. Vision curses are rare unless explicitly overridden. */
   rarity?: 'common' | 'uncommon' | 'rare';
   /** Item and food autoguesses fail this percentage of the time. */
@@ -244,6 +246,10 @@ export interface CharacterDef {
   description: string;
   maxHp: number;
   armor: number;
+  /** Extra item slots beyond the normal starting amount. */
+  bonusSlots?: number;
+  /** Starting gold. Defaults to 12. */
+  startingGold?: number;
   items: string[];
   curses: CurseId[];
   /** Letters the player must purge during setup, before the first round. */

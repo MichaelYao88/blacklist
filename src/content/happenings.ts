@@ -698,7 +698,7 @@ export const HAPPENINGS: HappeningDef[] = [
   defineHappening({
     id: 'purge-the-letter',
     name: 'Purge the Letter',
-    description: 'Three letters are listed for erasure. You may remove one.',
+    description: 'Two letters are listed for erasure. You may remove one.',
     options: [
       {
         id: 'leave',

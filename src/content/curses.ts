@@ -293,6 +293,18 @@ export const CURSES: CurseDef[] = [
     maxArmorMult: 0,
   }),
   defineCurse({
+    id: 'slow-mending',
+    name: 'Slow Mending',
+    description: 'Healing is halved per stack.',
+    rules: ['Each stack multiplies all healing by 0.5.'],
+    art: 'vowel-fog',
+    tags: ['body'],
+    rarity: 'uncommon',
+    maxStacks: Infinity,
+    healMult: 0.5,
+    noSpawn: true,
+  }),
+  defineCurse({
     id: 'tight-slots',
     name: 'Tight Slots',
     description: 'Two fewer item slots per stack.',

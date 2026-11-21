@@ -34,7 +34,7 @@ describe('character select', () => {
     expect(cards[3].textContent).toContain('Buy 3 Inkcap');
     expect(cards[5].textContent).toContain('Win a run');
     expect(cards[6].textContent).toContain('Ascension 1');
-    expect(cards[7].textContent).toContain('Ascension 2');
+    expect(cards[7].textContent).toContain('Beat the game with 2 different characters');
     expect((cards[2] as HTMLButtonElement).disabled).toBe(true);
 
     cards[1].click();

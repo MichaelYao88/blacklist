@@ -107,12 +107,14 @@ describe('cursed run setup', () => {
     expect(soldier.character).toBe('runner');
     expect(soldier.maxHp).toBe(15);
     expect(soldier.maxArmor).toBe(5);
+    expect(soldier.gold).toBe(12);
 
     const pathfinder = game.newRun({ seed: 'preset-pathfinder', character: 'pathfinder' }).state;
     expect(pathfinder.character).toBe('pathfinder');
     expect(pathfinder.maxHp).toBe(14);
     expect(pathfinder.maxArmor).toBe(3);
     expect(pathfinder.armor).toBe(3);
+    expect(pathfinder.gold).toBe(15);
     expect(pathfinder.items.some((item) => item.id === 'head-start' && item.equipped)).toBe(true);
     expect(pathfinder.curses.some((curse) => curse.id === 'the-list')).toBe(true);
 
@@ -121,6 +123,7 @@ describe('cursed run setup', () => {
     expect(necro.maxHp).toBe(40);
     expect(necro.maxArmor).toBe(2);
     expect(necro.armor).toBe(2);
+    expect(necro.gold).toBe(16);
     expect(necro.items.some((item) => item.id === 'necronomicon' && item.equipped)).toBe(true);
     expect(necro.curses.some((curse) => curse.id === 'sleeper')).toBe(true);
 
@@ -128,6 +131,7 @@ describe('cursed run setup', () => {
     expect(purgamist.character).toBe('purgamist');
     expect(purgamist.maxHp).toBe(12);
     expect(purgamist.maxArmor).toBe(4);
+    expect(purgamist.gold).toBe(17);
     expect(purgamist.pendingPurge).toBe(3);
     expect(purgamist.curses.some((curse) => curse.id === 'toll')).toBe(true);
 
@@ -141,8 +145,8 @@ describe('cursed run setup', () => {
     const farmer = game.newRun({ seed: 'preset-farmer', character: 'farmer' }).state;
     expect(farmer.character).toBe('farmer');
     expect(farmer.maxHp).toBe(20);
-    expect(farmer.maxArmor).toBe(0);
-    expect(farmer.armor).toBe(0);
+    expect(farmer.maxArmor).toBe(1);
+    expect(farmer.armor).toBe(1);
     expect(farmer.items.some((item) => item.id === 'harvest-charm' && item.equipped)).toBe(true);
     expect(farmer.curses).toEqual([]);
 
@@ -151,18 +155,20 @@ describe('cursed run setup', () => {
     expect(emptyArmor.maxHp).toBe(1);
     expect(emptyArmor.maxArmor).toBe(11);
     expect(emptyArmor.armor).toBe(11);
+    expect(emptyArmor.slots).toBe(5);
     expect(emptyArmor.items.some((item) => item.id === 'bulwark' && item.equipped)).toBe(true);
-    expect(emptyArmor.curses).toEqual([]);
+    expect(emptyArmor.curses.some((curse) => curse.id === 'slow-mending')).toBe(true);
 
     const werewolf = game.newRun({ seed: 'preset-werewolf', character: 'werewolf' }).state;
     expect(werewolf.character).toBe('werewolf');
-    expect(werewolf.maxHp).toBe(40);
+    expect(werewolf.maxHp).toBe(69);
     expect(werewolf.maxArmor).toBe(0);
     expect(werewolf.armor).toBe(0);
+    expect(werewolf.slots).toBe(2);
     expect(werewolf.items.some((item) => item.id === 'dark-echo' && item.equipped)).toBe(true);
     expect(werewolf.items.some((item) => item.id === 'thorn-crown' && item.equipped)).toBe(true);
     expect(werewolf.curses.some((curse) => curse.id === 'weak-plate')).toBe(true);
-    expect(werewolf.curses.some((curse) => curse.id === 'tight-slots')).toBe(false);
+    expect(werewolf.curses.some((curse) => curse.id === 'tight-slots')).toBe(true);
   });
 
   it('builds a 50-level map with 25 curse drafts and one final boss', () => {
@@ -493,6 +499,14 @@ describe('damage and curses', () => {
 
     const normal = act(soft.state, { type: 'guess', word: 'vamps' });
     expect(normal.state.hp).toBe(9); // later unarmored hits are normal
+  });
+
+  it('offsets base damage by 1.3 per starting curse stack', () => {
+    const pathfinder = game.newRun({ seed: 'starting-curse-damage', character: 'pathfinder' }).state;
+    expect(pathfinder.round?.baseDamage).toBe(3); // 3 + 1 - 1.3 -> 3 after rounding
+
+    const werewolf = game.newRun({ seed: 'starting-curse-damage-wolf', character: 'werewolf' }).state;
+    expect(werewolf.round?.baseDamage).toBe(2); // 3 + 2 - 2.6 -> 2 after rounding
   });
 
   it('adds Turtle Shell and Pain au Chocolat', () => {
@@ -4015,13 +4029,31 @@ describe('letter happenings', () => {
   it('Purge the Letter permanently purges the chosen letter', () => {
     const { state } = start('purge-letter-event');
     state.phase = 'happening';
-    state.happening = { id: 'purge-the-letter', options: [], letters: ['q', 'x', 'z'] };
+    state.happening = { id: 'purge-the-letter', options: [], letters: ['q', 'x'] };
     const chosen = act(state, { type: 'choose', optionId: 'q' });
     expect(chosen.state.purged).toContain('q');
     expect(chosen.state.happening?.resolved?.success).toBe(true);
   });
 
-  it('offers two know letters and three purge letters', () => {
+  it('lets the 80% letter option fail', () => {
+    const know = start('know-letter-fail').state;
+    know.phase = 'happening';
+    know.happening = { id: 'know-the-letter', options: [], letters: ['q', 'x'] };
+    know.rng = 4; // next rngNext() is 0.9236, so the 80% roll fails
+    const failedKnow = act(know, { type: 'choose', optionId: 'x' });
+    expect(failedKnow.state.permanentReveals).not.toContain('x');
+    expect(failedKnow.state.happening?.resolved?.success).toBe(false);
+
+    const purge = start('purge-letter-fail').state;
+    purge.phase = 'happening';
+    purge.happening = { id: 'purge-the-letter', options: [], letters: ['q', 'x'] };
+    purge.rng = 4;
+    const failedPurge = act(purge, { type: 'choose', optionId: 'x' });
+    expect(failedPurge.state.purged).not.toContain('x');
+    expect(failedPurge.state.happening?.resolved?.success).toBe(false);
+  });
+
+  it('offers two letters for each event with 100% and 80% odds', () => {
     let know: RunState['happening'];
     let purge: RunState['happening'];
     for (let index = 0; index < 400 && (!know || !purge); index++) {
@@ -4030,12 +4062,14 @@ describe('letter happenings', () => {
       if (next.state.happening?.id === 'know-the-letter') know = next.state.happening;
       if (next.state.happening?.id === 'purge-the-letter') purge = next.state.happening;
     }
-    expect(know?.letters).toHaveLength(2);
-    expect(purge?.letters).toHaveLength(3);
-    expect(new Set(know?.letters).size).toBe(2);
-    expect(new Set(purge?.letters).size).toBe(3);
-    expect(know?.options.filter((option) => option.id !== 'leave')).toHaveLength(2);
-    expect(purge?.options.filter((option) => option.id !== 'leave')).toHaveLength(3);
+    for (const event of [know, purge]) {
+      expect(event?.letters).toHaveLength(2);
+      expect(new Set(event?.letters).size).toBe(2);
+      const letterOptions = event?.options.filter((option) => option.id !== 'leave') ?? [];
+      expect(letterOptions).toHaveLength(2);
+      expect(letterOptions.map((option) => option.chancePct ?? 0).sort((a, b) => a - b))
+        .toEqual([80, 100]);
+    }
   });
 });
 
@@ -4473,7 +4507,8 @@ describe('curse rarity and trigger curses', () => {
       expect(CURSE_BY_ID.get(id)?.rarity, id).toBe('common');
     }
     expect(CURSE_BY_ID.get('no-help')).toBeUndefined();
-    expect(CURSE_BY_ID.get('slow-mending')).toBeUndefined();
+    expect(CURSE_BY_ID.get('slow-mending')?.noSpawn).toBe(true);
+    expect(CURSE_BY_ID.get('slow-mending')?.healMult).toBe(0.5);
     expect(CURSE_BY_ID.get('triggerless')?.name).toBe('Triggerless');
     expect(CURSE_BY_ID.get('triggerless')?.minLevel).toBe(20);
     expect(CURSE_BY_ID.get('regurgitation')?.minLevel).toBe(20);
