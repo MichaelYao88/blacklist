@@ -30,7 +30,7 @@ export const CHARACTERS: CharacterDef[] = [
     name: 'The Necromancer',
     tagline: 'Keep feeding the book.',
     description: 'A deep health pool, light armor, and a book that keeps taking.',
-    maxHp: 33,
+    maxHp: 27,
     armor: 4,
     startingGold: 16,
     items: ['necronomicon'],
@@ -50,7 +50,7 @@ export const CHARACTERS: CharacterDef[] = [
     curses: ['toll'],
     sprite: 'kitsune',
     startingPurges: 3,
-    unlockHint: 'Buy 2 Inkcap across any runs.',
+    unlockHint: 'Eat 2 Inkcap across any runs.',
   }),
   defineCharacter({
     id: 'gourmand',
@@ -63,7 +63,7 @@ export const CHARACTERS: CharacterDef[] = [
     items: ['potluck'],
     curses: ['porcupine'],
     sprite: 'tengu',
-    unlockHint: 'Buy 3 Double Cheeseburgers across any runs.',
+    unlockHint: 'Eat 3 Double Cheeseburgers across any runs.',
   }),
   defineCharacter({
     id: 'farmer',

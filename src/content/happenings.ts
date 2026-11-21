@@ -830,6 +830,73 @@ export const HAPPENINGS: HappeningDef[] = [
       },
     ],
   }),
+  defineHappening({
+    id: 'hollow-pocket',
+    name: 'The Hollow Pocket',
+    description: 'A hand offers to lighten your load, or to reach into a darker pocket.',
+    options: [
+      {
+        id: 'slot',
+        label: 'Give up a slot',
+        description: '-1 item slot.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'You hand over part of your kit and feel the space close behind it.',
+          effects: [{ type: 'slots', delta: -1 }],
+        }],
+      },
+      {
+        id: 'gamble',
+        label: 'Reach into the dark',
+        description: '50%: gain a specific random curse. 50%: nothing happens.',
+        outcomes: [
+          {
+            chancePct: 50,
+            text: 'The pocket is empty.',
+            effects: [],
+          },
+          {
+            chancePct: 50,
+            text: 'Something cold closes around your hand.',
+            effects: [{ type: 'addPreviewCurse' }],
+          },
+        ],
+      },
+    ],
+  }),
+  defineHappening({
+    id: 'forbidden-feast',
+    name: 'The Forbidden Feast',
+    description: 'A rare dish under a silver cover. Something under the table waits for payment.',
+    options: [
+      {
+        id: 'eat',
+        label: 'Eat the rare food',
+        description: 'Gain a specific random rare food. 50%: also gain a specific random curse.',
+        outcomes: [
+          {
+            chancePct: 50,
+            text: 'The meal is worth it.',
+            effects: [{ type: 'addPreviewFood' }],
+          },
+          {
+            chancePct: 50,
+            text: 'The meal is worth it. Something follows you.',
+            effects: [
+              { type: 'addPreviewFood' },
+              { type: 'addPreviewCurse' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'leave',
+        label: 'Walk away',
+        description: 'Nothing happens.',
+        outcomes: [{ chancePct: 100, text: 'You leave the cover where it lies.', effects: [] }],
+      },
+    ],
+  }),
 ];
 
 export const HAPPENING_BY_ID = new Map(HAPPENINGS.map((h) => [h.id, h]));

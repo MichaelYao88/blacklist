@@ -83,6 +83,15 @@ function nextHappening(state: RunState): StepResult {
   return act(state, { type: 'continue' });
 }
 
+function findHappeningById(prefix: string, id: string): StepResult {
+  for (let index = 0; index < 900; index++) {
+    const run = start(`${prefix}-${index}`);
+    const next = nextHappening(run.state);
+    if (next.state.happening?.id === id) return next;
+  }
+  throw new Error(`could not find happening ${id}`);
+}
+
 /** Advance into a boss and draft all of its prep curses. */
 function enterBoss(state: RunState, bossId: string): StepResult {
   const bossIndex = nodeAt(state, (node) => node.kind === 'boss' && node.boss === bossId);
@@ -144,7 +153,7 @@ describe('cursed run setup', () => {
 
     const necro = game.newRun({ seed: 'preset-necro', character: 'necromancer' }).state;
     expect(necro.character).toBe('necromancer');
-    expect(necro.maxHp).toBe(33);
+    expect(necro.maxHp).toBe(27);
     expect(necro.maxArmor).toBe(4);
     expect(necro.armor).toBe(4);
     expect(necro.gold).toBe(16);
@@ -1106,6 +1115,86 @@ describe('shop curses', () => {
       .toContainEqual({ type: 'gold', amount: 20 });
     expect(trade?.options.find((option) => option.id === 'heal')?.outcomes[0].effects)
       .toHaveLength(2);
+  });
+
+  it('adds The Hollow Pocket and The Forbidden Feast events', () => {
+    const hollow = HAPPENING_BY_ID.get('hollow-pocket');
+    expect(hollow?.options.map((option) => option.id)).toEqual(['slot', 'gamble']);
+    expect(hollow?.options.find((option) => option.id === 'slot')?.outcomes[0].effects)
+      .toEqual([{ type: 'slots', delta: -1 }]);
+    const gamble = hollow?.options.find((option) => option.id === 'gamble');
+    expect(gamble?.outcomes.map((outcome) => outcome.chancePct)).toEqual([50, 50]);
+    expect(gamble?.outcomes[0].effects).toEqual([]);
+    expect(gamble?.outcomes[1].effects).toEqual([{ type: 'addPreviewCurse' }]);
+
+    const feast = HAPPENING_BY_ID.get('forbidden-feast');
+    expect(feast?.options.map((option) => option.id)).toEqual(['eat', 'leave']);
+    const eat = feast?.options.find((option) => option.id === 'eat');
+    expect(eat?.outcomes.map((outcome) => outcome.chancePct)).toEqual([50, 50]);
+    expect(eat?.outcomes[0].effects).toEqual([{ type: 'addPreviewFood' }]);
+    expect(eat?.outcomes[1].effects).toEqual([
+      { type: 'addPreviewFood' },
+      { type: 'addPreviewCurse' },
+    ]);
+  });
+
+  it('resolves The Hollow Pocket slot loss and curse gamble', () => {
+    const slot = findHappeningById('hollow-slot', 'hollow-pocket');
+    const slotsBefore = slot.state.slots;
+    const lost = act(slot.state, { type: 'choose', optionId: 'slot' });
+    expect(lost.state.slots).toBe(slotsBefore - 1);
+
+    const safe = findHappeningById('hollow-safe', 'hollow-pocket');
+    safe.state.rng = 0; // 26.6%: the pocket is empty
+    const nothing = act(safe.state, { type: 'choose', optionId: 'gamble' });
+    expect(nothing.state.curses).toHaveLength(0);
+    expect(nothing.state.happening?.resolved?.success).toBe(true);
+
+    const risk = findHappeningById('hollow-risk', 'hollow-pocket');
+    const preview = risk.state.happening?.previewCurse;
+    expect(preview).toBeDefined();
+    expect(risk.state.happening?.options.find((option) => option.id === 'gamble')?.description)
+      .toContain(CURSE_BY_ID.get(preview!)?.name ?? '');
+    risk.state.rng = 1; // 62.7%: the curse lands
+    const cursed = act(risk.state, { type: 'choose', optionId: 'gamble' });
+    expect(cursed.state.curses.some((curse) => curse.id === preview)).toBe(true);
+    expect(cursed.state.happening?.resolved?.success).toBe(false);
+  });
+
+  it('resolves The Forbidden Feast with a specific rare food and curse roll', () => {
+    const feast = findHappeningById('feast-preview', 'forbidden-feast');
+    const previewFood = feast.state.happening?.previewFood;
+    const previewCurse = feast.state.happening?.previewCurse;
+    expect(FOOD_BY_ID.get(previewFood ?? '')?.rarity).toBe('rare');
+    expect(previewCurse).toBeDefined();
+    const eatOption = feast.state.happening?.options.find((option) => option.id === 'eat');
+    expect(eatOption?.description).toContain(FOOD_BY_ID.get(previewFood!)?.name ?? '');
+    expect(eatOption?.description).toContain(CURSE_BY_ID.get(previewCurse!)?.name ?? '');
+
+    const safe = findHappeningById('feast-safe', 'forbidden-feast');
+    const safeFood = safe.state.happening!.previewFood!;
+    const safeCurse = safe.state.happening!.previewCurse!;
+    safe.state.rng = 0; // 26.6%: food only
+    const foodOnly = act(safe.state, { type: 'choose', optionId: 'eat' });
+    expect(foodOnly.events.some(
+      (event) => event.type === 'foodEaten' && event.food === safeFood,
+    )).toBe(true);
+    expect(foodOnly.state.curses.some((curse) => curse.id === safeCurse)).toBe(false);
+
+    const risk = findHappeningById('feast-risk', 'forbidden-feast');
+    const riskFood = risk.state.happening!.previewFood!;
+    const riskCurse = risk.state.happening!.previewCurse!;
+    risk.state.rng = 1; // 62.7%: food and curse
+    const cursed = act(risk.state, { type: 'choose', optionId: 'eat' });
+    expect(cursed.events.some(
+      (event) => event.type === 'foodEaten' && event.food === riskFood,
+    )).toBe(true);
+    expect(cursed.state.curses.some((curse) => curse.id === riskCurse)).toBe(true);
+
+    const leave = findHappeningById('feast-leave', 'forbidden-feast');
+    const walked = act(leave.state, { type: 'choose', optionId: 'leave' });
+    expect(walked.state.curses).toHaveLength(0);
+    expect(walked.state.happening?.resolved?.success).toBe(true);
   });
 
   it('adds the Sanctuary, Kind Stranger and Stone Door events', () => {
@@ -3884,6 +3973,7 @@ describe('autocast and random-guess batch', () => {
 
   it('Naked Curse removes all max armor', () => {
     expect(CURSE_BY_ID.get('naked')?.maxArmorMult).toBe(0);
+    expect(CURSE_BY_ID.get('naked')?.minLevel).toBe(20);
     const { state } = start('naked-curse');
     state.phase = 'curse';
     state.curse = { options: ['naked'], starting: false };
@@ -3983,6 +4073,7 @@ describe('autocast and random-guess batch', () => {
     for (const id of ids) expect(ITEM_BY_ID.get(id), id).toBeDefined();
     expect(ITEM_BY_ID.get('dark-echo')?.rarity).toBe('uncommon');
     expect(ITEM_BY_ID.get('dark-echo')?.price).toBe(13);
+    expect(ITEM_BY_ID.get('detour')?.price).toBe(10);
     expect(ITEM_BY_ID.get('wild-magic')?.price).toBe(9);
     expect(ITEM_BY_ID.get('panic-button')?.price).toBe(8);
     expect(ITEM_BY_ID.get('black-eye')?.price).toBe(8);

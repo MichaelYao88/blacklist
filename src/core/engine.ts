@@ -1362,6 +1362,12 @@ export function createCore(content: Content): Core {
         else emit(rt, { type: 'message', text: 'No item is available.' });
         break;
       }
+      case 'addPreviewFood': {
+        const food = state.happening?.previewFood;
+        if (food) eatFood(rt, food);
+        else emit(rt, { type: 'message', text: 'No food is available.' });
+        break;
+      }
       case 'addPreviewCurse': {
         const curse = state.happening?.previewCurse;
         if (curse) applyCurse(rt, curse);
@@ -2987,9 +2993,13 @@ export function createCore(content: Content): Core {
 
   function openHappening(rt: Runtime): void {
     const state = rt.state;
+    const rareFoodsAvailable = content.foods.filter(
+      (food) => food.rarity === 'rare' && foodAvailable(state, food),
+    );
     const pool = content.happenings.filter(
       (happening) => (happening.requiresCurseCount ?? 0) <= state.curses.length
-        && (!happening.requiresClock || hasClock(state)),
+        && (!happening.requiresClock || hasClock(state))
+        && (happening.id !== 'forbidden-feast' || rareFoodsAvailable.length > 0),
     );
     if (pool.length === 0) {
       advanceNode(rt);
@@ -3121,6 +3131,38 @@ export function createCore(content: Content): Core {
       state.happening.previewCurse = curses.length > 0
         ? pickWeighted(state, curses).id
         : undefined;
+    }
+    if (def.id === 'hollow-pocket') {
+      const curses = eligibleCurses(state, false);
+      const curse = curses.length > 0 ? pickWeighted(state, curses) : undefined;
+      state.happening.previewCurse = curse?.id;
+      state.happening.options = state.happening.options.map((option) => {
+        if (option.id !== 'gamble') return option;
+        return {
+          ...option,
+          locked: !curse,
+          description: curse
+            ? `50%: gain ${curse.name}. 50%: nothing happens.`
+            : 'No curse is available.',
+        };
+      });
+    }
+    if (def.id === 'forbidden-feast') {
+      const food = rareFoodsAvailable.length > 0 ? rngPick(state, rareFoodsAvailable) : undefined;
+      const curses = eligibleCurses(state, false);
+      const curse = curses.length > 0 ? pickWeighted(state, curses) : undefined;
+      state.happening.previewFood = food?.id;
+      state.happening.previewCurse = curse?.id;
+      state.happening.options = state.happening.options.map((option) => {
+        if (option.id !== 'eat') return option;
+        const parts = food ? [`Gain ${food.name}.`] : ['No rare food is available.'];
+        if (curse) parts.push(`50%: also gain ${curse.name}.`);
+        return {
+          ...option,
+          locked: !food,
+          description: parts.join(' '),
+        };
+      });
     }
     state.phase = 'happening';
     emit(rt, {
@@ -3895,6 +3937,7 @@ export function createCore(content: Content): Core {
           happening: state.happening?.id ?? '',
           options: clone(state.happening?.options ?? []),
           previewItem: state.happening?.previewItem,
+          previewFood: state.happening?.previewFood,
           previewCurse: state.happening?.previewCurse,
           resolved: state.happening?.resolved,
         };

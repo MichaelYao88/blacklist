@@ -36,6 +36,8 @@ export interface Meta {
   victoriousCharacters: string[];
   /** Shop purchases by definition id, across all runs. */
   purchases: Record<string, number>;
+  /** Foods eaten by definition id, across all runs. */
+  foodCounts: Record<string, number>;
   history: RunRecord[];
   itemCounts: Record<string, number>;
   curseCounts: Record<string, number>;
@@ -57,6 +59,7 @@ const DEFAULT_META: Meta = {
   characters: ['runner'],
   victoriousCharacters: [],
   purchases: {},
+  foodCounts: {},
   history: [],
   itemCounts: {},
   curseCounts: {},
@@ -106,7 +109,7 @@ export function hasSave(): boolean {
 export function readMeta(): Meta {
   try {
     const raw = localStorage.getItem(META_KEY);
-    if (!raw) return { ...DEFAULT_META, history: [], itemCounts: {}, curseCounts: {} };
+    if (!raw) return { ...DEFAULT_META, history: [], itemCounts: {}, curseCounts: {}, foodCounts: {} };
     const parsed = JSON.parse(raw) as Partial<Meta>;
     return {
       runs: Number(parsed.runs) || 0,
@@ -139,6 +142,23 @@ export function readMeta(): Meta {
               .map(([id, count]) => [id, Number(count)]),
           )
         : {},
+      foodCounts: (() => {
+        if (parsed.foodCounts && typeof parsed.foodCounts === 'object') {
+          return Object.fromEntries(
+            Object.entries(parsed.foodCounts)
+              .filter(([, count]) => typeof count === 'number')
+              .map(([id, count]) => [id, Number(count)]),
+          );
+        }
+        // Preserve progress from the old purchase-based food unlocks.
+        const counts: Record<string, number> = {};
+        if (parsed.purchases && typeof parsed.purchases === 'object') {
+          for (const [id, count] of Object.entries(parsed.purchases)) {
+            if (typeof count === 'number') counts[id] = Number(count);
+          }
+        }
+        return counts;
+      })(),
       history: Array.isArray(parsed.history)
         ? parsed.history.map((run) => ({
             ...run,
@@ -162,7 +182,7 @@ export function readMeta(): Meta {
       totalDamage: Number(parsed.totalDamage) || 0,
     };
   } catch {
-    return { ...DEFAULT_META, history: [], itemCounts: {}, curseCounts: {} };
+    return { ...DEFAULT_META, history: [], itemCounts: {}, curseCounts: {}, foodCounts: {} };
   }
 }
 
@@ -253,6 +273,15 @@ export function recordPurchase(defId: string): number {
   const meta = readMeta();
   const next = (meta.purchases[defId] ?? 0) + 1;
   meta.purchases[defId] = next;
+  writeMeta(meta);
+  return next;
+}
+
+/** Records a food eaten and returns its new lifetime count. */
+export function recordFood(defId: string): number {
+  const meta = readMeta();
+  const next = (meta.foodCounts[defId] ?? 0) + 1;
+  meta.foodCounts[defId] = next;
   writeMeta(meta);
   return next;
 }

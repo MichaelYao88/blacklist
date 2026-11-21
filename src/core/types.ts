@@ -322,6 +322,7 @@ export interface HappeningState {
   letters?: Letter[];
   /** Pre-rolled previews for events such as The Bargain. */
   previewItem?: ItemId;
+  previewFood?: string;
   previewCurse?: CurseId;
   resolved?: { option: string; success: boolean; text: string };
 }
@@ -388,6 +389,7 @@ export type Effect =
   | { type: 'openShop' }
   | { type: 'startBattle' }
   | { type: 'addPreviewItem' }
+  | { type: 'addPreviewFood' }
   | { type: 'addPreviewCurse' }
   | { type: 'eat'; food: string }
   | { type: 'eatRandom' }
@@ -778,6 +780,7 @@ export type PhaseView =
       happening: HappeningId;
       options: HappeningOptionView[];
       previewItem?: ItemId;
+      previewFood?: string;
       previewCurse?: CurseId;
       resolved?: { option: string; success: boolean; text: string };
     }

@@ -1192,7 +1192,7 @@ export const ITEMS: ItemDef[] = [
     id: 'detour',
     name: 'Detour',
     description: 'Once per round: a guess sharing no letters with the previous guess autoguesses a random word.',
-    price: 7,
+    price: 10,
     kind: 'gear',
     initial: { used: 0 },
     on: {

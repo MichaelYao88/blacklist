@@ -19,7 +19,7 @@ import {
   ITEM_BY_ID,
   SPELL_BY_ID,
 } from '../content';
-import { LocalStore, hasSave, readMeta, recordPurchase, recordRun, recordStart, unlockCharacter } from './store';
+import { LocalStore, hasSave, readMeta, recordFood, recordPurchase, recordRun, recordStart, unlockCharacter } from './store';
 import { escapeHtml, formatTime, reasonText, roman } from './format';
 import { glossaryText } from './glossary';
 import {
@@ -658,9 +658,20 @@ function processEvents(events: GameEvent[]): void {
     if (event.type === 'offerBought') {
       const count = recordPurchase(event.def);
       const unlocked = [
-        event.def === 'double-cheeseburger' && count >= 3 ? 'gourmand' : null,
-        event.def === 'inkcap' && count >= 2 ? 'purgamist' : null,
         event.def === 'necronomicon' && count >= 1 ? 'necromancer' : null,
+      ].filter((id): id is string => Boolean(id));
+      for (const id of unlocked) {
+        if (unlockCharacter(id)) {
+          queueCharacterUnlock(id);
+          sfx.play('win');
+        }
+      }
+    }
+    if (event.type === 'foodEaten') {
+      const count = recordFood(event.food);
+      const unlocked = [
+        event.food === 'double-cheeseburger' && count >= 3 ? 'gourmand' : null,
+        event.food === 'inkcap' && count >= 2 ? 'purgamist' : null,
       ].filter((id): id is string => Boolean(id));
       for (const id of unlocked) {
         if (unlockCharacter(id)) {
@@ -2453,6 +2464,32 @@ function happeningPreviews(
   phase: Extract<PhaseView, { kind: 'happening' }>,
   optionId: string,
 ): string {
+  if (phase.happening === 'hollow-pocket' && optionId === 'gamble') {
+    const curse = phase.previewCurse ? CURSE_BY_ID.get(phase.previewCurse) : undefined;
+    const curseTip = curse ? `${curse.name}\n${curse.rules.join('\n')}` : 'One random eligible curse.';
+    return `<div class="preview-row">
+      <span class="preview-chip curse" tabindex="0" data-tip="${escapeHtml(curseTip)}">
+        <span class="preview-icon" aria-hidden="true">?</span>
+        50% - ${escapeHtml(curse?.name ?? 'Random curse')}
+      </span>
+    </div>`;
+  }
+  if (phase.happening === 'forbidden-feast' && optionId === 'eat') {
+    const food = phase.previewFood ? FOOD_BY_ID.get(phase.previewFood) : undefined;
+    const curse = phase.previewCurse ? CURSE_BY_ID.get(phase.previewCurse) : undefined;
+    const foodTip = food ? `${food.name}\n${food.description}` : 'One random rare food.';
+    const curseTip = curse ? `${curse.name}\n${curse.rules.join('\n')}` : 'One random eligible curse.';
+    return `<div class="preview-row">
+      <span class="preview-chip" tabindex="0" data-tip="${escapeHtml(foodTip)}">
+        <span class="preview-icon" aria-hidden="true">${food ? foodIcon(food.id) : '??'}</span>
+        RARE - ${escapeHtml(food?.name ?? 'Random rare food')}
+      </span>
+      <span class="preview-chip curse" tabindex="0" data-tip="${escapeHtml(curseTip)}">
+        <span class="preview-icon" aria-hidden="true">?</span>
+        50% - ${escapeHtml(curse?.name ?? 'Random curse')}
+      </span>
+    </div>`;
+  }
   if (phase.happening !== 'the-bargain' || optionId !== 'draw') return '';
   const item = phase.previewItem ? ITEM_BY_ID.get(phase.previewItem) : undefined;
   const curse = phase.previewCurse ? CURSE_BY_ID.get(phase.previewCurse) : undefined;
@@ -2722,4 +2759,16 @@ function renderRun(view: RunView): string {
   </div>`;
 }
 
+function syncFoodUnlocks(): void {
+  const meta = readMeta();
+  const unlocked = [
+    (meta.foodCounts['double-cheeseburger'] ?? 0) >= 3 ? 'gourmand' : null,
+    (meta.foodCounts.inkcap ?? 0) >= 2 ? 'purgamist' : null,
+  ].filter((id): id is string => Boolean(id));
+  for (const id of unlocked) {
+    if (unlockCharacter(id)) queueCharacterUnlock(id);
+  }
+}
+
+syncFoodUnlocks();
 render();

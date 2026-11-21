@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it } from 'vitest';
-import { readMeta, recordPurchase, recordRun, recordStart, unlockCharacter } from '../src/ui/store';
+import { readMeta, recordFood, recordPurchase, recordRun, recordStart, unlockCharacter } from '../src/ui/store';
 
 const stats = (overrides: Partial<Parameters<typeof recordRun>[0]['stats']> = {}) => ({
   rounds: 10,
@@ -38,6 +38,17 @@ describe('run history store', () => {
     });
   });
 
+  it('counts foods eaten across runs', () => {
+    expect(readMeta().foodCounts).toEqual({});
+    expect(recordFood('double-cheeseburger')).toBe(1);
+    expect(recordFood('double-cheeseburger')).toBe(2);
+    expect(recordFood('inkcap')).toBe(1);
+    expect(readMeta().foodCounts).toEqual({
+      'double-cheeseburger': 2,
+      inkcap: 1,
+    });
+  });
+
   it('migrates Maze Runner to Pathfinder and keeps purchase counts', () => {
     localStorage.setItem(
       'blacklist.meta.v1',
@@ -49,6 +60,7 @@ describe('run history store', () => {
     const meta = readMeta();
     expect(meta.characters).toEqual(['runner', 'pathfinder', 'necromancer']);
     expect(meta.purchases).toEqual({ 'poppy-seeds': 3 });
+    expect(meta.foodCounts).toEqual({ 'poppy-seeds': 3 });
   });
 
   it('records runs, totals, favorites and unlocks the next ascension on a win', () => {

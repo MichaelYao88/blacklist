@@ -49,7 +49,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - Rarity uses cumulative floors: 40% pulls from rare, uncommon or common, 45% pulls from uncommon or common, and 15% pulls from common only. If a tier is empty, it falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on bosses)
-- 100 items (90 shop items + 10 rare relics), 6 spells, 84 foods and 30 happenings
+- 100 items (90 shop items + 10 rare relics), 6 spells, 84 foods and 32 happenings
 - New foods include **U-nagi**, **Donut Holes**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
@@ -117,6 +117,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Oracle's Banquet** is a 28g rare unique food: it permanently autoguesses at the start of every round
 - **Tally** counts every guess, including ally and autoguesses
 - **Harvest Charm**, **Empty Mouth**, **Empty Orb**, **Empty Phone**, **Detour**, **Dark Echo**, **Black Eye**, **Palindrome**, **Oasis 15**, **Shellshock**, **Echo Chamber**, **Panic Button**, and **Wild Magic** are the new autoguess/autocast items
+- **Detour** is a 10g item that autoguesses once per round after a guess sharing no letters with the previous guess
 - **Black Eye** is an 8g item: a hit that deals HP damage has an 80% chance to autoguess a random word; **Thorn Crown** is a 14g item with an 80% chance to autocast a free random spell instead
 - **Turtle Shell** is an 8g item that halves every hit armor does not soak; **Pain au Chocolat** is a 14g rare unique food that halves only the first such hit
 - **Second Skin** is a 9g uncommon item: the first time armor hits 0 each round, restore half your max armor
@@ -127,7 +128,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Iron Ration** is a 12g rare food: +2 max armor. **One Bo Hue** is a 4g uncommon food; **Plating** is uncommon; **Taco Pizza Party** is rare
 - **Clean Slate** gives +1 max HP or +1 max armor at random when its condition triggers, once per round
 - **Double Dip** is Kase's new name; it keeps the +1 max armor and queued-answer effect
-- **The Naked Curse** removes all max armor; curse drafts offer two choices
+- **The Naked Curse** is a level-20+ curse that removes all max armor; curse drafts offer two choices
 - Blacklisted words are never chosen as round targets; if a late run runs out of legal targets, the List releases one
 - The run-over screen and run history record the items you had equipped, and the stats page shows them per run
 - Random guesses pull from a 214-word pool chosen for non-native speakers, including **patsy**, **wharf**, **rajah**, **guppy**, **glyph**, **lymph**, **gaunt**, **jaunt**, **vaunt**, **lurid**, **torus**, **bough**, **caput**, **etude**, and **butte**; **Dark Echo** avoids letters from your first guess
@@ -139,6 +140,8 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Regurgitation** is an uncommon level-20+ curse: food reveals fail 50% of the time
 - **The Tax** reduces encounter gold by 40% and is unique; **The Sleeper** adds +2 damage per revealed letter in your first player guess, per stack; **The Curse Broker** charges 12g for a relic or 15g to remove a random curse; **The Confessional** sells 45/75/100% random curse removal for 5/10/15g
 - **The Detour** offers a slot, or a trip to the Time Bakery for +8 max HP and a Time Freeze; **The Crossroads** offers a shop or a Heal plus Time Freeze; **The Trade** trades gold for a slot, a slot for gold, or two Heal spells
+- **The Hollow Pocket** offers -1 item slot, or a 50% chance at a specific random curse
+- **The Forbidden Feast** offers a specific random rare food, with a 50% chance of also gaining a specific random curse; you can walk away instead
 - The Soldier and Orc idle in their walk loops; free guesses and the winning guess play the Soldier's attack, other guesses alternate Orc → Soldier, a fatal guess is always the Orc, and the Orc collapses from the winning blow and stays down until the next round starts
 - Defeat drops the Soldier into their death animation on the run-over screen
 - The pause menu includes a color-coded **CHRONICLE** of gameplay actions: guesses, rounds, damage, spells, item triggers, gold, food, shop purchases and curses
@@ -200,9 +203,9 @@ Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title s
 
 - **The Soldier** is the default: 15 HP, 5 armor, 12 gold, no starting gear or curses.
 - **The Pathfinder** unlocks when The Soldier reaches the first curse screen. They start with **Head Start**, **The List** curse, 14 HP, 3 armor and 9 gold.
-- **The Necromancer** unlocks after buying the **Necronomicon** once from a shop. They start with the **Necronomicon**, **The Sleeper** curse, 33 HP, 4 armor and 16 gold.
-- **The Purgamist** unlocks after buying 2 **Inkcap** across any runs. They start with **The Toll** curse, 12 HP, 4 armor, 17 gold, and purge 3 letters of your choice before the first round.
-- **The Gourmand** unlocks after buying 3 **Double Cheeseburgers** across any runs. They start with **Potluck**, **Porcupine's Dilemma** curse, 25 HP, 2 armor and 6 gold.
+- **The Necromancer** unlocks after buying the **Necronomicon** once from a shop. They start with the **Necronomicon**, **The Sleeper** curse, 27 HP, 4 armor and 16 gold.
+- **The Purgamist** unlocks after eating 2 **Inkcap** across any runs. They start with **The Toll** curse, 12 HP, 4 armor, 17 gold, and purge 3 letters of your choice before the first round.
+- **The Gourmand** unlocks after eating 3 **Double Cheeseburgers** across any runs. They start with **Potluck**, **Porcupine's Dilemma** curse, 25 HP, 2 armor and 6 gold.
 - **The Farmer** unlocks after winning any run. They start with the **Harvest Charm** (character-only, not found in shops), 20 HP, 1 armor and 6 gold.
 - **The Empty Armor** unlocks after winning a run on **Ascension 1**. It starts with **Bulwark**, the character-only **Slow Mending** curse, 1 HP, 11 armor, one extra item slot and 6 gold.
 - **The Werewolf** unlocks after winning runs with **2 different characters**. It starts with **Dark Echo**, **Thorn Crown**, the **Weak Plate** and **Tight Slots** curses, 69 HP, no armor and 6 gold.

@@ -304,6 +304,7 @@ export const CURSES: CurseDef[] = [
     tags: ['body'],
     rarity: 'uncommon',
     maxStacks: 1,
+    minLevel: 20,
     maxArmorMult: 0,
   }),
   defineCurse({

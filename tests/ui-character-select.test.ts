@@ -31,7 +31,7 @@ describe('character select', () => {
     expect(cards[0].classList.contains('active')).toBe(true);
     expect(cards.filter((card) => card.classList.contains('locked'))).toHaveLength(6);
     expect(cards[2].textContent).toContain('Buy the Necronomicon once');
-    expect(cards[3].textContent).toContain('Buy 2 Inkcap');
+    expect(cards[3].textContent).toContain('Eat 2 Inkcap');
     expect(cards[5].textContent).toContain('Win a run');
     expect(cards[6].textContent).toContain('Ascension 1');
     expect(cards[7].textContent).toContain('Beat the game with 2 different characters');
