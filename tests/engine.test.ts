@@ -1396,10 +1396,10 @@ describe('item and food batch', () => {
 
   it('removes the damage cap and prices letter foods by rarity', () => {
     expect(ITEM_BY_ID.get('hard-hat')).toBeUndefined();
-    expect(FOOD_BY_ID.get('x-ray')?.price).toBe(6);
+    expect(FOOD_BY_ID.get('x-ray')?.price).toBe(8);
     expect(FOOD_BY_ID.get('x-ray')?.name).toBe('X-Ray Cake');
     expect(FOOD_BY_ID.get('x-ray')?.rarity).toBe('rare');
-    expect(FOOD_BY_ID.get('q-tip')?.price).toBe(4);
+    expect(FOOD_BY_ID.get('q-tip')?.price).toBe(6);
     expect(FOOD_BY_ID.get('i-spy')?.effects)
       .toContainEqual({ type: 'revealLetter', letter: 'i' });
     expect(FOOD_BY_ID.get('reveal-the-d')?.effects)
@@ -2273,7 +2273,7 @@ describe('latest balance pass', () => {
     expect(FOOD_BY_ID.get('packed-lunch')).toBeUndefined();
     expect(ITEM_BY_ID.get('bookend')?.price).toBe(7);
     expect(ITEM_BY_ID.get('bookend')?.description).toContain('+2 gold');
-    expect(FOOD_BY_ID.get('gg-gum')?.price).toBe(14);
+    expect(FOOD_BY_ID.get('gg-gum')?.price).toBe(16);
     expect(ITEM_BY_ID.get('overachiever')).toBeUndefined();
     expect(ITEM_BY_ID.get('miser')).toBeUndefined();
     expect(FOOD_BY_ID.get('old-mcdonald')).toBeDefined();
@@ -2332,19 +2332,21 @@ describe('latest balance pass', () => {
       .toContainEqual({ type: 'healMissingPercent', percent: 50 });
     expect(FOOD_BY_ID.get('menemen')?.price).toBe(4);
     expect(FOOD_BY_ID.get('big-eggplant')?.price).toBe(4);
+    expect(FOOD_BY_ID.get('big-eggplant')?.rarity).toBe('uncommon');
     expect(FOOD_BY_ID.get('big-eggplant')?.effects)
       .toContainEqual({ type: 'maxArmor', delta: -3 });
     expect(FOOD_BY_ID.get('jumbo-hot-dog')?.price).toBe(3);
+    expect(FOOD_BY_ID.get('jumbo-hot-dog')?.rarity).toBe('uncommon');
     expect(FOOD_BY_ID.get('juicy-peach')?.price).toBe(4);
     expect(FOOD_BY_ID.get('cherries')?.price).toBe(2);
     expect(FOOD_BY_ID.get('satchel')?.price).toBe(19);
     expect(FOOD_BY_ID.get('satchel')?.rarity).toBe('uncommon');
-    expect(FOOD_BY_ID.get('o-toro')?.price).toBe(16);
+    expect(FOOD_BY_ID.get('o-toro')?.price).toBe(18);
     expect(FOOD_BY_ID.get('o-toro')?.effects)
       .toContainEqual({ type: 'revealLetter', letter: 'o' });
-    expect(FOOD_BY_ID.get('i-spy')?.price).toBe(14);
+    expect(FOOD_BY_ID.get('i-spy')?.price).toBe(16);
     expect(FOOD_BY_ID.get('i-spy')?.name).toBe('I-Cee');
-    expect(FOOD_BY_ID.get('reveal-the-d')?.price).toBe(16);
+    expect(FOOD_BY_ID.get('reveal-the-d')?.price).toBe(18);
     expect(FOOD_BY_ID.get('reveal-the-d')?.rarity).toBe('rare');
     expect(FOOD_BY_ID.get('reveal-the-d')?.shopRarity).toBeUndefined();
     expect(FOOD_BY_ID.get('honey-cake')?.price).toBe(6);
@@ -2952,15 +2954,32 @@ describe('latest balance pass', () => {
     expect(current.items.find((item) => item.id === 'scattershot')?.data.used).toBe(1);
   });
 
-  it('Yellow1 autoguesses on one yellow and no green without a round limit', () => {
+  it('Yellow1 autoguesses once per round on one yellow and no green', () => {
     const { state } = start('yellow1-auto');
-    state.items.push({ instance: 'i-yellow', id: 'double-blind', data: {}, equipped: true });
+    state.items.push({ instance: 'i-yellow', id: 'double-blind', data: { used: 0 }, equipped: true });
     state.round!.answer = 'crane';
     state.round!.freeLeft = 0;
     const guessed = act(state, { type: 'guess', word: 'roost' });
     expect(guessed.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
-    expect(ITEM_BY_ID.get('double-blind')?.initial).toBeUndefined();
-    expect(ITEM_BY_ID.get('double-blind')?.on?.onRoundStart).toBeUndefined();
+    expect(guessed.state.items.find((item) => item.id === 'double-blind')?.data.used).toBe(1);
+
+    const spent = start('yellow1-spent');
+    spent.state.items.push({
+      instance: 'i-yellow-spent',
+      id: 'double-blind',
+      data: { used: 1 },
+      equipped: true,
+    });
+    spent.state.round!.answer = 'crane';
+    spent.state.round!.freeLeft = 0;
+    const skipped = act(spent.state, { type: 'guess', word: 'roost' });
+    expect(skipped.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(false);
+
+    expect(ITEM_BY_ID.get('double-blind')?.initial).toEqual({ used: 0 });
+    expect(ITEM_BY_ID.get('double-blind')?.on?.onRoundStart).toBeDefined();
+    expect(ITEM_BY_ID.get('double-blind')?.description).toContain('Once per round');
+    expect(ITEM_BY_ID.get('double-blind')?.price).toBe(14);
+    expect(ITEM_BY_ID.get('double-blind')?.rarity).toBe('rare');
   });
 
   it('Yellow1 and Green1 ignore non-player guesses', () => {
@@ -2983,21 +3002,35 @@ describe('latest balance pass', () => {
     expect(greenNext.events.some(
       (event) => event.type === 'itemProc' && event.item === 'green1',
     )).toBe(false);
-    expect(ITEM_BY_ID.get('double-blind')?.description).toContain('Your guess');
-    expect(ITEM_BY_ID.get('green1')?.description).toContain('Your guess');
+    expect(ITEM_BY_ID.get('double-blind')?.description).toContain('Once per round');
+    expect(ITEM_BY_ID.get('green1')?.description).toContain('Once per round');
   });
 
-  it('Green1 autoguesses on one green and no yellow without a round limit', () => {
+  it('Green1 autoguesses once per round on one green and no yellow', () => {
     const { state } = start('green1-auto');
-    state.items.push({ instance: 'i-green', id: 'green1', data: {}, equipped: true });
+    state.items.push({ instance: 'i-green', id: 'green1', data: { used: 0 }, equipped: true });
     state.round!.answer = 'crane';
     state.round!.freeLeft = 0;
     const guessed = act(state, { type: 'guess', word: 'climb' });
     expect(guessed.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
-    expect(ITEM_BY_ID.get('green1')?.initial).toBeUndefined();
-    expect(ITEM_BY_ID.get('green1')?.on?.onRoundStart).toBeUndefined();
+    expect(guessed.state.items.find((item) => item.id === 'green1')?.data.used).toBe(1);
+
+    const spent = start('green1-spent');
+    spent.state.items.push({
+      instance: 'i-green-spent',
+      id: 'green1',
+      data: { used: 1 },
+      equipped: true,
+    });
+    spent.state.round!.answer = 'crane';
+    spent.state.round!.freeLeft = 0;
+    const skipped = act(spent.state, { type: 'guess', word: 'climb' });
+    expect(skipped.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(false);
+
+    expect(ITEM_BY_ID.get('green1')?.initial).toEqual({ used: 0 });
+    expect(ITEM_BY_ID.get('green1')?.on?.onRoundStart).toBeDefined();
+    expect(ITEM_BY_ID.get('green1')?.description).toContain('Once per round');
     expect(ITEM_BY_ID.get('green1')?.price).toBe(8);
-    expect(ITEM_BY_ID.get('double-blind')?.price).toBe(10);
   });
 
   it('Deadline grants one free guess when the clock drops below 30s', () => {
@@ -3233,7 +3266,7 @@ describe('latest balance pass', () => {
     expect(FOOD_BY_ID.get('plating')?.price).toBe(4);
     expect(FOOD_BY_ID.get('plating')?.effects).toContainEqual({ type: 'maxArmor', delta: 1 });
     expect(ITEM_BY_ID.get('compound-interest')?.price).toBe(4);
-    expect(FOOD_BY_ID.get('yin-yang')?.price).toBe(16);
+    expect(FOOD_BY_ID.get('yin-yang')?.price).toBe(18);
     expect(FOOD_BY_ID.get('bounty')?.price).toBe(9);
     expect(FOOD_BY_ID.get('bounty')?.rarity).toBe('rare');
     expect(FOOD_BY_ID.get('bounty')?.effects).toContainEqual({ type: 'solveGold', amount: 1 });
@@ -3287,7 +3320,7 @@ describe('spells and foods', () => {
   it('adds Without U and makes every knowledge food rare', () => {
     const uNagi = FOOD_BY_ID.get('only-u');
     const withoutU = FOOD_BY_ID.get('without-u');
-    expect(uNagi?.price).toBe(12);
+    expect(uNagi?.price).toBe(14);
     expect(uNagi?.rarity).toBe('rare');
     expect(withoutU?.price).toBe(3);
     expect(withoutU?.rarity).toBe('common');
@@ -3298,7 +3331,7 @@ describe('spells and foods', () => {
     const aSteak = FOOD_BY_ID.get('a-steak');
     expect(aSteak?.rarity).toBe('rare');
     expect(aSteak?.shopRarity).toBeUndefined();
-    expect(aSteak?.price).toBe(11);
+    expect(aSteak?.price).toBe(13);
     expect(aSteak?.effects).toContainEqual({ type: 'revealLetter', letter: 'a' });
 
     for (const food of FOODS) {
@@ -3719,15 +3752,15 @@ describe('autocast and random-guess batch', () => {
 
   it('adds the new letter foods and prices', () => {
     const expected: Record<string, [string, number, string]> = {
-      'e-fu-noodles': ['E-Fu Noodles', 19, 'e'],
-      't-bone': ['T-Bone', 12, 't'],
-      'j-ello': ['J-Ello', 6, 'j'],
-      'c-urchin': ['C-Urchin', 12, 'c'],
-      'f-unnel-cake': ['F-Unnel Cake', 11, 'f'],
-      'h-erring': ['H-Erring', 11, 'h'],
-      'p-stachio': ['P-Stachio', 11, 'p'],
-      'l-bacore-tuna': ['L-Bacore Tuna', 14, 'l'],
-      'w-asabi': ['W-Asabi', 8, 'w'],
+      'e-fu-noodles': ['E-Fu Noodles', 21, 'e'],
+      't-bone': ['T-Bone', 14, 't'],
+      'j-ello': ['J-Ello', 8, 'j'],
+      'c-urchin': ['C-Urchin', 14, 'c'],
+      'f-unnel-cake': ['F-Unnel Cake', 13, 'f'],
+      'h-erring': ['H-Erring', 13, 'h'],
+      'p-stachio': ['P-Stachio', 13, 'p'],
+      'l-bacore-tuna': ['L-Bacore Tuna', 16, 'l'],
+      'w-asabi': ['W-Asabi', 10, 'w'],
     };
     for (const [id, [name, price, letter]] of Object.entries(expected)) {
       expect(FOOD_BY_ID.get(id)?.name, id).toBe(name);
@@ -3737,13 +3770,13 @@ describe('autocast and random-guess batch', () => {
         .toContainEqual({ type: 'revealLetter', letter });
     }
     expect(FOOD_BY_ID.get('i-spy')?.name).toBe('I-Cee');
-    expect(FOOD_BY_ID.get('i-spy')?.price).toBe(14);
+    expect(FOOD_BY_ID.get('i-spy')?.price).toBe(16);
     expect(FOOD_BY_ID.get('b-file')?.name).toBe('B-Fsteak');
-    expect(FOOD_BY_ID.get('b-file')?.price).toBe(11);
-    expect(FOOD_BY_ID.get('q-tip')?.price).toBe(4);
-    expect(FOOD_BY_ID.get('x-ray')?.price).toBe(6);
-    expect(FOOD_BY_ID.get('o-toro')?.price).toBe(16);
-    expect(FOOD_BY_ID.get('only-u')?.price).toBe(12);
+    expect(FOOD_BY_ID.get('b-file')?.price).toBe(13);
+    expect(FOOD_BY_ID.get('q-tip')?.price).toBe(6);
+    expect(FOOD_BY_ID.get('x-ray')?.price).toBe(8);
+    expect(FOOD_BY_ID.get('o-toro')?.price).toBe(18);
+    expect(FOOD_BY_ID.get('only-u')?.price).toBe(14);
 
     for (const id of [
       'only-u', 'b-file', 'x-ray', 'q-tip', 'gg-gum', 'yin-yang',
@@ -3774,6 +3807,10 @@ describe('autocast and random-guess batch', () => {
     expect(ITEM_BY_ID.get('panic-button')?.price).toBe(8);
     expect(ITEM_BY_ID.get('black-eye')?.price).toBe(8);
     expect(ITEM_BY_ID.get('black-eye')?.description).toContain('80%');
+    expect(ITEM_BY_ID.get('palindrome')?.rarity).toBe('rare');
+    expect(ITEM_BY_ID.get('palindrome')?.price).toBe(10);
+    expect(ITEM_BY_ID.get('scattershot')?.rarity).toBe('rare');
+    expect(ITEM_BY_ID.get('scattershot')?.price).toBe(12);
     expect(ITEM_BY_ID.get('empty-orb')?.price).toBe(7);
     expect(ITEM_BY_ID.get('empty-phone')?.price).toBe(9);
   });
@@ -4095,7 +4132,7 @@ describe('relic uniqueness', () => {
     .map((item) => item.id);
 
   it('never offers a relic already in the player inventory', () => {
-    expect(relicIds).toHaveLength(7);
+    expect(relicIds).toHaveLength(10);
     let sawOtherRelic = false;
     for (let index = 0; index < 60; index++) {
       const { state } = start(`relic-owned-${index}`);
@@ -4589,7 +4626,7 @@ describe('curse rarity and trigger curses', () => {
       state.curses.push({ id: 'regurgitation', stacks: 1 });
       state.phase = 'shop';
       state.gold = 20;
-      state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'b-file', price: 11 }]);
+      state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'b-file', price: 13 }]);
       const eaten = act(state, { type: 'buy', offerId: 'o0' });
       if (eaten.state.permanentReveals.includes('b')) revealed++;
       else failed++;

@@ -177,8 +177,9 @@ export const ITEMS: ItemDef[] = [
     id: 'scattershot',
     name: 'Scattershot',
     description: 'Once per round: a guess sharing no letters with the previous guess autoguesses a random word.',
-    price: 8,
+    price: 12,
     kind: 'gear',
+    rarity: 'rare',
     initial: { used: 0 },
     on: {
       onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
@@ -1008,30 +1009,41 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'double-blind',
     name: 'Yellow1',
-    description: 'Your guess with exactly one yellow and no green autoguesses a random word.',
-    price: 10,
+    description: 'Once per round: a guess with exactly one yellow and no green autoguesses a random word.',
+    price: 14,
     kind: 'gear',
+    rarity: 'rare',
+    initial: { used: 0 },
     on: {
-      onGuessScored: (_ctx, p) => {
-        if (p.guess.by !== 'player') return [];
+      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
+      onGuessScored: (ctx, p) => {
+        if (ctx.self.data.used || p.guess.by !== 'player') return [];
         const counts = truthCounts(p.guess.truth);
         if (counts.correct !== 0 || counts.present !== 1) return [];
-        return [{ type: 'randomGuesses', count: 1 }];
+        return [
+          { type: 'randomGuesses', count: 1 },
+          { type: 'setItemData', stat: 'used', value: 1 },
+        ];
       },
     },
   }),
   defineItem({
     id: 'green1',
     name: 'Green1',
-    description: 'Your guess with exactly one green and no yellow autoguesses a random word.',
+    description: 'Once per round: a guess with exactly one green and no yellow autoguesses a random word.',
     price: 8,
     kind: 'gear',
+    initial: { used: 0 },
     on: {
-      onGuessScored: (_ctx, p) => {
-        if (p.guess.by !== 'player') return [];
+      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
+      onGuessScored: (ctx, p) => {
+        if (ctx.self.data.used || p.guess.by !== 'player') return [];
         const counts = truthCounts(p.guess.truth);
         if (counts.correct !== 1 || counts.present !== 0) return [];
-        return [{ type: 'randomGuesses', count: 1 }];
+        return [
+          { type: 'randomGuesses', count: 1 },
+          { type: 'setItemData', stat: 'used', value: 1 },
+        ];
       },
     },
   }),
@@ -1280,8 +1292,9 @@ export const ITEMS: ItemDef[] = [
     id: 'palindrome',
     name: 'Palindrome',
     description: 'Once per round: a guess whose first and last letters match autoguesses a random word.',
-    price: 6,
+    price: 10,
     kind: 'gear',
+    rarity: 'rare',
     initial: { used: 0 },
     on: {
       onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],

@@ -65,8 +65,8 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Hearty Stew** is a 4g food that grants 1-2 casts of Heal; **Hagelslag** gives +3 max HP and heals 20% of missing HP
 - **Bulwark** is an 8g item: every 10 damage blocked by armor, autocast a random spell
 - **Ricochet** is a 7g item: every 10 armor lost, autoguess a random word
-- **Scattershot** autoguesses once per round after a guess sharing no letters with the previous guess
-- **Yellow1** autoguesses on your player guess with exactly one yellow and no green; **Green1** does the same for exactly one green and no yellow. Neither has a round limit, and neither counts ally or auto-guesses
+- **Scattershot** is a 12g rare item that autoguesses once per round after a guess sharing no letters with the previous guess
+- **Yellow1** is a 14g rare item that autoguesses once per round on your player guess with exactly one yellow and no green; **Green1** does the same for exactly one green and no yellow. Neither counts ally or auto-guesses
 - **Deadline** grants +1 free guess as soon as the clock drops below 30s each round
 - **Second Hand** and **Counterclockwise** (formerly Engine) are 8g items that cross-cast spells on cast at 80%
 - **Last Cast** only reacts to spells you cast manually; autocast spells never trigger it
@@ -99,14 +99,15 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Placebo** is a 4g item that heals exactly 1 HP on each player guess
 - **Pen Club** pays a random 1-5 gold for guesses starting with PEN; **Gourmand** gains +1 max HP on eat or spell cast
 - **Old McDonald's** is a 4g unique food: EIEIO is guessed for free once, at the start of the next round
+- **Big Eggplant** and **Jumbo Hot Dog** are uncommon foods that trade max armor or max HP for an item slot
 - Shops can show up to 2 copies of the same entry; sell rows are hoverable
 - Solve gold is a random 4-8 per solve, independent of guess count
 - **The Endless Table** fires every on-eat effect 7 times or pays 7 gold
 - **Tally Lens** is a 12g common-rarity unique item with an uncommon shop banner and a 3x appearance weight while a vision curse is active; it is no longer guaranteed in a shop and shows correct/misplaced counts. **Tally** is never offered while you already own one
 - **Encore** is unique and appears three times as often as an average common item; **Poppy Seeds** is a 6g common-rarity food that shows an uncommon shop banner
 - **Without U** is a 3g common-rarity unique food that permanently purges U and shows an uncommon shop banner; **Purge the D** is also common-rarity with an uncommon shop banner
-- **Reveal the D** is a 16g rare food; **Pay Respects to F** is an 8g common-rarity food with an uncommon banner that permanently purges F
-- **A-Steak** is an 11g rare food that reveals whether A is in the answer every round
+- **Reveal the D** is an 18g rare food; **Pay Respects to F** is an 8g common-rarity food with an uncommon banner that permanently purges F
+- **A-Steak** is a 13g rare food that reveals whether A is in the answer every round; all permanent letter-reveal foods cost 2g more
 - **Black Market Ledger** is an 8g item: every shop purchase or event arrival has a 40% chance to add a random spell
 - **The Spellbroker** event trades your spells for permanent value: Omen or Phone a Friend becomes a random permanent letter, Heal becomes +10 max HP and a 10 HP heal, and Immunity or Restore becomes +5 armor
 - **The Spell Tithe** event trades one random spell for either permanent knowledge of a specific letter or a permanent purge of a specific letter; the trades are locked when you have no spells
