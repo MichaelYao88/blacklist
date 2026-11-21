@@ -264,6 +264,8 @@ export interface CharacterDef {
 export interface CurseState {
   options: CurseId[];
   starting: boolean;
+  /** Boss-prep curse draft before the Floor Boss. */
+  boss?: boolean;
   chosen?: CurseId;
 }
 
@@ -523,6 +525,8 @@ export interface BossDef {
   acts: number[];
   timerMs: number | null;
   gauntlet?: { puzzles: number; timerMs: number };
+  /** Boss revives after a solved word this many times. */
+  revives?: number;
   timerFromCurse?: boolean;
   noGuessDamage?: boolean;
   /** Fixed damage for a boss round. Omit to use the act-based default. */
@@ -675,6 +679,8 @@ export interface RunState {
   /** Common curses that have been offered or taken and now draft as uncommon. */
   upgradedCommonCurses: CurseId[];
   pendingStartingCurses: number;
+  /** Curses still to draft before the Floor Boss fight. */
+  bossCursesLeft: number;
   pendingCurseRemoval: number;
   phase: PhaseKind;
   bossIntro?: { boss: BossId };
@@ -747,7 +753,13 @@ export type PhaseView =
     }
   | { kind: 'reward'; options: RewardOption[]; boss: boolean; chosen?: string }
   | { kind: 'bossIntro'; boss: BossId }
-  | { kind: 'curse'; options: CurseId[]; starting: boolean }
+  | {
+      kind: 'curse';
+      options: CurseId[];
+      starting: boolean;
+      boss?: boolean;
+      remaining?: number;
+    }
   | { kind: 'shopChoice' }
   | { kind: 'shop'; offers: Offer[]; rerollCost: number; purchases: number }
   | {

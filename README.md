@@ -2,7 +2,7 @@
 
 A word roguelike about the burdens you choose.
 
-A 50-level curse run. The blacklist and the clock start disabled. Every two levels you choose one of three permanent curses, and those curses become the difficulty. Levels 47-49 are curse floors, and level 50 is a final boss made of three back-to-back rounds. One active save, and defeat wipes it.
+A 30-level curse run. The blacklist and the clock start disabled. Every two levels you choose one of two permanent curses, and those curses become the difficulty. After level 30, draft three final curses and face the Floor Boss, which revives three times. One active save, and defeat wipes it.
 
 **Play:** https://michaelayao88.github.io/blacklist/
 
@@ -13,16 +13,16 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 ## What is in the vertical slice
 
 - Wordle-style scoring with duplicate-letter handling
-- A 50-level curse run: no bosses until level 50, no starting clock, no starting blacklist
+- A 30-level curse run: no bosses until the Floor Boss after level 30, no starting clock, no starting blacklist
 - Round loop: `round → 55% event → shop`, then `round → 55% event → curse`
-- Curse drafts offer 2 choices after every 2 levels; levels 47-49 are curse floors
+- Curse drafts offer 2 choices after every 2 levels; the Floor Boss demands 3 final curse drafts before the fight
 - Curse drafts draw from the weighted pool; The List and The Clock get a 3x weight until they first appear in a draft, then normal
 - Curse drafts use the same rarity floors as shops (40% rare and below, 45% uncommon and below, 15% common only), but do not display rarity. A common curse becomes uncommon for the rest of the run after it is offered or selected
 - Hover or focus a curse in the HUD to read its rules
-- 50 is the final boss: three rounds back-to-back with no intermission. Bosses ignore the **Second Wind** curse
+- The Floor Boss waits after level 30: draft 3 curses, then beat four words as it revives three times. Bosses ignore the **Second Wind** curse
 - **Second Wind** is a rare curse: after you solve a word, a second word appears with one free guess
 - The Toll is only offered through level 40; The Tax and The Chained are only offered through level 20
-- Base encounter damage is **3 + 1.3 per curse stack, rounded down**, plus **+1 for every 60 gold spent this run**; characters that start with curses subtract **1.3 per starting curse stack**, and Heavy Hand multiplies the base by **1.5 per stack**. After the sixth guess in each puzzle, each later wrong guess increases the damage multiplier (**×2, ×3, ×4...**), counting autoguesses; the multiplier resets on Second Wind and each final-boss puzzle. Every paid wrong guess adds **+1 per occupied item slot above 5**
+- Base encounter damage is **3 + 1.3 per curse stack, rounded down**, plus **+1 for every 60 gold spent this run**; characters that start with curses subtract **1.3 per starting curse stack**, and Heavy Hand multiplies the base by **1.5 per stack**. After the sixth guess in each puzzle, each later wrong guess increases the damage multiplier (**×2, ×3, ×4...**), counting autoguesses; the multiplier resets on Second Wind and each Floor Boss puzzle. Every paid wrong guess adds **+1 per occupied item slot above 5**
 - Vision curses are usually rare. **Take the L** is common, while **Hard R**, **Without the D**, and **IP Theft** are uncommon; the first/second/third/fourth/fifth position curses hide their tile **50% of the time**
 - The blacklist is disabled and hidden until **The List** curse is taken; The List is a single curse, never stacks, and arrives stocked with the first guess from every earlier round
 - The clock is disabled until **The Clock** curse is taken; the first stack gives 5:00 and each further stack shrinks it by 40%. If the clock reaches zero, the run ends immediately
@@ -47,7 +47,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Opening shields such as **Head Start** (7s, rare) make guesses in their window count as free guesses and show a floating timer banner with the remaining seconds
 - Rarity uses cumulative floors: 40% pulls from rare, uncommon or common, 45% pulls from uncommon or common, and 15% pulls from common only. If a tier is empty, it falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
-- Defeat reveals the answer you missed (all of them, on the final boss)
+- Defeat reveals the answer you missed (all of them, on the Floor Boss)
 - 103 items (93 shop items + 10 rare relics), 6 spells, 84 foods and 30 happenings
 - New foods include **U-nagi**, **Donut Holes**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
@@ -151,7 +151,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - Spells and the blacklist sit on the right; the item list sits under the battle rail on desktop and at the bottom of the right column on mobile
 - Pause (Space or Esc), independent music/SFX mutes, synthesized SFX, keyboard and on-screen keyboard, colorblind symbols, reduced-motion-friendly CSS
 - Non-English keyboard layouts fall back to physical QWERTY key positions and show a one-time notice
-- Soundtrack opens every run on Dark Synthwave and rerolls to a random regular track every 7 levels (repeats allowed). Click the **MUSIC** control to cycle manually. More Power is reserved for the final boss and is not in the carousel. Music sits below the SFX mix.
+- Soundtrack opens every run on Dark Synthwave and rerolls to a random regular track every 7 levels (repeats allowed). Click the **MUSIC** control to cycle manually. More Power is reserved for the Floor Boss and is not in the carousel. Music sits below the SFX mix.
 
 Not in this version: daily seeds, Ascension above A2, dordle grids, Antiwordle, liar clues, Green Warden. The state and seed plumbing is already there for those.
 
@@ -159,7 +159,7 @@ Not in this version: daily seeds, Ascension above A2, dordle grids, Antiwordle, 
 
 ## Music
 
-Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title screen or top bar to cycle through the twelve regular tracks; the mute button is separate. **More Power** is locked to the final boss and is not available in the carousel.
+Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title screen or top bar to cycle through the twelve regular tracks; the mute button is separate. **More Power** is locked to the Floor Boss and is not available in the carousel.
 
 **Liborio Conti** — free to use, no attribution required, via [no-copyright-music.com](https://www.no-copyright-music.com/):
 
@@ -199,7 +199,7 @@ Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title s
 
 - **The Soldier** is the default: 15 HP, 5 armor, 12 gold, no starting gear or curses.
 - **The Pathfinder** unlocks when The Soldier reaches the first curse screen. They start with **Head Start**, **The List** curse, 14 HP, 3 armor and 9 gold.
-- **The Necromancer** unlocks after buying the **Necronomicon** once from a shop. They start with the **Necronomicon**, **The Sleeper** curse, 13 HP, 2 armor and 16 gold.
+- **The Necromancer** unlocks after buying the **Necronomicon** once from a shop. They start with the **Necronomicon**, **The Sleeper** curse, 33 HP, 4 armor and 16 gold.
 - **The Purgamist** unlocks after buying 2 **Inkcap** across any runs. They start with **The Toll** curse, 12 HP, 4 armor, 17 gold, and purge 3 letters of your choice before the first round.
 - **The Gourmand** unlocks after buying 3 **Double Cheeseburgers** across any runs. They start with **Potluck**, **Porcupine's Dilemma** curse, 25 HP, 2 armor and 6 gold.
 - **The Farmer** unlocks after winning any run. They start with the **Harvest Charm** (character-only, not found in shops), 20 HP, 1 armor and 6 gold.
@@ -226,10 +226,10 @@ The Soldier and Orc sprites are from **Tiny RPG Character Asset Pack 01** by [Ze
 | Blacklist | disabled until The List curse; unlimited once active |
 | Normal timer | none until The Clock curse |
 | Clock curse | first stack 5:00, each later stack -40%, floor 0:30 |
-| Final boss | 3 rounds, shared clock if active |
+| Floor Boss | 4 rounds (3 revives), shared clock if active |
 | Base damage | `3 + floor(1.3 × total curse stacks) − (1.3 × starting curse stacks) + floor(gold spent / 60)`, then Heavy Hand and other modifiers apply |
 | Paid guess damage | curse-scaled base; after the sixth guess in each puzzle each later wrong guess increases the multiplier (`×2, ×3, ×4...`), counting autoguesses |
-| Final boss damage | 3 base plus curses |
+| Floor Boss damage | 3 base plus curses |
 | Timeout | ends the run immediately; armor, immunity and revives cannot prevent it |
 | Armor | a pool that soaks damage point-for-point before HP; refills each round |
 | Solve gold | random `4-8`, plus `solveGoldBonus` (Midas Touch can double any gain) |
@@ -286,7 +286,7 @@ view(state) → RunView
 ```
 src/
   core/        portable engine, types, RNG, scoring, host adapter
-  content/     items, spells, curses, final boss, foods, happenings
+  content/     items, spells, curses, Floor Boss, foods, happenings
   data/        generated word lists
   ui/          vanilla DOM client
   game.ts      core instance wired to content

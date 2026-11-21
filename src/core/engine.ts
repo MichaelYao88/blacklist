@@ -41,7 +41,7 @@ import { ASCENSION_MAX, ascensionStartingCurses } from './ascension';
 
 const VERSION = 6;
 const WORD_LENGTH = 5;
-const MAX_LEVEL = 50;
+const MAX_LEVEL = 30;
 const LEVELS_PER_AREA = 10;
 const STARTING_ITEM_SLOTS = 4;
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyz'.split('');
@@ -3245,11 +3245,13 @@ export function createCore(content: Content): Core {
     return picks;
   }
 
-  function openCurseDraft(rt: Runtime, starting: boolean): void {
+  function openCurseDraft(rt: Runtime, starting: boolean, boss = false): void {
     const state = rt.state;
-    const options = pickCurseOptions(state, starting);
+    const options = pickCurseOptions(state, boss ? false : starting);
     if (options.length === 0) {
-      if (starting && state.pendingStartingCurses > 0) {
+      if (boss) {
+        openBossIntro(rt);
+      } else if (starting && state.pendingStartingCurses > 0) {
         state.pendingStartingCurses = 0;
         enterNode(rt);
       } else {
@@ -3257,9 +3259,9 @@ export function createCore(content: Content): Core {
       }
       return;
     }
-    state.curse = { options, starting };
+    state.curse = { options, starting: boss ? false : starting, boss: boss || undefined };
     state.phase = 'curse';
-    emit(rt, { type: 'curseOffered', options: options.slice(), starting });
+    emit(rt, { type: 'curseOffered', options: options.slice(), starting: boss ? false : starting });
   }
 
   /** Unequip overflow when the slot count shrinks, keeping the bag usable. */
@@ -3349,6 +3351,16 @@ export function createCore(content: Content): Core {
     }
     applyCurse(rt, curseId);
     draft.chosen = curseId;
+    if (draft.boss) {
+      state.bossCursesLeft = Math.max(0, state.bossCursesLeft - 1);
+      state.curse = undefined;
+      if (state.bossCursesLeft > 0) {
+        openCurseDraft(rt, false, true);
+      } else {
+        openBossIntro(rt);
+      }
+      return;
+    }
     if (draft.starting && state.pendingStartingCurses > 0) {
       state.pendingStartingCurses--;
       if (state.pendingStartingCurses > 0) {
@@ -3391,6 +3403,21 @@ export function createCore(content: Content): Core {
     }
   }
 
+  function openBossIntro(rt: Runtime): void {
+    const state = rt.state;
+    const node = state.nodes[state.nodeIndex];
+    const boss = node?.boss;
+    if (!boss) {
+      advanceNode(rt);
+      return;
+    }
+    state.phase = 'bossIntro';
+    state.bossIntro = { boss };
+    state.bossCursesLeft = 0;
+    state.round = undefined;
+    emit(rt, { type: 'bossIntro', boss });
+  }
+
   function enterNode(rt: Runtime): void {
     const state = rt.state;
     if (state.nodeIndex >= state.nodes.length) {
@@ -3413,10 +3440,8 @@ export function createCore(content: Content): Core {
       return;
     }
     if (node.kind === 'boss' && node.boss) {
-      state.phase = 'bossIntro';
-      state.bossIntro = { boss: node.boss };
-      state.round = undefined;
-      emit(rt, { type: 'bossIntro', boss: node.boss });
+      state.bossCursesLeft = 3;
+      openCurseDraft(rt, false, true);
       return;
     }
     if (node.kind === 'round' || node.kind === 'boss') {
@@ -3748,6 +3773,8 @@ export function createCore(content: Content): Core {
           kind: 'curse',
           options: state.curse?.options.slice() ?? [],
           starting: state.curse?.starting ?? false,
+          boss: state.curse?.boss,
+          remaining: state.bossCursesLeft,
         };
         break;
       case 'shopChoice':
@@ -3931,20 +3958,18 @@ export function createCore(content: Content): Core {
       if (rngChance(state, 55)) nodes.push({ kind: 'happening', level });
     };
 
-    for (let level = 1; level <= 45; level++) {
+    for (let level = 1; level <= MAX_LEVEL; level++) {
       addRound(level);
+      if (level >= MAX_LEVEL) continue;
       if (level % 2 === 1) {
         nodes.push({ kind: 'shop', level });
-      } else if (level <= 44) {
+      } else {
         nodes.push({ kind: 'curse', level });
       }
     }
 
-    addRound(46);
-    for (let level = 47; level <= 49; level++) {
-      nodes.push({ kind: 'curse', level });
-    }
-    nodes.push({ kind: 'boss', level: MAX_LEVEL, boss: 'final-boss' });
+    // The Floor Boss drafts three curses before the fight.
+    nodes.push({ kind: 'boss', level: MAX_LEVEL, boss: 'floor-boss' });
     state.nodes = nodes;
   }
 
@@ -3998,6 +4023,7 @@ export function createCore(content: Content): Core {
       seenCurses: [],
       upgradedCommonCurses: [],
       pendingStartingCurses: startingCurses,
+      bossCursesLeft: 0,
       pendingCurseRemoval: 0,
       phase: 'round',
       stats: {
@@ -4057,6 +4083,18 @@ export function createCore(content: Content): Core {
       const state = parsed as RunState;
       const fromVersion = typeof parsed.version === 'number' ? parsed.version : 0;
       state.version = VERSION;
+      const bossAliases: Record<string, string> = {
+        'final-boss': 'floor-boss',
+      };
+      for (const node of state.nodes) {
+        if (node.boss && bossAliases[node.boss]) node.boss = bossAliases[node.boss];
+      }
+      if (state.round?.boss && bossAliases[state.round.boss]) {
+        state.round.boss = bossAliases[state.round.boss];
+      }
+      if (state.bossIntro?.boss && bossAliases[state.bossIntro.boss]) {
+        state.bossIntro.boss = bossAliases[state.bossIntro.boss];
+      }
       const characterAliases: Record<string, string> = {
         'maze-runner': 'pathfinder',
       };
@@ -4113,6 +4151,7 @@ export function createCore(content: Content): Core {
         state.level = state.nodes[state.nodeIndex]?.level ?? 1;
       }
       if (typeof state.pendingStartingCurses !== 'number') state.pendingStartingCurses = 0;
+      if (typeof state.bossCursesLeft !== 'number') state.bossCursesLeft = 0;
       if (typeof state.pendingCurseRemoval !== 'number') state.pendingCurseRemoval = 0;
       if (typeof state.pendingAbsent !== 'number') state.pendingAbsent = 0;
       if (typeof state.unarmoredHalfCharges !== 'number') state.unarmoredHalfCharges = 0;

@@ -1576,7 +1576,7 @@ function renderTitle(): string {
     ${characterPicker}
     ${ascensionPicker}
     <div class="title-facts">
-      <div><b>50</b><span>levels</span></div>
+      <div><b>30</b><span>levels</span></div>
       <div><b>2</b><span>curse choices</span></div>
       <div><b>3</b><span>base damage</span></div>
       <div><b>1</b><span>free guess</span></div>
@@ -1598,7 +1598,7 @@ function renderHelp(): string {
     <div class="rules-grid">
       <article class="rule-card">
         <h3>The run</h3>
-        <p>Fifty levels. The loop is <b>round → event chance → shop</b>, then <b>round → event chance → curse</b>. Levels 47–49 are curse floors, and level 50 is the final boss. You must choose one of two curses every time a curse is offered.</p>
+        <p>Thirty levels. The loop is <b>round → event chance → shop</b>, then <b>round → event chance → curse</b>. After level 30, draft <b>3 curses</b>, then face the <b>Floor Boss</b>, which revives three times. You must choose one of two curses every time a curse is offered.</p>
       </article>
       <article class="rule-card">
         <h3>Damage</h3>
@@ -1626,7 +1626,7 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>Controls</h3>
-        <p>Type letters, <b>Backspace</b> to delete, <b>Enter</b> to submit. <b>Space</b> or <b>Esc</b> pauses. Click the <b>MUSIC</b> name to cycle tracks; the mute button is separate. More Power only plays for the final boss. Non-English keyboard layouts use the physical QWERTY key positions.</p>
+        <p>Type letters, <b>Backspace</b> to delete, <b>Enter</b> to submit. <b>Space</b> or <b>Esc</b> pauses. Click the <b>MUSIC</b> name to cycle tracks; the mute button is separate. More Power only plays for the Floor Boss. Non-English keyboard layouts use the physical QWERTY key positions.</p>
       </article>
     </div>
     <div class="help-actions">
@@ -2170,7 +2170,7 @@ function renderSummary(view: RunView, phase: Extract<PhaseView, { kind: 'summary
     </div>
     <p class="muted">${phase.outcome === 'solved'
       ? boss
-        ? 'The final boss is down. Continue to finish the run.'
+        ? 'The Floor Boss is down. Continue to finish the run.'
         : 'The round is clear. Choose a reward and keep moving.'
       : phase.outcome === 'timeout'
         ? 'The clock took its cut, but the encounter still paid. No reward this time. The run continues if you do.'
@@ -2235,11 +2235,16 @@ function offerInfo(offer: Offer): { name: string; description: string; slots: nu
 }
 
 function renderCurse(phase: Extract<PhaseView, { kind: 'curse' }>): string {
+  const bossStep = 4 - (phase.remaining ?? 1);
   return `
   <div class="phase-card curse-draft">
-    <p class="panel-kicker">${phase.starting ? 'STARTING CURSE' : 'CURSE DRAFT'}</p>
-    <h2>Choose a burden</h2>
-    <p class="muted">Every curse here affects every future encounter. You must take one.</p>
+    <p class="panel-kicker">${phase.boss
+      ? `BOSS PREP · CURSE ${bossStep}/3`
+      : phase.starting ? 'STARTING CURSE' : 'CURSE DRAFT'}</p>
+    <h2>${phase.boss ? 'Choose a curse for the fight' : 'Choose a burden'}</h2>
+    <p class="muted">${phase.boss
+      ? 'The Floor Boss waits. Take this burden, then face something that revives three times.'
+      : 'Every curse here affects every future encounter. You must take one.'}</p>
     <div class="curse-grid">
       ${phase.options.map((id) => {
         const def = CURSE_BY_ID.get(id);
@@ -2522,14 +2527,14 @@ function renderOver(phase: Extract<PhaseView, { kind: 'over' }>): string {
     <p class="kicker">RUN OVER</p>
     <h1>${victory ? 'THE LIST IS YOURS' : 'THE LIST CLOSES'}</h1>
     <p class="tagline">${victory
-      ? 'Fifty levels. Every curse. The words you gave up are the ones that carried you.'
+      ? 'Thirty levels. Every curse. The words you gave up are the ones that carried you.'
       : 'The word that ended you is written below. It will not be so kind next time.'}</p>
     ${ascNote ? `<p class="ascension-result">${ascNote}</p>` : ''}
     ${reveal}
     <div class="stats-grid">
       <div><b>${stats.rounds}</b><span>rounds</span></div>
       <div><b>${stats.guesses}</b><span>guesses</span></div>
-      <div><b>${stats.bosses}</b><span>final boss</span></div>
+      <div><b>${stats.bosses}</b><span>bosses</span></div>
       <div><b>${stats.goldEarned}</b><span>gold earned</span></div>
       <div><b>${stats.damageTaken}</b><span>damage taken</span></div>
       <div><b>${stats.timeouts}</b><span>timeouts</span></div>
@@ -2580,7 +2585,7 @@ function renderBossIntro(view: RunView, phase: Extract<PhaseView, { kind: 'bossI
     <div class="boss-intro-facts">
       <span>${damage}</span>
       <span>${timer}</span>
-      <span>${boss.gauntlet ? `${boss.gauntlet.puzzles} PUZZLES` : 'ONE WORD'}</span>
+      <span>${boss.revives ? `${boss.revives} REVIVES` : boss.gauntlet ? `${boss.gauntlet.puzzles} PUZZLES` : 'ONE WORD'}</span>
     </div>
     <section class="boss-rulebox">
       <h3>WHAT CHANGES</h3>

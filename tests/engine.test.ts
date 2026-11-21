@@ -83,6 +83,22 @@ function nextHappening(state: RunState): StepResult {
   return act(state, { type: 'continue' });
 }
 
+/** Advance into the Floor Boss and draft its three prep curses. */
+function enterFloorBoss(state: RunState): StepResult {
+  const bossIndex = nodeAt(state, (node) => node.kind === 'boss');
+  state.nodeIndex = bossIndex - 1;
+  state.phase = 'shop';
+  state.shop = shopState();
+  let result = act(state, { type: 'continue' });
+  let picks = 0;
+  while (result.state.phase === 'curse' && picks < 3) {
+    const options = result.state.curse?.options ?? [];
+    result = act(result.state, { type: 'chooseCurse', curseId: options[0] });
+    picks++;
+  }
+  return result;
+}
+
 describe('cursed run setup', () => {
   it('starts at level 1 with no clock, blacklist or curses', () => {
     const { state, events } = start();
@@ -120,9 +136,9 @@ describe('cursed run setup', () => {
 
     const necro = game.newRun({ seed: 'preset-necro', character: 'necromancer' }).state;
     expect(necro.character).toBe('necromancer');
-    expect(necro.maxHp).toBe(13);
-    expect(necro.maxArmor).toBe(2);
-    expect(necro.armor).toBe(2);
+    expect(necro.maxHp).toBe(33);
+    expect(necro.maxArmor).toBe(4);
+    expect(necro.armor).toBe(4);
     expect(necro.gold).toBe(16);
     expect(necro.items.some((item) => item.id === 'necronomicon' && item.equipped)).toBe(true);
     expect(necro.curses.some((curse) => curse.id === 'sleeper')).toBe(true);
@@ -175,14 +191,15 @@ describe('cursed run setup', () => {
     expect(werewolf.curses.some((curse) => curse.id === 'tight-slots')).toBe(true);
   });
 
-  it('builds a 50-level map with 25 curse drafts and one final boss', () => {
+  it('builds a 30-level map with 14 curse drafts and one Floor Boss', () => {
     const { state } = start();
     expect(nodeAt(state, (node) => node.kind === 'boss')).toBeGreaterThan(0);
     expect(state.nodes.filter((node) => node.kind === 'boss')).toHaveLength(1);
-    expect(state.nodes.filter((node) => node.kind === 'curse')).toHaveLength(25);
-    expect(state.nodes.find((node) => node.kind === 'boss')?.level).toBe(50);
-    expect(state.nodes.some((node) => node.kind === 'curse' && node.level === 47)).toBe(true);
-    expect(state.nodes.some((node) => node.kind === 'curse' && node.level === 49)).toBe(true);
+    expect(state.nodes.filter((node) => node.kind === 'round')).toHaveLength(30);
+    expect(state.nodes.filter((node) => node.kind === 'curse')).toHaveLength(14);
+    expect(state.nodes.find((node) => node.kind === 'boss')?.level).toBe(30);
+    expect(state.nodes.some((node) => node.kind === 'curse' && node.level === 28)).toBe(true);
+    expect(state.nodes.some((node) => node.kind === 'curse' && node.level === 30)).toBe(false);
   });
 
   it('opens a starting curse draft for Ascension 1 and 2', () => {
@@ -3539,20 +3556,36 @@ describe('full cursed loop', () => {
   });
 });
 
-describe('final boss', () => {
-  it('is a three-round gauntlet and ends in victory', () => {
-    const { state } = start();
+describe('Floor Boss', () => {
+  it('drafts three curses before the fight', () => {
+    const { state } = start('boss-prep');
     const bossIndex = nodeAt(state, (node) => node.kind === 'boss');
     state.nodeIndex = bossIndex - 1;
     state.phase = 'shop';
     state.shop = shopState();
-    const intro = act(state, { type: 'continue' });
+    let result = act(state, { type: 'continue' });
+    const picked: string[] = [];
+    while (result.state.phase === 'curse') {
+      expect(result.state.curse?.boss).toBe(true);
+      const option = result.state.curse?.options[0];
+      if (!option) break;
+      picked.push(option);
+      result = act(result.state, { type: 'chooseCurse', curseId: option });
+    }
+    expect(picked).toHaveLength(3);
+    expect(result.state.phase).toBe('bossIntro');
+    expect(result.state.bossIntro?.boss).toBe('floor-boss');
+  });
+
+  it('revives three times and ends in victory after four words', () => {
+    const { state } = start();
+    const intro = enterFloorBoss(state);
     expect(intro.state.phase).toBe('bossIntro');
 
     let result = act(intro.state, { type: 'continue' });
-    expect(result.state.round?.gauntletTotal).toBe(3);
+    expect(result.state.round?.gauntletTotal).toBe(4);
 
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 4; i++) {
       if (result.state.phase !== 'round' || !result.state.round) break;
       result = act(result.state, { type: 'guess', word: result.state.round.answer });
     }
@@ -3566,13 +3599,9 @@ describe('final boss', () => {
 
   it('resets hints and skips letters seen in an earlier gauntlet puzzle', () => {
     const { state } = start('omen-gauntlet');
-    const bossIndex = nodeAt(state, (node) => node.kind === 'boss');
-    state.nodeIndex = bossIndex - 1;
-    state.phase = 'shop';
-    state.shop = shopState();
-    let result = act(state, { type: 'continue' });
+    let result = enterFloorBoss(state);
     result = act(result.state, { type: 'continue' });
-    expect(result.state.round?.gauntletTotal).toBe(3);
+    expect(result.state.round?.gauntletTotal).toBe(4);
     result.state.round!.answer = 'crane';
     result.state.round!.freeLeft = 0;
     result.state.round!.hints.q = 'absent';
@@ -4546,16 +4575,12 @@ describe('Second Wind and late curse pool', () => {
     expect(first.state.round?.hints.q).toBeDefined();
   });
 
-  it('does not add a fourth final-boss puzzle or a free guess', () => {
+  it('does not add a fifth Floor Boss puzzle or a free guess', () => {
     const { state } = start('second-wind-boss');
     state.curses.push({ id: 'second-wind', stacks: 1 });
-    const bossIndex = nodeAt(state, (node) => node.kind === 'boss');
-    state.nodeIndex = bossIndex - 1;
-    state.phase = 'shop';
-    state.shop = shopState();
-    let result = act(state, { type: 'continue' });
+    let result = enterFloorBoss(state);
     result = act(result.state, { type: 'continue' });
-    expect(result.state.round?.gauntletTotal).toBe(3);
+    expect(result.state.round?.gauntletTotal).toBe(4);
     setAnswer(result.state, 'crane');
     result.state.round!.freeLeft = 0;
     result = act(result.state, { type: 'guess', word: 'crane' });
@@ -4933,15 +4958,11 @@ describe('damage doubling and slots', () => {
     )).toBe(false);
   });
 
-  it('resets the damage multiplier on each final-boss puzzle', () => {
+  it('resets the damage multiplier on each Floor Boss puzzle', () => {
     const { state } = start('boss-ramp');
-    const bossIndex = nodeAt(state, (node) => node.kind === 'boss');
-    state.nodeIndex = bossIndex - 1;
-    state.phase = 'shop';
-    state.shop = shopState();
-    let result = act(state, { type: 'continue' });
+    let result = enterFloorBoss(state);
     result = act(result.state, { type: 'continue' });
-    expect(result.state.round?.gauntletTotal).toBe(3);
+    expect(result.state.round?.gauntletTotal).toBe(4);
 
     result.state.round!.answer = 'crane';
     result.state.round!.freeLeft = 0;
@@ -4964,7 +4985,7 @@ describe('damage doubling and slots', () => {
     solved.state.maxArmor = 0;
     solved.state.hp = 200;
     solved.state.maxHp = 200;
-    const wrong = solved.state.round!.answer === 'slate' ? 'brick' : 'slate';
+    const wrong = solved.state.round!.answer === 'jumbo' ? 'waltz' : 'jumbo';
     const before = solved.state.hp;
     const hit = act(solved.state, { type: 'guess', word: wrong });
     expect(before - hit.state.hp).toBe(3);
