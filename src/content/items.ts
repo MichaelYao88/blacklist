@@ -1031,8 +1031,9 @@ export const ITEMS: ItemDef[] = [
     id: 'green1',
     name: 'Green1',
     description: 'Once per round: a guess with exactly one green and no yellow autoguesses a random word.',
-    price: 8,
+    price: 14,
     kind: 'gear',
+    rarity: 'uncommon',
     initial: { used: 0 },
     on: {
       onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],

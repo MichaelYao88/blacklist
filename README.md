@@ -66,7 +66,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Bulwark** is an 8g item: every 10 damage blocked by armor, autocast a random spell
 - **Ricochet** is a 7g item: every 10 armor lost, autoguess a random word
 - **Scattershot** is a 12g rare item that autoguesses once per round after a guess sharing no letters with the previous guess
-- **Yellow1** is a 14g rare item that autoguesses once per round on your player guess with exactly one yellow and no green; **Green1** does the same for exactly one green and no yellow. Neither counts ally or auto-guesses
+- **Yellow1** is a 14g rare item that autoguesses once per round on your player guess with exactly one yellow and no green; **Green1** is a 14g uncommon item that does the same for exactly one green and no yellow. Neither counts ally or auto-guesses
 - **Deadline** grants +1 free guess as soon as the clock drops below 30s each round
 - **Second Hand** and **Counterclockwise** (formerly Engine) are 8g items that cross-cast spells on cast at 80%
 - **Last Cast** only reacts to spells you cast manually; autocast spells never trigger it

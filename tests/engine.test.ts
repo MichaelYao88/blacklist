@@ -3030,7 +3030,8 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('green1')?.initial).toEqual({ used: 0 });
     expect(ITEM_BY_ID.get('green1')?.on?.onRoundStart).toBeDefined();
     expect(ITEM_BY_ID.get('green1')?.description).toContain('Once per round');
-    expect(ITEM_BY_ID.get('green1')?.price).toBe(8);
+    expect(ITEM_BY_ID.get('green1')?.price).toBe(14);
+    expect(ITEM_BY_ID.get('green1')?.rarity).toBe('uncommon');
   });
 
   it('Deadline grants one free guess when the clock drops below 30s', () => {
