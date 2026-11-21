@@ -834,14 +834,16 @@ function dispatchCommand(command: Command): GameEvent[] {
   return events;
 }
 
-function startNewRun(): void {
+function startNewRun(preferredCharacter?: string): void {
   if (hasSave() && !host.current?.over) {
     const ok = window.confirm('Start a new run? Your active run will be lost.');
     if (!ok) return;
   }
   const seed = `bl-${Date.now().toString(36)}-${Math.floor(Math.random() * 1_000_000).toString(36)}`;
   const unlocked = readMeta().characters;
-  const character = unlocked.includes(selectedCharacter) ? selectedCharacter : 'runner';
+  const chosen = preferredCharacter ?? selectedCharacter;
+  const character = unlocked.includes(chosen) ? chosen : 'runner';
+  selectedCharacter = character;
   const events = host.start(seed, selectedAscension, character);
   music.beginRun();
   recordStart();
@@ -884,6 +886,9 @@ function resumeRun(): void {
     return;
   }
   const resumedView = host.view();
+  if (resumedView && readMeta().characters.includes(resumedView.character)) {
+    selectedCharacter = resumedView.character;
+  }
   if (
     resumedView?.phase.kind === 'curse'
     && resumedView.character === 'runner'
@@ -1026,7 +1031,7 @@ app.addEventListener('click', (event) => {
       render();
       break;
     case 'new-run':
-      startNewRun();
+      startNewRun(target.dataset.character);
       break;
     case 'ascension':
       selectedAscension = Math.max(0, Math.min(ASCENSION_MAX, Number(target.dataset.level) || 0));
@@ -2566,7 +2571,7 @@ function renderOver(phase: Extract<PhaseView, { kind: 'over' }>): string {
       <div>${equipped.map((entry) => `<span tabindex="0" data-tip="${escapeHtml(entry.tip)}">${escapeHtml(entry.name)}</span>`).join('')}</div>
     </div>` : ''}
     <div class="over-actions">
-      <button class="btn primary big" data-action="new-run">NEW RUN</button>
+      <button class="btn primary big" data-action="new-run" data-character="${escapeHtml(deathCharacter)}">NEW RUN</button>
       <button class="btn ghost big" data-action="stats">STATS</button>
       <button class="btn ghost big" data-action="title">TITLE</button>
     </div>
