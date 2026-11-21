@@ -395,20 +395,6 @@ export const ITEMS: ItemDef[] = [
     },
   }),
   defineItem({
-    id: 'metronome',
-    name: 'Metronome',
-    description: 'Guess with ≤5s on the clock: +6 gold.',
-    price: 8,
-    kind: 'gear',
-    requiresClock: true,
-    on: {
-      onGuessScored: (_ctx, p) => {
-        if (p.remainingMs == null || p.remainingMs > 5_000) return [];
-        return [{ type: 'gold', amount: 6 }];
-      },
-    },
-  }),
-  defineItem({
     id: 'tally',
     name: 'Tally',
     description: 'Every 4 guesses: +1 gold.',
@@ -956,27 +942,6 @@ export const ITEMS: ItemDef[] = [
         return [
           { type: 'freeGuesses', count: 1 },
           { type: 'setItemData', stat: 'used', value: 1 },
-        ];
-      },
-    },
-  }),
-  defineItem({
-    id: 'ticking-fee',
-    name: 'Ticking Fee',
-    description: 'Every 40s that pass in a round: +1 gold.',
-    price: 8,
-    kind: 'gear',
-    timerInterest: true,
-    requiresClock: true,
-    initial: { ms: 0 },
-    on: {
-      onRoundStart: () => [{ type: 'setItemData', stat: 'ms', value: 0 }],
-      onTimerTick: (ctx, p) => {
-        const total = ctx.self.data.ms + p.dtMs;
-        const gold = Math.floor(total / 40_000);
-        return [
-          { type: 'setItemData', stat: 'ms', value: total % 40_000 },
-          ...Array.from({ length: gold }, () => ({ type: 'gold' as const, amount: 1 })),
         ];
       },
     },

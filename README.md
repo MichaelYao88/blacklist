@@ -48,7 +48,7 @@ A 30-level curse run. The blacklist and the clock start disabled. Every two leve
 - Rarity uses cumulative floors: 40% pulls from rare, uncommon or common, 45% pulls from uncommon or common, and 15% pulls from common only. If a tier is empty, it falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on the Floor Boss)
-- 103 items (93 shop items + 10 rare relics), 6 spells, 84 foods and 30 happenings
+- 100 items (90 shop items + 10 rare relics), 6 spells, 84 foods and 30 happenings
 - New foods include **U-nagi**, **Donut Holes**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
@@ -123,7 +123,7 @@ A 30-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Empty Orb** is a 7g item that autocasts a free Omen when a round starts with no spells; **Empty Phone** is the 9g Phone a Friend version that does the same
 - **Enoki** is a 4g food: +3 max HP and one autoguess next round
 - **Corn** is a 3g food: +2 max HP and reveals C, O, R and N for the next round only
-- **Iron Ration** is a 12g rare food: +2 max armor. **One Bo Hue** and **Plating** are uncommon; **Taco Pizza Party** is rare
+- **Iron Ration** is a 12g rare food: +2 max armor. **One Bo Hue** is a 4g uncommon food; **Plating** is uncommon; **Taco Pizza Party** is rare
 - **Clean Slate** gives +1 max HP or +1 max armor at random when its condition triggers, once per round
 - **Double Dip** is Kase's new name; it keeps the +1 max armor and queued-answer effect
 - **The Naked Curse** removes all max armor; curse drafts offer two choices
@@ -145,7 +145,7 @@ A 30-level curse run. The blacklist and the clock start disabled. Every two leve
 - One exact-state autosave slot. Defeat clears it. Victory clears it and updates meta stats.
 - A **STATS** page tracks run history (last 50 runs), win rate, best level, average solve time, favorite items and curses, play time, gold and damage totals
 - The top bar shows gold and area; the current level lives in the battle rail, not a level counter
-- Clock-gated items such as **Ticking Fee** never appear in shops or rewards until **The Clock** curse exists
+- Clock-gated items such as **Hourglass** never appear in shops or rewards until **The Clock** curse exists
 - Compact battle rail on the left: round timer with a hover tooltip for the time limit, a wrong-guess damage chip, a side-view mini arena with your character facing the act's monster (or boss), player HP and armor
 - Damage numbers slam into the centre of the screen as `N damage`, with a block message when armor or immunity eats the hit
 - Spells and the blacklist sit on the right; the item list sits under the battle rail on desktop and at the bottom of the right column on mobile

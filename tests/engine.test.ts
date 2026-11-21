@@ -920,7 +920,7 @@ describe('shop curses', () => {
         .map((item) => item.id),
     );
     expect(gatedItems.size).toBeGreaterThan(0);
-    expect(gatedItems.has('ticking-fee')).toBe(true);
+    expect(gatedItems.has('hourglass')).toBe(true);
 
     let sawGatedItem = false;
     let sawGatedFood = false;
@@ -2356,7 +2356,7 @@ describe('latest balance pass', () => {
     expect(FOOD_BY_ID.get('empty-calories')?.price).toBe(5);
     expect(FOOD_BY_ID.get('empty-calories')?.name).toBe('Donut Holes');
     expect(FOOD_BY_ID.get('empty-calories')?.effects).toContainEqual({ type: 'maxHp', delta: 9 });
-    expect(FOOD_BY_ID.get('one-bo-hue')?.price).toBe(6);
+    expect(FOOD_BY_ID.get('one-bo-hue')?.price).toBe(4);
     expect(FOOD_BY_ID.get('warm-bowl')?.price).toBe(4);
     expect(FOOD_BY_ID.get('banh-mi')?.price).toBe(3);
     expect(FOOD_BY_ID.get('banh-mi')?.effects)
@@ -2806,7 +2806,8 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('second-skin')?.rarity).toBe('uncommon');
     expect(ITEM_BY_ID.get('second-skin')?.description).not.toContain('heal');
     expect(ITEM_BY_ID.get('solo-note')?.price).toBe(7);
-    expect(ITEM_BY_ID.get('ticking-fee')?.description).toContain('40s');
+    expect(ITEM_BY_ID.get('ticking-fee')).toBeUndefined();
+    expect(ITEM_BY_ID.get('metronome')).toBeUndefined();
     expect(ITEM_BY_ID.get('trailblazer')?.price).toBe(7);
     expect(ITEM_BY_ID.get('trailblazer')?.description).toContain('15+');
     expect(ITEM_BY_ID.get('double-blind')?.name).toBe('Yellow1');

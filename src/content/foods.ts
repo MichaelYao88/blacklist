@@ -45,7 +45,7 @@ export const FOODS: FoodDef[] = [
     id: 'one-bo-hue',
     name: 'One Bo Hue',
     description: 'Heal 1, +1 max HP and +1 max armor. No slot.',
-    price: 6,
+    price: 4,
     rarity: 'uncommon',
     effects: [
       { type: 'heal', amount: 1 },
