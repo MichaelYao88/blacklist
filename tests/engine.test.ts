@@ -2868,7 +2868,7 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('iron-hide')).toBeUndefined();
     expect(ITEM_BY_ID.get('purge-token')).toBeUndefined();
     expect(ITEM_BY_ID.get('boss-trophy')).toBeUndefined();
-    expect(ITEM_BY_ID.get('thorn-crown')?.description).toContain('70%');
+    expect(ITEM_BY_ID.get('thorn-crown')?.description).toContain('80%');
     expect(ITEM_BY_ID.get('vampire-teeth')).toBeUndefined();
     expect(ITEM_BY_ID.get('chrono-anchor')?.description).toContain('Taking damage: 30% chance');
     expect(ITEM_BY_ID.get('chrono-anchor')?.on?.onSolve).toBeUndefined();
@@ -3725,7 +3725,7 @@ describe('autocast and random-guess batch', () => {
     expect(ITEM_BY_ID.get('wild-magic')?.price).toBe(9);
     expect(ITEM_BY_ID.get('panic-button')?.price).toBe(8);
     expect(ITEM_BY_ID.get('black-eye')?.price).toBe(8);
-    expect(ITEM_BY_ID.get('black-eye')?.description).toContain('70%');
+    expect(ITEM_BY_ID.get('black-eye')?.description).toContain('80%');
     expect(ITEM_BY_ID.get('empty-orb')?.price).toBe(7);
     expect(ITEM_BY_ID.get('empty-phone')?.price).toBe(9);
   });

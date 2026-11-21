@@ -1278,12 +1278,12 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'black-eye',
     name: 'Black Eye',
-    description: 'A hit gets through: 70% chance to autoguess a random word.',
+    description: 'A hit gets through: 80% chance to autoguess a random word.',
     price: 8,
     kind: 'gear',
     on: {
       onDamageTaken: (_ctx, p) =>
-        p.dealt > 0 ? [{ type: 'randomGuesses', count: 1, chancePct: 70 }] : [],
+        p.dealt > 0 ? [{ type: 'randomGuesses', count: 1, chancePct: 80 }] : [],
     },
   }),
   defineItem({
@@ -1502,13 +1502,13 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'thorn-crown',
     name: 'Thorn Crown',
-    description: 'A hit gets through: 70% chance to autocast a random spell.',
+    description: 'A hit gets through: 80% chance to autocast a random spell.',
     price: 14,
     kind: 'gear',
     rarity: 'uncommon',
     on: {
       onDamageTaken: (_ctx, p) =>
-        p.dealt > 0 ? [{ type: 'castSpell', spell: 'random', chancePct: 70 }] : [],
+        p.dealt > 0 ? [{ type: 'castSpell', spell: 'random', chancePct: 80 }] : [],
     },
   }),
   defineItem({

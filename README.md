@@ -113,7 +113,7 @@ A 50-level curse run. The blacklist and the clock start disabled. Every two leve
 - **Oracle's Banquet** is a 28g rare unique food: it permanently autoguesses at the start of every round
 - **Tally** counts every guess, including ally and autoguesses
 - **Harvest Charm**, **Empty Mouth**, **Empty Orb**, **Empty Phone**, **Detour**, **Dark Echo**, **Black Eye**, **Palindrome**, **Oasis 15**, **Shellshock**, **Echo Chamber**, **Panic Button**, and **Wild Magic** are the new autoguess/autocast items
-- **Black Eye** is an 8g item: a hit that deals HP damage has a 70% chance to autoguess a random word; **Thorn Crown** is a 14g item with a 70% chance to autocast a random spell instead
+- **Black Eye** is an 8g item: a hit that deals HP damage has an 80% chance to autoguess a random word; **Thorn Crown** is a 14g item with an 80% chance to autocast a random spell instead
 - **Turtle Shell** is an 8g item that halves every hit armor does not soak; **Pain au Chocolat** is a 14g rare unique food that halves only the first such hit
 - **Second Skin** is a 9g uncommon item: the first time armor hits 0 each round, restore half your max armor
 - **Moon Cake** is a 25g rare unique food: autocast Omen at the start of every round
