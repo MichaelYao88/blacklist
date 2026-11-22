@@ -339,6 +339,8 @@ interface DamageFx {
   armorSpent: number;
   incoming: number;
   at: number;
+  /** Suppressed while a damage tooltip is open. */
+  showOverlay: boolean;
 }
 let damageFx: DamageFx | null = null;
 let damageTimer: number | undefined;
@@ -422,9 +424,17 @@ function notify(text: string, kind: Notice['kind'] = 'info'): void {
 }
 
 function flashDamage(hpLost: number, armorSpent: number, incoming: number): void {
+  const tooltipOpen = isDamageTooltipOpen();
   damageSeq += 1;
-  damageFx = { id: damageSeq, hpLost, armorSpent, incoming, at: performance.now() };
-  shake = hpLost > 0;
+  damageFx = {
+    id: damageSeq,
+    hpLost,
+    armorSpent,
+    incoming,
+    at: performance.now(),
+    showOverlay: !tooltipOpen,
+  };
+  shake = hpLost > 0 && !tooltipOpen;
   if (shakeTimer) window.clearTimeout(shakeTimer);
   shakeTimer = window.setTimeout(() => {
     shake = false;
@@ -450,6 +460,7 @@ function triggerArenaAttack(force?: 'player' | 'enemy'): void {
 }
 
 function flashDamageWarning(multiplier: number): void {
+  if (isDamageTooltipOpen()) return;
   const view = host.view();
   const board = view?.phase.kind === 'round' ? view.phase.board : null;
   const mult = board?.nextGuessMultiplier ?? multiplier;
@@ -1608,6 +1619,36 @@ function renderCharacterUnlock(): string {
 
 let tipEl: HTMLDivElement | null = null;
 let tipTarget: HTMLElement | null = null;
+let damageTipOpen = false;
+
+const DAMAGE_TIP_SELECTOR = '.guess-damage, .board-divider';
+
+/** True while the incoming-damage or multiplier tooltip is on screen. */
+function isDamageTooltipOpen(): boolean {
+  return damageTipOpen;
+}
+
+/** Clear competing damage feedback without re-rendering the page. */
+function clearDamageFeedback(): void {
+  if (damageTimer) {
+    window.clearTimeout(damageTimer);
+    damageTimer = undefined;
+  }
+  if (warningTimer) {
+    window.clearTimeout(warningTimer);
+    warningTimer = undefined;
+  }
+  if (shakeTimer) {
+    window.clearTimeout(shakeTimer);
+    shakeTimer = undefined;
+  }
+  damageFx = null;
+  damageRendered = 0;
+  fxRoot.innerHTML = '';
+  warningRoot.innerHTML = '';
+  shake = false;
+  app?.querySelector('.shell')?.classList.remove('shake');
+}
 
 function ensureTip(): HTMLDivElement {
   if (!tipEl) {
@@ -1626,6 +1667,8 @@ function showTip(target: HTMLElement): void {
   tipTarget = target;
   el.textContent = text;
   el.classList.add('visible');
+  damageTipOpen = Boolean(target.closest(DAMAGE_TIP_SELECTOR));
+  if (damageTipOpen) clearDamageFeedback();
 
   const rect = target.getBoundingClientRect();
   const size = el.getBoundingClientRect();
@@ -1641,6 +1684,7 @@ function showTip(target: HTMLElement): void {
 function hideTip(): void {
   tipEl?.classList.remove('visible');
   tipTarget = null;
+  damageTipOpen = false;
 }
 
 document.addEventListener('pointermove', (event) => {
@@ -1967,7 +2011,7 @@ function phaseLabel(view: RunView): string {
 }
 
 function damageOverlayHtml(): string {
-  if (!damageFx) return '';
+  if (!damageFx || !damageFx.showOverlay) return '';
   if (damageFx.hpLost > 0) {
     const absorbed = damageFx.armorSpent > 0
       ? `<span>${damageFx.armorSpent} armor absorbed</span>`
@@ -2952,7 +2996,7 @@ function renderDamageTutorial(): string {
       <p class="muted">Armor soaks damage first. Only what gets through reaches HP.</p>
       <button class="tutorial-check ${damageTutorialMute ? 'checked' : ''}" data-action="toggle-damage-tutorial-mute" role="checkbox" aria-checked="${damageTutorialMute}">
         <span class="tutorial-box" aria-hidden="true">${damageTutorialMute ? '✓' : ''}</span>
-        Don't remind me again
+        Don't remind me
       </button>
       <button class="btn primary big" data-action="dismiss-damage-tutorial">GOT IT</button>
     </div>
