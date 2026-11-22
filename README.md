@@ -41,7 +41,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Restore** clears the blacklist, refills armor, and ignores vision curses — including position curses — for the rest of the round; **Contrapuntal** turns into a random relic if you cast all six spell types
 - Happenings with visible odds and persistent consequences
 - **Purge the Letter** offers two random letters: the first has a 100% chance to purge and the second has an 80% chance; you may also leave
-- Short item, spell and offer text with hover tooltips for keywords like autocast, autoguess, player guess, free guess, reveal, learn, rule out, incoming damage, armor, blacklist, relic and timeout
+- Short item, spell and offer text with hover tooltips for keywords like autocast, autoguess, player guess, free guess, reveal, learn, rule out, purged, incoming damage, hit, armor, blacklist, relic and timeout
 - Revealed letters stay marked on the keyboard and in a Revealed panel for the puzzle; permanent food/item reveals are listed separately as collected letters; random reveals lean toward letters that are not in the answer; letter-reveal foods are permanent for the run
 - Vision-hidden letters show the hatched hidden key only when the letter has no other visible status; visible results, reveals and rule-outs take priority over that layer
 - Every finished encounter pays gold; solves offer coins, usually a spell, and only rarely gear or a meal
@@ -153,7 +153,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - Clock-gated items such as **Deadline** never appear in shops or rewards until **The Clock** curse exists
 - Compact battle rail on the left: a persistent slanted floor trail, round timer with a hover tooltip for the time limit, an incoming-damage chip with separate hovers for the rule and the calculation, a hoverable armor bar explaining how armor soaks hits, a side-view mini arena with your character facing the act's monster (or boss), player HP and armor
 - Damage numbers slam into the centre of the screen as `N damage`, with a block message when armor or immunity eats the hit; the **WATCH OUT!** banner shows the hit as a calculation (for example `3 × 2 = 6 DAMAGE`), and the first hit of a run opens a one-time damage tutorial with a persistent **Don't remind me again** option
-- A dotted divider with `!` marks and crossed swords sits where damage starts multiplying (the 6th guess, or earlier with Short Fuse); hover or focus it to see the ×2, ×3, ×4 progression
+- A dotted divider with `!` marks and crossed swords sits where damage starts multiplying (the 6th guess, or earlier with Short Fuse); hover or focus it to see the ×2, ×3, ×4 progression and that any remaining free guesses are lost there
 - Free guesses show a **FREE GUESS!** pop-up naming the source, such as **First player guess** or **Time Freeze**
 - Spells and the blacklist sit on the right; the item list sits under the battle rail on desktop and at the bottom of the right column on mobile
 - Pause (Space or Esc), independent music/SFX mutes, synthesized SFX, keyboard and on-screen keyboard, colorblind symbols, reduced-motion-friendly CSS

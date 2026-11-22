@@ -7,17 +7,25 @@ interface GlossaryEntry {
 
 export const ARMOR_TIP =
   'Armor soaks damage before HP, point for point. It refills at the start of every round. '
-  + 'Damage that gets past armor is a Hit (HP damage). Running out of time ends the run.';
+  + 'Damage that gets past armor is a Hit (HP damage).';
+
+export const PURGED_TIP =
+  'A purged letter can never be guessed again, and no puzzle answer will ever contain it.';
 
 export const INCOMING_DAMAGE_TIP =
   'Every wrong guess that is not free makes the monster hit you. '
-  + 'The hit is the monster\'s base damage plus bonuses from curses, bosses and items '
+  + 'Armor reduces that damage first; any damage that gets through becomes a Hit to HP. '
+  + 'The attack is the monster\'s base damage plus bonuses from curses, bosses and items '
   + '(such as extra damage per green, per 60 gold spent, or per equipped slot over five). '
   + 'After the fifth guess in a round a multiplier kicks in; the WATCH OUT banner shows that calculation.';
 
 // Order matters: longer or more specific phrases must come before the shorter
 // word they contain, because earlier matches become placeholders.
 const ENTRIES: GlossaryEntry[] = [
+  {
+    pattern: /\bhit \(hp damage\)/gi,
+    tip: 'Damage to your HP, not your armor. Armor soaks the monster\'s attack first; whatever is left over becomes Hit (HP damage).',
+  },
   {
     pattern: /\bmax(?:imum)? HP\b/gi,
     tip: 'Your hit point ceiling. Healing cannot push HP past it.',
@@ -83,8 +91,8 @@ const ENTRIES: GlossaryEntry[] = [
     tip: 'Words you can never guess again. It has no limit, and the first guess of each round joins it forever.',
   },
   {
-    pattern: /\bpurge(?:d)?\b/gi,
-    tip: 'Remove a letter from every future answer. You can never guess that letter again.',
+    pattern: /\bpurge(?:s|d|ing)?\b/gi,
+    tip: PURGED_TIP,
   },
   {
     pattern: /\bsolve(?:d)?\b/gi,
@@ -215,16 +223,12 @@ const ENTRIES: GlossaryEntry[] = [
     tip: 'Damage stopped by armor or immunity before it reached HP.',
   },
   {
-    pattern: /\bhit \(HP damage\)\b/gi,
-    tip: 'One monster attack that reached your HP after armor. Armor soaks damage first; the rest is Hit (HP damage).',
-  },
-  {
     pattern: /\bincoming damage\b/gi,
     tip: INCOMING_DAMAGE_TIP,
   },
   {
     pattern: /\bhits?\b/gi,
-    tip: 'One damage event. Armor reduces it point for point.',
+    tip: 'One incoming attack. Armor reduces it point for point; damage that gets through is dealt to HP as a Hit.',
   },
 ];
 

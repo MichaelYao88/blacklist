@@ -24,7 +24,7 @@ import {
 } from '../content';
 import { LocalStore, dismissDamageTutorial, hasSave, readMeta, recordFood, recordPurchase, recordRun, recordStart, unlockCharacter } from './store';
 import { escapeHtml, formatTime, reasonText, roman } from './format';
-import { ARMOR_TIP, glossaryText } from './glossary';
+import { ARMOR_TIP, PURGED_TIP, glossaryText } from './glossary';
 import {
   bossColor,
   bossSigil,
@@ -1776,11 +1776,11 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>Armor</h3>
-        <p>Armor is a pool of damage reduction. Each point soaks one point of an incoming hit before HP is touched. The pool refills at the start of every round. If the clock reaches zero, the run ends regardless of armor.</p>
+        <p>Armor is a pool of damage reduction. Each point soaks one point of an incoming hit before HP is touched. The pool refills at the start of every round.</p>
       </article>
       <article class="rule-card">
         <h3>The clock</h3>
-        <p>There is no clock until you take <b>The Clock</b> curse. The first stack gives 5:00; each later stack cuts 40%. Reveal-time items show a count-up timer, while clock rounds show a count-down. If the clock reaches zero, the run ends immediately.</p>
+        <p>There is no clock until you take <b>The Clock</b> curse. The first stack gives 5:00; each later stack cuts 40%. Reveal-time items show a count-up timer, while clock rounds show a count-down. If the clock reaches zero, the run ends immediately, even if armor remains.</p>
       </article>
       <article class="rule-card">
         <h3>Curses</h3>
@@ -1996,7 +1996,8 @@ function guessDamageHtml(board: BoardView): string {
   const base = board.nextGuessBase;
   const baseText = Number.isInteger(base) ? String(base) : base.toFixed(1);
   const eq = Math.abs(base * mult - value) < 0.05 ? '=' : '≈';
-  const labelTip = 'Your first guess each round is free. Every wrong guess after that is a Hit (HP damage) from the monster. '
+  const labelTip = 'Your first guess each round is free. Every wrong guess after that is attacked by the monster. '
+    + 'Armor reduces that damage first; whatever is left over becomes a Hit to HP. '
     + 'After the safe limit each wrong guess deals multiplied damage: ×2, ×3, ×4, and so on.';
   const calcTip = safe
     ? 'Your next guess is free, so there is no damage to calculate.'
@@ -2034,7 +2035,10 @@ function renderTimer(view: RunView, board: BoardView): string {
     ? 100
     : Math.max(0, Math.min(100, (board.remainingMs / board.timerStartMs) * 100));
   const urgent = !countUp && board.remainingMs !== null && board.remainingMs <= 15_000;
-  return `<div class="timer ${urgent ? 'urgent' : ''} ${board.timerFrozen ? 'frozen' : ''}" title="${countUp ? 'No clock limit. Time is shown because an equipped item cares about it.' : 'When this reaches zero the run ends.'}">
+  const timerTip = countUp
+    ? 'No clock limit. Time is shown because an equipped item cares about it.'
+    : 'When this reaches zero the run ends, even if you still have armor.';
+  return `<div class="timer ${urgent ? 'urgent' : ''} ${board.timerFrozen ? 'frozen' : ''}" tabindex="0" data-tip="${escapeHtml(timerTip)}" aria-label="${escapeHtml(timerTip)}">
     <span class="timer-label">${label}</span>
     <b>${time}</b>
     <div class="timer-bar"><i style="width:${pct}%"></i></div>
@@ -2340,7 +2344,7 @@ function renderSidePanel(view: RunView): string {
         <span class="panel-kicker">${view.phase.kind === 'round' || view.phase.kind === 'summary' ? 'REVEALED THIS PUZZLE' : 'REVEALED'}</span>
         <div>${view.revealed.map(({ letter, status }) => `<span class="reveal-chip ${status}"><b>${escapeHtml(letter.toUpperCase())}</b><em>${status === 'present' ? 'IN WORD' : 'RULED OUT'}</em></span>`).join('')}</div>
       </div>` : ''}
-      ${view.purged.length ? `<div class="purged"><span class="panel-kicker">PURGED</span><div>${view.purged.map((letter) => `<span class="letter-chip">${escapeHtml(letter.toUpperCase())}</span>`).join('')}</div></div>` : ''}
+      ${view.purged.length ? `<div class="purged" tabindex="0" data-tip="${escapeHtml(PURGED_TIP)}" aria-label="${escapeHtml(PURGED_TIP)}"><span class="panel-kicker">PURGED</span><div>${view.purged.map((letter) => `<span class="letter-chip" tabindex="0" data-tip="${escapeHtml(PURGED_TIP)}">${escapeHtml(letter.toUpperCase())}</span>`).join('')}</div></div>` : ''}
     </section>` : ''}
   </aside>`;
 }
@@ -2443,7 +2447,7 @@ function renderBoard(board: BoardView): string {
   // The engine starts multiplying damage at this row. Short Fuse moves the
   // boundary earlier; the divider is purely visual and never changes behavior.
   const firstMultiplied = Math.max(0, 5 - board.damageRampEarly);
-  const dividerTip = 'Damage is multiplied after this guess. '
+  const dividerTip = 'Damage is multiplied after this guess, and any remaining free guesses are lost. '
     + 'Wrong guesses below take ×2 damage, then ×3, ×4 and so on.'
     + (board.damageRampEarly > 0 ? ' Short Fuse moved this line earlier.' : '');
 
@@ -2482,13 +2486,15 @@ function renderKeyboard(board: BoardView): string {
       const status = board.keyboard[letter] ?? '';
       const hint = board.hints[letter];
       const hinted = hint ? 'hinted' : '';
-      const title = status === 'hidden'
-        ? `${letter.toUpperCase()} · hidden by a vision curse`
-        : hint === 'present'
-          ? `${letter.toUpperCase()} · revealed in the answer`
-          : hint === 'absent'
-            ? `${letter.toUpperCase()} · revealed not in the answer`
-            : letter.toUpperCase();
+      const title = status === 'purged'
+        ? `${letter.toUpperCase()} · purged, cannot be guessed`
+        : status === 'hidden'
+          ? `${letter.toUpperCase()} · hidden by a vision curse`
+          : hint === 'present'
+            ? `${letter.toUpperCase()} · revealed in the answer`
+            : hint === 'absent'
+              ? `${letter.toUpperCase()} · revealed not in the answer`
+              : letter.toUpperCase();
       return `<button class="key ${status} ${hinted}" data-action="key" data-letter="${letter}" title="${title}" ${status === 'purged' ? 'disabled' : ''}>${letter}</button>`;
     }).join('');
     const tail = rowIndex === 2

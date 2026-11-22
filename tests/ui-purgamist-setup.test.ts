@@ -34,5 +34,6 @@ describe('Purgamist setup', () => {
     }
     expect(root.querySelector('.modal')).toBeNull();
     expect(document.querySelector('.countdown-overlay')).not.toBeNull();
+    expect(root.querySelector('.purged[data-tip]')?.getAttribute('data-tip')).toContain('no puzzle answer');
   });
 });

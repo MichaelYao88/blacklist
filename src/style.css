@@ -767,6 +767,7 @@ button {
 
 .purged {
   margin-top: 10px;
+  cursor: help;
 }
 
 .purged > div {
@@ -822,6 +823,7 @@ button {
   padding: 8px 12px 12px;
   border: 1px solid var(--line-2);
   border-radius: 9px;
+  cursor: help;
   background: rgba(255, 255, 255, 0.02);
   overflow: hidden;
 }

@@ -49,6 +49,7 @@ describe('damage multiplier warning', () => {
     const divider = root.querySelector<HTMLElement>('.board-divider');
     expect(divider).not.toBeNull();
     expect(divider?.getAttribute('data-tip')).toContain('Damage is multiplied after this guess');
+    expect(divider?.getAttribute('data-tip')).toContain('free guesses are lost');
     expect(divider?.textContent).toContain('⚔️');
     expect(divider?.nextElementSibling?.classList.contains('board-row')).toBe(true);
 
