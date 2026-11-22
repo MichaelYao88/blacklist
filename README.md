@@ -51,7 +51,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - Defeat reveals the answer you missed (all of them, on bosses)
 - 98 items (88 shop items + 10 rare relics), 6 spells, 83 foods and 32 happenings
 - New foods include **U-nagi**, **Donut Holes**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
-- Every run starts with one random spell
+- Every run starts with an Omen spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
 - **Field Kit** Rules Out exactly 4 letters guaranteed not in the word; **Doggy Bag** Rules Out 2 and queues another after every food
 - Letter foods cover A, B, C, D, E, F, G, H, I, J, K, L, O, P, Q, T, U, W, X, and Y+N; every letter food is rare, unique, and stops appearing once all its letters are permanently revealed. A-Steak and B-Fsteak reveal whether their letter is in the answer
@@ -230,7 +230,7 @@ The Soldier and Orc sprites are from **Tiny RPG Character Asset Pack 01** by [Ze
 | Starting item slots | 4 (only equipped gear counts; relics use one slot each) |
 | Free guesses per round | 1; timed immunity blocks damage in its window, but the first guess still spends the free guess |
 | Starting gold | 12 |
-| Starting spells | 1 random spell |
+| Starting spells | Omen |
 | Blacklist | disabled until The List curse; unlimited once active |
 | Normal timer | none until The Clock curse |
 | Clock curse | first stack 5:00, each later stack -40%, floor 0:30 |

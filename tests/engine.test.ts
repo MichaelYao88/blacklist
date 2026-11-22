@@ -131,7 +131,7 @@ describe('cursed run setup', () => {
     expect(state.blacklist).toEqual([]);
     expect(state.curses).toEqual([]);
     expect(state.spells).toHaveLength(1);
-    expect(SPELLS.some((spell) => spell.id === state.spells[0].id)).toBe(true);
+    expect(state.spells[0].id).toBe('omen');
     expect(state.round?.remainingMs).toBeNull();
     expect(state.round?.baseDamage).toBe(3);
     expect(eventTypes(events)).toContain('runStarted');

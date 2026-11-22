@@ -2860,10 +2860,6 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
   return `
   <div class="phase-card shop">
     <div class="shop-head">
-      <div>
-        <p class="panel-kicker">SHOP</p>
-        <h2>Spend it or lose it</h2>
-      </div>
       <div class="chip-stat gold">🪙 <b>${view.gold}</b></div>
     </div>
     ${coupon > 0 ? `<p class="hint coupon-hint">Coupon Book: the first item or food purchase costs ${coupon} less.</p>` : ''}

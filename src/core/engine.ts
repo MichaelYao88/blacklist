@@ -4334,7 +4334,7 @@ export function createCore(content: Content): Core {
       ascension,
       nodes: clone(state.nodes),
     });
-    if (content.spells.length > 0) addSpell(rt, rngPick(state, content.spells).id);
+    if (spellById.has('omen')) addSpell(rt, 'omen');
     for (const item of character.items) addItem(rt, item);
     for (const curse of character.curses) applyCurse(rt, curse, true);
     for (const foodId of character.startingFoods ?? []) {
