@@ -1677,9 +1677,21 @@ function characterPortraitClass(characterId: string): string {
   return CHARACTER_BY_ID.get(characterId)?.sprite ?? 'runner';
 }
 
+const CHARACTER_TIPS: Record<string, { kicker: string; text: string }> = {
+  pathfinder: {
+    kicker: 'PATHFINDER TIP',
+    text: "Spam 4 words that cover 20 letters, then solve what's left. The blacklist blocks repeats, so vary your spam words. Try TUBES-WINDY-CHAMP-BLING or GATED-FORKS-IMPLY-BUNCH.",
+  },
+  purgamist: {
+    kicker: 'PURGAMIST TIP',
+    text: 'Purge A, E, I, O and U: only 14 dictionary words remain, all with Y as the vowel.',
+  },
+};
+
 function renderCharacterPicker(meta: ReturnType<typeof readMeta>): string {
   if (meta.characters.length <= 1) return '';
   if (!meta.characters.includes(selectedCharacter)) selectedCharacter = 'runner';
+  const tip = CHARACTER_TIPS[selectedCharacter];
   return `
   <div class="character-picker">
     <div class="character-head">
@@ -1705,6 +1717,10 @@ function renderCharacterPicker(meta: ReturnType<typeof readMeta>): string {
         </button>`;
       }).join('')}
     </div>
+    ${tip ? `<div class="character-tip" role="note">
+      <span class="character-tip-kicker">${escapeHtml(tip.kicker)}</span>
+      <p>${escapeHtml(tip.text)}</p>
+    </div>` : ''}
   </div>`;
 }
 
@@ -2016,9 +2032,10 @@ function guessDamageHtml(board: BoardView): string {
         )),
         `= ${value} damage`,
       ].join('\n');
-  return `<div class="guess-damage ${safe ? 'safe' : ''}">
-    <span class="guess-damage-label tip-dots" tabindex="0" data-tip="${escapeHtml(labelTip)}" aria-label="${escapeHtml(labelTip)}">INCOMING DAMAGE</span>
-    <b class="guess-damage-value tip-dots" tabindex="0" data-tip="${escapeHtml(calcTip)}" aria-label="${escapeHtml(calcTip)}">${safe ? 'FREE' : `⚔️ ${value} ⚔️`}</b>
+  const tip = `${labelTip}\n\n${calcTip}`;
+  return `<div class="guess-damage ${safe ? 'safe' : ''}" tabindex="0" data-tip="${escapeHtml(tip)}" aria-label="${escapeHtml(tip)}">
+    <span class="guess-damage-label tip-dots" aria-hidden="true">INCOMING DAMAGE</span>
+    <b class="guess-damage-value tip-dots" aria-hidden="true">${safe ? 'FREE' : `⚔️ ${value} ⚔️`}</b>
   </div>`;
 }
 
