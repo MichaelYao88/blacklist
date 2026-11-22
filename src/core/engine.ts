@@ -2346,7 +2346,7 @@ export function createCore(content: Content): Core {
       ? round.guesses[round.guesses.length - 1]
       : undefined;
 
-    if (round.frozenUntilGuess) {
+    if (round.frozenUntilGuess && by === 'player') {
       round.frozenUntilGuess = false;
       emit(rt, {
         type: 'timerChanged',

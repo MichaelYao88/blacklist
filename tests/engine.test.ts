@@ -842,6 +842,31 @@ describe('timer curses', () => {
     expect(resumed.state.round?.remainingMs).toBe(299_000);
   });
 
+  it('does not let friend guesses or autoguesses end Time Freeze', () => {
+    const { state } = start('time-freeze-friends');
+    state.curses.push({ id: 'clock', stacks: 1 });
+    setAnswer(state, 'zzzzz');
+    state.round!.remainingMs = 300_000;
+    state.round!.timerStartMs = 300_000;
+    state.round!.freeLeft = 0;
+    state.spells = [
+      { instance: 's-freeze', id: 'time-freeze' },
+      { instance: 's-phone', id: 'phone-friend' },
+    ];
+
+    const frozen = act(state, { type: 'castSpell', instance: 's-freeze' });
+    const phone = act(frozen.state, { type: 'castSpell', instance: 's-phone' });
+    expect(phone.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
+    expect(phone.state.round?.frozenUntilGuess).toBe(true);
+    expect(phone.state.round?.remainingMs).toBe(305_000);
+
+    const ticked = act(phone.state, { type: 'tick', dtMs: 5_000 });
+    expect(ticked.state.round?.remainingMs).toBe(305_000);
+
+    const guess = act(ticked.state, { type: 'guess', word: 'slate' });
+    expect(guess.state.round?.frozenUntilGuess).toBe(false);
+  });
+
   it('Restore ignores a position curse for the rest of the round', () => {
     const { state } = start('restore-position');
     state.curses.push({ id: 'censor', stacks: 1 });
@@ -3512,7 +3537,7 @@ describe('spells and foods', () => {
 
   it('uses the new Time Freeze text', () => {
     expect(SPELL_BY_ID.get('time-freeze')?.description)
-      .toBe('Get a free and unobscured guess. Doesn\'t count towards the number of guesses (for certain items). Freeze the Clock.');
+      .toBe('Get a free and unobscured guess. Doesn\'t count towards the number of guesses (for certain items). Freeze the clock until your next guess.');
   });
 
   it('prices Pen Club at 15 gold for a 1-5 gold payout', () => {

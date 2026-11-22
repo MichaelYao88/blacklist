@@ -29,7 +29,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - The clock is disabled until **The Clock** curse is taken; the first stack gives 5:00 and each further stack shrinks it by 40%. If the clock reaches zero, the run ends immediately
 - The Clockmaker event only appears once The Clock exists
 - **Phone a Friend** delivers a one- or two-word catchphrase, quietly adds 5 seconds, and spams his words across the screen; the **Pizza Pzazz** set shows a pizza/sparkle callout instead of the word spam. If purges leave fewer than three two-word phrases available, he falls back to single words
-- **Time Freeze** gives a free, unobscured guess that does not count towards solve-count items (Hat Trick, Bloom, Growth Spurt, etc.); Time Freeze and Immunity lock until your next guess
+- **Time Freeze** gives a free, unobscured guess that does not count towards solve-count items (Hat Trick, Bloom, Growth Spurt, etc.); the clock stays frozen until your next own guess, and autoguesses or friend guesses do not end it; Time Freeze and Immunity lock until your next guess
 - Within-X solve items count **player guesses only**; solve gold is a random 4-8, independent of guess count and auto-guesses
 - Curse Collector, Curse Bulwark and Reliquary trigger on gaining a curse ("Whenever you gain a curse: Gain …"). Curse Collector grants +6 max HP and heals 6
 - Ascension A1/A2 draft 1/2 starting curses
