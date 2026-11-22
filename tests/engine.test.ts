@@ -4966,8 +4966,8 @@ describe('curse rarity and trigger curses', () => {
     ]) {
       expect(CURSE_BY_ID.get(id)?.rarity, id).toBe('common');
     }
-    expect(CURSE_BY_ID.get('short-fuse')?.maxStacks).toBe(3);
-    expect(CURSE_BY_ID.get('short-fuse')?.damageRampEarly).toBe(2);
+    expect(CURSE_BY_ID.get('short-fuse')?.maxStacks).toBe(4);
+    expect(CURSE_BY_ID.get('short-fuse')?.damageRampEarly).toBe(1);
     expect(CURSE_BY_ID.get('short-fuse')?.damageRampEarlyPerStack).toBe(1);
     expect(CURSE_BY_ID.get('no-help')).toBeUndefined();
     expect(CURSE_BY_ID.get('slow-mending')?.noSpawn).toBe(true);
@@ -5189,26 +5189,26 @@ describe('damage doubling and slots', () => {
   });
 
   it('moves the free-guess loss earlier with Short Fuse', () => {
-    const { state } = start('short-fuse-free-guess');
-    state.curses.push({ id: 'short-fuse', stacks: 1 });
-    setAnswer(state, 'crane');
-    state.round!.baseDamage = 3;
-    state.round!.freeLeft = 0;
-    state.armor = 0;
-    state.maxArmor = 0;
-    state.hp = 200;
-    state.maxHp = 200;
-    let current = state;
-    for (const word of ['slate', 'brick']) {
+    const one = start('short-fuse-free-guess');
+    one.state.curses.push({ id: 'short-fuse', stacks: 1 });
+    setAnswer(one.state, 'crane');
+    one.state.round!.baseDamage = 3;
+    one.state.round!.freeLeft = 0;
+    one.state.armor = 0;
+    one.state.maxArmor = 0;
+    one.state.hp = 200;
+    one.state.maxHp = 200;
+    let current = one.state;
+    for (const word of ['slate', 'brick', 'plumb']) {
       current = act(current, { type: 'guess', word }).state;
     }
     current.round!.freeLeft = 2;
-    const third = act(current, { type: 'guess', word: 'plumb' });
-    expect(third.state.round?.freeLeft).toBe(0);
-    expect(third.events.some(
+    const fourth = act(current, { type: 'guess', word: 'chunk' });
+    expect(fourth.state.round?.freeLeft).toBe(0);
+    expect(fourth.events.some(
       (event) => event.type === 'freeGuessesChanged' && event.remaining === 0,
     )).toBe(true);
-    expect(third.events.some(
+    expect(fourth.events.some(
       (event) => event.type === 'damageMultiplier' && event.multiplier === 2,
     )).toBe(true);
 
@@ -5222,19 +5222,20 @@ describe('damage doubling and slots', () => {
     two.state.hp = 200;
     two.state.maxHp = 200;
     current = act(two.state, { type: 'guess', word: 'slate' }).state;
+    current = act(current, { type: 'guess', word: 'brick' }).state;
     current.round!.freeLeft = 2;
-    const second = act(current, { type: 'guess', word: 'brick' });
-    expect(second.state.round?.freeLeft).toBe(0);
-    expect(second.events.some(
+    const third = act(current, { type: 'guess', word: 'plumb' });
+    expect(third.state.round?.freeLeft).toBe(0);
+    expect(third.events.some(
       (event) => event.type === 'freeGuessesChanged' && event.remaining === 0,
     )).toBe(true);
-    expect(second.events.some(
+    expect(third.events.some(
       (event) => event.type === 'damageMultiplier' && event.multiplier === 2,
     )).toBe(true);
 
-    const three = start('short-fuse-free-guess-three');
-    three.state.curses.push({ id: 'short-fuse', stacks: 3 });
-    const next = nextRound(three.state);
+    const four = start('short-fuse-free-guess-four');
+    four.state.curses.push({ id: 'short-fuse', stacks: 4 });
+    const next = nextRound(four.state);
     next.state.round!.freeLeft = 2;
     const first = act(next.state, { type: 'guess', word: 'slate' });
     expect(first.state.round?.freeLeft).toBe(0);
@@ -5335,7 +5336,7 @@ describe('damage doubling and slots', () => {
     expect(before - sixth.state.hp).toBe(6);
   });
 
-  it('Short Fuse starts the multiplier two guesses earlier per stack', () => {
+  it('Short Fuse starts the multiplier one guess earlier per stack', () => {
     const one = start('short-fuse-one');
     one.state.curses.push({ id: 'short-fuse', stacks: 1 });
     setAnswer(one.state, 'crane');
@@ -5346,12 +5347,12 @@ describe('damage doubling and slots', () => {
     one.state.hp = 200;
     one.state.maxHp = 200;
     let current = one.state;
-    for (const word of ['slate', 'brick', 'plumb']) {
+    for (const word of ['slate', 'brick', 'plumb', 'chunk']) {
       current = act(current, { type: 'guess', word }).state;
     }
     const before = current.hp;
-    const fourth = act(current, { type: 'guess', word: 'chunk' });
-    expect(before - fourth.state.hp).toBe(6);
+    const fifth = act(current, { type: 'guess', word: 'jumpy' });
+    expect(before - fifth.state.hp).toBe(6);
 
     const two = start('short-fuse-two');
     two.state.curses.push({ id: 'short-fuse', stacks: 2 });
@@ -5363,12 +5364,12 @@ describe('damage doubling and slots', () => {
     two.state.hp = 200;
     two.state.maxHp = 200;
     current = two.state;
-    for (const word of ['slate', 'brick']) {
+    for (const word of ['slate', 'brick', 'plumb']) {
       current = act(current, { type: 'guess', word }).state;
     }
     const stackedBefore = current.hp;
-    const third = act(current, { type: 'guess', word: 'plumb' });
-    expect(stackedBefore - third.state.hp).toBe(6);
+    const fourth = act(current, { type: 'guess', word: 'chunk' });
+    expect(stackedBefore - fourth.state.hp).toBe(6);
 
     const three = start('short-fuse-three');
     three.state.curses.push({ id: 'short-fuse', stacks: 3 });
@@ -5379,10 +5380,27 @@ describe('damage doubling and slots', () => {
     three.state.maxArmor = 0;
     three.state.hp = 200;
     three.state.maxHp = 200;
-    current = act(three.state, { type: 'guess', word: 'slate' }).state;
+    current = three.state;
+    for (const word of ['slate', 'brick']) {
+      current = act(current, { type: 'guess', word }).state;
+    }
     const firstBefore = current.hp;
+    const third = act(current, { type: 'guess', word: 'plumb' });
+    expect(firstBefore - third.state.hp).toBe(6);
+
+    const four = start('short-fuse-four');
+    four.state.curses.push({ id: 'short-fuse', stacks: 4 });
+    setAnswer(four.state, 'crane');
+    four.state.round!.baseDamage = 3;
+    four.state.round!.freeLeft = 0;
+    four.state.armor = 0;
+    four.state.maxArmor = 0;
+    four.state.hp = 200;
+    four.state.maxHp = 200;
+    current = act(four.state, { type: 'guess', word: 'slate' }).state;
+    const fourBefore = current.hp;
     const second = act(current, { type: 'guess', word: 'brick' });
-    expect(firstBefore - second.state.hp).toBe(6);
+    expect(fourBefore - second.state.hp).toBe(6);
   });
 
   it('resets the damage multiplier on Second Wind puzzles', () => {
@@ -5488,7 +5506,7 @@ describe('damage doubling and slots', () => {
     state.curses.push({ id: 'short-fuse', stacks: 1 });
     const phase = game.view(state).phase;
     if (phase.kind !== 'round') throw new Error('expected round');
-    expect(phase.board.damageRampEarly).toBe(2);
+    expect(phase.board.damageRampEarly).toBe(1);
   });
 
   it('counts equipped slots only, not unused capacity', () => {
