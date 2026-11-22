@@ -2581,7 +2581,7 @@ function renderKeyboard(board: BoardView): string {
       const hint = board.hints[letter];
       const hinted = hint ? 'hinted' : '';
       const title = status === 'purged'
-        ? `${letter.toUpperCase()} · purged, cannot be guessed`
+        ? `${letter.toUpperCase()} · purged, can't be manually guessed`
         : status === 'hidden'
           ? `${letter.toUpperCase()} · hidden by a vision curse`
           : hint === 'present'
@@ -3063,7 +3063,7 @@ function renderPurgeModal(view: RunView): string {
     <div class="modal-card">
       <p class="panel-kicker">${setup ? 'BEFORE THE FIRST FLOOR' : 'LETTER PURGE'}</p>
       <h2>${setup ? `Erase ${view.pendingPurge} letter${view.pendingPurge === 1 ? '' : 's'}` : 'Erase a letter'}</h2>
-      <p class="muted">${setup ? 'No word has been drawn yet, so every letter is fair game. ' : ''}The letter will never appear in a future answer, and you can never guess it again. Choose carefully. If a purge would leave no legal words, a random purged letter is restored.</p>
+      <p class="muted">${setup ? 'No word has been drawn yet, so every letter is fair game. ' : ''}The letter will never appear in a future answer, and you can never manually guess it again. Autoguesses can still use it. Choose carefully. If a purge would leave no legal words, a random purged letter is restored.</p>
       <div class="purge-grid">
         ${letters.map((letter) => `<button class="purge-key ${view.purged.includes(letter) ? 'used' : ''}" data-action="purge" data-letter="${letter}" ${view.purged.includes(letter) ? 'disabled' : ''}>${letter.toUpperCase()}</button>`).join('')}
       </div>

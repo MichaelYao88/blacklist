@@ -1302,7 +1302,6 @@ export function createCore(content: Content): Core {
         const word = normalizeWord(effect.word);
         if (word.length !== WORD_LENGTH) break;
         if (state.blacklist.includes(word)) break;
-        if (word.split('').some((ch) => state.purged.includes(ch))) break;
         if (round.guesses.some((guess) => guess.word === word)) break;
         scorePlayerGuess(rt, word, 'friend');
         break;
@@ -1992,7 +1991,6 @@ export function createCore(content: Content): Core {
         !autoguessFails(state)
         && word.length === WORD_LENGTH
         && !state.blacklist.includes(word)
-        && !word.split('').some((ch) => state.purged.includes(ch))
         && !round.guesses.some((guess) => guess.word === word)
       ) {
         scorePlayerGuess(rt, word, 'friend');
@@ -2007,7 +2005,6 @@ export function createCore(content: Content): Core {
         !autoguessFails(state)
         && word.length === WORD_LENGTH
         && !state.blacklist.includes(word)
-        && !word.split('').some((ch) => state.purged.includes(ch))
         && !round.guesses.some((guess) => guess.word === word)
       ) {
         scorePlayerGuess(rt, word, 'friend');
@@ -2021,7 +2018,6 @@ export function createCore(content: Content): Core {
         !autoguessFails(state)
         && word.length === WORD_LENGTH
         && !state.blacklist.includes(word)
-        && !word.split('').some((ch) => state.purged.includes(ch))
         && !round.guesses.some((guess) => guess.word === word)
       ) {
         scorePlayerGuess(rt, word, 'friend');
@@ -2337,8 +2333,7 @@ export function createCore(content: Content): Core {
       return (
         w.length === WORD_LENGTH &&
         !taken.has(w) &&
-        !state.blacklist.includes(w) &&
-        !w.split('').some((ch) => state.purged.includes(ch))
+        !state.blacklist.includes(w)
       );
     };
 
@@ -2349,8 +2344,8 @@ export function createCore(content: Content): Core {
       const phrases = content.friendPhrases.filter(
         ([first, second]) => available(first, taken) && available(second, taken),
       );
-      // When purges shrink the phrase pool below three options, fall back to
-      // single words so Phone a Friend does not repeat the same two phrases.
+      // When the phrase pool is too small, fall back to single words so Phone
+      // a Friend does not repeat the same two phrases.
       if (phrases.length >= 3) {
         const [first, second] = rngPick(state, phrases);
         if (first === 'pizza' && second === 'pzazz') {
@@ -2395,7 +2390,6 @@ export function createCore(content: Content): Core {
         w.length === WORD_LENGTH
         && !taken.has(w)
         && !state.blacklist.includes(w)
-        && !w.split('').some((ch) => state.purged.includes(ch))
         && !w.split('').some((ch) => blocked.has(ch))
       );
     };

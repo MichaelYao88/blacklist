@@ -10,7 +10,7 @@ export const ARMOR_TIP =
   + 'Damage that gets past armor is a Hit (HP damage).';
 
 export const PURGED_TIP =
-  'A purged letter can never be guessed again, and no puzzle answer will ever contain it.';
+  'A purged letter can\'t be manually guessed again, and no puzzle answer will ever contain it. Autoguesses can still use it.';
 
 export const INCOMING_DAMAGE_TIP =
   'Every wrong guess that is not free makes the monster hit you. '

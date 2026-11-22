@@ -322,7 +322,6 @@ export const ITEMS: ItemDef[] = [
         const answer = ctx.state.lastAnswer;
         if (!answer) return [];
         if (ctx.state.blacklist.includes(answer)) return [];
-        if (answer.split('').some((ch) => ctx.state.purged.includes(ch))) return [];
         return [{ type: 'autoGuess', word: answer }];
       },
     },

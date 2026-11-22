@@ -2574,6 +2574,29 @@ describe('latest balance pass', () => {
     expect(has(removed, 'addTime')).toBe(false);
   });
 
+  it('autoguesses go through purged letters', () => {
+    const { state } = start('autoguess-purged');
+    state.permanentRoundStartWord = 'dagon';
+    state.purged = ['d'];
+    setAnswer(state, 'crane');
+    const next = nextRound(state);
+    expect(next.state.round?.guesses.some(
+      (guess) => guess.word === 'dagon' && guess.by === 'friend',
+    )).toBe(true);
+  });
+
+  it('manual guesses still reject purged letters', () => {
+    const { state } = start('manual-purged');
+    state.purged = ['s'];
+    setAnswer(state, 'crane');
+    const rejected = act(state, { type: 'guess', word: 'slate' });
+    expect(rejected.events).toContainEqual({
+      type: 'guessRejected',
+      word: 'slate',
+      reason: 'purgedLetter',
+    });
+  });
+
   it('Hearty Meal gives 5 max HP and heals 5', () => {
     const meal = FOOD_BY_ID.get('hearty-meal');
     expect(meal?.effects).toEqual([
