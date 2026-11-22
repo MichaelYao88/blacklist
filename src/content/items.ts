@@ -134,7 +134,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'head-start',
     name: 'Head Start',
-    description: 'The first 7s of each round: guesses are free.',
+    description: 'The first 7s of each round: Immune to damage. Your free guess is still spent by the first guess.',
     price: 8,
     kind: 'gear',
     rarity: 'rare',
@@ -145,7 +145,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'scattershot',
     name: 'Scattershot',
-    description: 'Once per round: a guess sharing no letters with the previous guess autocasts a free random spell.',
+    description: 'Once per round: a player guess sharing no letters with the previous guess autocasts a free random spell.',
     price: 10,
     kind: 'gear',
     rarity: 'uncommon',
@@ -153,7 +153,7 @@ export const ITEMS: ItemDef[] = [
     on: {
       onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
       onGuessScored: (ctx, p) => {
-        if (ctx.self.data.used || !p.previous) return [];
+        if (ctx.self.data.used || !p.previous || p.guess.by !== 'player') return [];
         if (sharedLetters(p.guess.word, p.previous.word) > 0) return [];
         return [
           { type: 'castSpell', spell: 'random' },
@@ -176,7 +176,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'encore',
     name: 'Encore',
-    description: 'Round start: the last solved answer is guessed for free.',
+    description: 'Round start: autoguess the last solved answer.',
     price: 7,
     kind: 'gear',
     appearanceWeight: 3,
@@ -269,12 +269,11 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'placebo',
     name: 'Placebo',
-    description: 'Every guess you make: heal 1 HP.',
+    description: 'Any guess, including an autoguess: heal 1 HP.',
     price: 4,
     kind: 'gear',
     on: {
-      onGuessScored: (_ctx, p) =>
-        p.guess.by === 'player' ? [{ type: 'heal', amount: 1 }] : [],
+      onGuessScored: () => [{ type: 'heal', amount: 1 }],
     },
   }),
   defineItem({
@@ -331,7 +330,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'necronomicon',
     name: 'Necronomicon',
-    description: 'Click to pay 13% of your max HP and cast Omen. Each Omen cast reveals an extra random letter this round for every 13 HP paid to the book.',
+    description: 'Click to pay 13% of your max HP and cast Omen. Each Omen cast learns an extra random letter this round for every 13 HP paid to the book.',
     price: 13,
     kind: 'gear',
     rarity: 'rare',
@@ -441,7 +440,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'loose-tongue',
     name: 'Loose Tongue',
-    description: 'Any five letters are a valid guess. Nonsense still scores.',
+    description: 'Any five letters are a valid guess. Nonsense still scores, and this is the only way to guess an invalid word.',
     price: 12,
     kind: 'gear',
     rarity: 'uncommon',
@@ -606,7 +605,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'field-kit',
     name: 'Field Kit',
-    description: 'Round start, learn 4 letters not in the word.',
+    description: 'Round start: Rule Out 4 letters guaranteed not in the word.',
     price: 10,
     kind: 'gear',
     on: { onRoundStart: () => [{ type: 'revealAbsent', count: 4 }] },
@@ -614,7 +613,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'doggy-bag',
     name: 'Doggy Bag',
-    description: 'Round start: learn 2 letters not in the word. Eating food: 1 more next round.',
+    description: 'Round start: Rule Out 2 letters guaranteed not in the word. Eating food: 1 more next round.',
     price: 11,
     kind: 'gear',
     on: {
@@ -1147,7 +1146,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'off-road',
     name: 'Off-Road',
-    description: 'Once per round: a guess sharing no letters with the previous guess autocasts a free random spell.',
+    description: 'Once per round: a player guess sharing no letters with the previous guess autocasts a free random spell.',
     price: 9,
     kind: 'gear',
     initial: { used: 0 },
@@ -1216,7 +1215,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'turtle-shell',
     name: 'Turtle Shell',
-    description: 'Hits that armor does not soak are reduced by 50%.',
+    description: 'A Hit (HP damage) that armor does not soak is reduced by 50%.',
     price: 8,
     kind: 'gear',
     unarmoredHitMultiplier: 0.5,
@@ -1367,7 +1366,7 @@ export const ITEMS: ItemDef[] = [
 
   defineItem({
     id: 'tally-lens',
-    name: 'Tally Lens',
+    name: 'Counter-Intelligence',
     description: 'While a vision curse is active, guesses show correct and misplaced counts.',
     price: 12,
     kind: 'gear',

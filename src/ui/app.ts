@@ -1,12 +1,15 @@
 import { game, CoreHost } from '../game';
 import type {
   BoardView,
+  BossId,
   Command,
   GameEvent,
   ItemView,
+  NodeKind,
   Offer,
   PhaseView,
   RunView,
+  Source,
   SpellView,
 } from '../game';
 import {
@@ -19,11 +22,12 @@ import {
   ITEM_BY_ID,
   SPELL_BY_ID,
 } from '../content';
-import { LocalStore, hasSave, readMeta, recordFood, recordPurchase, recordRun, recordStart, unlockCharacter } from './store';
+import { LocalStore, dismissDamageTutorial, hasSave, readMeta, recordFood, recordPurchase, recordRun, recordStart, unlockCharacter } from './store';
 import { escapeHtml, formatTime, reasonText, roman } from './format';
-import { glossaryText } from './glossary';
+import { INCOMING_DAMAGE_TIP, glossaryText } from './glossary';
 import {
   bossColor,
+  bossSigil,
   enemyArt,
   enemySprite,
   foodIcon,
@@ -168,6 +172,26 @@ warningRoot.setAttribute('aria-live', 'assertive');
 document.body.appendChild(warningRoot);
 let warningTimer: number | undefined;
 
+// Free-guess callout. It lives outside the render tree so timer ticks cannot
+// restart the pop animation.
+const freeGuessRoot = document.createElement('div');
+freeGuessRoot.id = 'free-guess-root';
+freeGuessRoot.setAttribute('aria-live', 'polite');
+document.body.appendChild(freeGuessRoot);
+let freeGuessTimer: number | undefined;
+
+function showFreeGuessPopup(source: string): void {
+  freeGuessRoot.innerHTML = `<div class="free-guess-pop">
+    <span class="free-guess-kicker">FREE GUESS!</span>
+    <span class="free-guess-source">(${escapeHtml(source)})</span>
+  </div>`;
+  if (freeGuessTimer) window.clearTimeout(freeGuessTimer);
+  freeGuessTimer = window.setTimeout(() => {
+    freeGuessRoot.innerHTML = '';
+    freeGuessTimer = undefined;
+  }, 2_400);
+}
+
 const procRoot = document.createElement('div');
 procRoot.id = 'proc-root';
 procRoot.setAttribute('aria-live', 'polite');
@@ -260,6 +284,9 @@ interface Notice {
   kind: 'info' | 'good' | 'bad';
 }
 let screen: Screen = 'title';
+let damageTutorialOpen = false;
+let damageTutorialSeen = false;
+let damageTutorialMute = false;
 let input = '';
 let notice: Notice | null = null;
 let noticeTimer: number | undefined;
@@ -643,6 +670,28 @@ function logGameEvent(event: GameEvent): void {
   }
 }
 
+function freeSourceLabel(source: Source | undefined): string {
+  if (!source) return 'Free guess';
+  switch (source.kind) {
+    case 'item': {
+      const item = host.current?.items.find((entry) => entry.instance === source.instance);
+      return item ? ITEM_BY_ID.get(item.id)?.name ?? 'Item' : 'Item';
+    }
+    case 'spell':
+      return SPELL_BY_ID.get(source.spell)?.name ?? 'Spell';
+    case 'food':
+      return FOOD_BY_ID.get(source.food)?.name ?? 'Food';
+    case 'boss':
+      return BOSS_BY_ID.get(source.boss)?.name ?? 'Boss';
+    case 'happening':
+      return HAPPENING_BY_ID.get(source.happening)?.name ?? 'Happening';
+    case 'inn':
+      return 'Inn';
+    default:
+      return 'Free guess';
+  }
+}
+
 function processEvents(events: GameEvent[]): void {
   let playerGuessed = false;
   let playerFreeGuess = false;
@@ -724,10 +773,30 @@ function processEvents(events: GameEvent[]): void {
         flashDamage(0, 0, event.incoming);
         sfx.play('block');
       }
+      if (
+        event.incoming > 0
+        && !damageTutorialSeen
+        && !readMeta().damageTutorialDismissed
+      ) {
+        damageTutorialSeen = true;
+        damageTutorialOpen = true;
+      }
     }
     if (event.type === 'guessScored' && event.by === 'player') {
       playerGuessed = true;
-      if (event.free) playerFreeGuess = true;
+      if (event.free) {
+        playerFreeGuess = true;
+        const view = host.view();
+        const shielded = view?.phase.kind === 'round' ? view.phase.board.shielded : false;
+        const label = event.unobscured
+          ? 'Time Freeze'
+          : event.firstPlayerGuess
+            ? 'First player guess'
+            : event.freeSource
+              ? freeSourceLabel(event.freeSource)
+              : shielded ? 'Immune to damage' : 'Free guess';
+        showFreeGuessPopup(label);
+      }
       if (event.solved) solvedByPlayer = true;
     }
     if (event.type === 'healed') sfx.play('coin');
@@ -875,6 +944,12 @@ function startNewRun(preferredCharacter?: string): void {
   if (warningTimer) window.clearTimeout(warningTimer);
   warningTimer = undefined;
   warningRoot.innerHTML = '';
+  if (freeGuessTimer) window.clearTimeout(freeGuessTimer);
+  freeGuessTimer = undefined;
+  freeGuessRoot.innerHTML = '';
+  damageTutorialOpen = false;
+  damageTutorialSeen = false;
+  damageTutorialMute = false;
   clearProcFeed();
   clearSpellPopups();
   clearChronicle();
@@ -921,6 +996,13 @@ function resumeRun(): void {
   if (orcDeathTimer) window.clearTimeout(orcDeathTimer);
   orcDeathTimer = undefined;
   playerDeathStartedAt = null;
+  if (freeGuessTimer) window.clearTimeout(freeGuessTimer);
+  freeGuessTimer = undefined;
+  freeGuessRoot.innerHTML = '';
+  damageTutorialOpen = false;
+  damageTutorialSeen = (host.current?.stats.damageTaken ?? 0) > 0
+    || readMeta().damageTutorialDismissed;
+  damageTutorialMute = false;
   clearProcFeed();
   clearSpellPopups();
   clearChronicle();
@@ -1056,6 +1138,16 @@ app.addEventListener('click', (event) => {
     }
     case 'dismiss-unlock':
       nextCharacterUnlock();
+      render();
+      break;
+    case 'toggle-damage-tutorial-mute':
+      damageTutorialMute = !damageTutorialMute;
+      render();
+      break;
+    case 'dismiss-damage-tutorial':
+      if (damageTutorialMute) dismissDamageTutorial();
+      damageTutorialOpen = false;
+      damageTutorialMute = false;
       render();
       break;
     case 'help':
@@ -1618,7 +1710,7 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>Damage</h3>
-        <p>Your first guess each round is free. Wrong paid guesses take <b>3 damage</b> before curses, plus <b>1.3 per curse stack</b> rounded down. Damage never grows with level; only curses change it. A correct guess never hurts you.</p>
+        <p>Your first guess each round is free. Every wrong guess after that is a <b>Hit (HP damage)</b>. Damage starts at <b>3</b>, plus bonuses from curses, bosses and items. The first five guesses use a ×1 multiplier; from the <b>6th guess</b> on, damage is multiplied by the guess number minus 4. Armor soaks it first. A correct guess never hurts you, and autoguesses are always free.</p>
       </article>
       <article class="rule-card">
         <h3>Armor</h3>
@@ -1630,7 +1722,11 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>Curses</h3>
-        <p>Curses are permanent rules. Vision curses hide tiles or letters; others change damage, shops, healing, slots, HP, gold or the clock. Some stack; boolean vision curses are one copy each. <b>Tally Lens</b> reveals correct/misplaced counts after the first vision curse.</p>
+        <p>Curses are permanent rules. Vision curses hide tiles or letters; others change damage, shops, healing, slots, HP, gold or the clock. Some stack; boolean vision curses are one copy each. <b>Counter-Intelligence</b> shows correct/misplaced counts after the first vision curse.</p>
+      </article>
+      <article class="rule-card">
+        <h3>Words you will see</h3>
+        <p><b>Autocast</b>: the item casts a spell immediately and for free. It never enters your spell list, but it still counts as a spell cast. <b>Autoguess</b>: a free guess from an item or Phone a Friend. It never deals damage and does not spend a free guess, but it does add to the round's guess count. <b>Player guess</b>: manual guess only. <b>Reveal</b>: a guaranteed yellow letter. <b>Learn</b>: a letter that may be present or absent. <b>Rule Out</b>: a letter guaranteed not to be in the word.</p>
       </article>
       <article class="rule-card">
         <h3>Items & spells</h3>
@@ -1834,8 +1930,11 @@ function guessDamageHtml(board: BoardView): string {
     || board.shielded
     || board.guessImmuneMsLeft > 0;
   const value = safe ? 0 : board.nextGuessDamage;
-  return `<div class="guess-damage ${safe ? 'safe' : ''}" title="Damage a wrong guess deals once your free guesses and shield are gone.">
-    <span>WRONG GUESS</span>
+  const tip = safe
+    ? `Your next guess is free and deals no damage. ${INCOMING_DAMAGE_TIP}`
+    : `A wrong guess will deal ${value} damage right now. ${INCOMING_DAMAGE_TIP}`;
+  return `<div class="guess-damage ${safe ? 'safe' : ''}" tabindex="0" data-tip="${escapeHtml(tip)}" aria-label="${escapeHtml(tip)}">
+    <span>INCOMING DAMAGE</span>
     <b>${safe ? 'FREE' : `${value} damage`}</b>
   </div>`;
 }
@@ -1872,15 +1971,94 @@ function renderTimer(view: RunView, board: BoardView): string {
   </div>`;
 }
 
+const RAIL_NODE_LABELS: Record<NodeKind, string> = {
+  round: 'Fight',
+  shop: 'Shop',
+  curse: 'Curse',
+  happening: 'Event',
+  boss: 'Boss',
+};
+
+const RAIL_NODE_GLYPHS: Record<NodeKind, string> = {
+  round: '◆',
+  shop: '¤',
+  curse: '✕',
+  happening: '?',
+  boss: '☠',
+};
+
+interface RailFloor {
+  level: number;
+  kind: NodeKind | 'start';
+  bossId?: BossId;
+  /** A floor can hold both a fight and an event. */
+  hasEvent: boolean;
+}
+
+/** Collapse the nodes on one floor into a single ladder entry. */
+function railFloorAt(view: RunView, level: number): RailFloor | null {
+  if (level === 0) return { level, kind: 'start', hasEvent: false };
+  if (level < 0) return null;
+  const nodes = view.nodes.filter((node) => node.level === level);
+  if (nodes.length === 0) return null;
+  const primary = nodes.find((node) => node.kind === 'boss')
+    ?? nodes.find((node) => node.kind === 'round')
+    ?? nodes.find((node) => node.kind === 'curse')
+    ?? nodes.find((node) => node.kind === 'shop')
+    ?? nodes.find((node) => node.kind === 'happening');
+  if (!primary) return null;
+  return {
+    level,
+    kind: primary.kind,
+    bossId: primary.boss,
+    hasEvent: primary.kind !== 'happening' && nodes.some((node) => node.kind === 'happening'),
+  };
+}
+
+function railFloorLabel(floor: RailFloor): string {
+  if (floor.kind === 'start') return 'Run start';
+  const name = floor.kind === 'boss'
+    ? (floor.bossId ? BOSS_BY_ID.get(floor.bossId)?.name : undefined) ?? 'Boss'
+    : RAIL_NODE_LABELS[floor.kind];
+  return `Floor ${floor.level} · ${name}${floor.hasEvent ? ' and an event' : ''}`;
+}
+
+function railFloorGlyph(floor: RailFloor): string {
+  if (floor.kind === 'start') return '·';
+  if (floor.kind === 'boss') return bossSigil(floor.bossId);
+  return RAIL_NODE_GLYPHS[floor.kind];
+}
+
 function renderLevelBadge(view: RunView): string {
   const maxLevel = view.nodes.reduce((max, node) => Math.max(max, node.level ?? 0), view.level);
-  const pct = Math.max(0, Math.min(100, (view.level / Math.max(1, maxLevel)) * 100));
+  // One floor behind, the current floor, and three ahead. Empty slots keep the
+  // ladder the same height at the start and end of the run.
+  const rows = [3, 2, 1, 0, -1].map((offset) => {
+    const level = view.level + offset;
+    if (level < 0 || level > maxLevel || (level === 0 && view.level !== 0)) {
+      return '<li class="rail-node is-empty" aria-hidden="true"></li>';
+    }
+    const floor = railFloorAt(view, level);
+    if (!floor) return '<li class="rail-node is-empty" aria-hidden="true"></li>';
+    const current = level === view.level;
+    const state = current ? 'current' : level < view.level ? 'past' : 'future';
+    const tip = railFloorLabel(floor);
+    return `<li class="rail-node ${state} kind-${floor.kind}${floor.hasEvent ? ' has-event' : ''}"
+      data-level="${level}"
+      tabindex="0"
+      data-tip="${escapeHtml(tip)}"
+      aria-label="${escapeHtml(tip.replace(' · ', ', '))}"${current ? ' aria-current="step"' : ''}>
+      <span class="rail-node-pip" aria-hidden="true">${railFloorGlyph(floor)}</span>
+      <span class="rail-node-floor">${level}</span>
+    </li>`;
+  }).join('');
+
   return `<div class="rail-level" aria-label="Current level ${view.level} of ${maxLevel}">
     <div class="rail-level-top">
       <span class="rail-level-kicker">LEVEL</span>
       <span class="rail-level-value">${view.level}<i>/${maxLevel}</i></span>
     </div>
-    <div class="rail-level-bar"><i style="width:${pct}%"></i></div>
+    <ol class="rail-map" aria-label="Nearby floors">${rows}</ol>
   </div>`;
 }
 
@@ -1909,7 +2087,7 @@ function renderBattleRail(view: RunView, bossId?: string): string {
   const facts = board
     ? [
         `<span class="fact">FREE ${board.freeGuessesLeft}</span>`,
-        board.shielded ? `<span class="fact shield">SHIELD ${formatTime(board.shieldMsLeft)}</span>` : '',
+        board.shielded ? `<span class="fact shield">IMMUNE ${formatTime(board.shieldMsLeft)}</span>` : '',
         board.gauntletTotal > 1 ? `<span class="fact gauntlet">PUZZLE ${board.gauntletIndex + 1}/${board.gauntletTotal}</span>` : '',
         view.items.some((item) => item.id === 'loose-tongue' && item.equipped) ? `<span class="fact free-speech">ANY WORD</span>` : '',
       ].filter(Boolean).join('')
@@ -2622,6 +2800,24 @@ function renderOver(phase: Extract<PhaseView, { kind: 'over' }>): string {
   </div>`;
 }
 
+function renderDamageTutorial(): string {
+  return `
+  <div class="modal damage-tutorial">
+    <div class="modal-card">
+      <p class="panel-kicker">DAMAGE</p>
+      <h2>The monster hits back</h2>
+      <p class="muted">Your first guess each round is free. After that, every wrong guess is a <b>Hit (HP damage)</b>: the monster attacks you.</p>
+      <p class="muted">From the <b>6th guess</b> in a round onward, each wrong guess deals an increasing amount of damage. A correct guess never hurts you, and autoguesses are always free.</p>
+      <p class="muted">Armor soaks damage first. Only what gets through reaches HP.</p>
+      <button class="tutorial-check ${damageTutorialMute ? 'checked' : ''}" data-action="toggle-damage-tutorial-mute" role="checkbox" aria-checked="${damageTutorialMute}">
+        <span class="tutorial-box" aria-hidden="true">${damageTutorialMute ? '✓' : ''}</span>
+        Don't remind me again
+      </button>
+      <button class="btn primary big" data-action="dismiss-damage-tutorial">GOT IT</button>
+    </div>
+  </div>`;
+}
+
 function renderPurgeModal(view: RunView): string {
   if (view.pendingPurge <= 0) return '';
   const letters = 'abcdefghijklmnopqrstuvwxyz'.split('');
@@ -2760,6 +2956,7 @@ function renderRun(view: RunView): string {
           <section class="center-column">${phasePanel(view)}</section>
           ${renderSidePanel(view)}
         </main>`}
+    ${damageTutorialOpen && !over ? renderDamageTutorial() : ''}
     ${renderPurgeModal(view)}
     ${renderCurseRemovalModal(view)}
     ${count > 0 ? `<div class="countdown-overlay" aria-live="assertive">

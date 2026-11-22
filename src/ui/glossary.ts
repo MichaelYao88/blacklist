@@ -5,6 +5,13 @@ interface GlossaryEntry {
   tip: string;
 }
 
+export const INCOMING_DAMAGE_TIP =
+  'Every wrong guess that is not free makes the monster hit you. '
+  + 'Damage starts with the monster\'s base hit, then adds bonuses from curses, bosses and items '
+  + '(such as extra damage per green, per 60 gold spent, or per equipped slot over five). '
+  + 'The multiplier is 1 for the first five guesses; from the 6th guess on it is the guess number minus 4. '
+  + 'Armor soaks it first; the rest is Hit (HP damage).';
+
 // Order matters: longer or more specific phrases must come before the shorter
 // word they contain, because earlier matches become placeholders.
 const ENTRIES: GlossaryEntry[] = [
@@ -22,19 +29,31 @@ const ENTRIES: GlossaryEntry[] = [
   },
   {
     pattern: /\bfree guesses?\b/gi,
-    tip: 'A guess that costs no HP. The first guess of every round is free.',
+    tip: 'Each round a player gets one free guess. Other guesses will take damage from the monster. If you haven\'t used your free guess by the 5th guess, you lose it.',
   },
   {
     pattern: /\bpaid guesses?\b/gi,
-    tip: 'A guess that costs HP. The monster hit is fixed for the whole encounter.',
+    tip: 'A guess that costs HP. Damage grows after the first five guesses of a round.',
   },
   {
     pattern: /\brandom spells?\b/gi,
     tip: 'One spell picked at random from the spell pool.',
   },
   {
-    pattern: /\bautocast(?:s|ing)?\b/gi,
-    tip: 'The item casts the spell immediately. It never enters your spell list.',
+    pattern: /\bauto[- ]?cast(?:s|ing)?\b/gi,
+    tip: 'The item casts the spell immediately and for free. It never enters your spell list, but it still counts as a spell cast, so it triggers and advances cast-based items.',
+  },
+  {
+    pattern: /\bauto[- ]?guess(?:es|ed|ing)?\b/gi,
+    tip: 'A guess made by an item or the Phone a Friend spell. It is always free, never deals damage, and does not spend a free guess. It does add to the round\'s total guess count.',
+  },
+  {
+    pattern: /\bplayer guesses?\b/gi,
+    tip: 'Manual Guess only.',
+  },
+  {
+    pattern: /\bmanual guesses?\b/gi,
+    tip: 'Player only. Autoguesses and friend guesses are not manual.',
   },
   {
     pattern: /\bspells?\b/gi,
@@ -86,7 +105,7 @@ const ENTRIES: GlossaryEntry[] = [
   },
   {
     pattern: /\bOmen\b/g,
-    tip: 'Spell: reveal one yellow (misplaced) letter in the answer.',
+    tip: 'Spell: Reveal one guaranteed yellow (misplaced) letter in the answer.',
   },
   {
     pattern: /\bHeal\b/g,
@@ -161,6 +180,10 @@ const ENTRIES: GlossaryEntry[] = [
     tip: 'A guess where none of the five letters is in the answer.',
   },
   {
+    pattern: /\brule out\b/gi,
+    tip: 'A letter guaranteed not to be in the answer. It is marked RULED OUT on the keyboard and never appears in the word.',
+  },
+  {
     pattern: /\bruled[- ]out\b/gi,
     tip: 'A letter proven absent from this answer. Explorer effects count distinct ruled-out letters.',
   },
@@ -169,16 +192,32 @@ const ENTRIES: GlossaryEntry[] = [
     tip: 'A guaranteed absent letter. It is marked RULED OUT on the keyboard and in the Revealed panel.',
   },
   {
+    pattern: /\blearn(?:s|ed|ing)?\b/gi,
+    tip: 'A letter you learn may be in the answer or absent. Check its mark: IN WORD means present; RULED OUT means absent.',
+  },
+  {
     pattern: /\brevealed letters?\b/gi,
     tip: 'Any letter marked by a guess or a reveal. IN WORD means present; RULED OUT means absent.',
   },
   {
     pattern: /\breveal(?:ed|s|ing|ation)?\b/gi,
-    tip: 'A revealed letter is marked on the keyboard and listed in the Revealed panel. IN WORD means present; RULED OUT means absent.',
+    tip: 'A guaranteed yellow letter: it is in the answer, but not in that position.',
+  },
+  {
+    pattern: /\bimmune to (?:guess )?damage\b/gi,
+    tip: 'Damage does not reach you. Timed immunity blocks every hit for its duration; the Immunity spell blocks one hit.',
   },
   {
     pattern: /\bblocked\b/gi,
     tip: 'Damage stopped by armor or immunity before it reached HP.',
+  },
+  {
+    pattern: /\bhit \(HP damage\)\b/gi,
+    tip: 'One monster attack that reached your HP after armor. Armor soaks damage first; the rest is Hit (HP damage).',
+  },
+  {
+    pattern: /\bincoming damage\b/gi,
+    tip: INCOMING_DAMAGE_TIP,
   },
   {
     pattern: /\bhits?\b/gi,

@@ -41,11 +41,11 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Restore** clears the blacklist, refills armor, and ignores vision curses — including position curses — for the rest of the round; **Contrapuntal** turns into a random relic if you cast all six spell types
 - Happenings with visible odds and persistent consequences
 - **Purge the Letter** offers two random letters: the first has a 100% chance to purge and the second has an 80% chance; you may also leave
-- Short item, spell and offer text with hover tooltips for keywords like armor, reveal, ruled out, free guesses, blacklist, relic and timeout
+- Short item, spell and offer text with hover tooltips for keywords like autocast, autoguess, player guess, free guess, reveal, learn, rule out, incoming damage, armor, blacklist, relic and timeout
 - Revealed letters stay marked on the keyboard and in a Revealed panel for the puzzle; permanent food/item reveals are listed separately as collected letters; random reveals lean toward letters that are not in the answer; letter-reveal foods are permanent for the run
 - Vision-hidden letters show the hatched hidden key only when the letter has no other visible status; visible results, reveals and rule-outs take priority over that layer
 - Every finished encounter pays gold; solves offer coins, usually a spell, and only rarely gear or a meal
-- Opening shields such as **Head Start** (7s, rare) make guesses in their window count as free guesses and show a floating timer banner with the remaining seconds
+- Opening shields such as **Head Start** (7s, rare) make guesses in their window **Immune to damage** and show a floating timer banner with the remaining seconds; the first guess still spends the round's free guess
 - Rarity uses cumulative floors: 40% pulls from rare, uncommon or common, 45% pulls from uncommon or common, and 15% pulls from common only. If a tier is empty, it falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on bosses)
@@ -53,7 +53,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - New foods include **U-nagi**, **Donut Holes**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
-- **Field Kit** reveals exactly 4 letters that are not in the word; **Doggy Bag** reveals 2 and queues another after every food
+- **Field Kit** Rules Out exactly 4 letters guaranteed not in the word; **Doggy Bag** Rules Out 2 and queues another after every food
 - Letter foods cover A, B, C, D, E, F, G, H, I, J, K, L, O, P, Q, T, U, W, X, and Y+N; every letter food is rare, unique, and stops appearing once all its letters are permanently revealed. A-Steak and B-Fsteak reveal whether their letter is in the answer
 - New solve rewards: **Brace** (6g, +1 max armor), **Bloom** (+5 max HP, +1 per trigger), **Patch Kit** (heal 30% of max HP +1)
 - **Four-Leaf Clover** has a 20% chance of a random spell when you eat or cast
@@ -92,7 +92,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Immunity** blocks the next hurting guess and any guess for 4 seconds after it
 - **Mending Plate** is a rare item: +1 max armor per 8 HP healed
 - **Bounty** is a 9g rare food: +1 gold per solve
-- **Necronomicon** is a rare item: click it to pay 13% of your max HP and cast Omen. Each Omen cast reveals an extra random letter this round for every 13 HP paid to the book
+- **Necronomicon** is a rare item: click it to pay 13% of your max HP and cast Omen. Each Omen cast learns an extra random letter this round for every 13 HP paid to the book
 - **Growth Spurt** gives +3 max HP when you solve in 4 guesses or fewer
 - **Growth Chart** is an 8g item: every 3 max HP gained grants +1 Time Freeze
 - **Midas Touch** has a 30% chance to double every gold gain
@@ -105,11 +105,11 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - Shops can show up to 2 copies of the same entry; sell rows are hoverable
 - Solve gold is a random 4-8 per solve, independent of guess count
 - **The Endless Table** fires every on-eat effect 7 times or pays 7 gold
-- **Tally Lens** is a 12g common-rarity unique item with an uncommon shop banner and a 3x appearance weight while a vision curse is active; it is no longer guaranteed in a shop and shows correct/misplaced counts. **Tally** is never offered while you already own one
+- **Counter-Intelligence** is a 12g common-rarity unique item with an uncommon shop banner and a 3x appearance weight while a vision curse is active; it is no longer guaranteed in a shop and shows correct/misplaced counts. **Tally** is never offered while you already own one
 - **Encore** is unique and appears three times as often as an average common item; **Poppy Seeds** is a 6g common-rarity food that shows an uncommon shop banner
 - **Without U** is a 3g common-rarity unique food that permanently purges U and shows an uncommon shop banner; **Purge the D** is also common-rarity with an uncommon shop banner
 - **Reveal the D** is an 18g rare food; **Pay Respects to F** is an 8g common-rarity food with an uncommon banner that permanently purges F
-- **A-Steak** is a 13g rare food that reveals whether A is in the answer every round; all permanent letter-reveal foods cost 2g more
+- **A-Steak** is a 13g rare food that learns whether A is in the answer every round; all permanent letter-learn foods cost 2g more
 - **Black Market Ledger** is an 8g item: every shop purchase or event arrival has a 40% chance to add a random spell
 - **The Spellbroker** event trades your spells for permanent value: Omen or Phone a Friend becomes a random permanent letter, Heal becomes +10 max HP and a 10 HP heal, and Immunity or Restore becomes +5 armor
 - **The Spell Tithe** event trades one random spell for either permanent knowledge of a specific letter or a permanent purge of a specific letter; the trades are locked when you have no spells
@@ -125,7 +125,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Moon Cake** is a 25g rare unique food: autocast a free Omen at the start of every round
 - **Empty Orb** is a 7g item that autocasts a free Omen when a round starts with no spells; **Empty Phone** is the 9g Phone a Friend version that does the same
 - **Enoki** is a 4g food: +3 max HP and one autoguess next round
-- **Corn** is a 3g food: +2 max HP and reveals C, O, R and N for the next round only
+- **Corn** is a 3g food: +2 max HP and learns whether C, O, R and N are in the word for the next round only
 - **Iron Ration** is a 12g rare food: +2 max armor. **One Bo Hue** is a 4g uncommon food; **Plating** is uncommon; **Taco Pizza Party** is rare
 - **Clean Slate** gives +1 max HP or +1 max armor at random when its condition triggers, once per round
 - **Double Dip** is Kase's new name; it keeps the +1 max armor and queued-answer effect
@@ -149,10 +149,11 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - Purge is an event (The Redaction) and foods (Poppy Seeds, rare Inkcap, Purge the D, Pay Respects to F); its rest option triggers an eat and a 10% random curse removal
 - One exact-state autosave slot. Defeat clears it. Victory clears it and updates meta stats.
 - A **STATS** page tracks run history (last 50 runs), win rate, best level, average solve time, favorite items and curses, play time, gold and damage totals
-- The top bar shows gold and area; a persistent level badge at the top of the battle rail shows the current floor and run progress in every phase
+- The top bar shows gold and area; a persistent floor ladder at the top of the battle rail shows the current floor, one cleared floor below it, and the next three floors above, in every phase. Hover or focus a rung to see what waits there
 - Clock-gated items such as **Deadline** never appear in shops or rewards until **The Clock** curse exists
-- Compact battle rail on the left: a persistent level badge, round timer with a hover tooltip for the time limit, a wrong-guess damage chip, a side-view mini arena with your character facing the act's monster (or boss), player HP and armor
-- Damage numbers slam into the centre of the screen as `N damage`, with a block message when armor or immunity eats the hit
+- Compact battle rail on the left: a persistent floor ladder, round timer with a hover tooltip for the time limit, an incoming-damage chip with the full damage formula, a side-view mini arena with your character facing the act's monster (or boss), player HP and armor
+- Damage numbers slam into the centre of the screen as `N damage`, with a block message when armor or immunity eats the hit; the first hit of a run opens a one-time damage tutorial with a persistent **Don't remind me again** option
+- Free guesses show a **FREE GUESS!** pop-up naming the source, such as **First player guess** or **Time Freeze**
 - Spells and the blacklist sit on the right; the item list sits under the battle rail on desktop and at the bottom of the right column on mobile
 - Pause (Space or Esc), independent music/SFX mutes, synthesized SFX, keyboard and on-screen keyboard, colorblind symbols, reduced-motion-friendly CSS
 - Non-English keyboard layouts fall back to physical QWERTY key positions and show a one-time notice
@@ -225,7 +226,7 @@ The Soldier and Orc sprites are from **Tiny RPG Character Asset Pack 01** by [Ze
 | Starting HP | 15 for The Soldier; preset characters override this |
 | Starting armor | 5 points for The Soldier; preset characters override this |
 | Starting item slots | 4 (only equipped gear counts; relics use one slot each) |
-| Free guesses per round | 1, plus every guess made inside a timed shield |
+| Free guesses per round | 1; timed immunity blocks damage in its window, but the first guess still spends the free guess |
 | Starting gold | 12 |
 | Starting spells | 1 random spell |
 | Blacklist | disabled until The List curse; unlimited once active |

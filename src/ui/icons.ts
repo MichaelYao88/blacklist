@@ -90,7 +90,7 @@ const ITEM_ICONS: Record<string, string> = {
   'empty-phone': '📞',
   'bulk-order': '🛒',
   'solo-note': '🎵',
-  'tally-lens': '🧮',
+  'tally-lens': '🛎️',
   'meal-timer': '🍽️',
   'plate-timer': '🛡️',
   'off-road': '🚙',

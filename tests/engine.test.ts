@@ -299,8 +299,8 @@ describe('curse drafting', () => {
   });
 });
 
-describe('vision curses and Tally Lens', () => {
-  it('hides the first tile with Censor and shows counts with Tally Lens', () => {
+describe('vision curses and Counter-Intelligence', () => {
+  it('hides the first tile with Censor and shows counts with Counter-Intelligence', () => {
     const { state } = start();
     setAnswer(state, 'crane');
     state.curses.push({ id: 'censor', stacks: 1 });
@@ -2214,7 +2214,7 @@ describe('latest balance pass', () => {
     expect(view.revealed).toEqual([{ letter: 'q', status: 'present' }]);
   });
 
-  it('Tally Lens is weighted but no longer guaranteed after a vision curse', () => {
+  it('Counter-Intelligence is weighted but no longer guaranteed after a vision curse', () => {
     expect(ITEM_BY_ID.get('tally-lens')?.rarity).toBe('common');
     expect(ITEM_BY_ID.get('tally-lens')?.shopRarity).toBe('uncommon');
     expect(ITEM_BY_ID.get('tally-lens')?.appearanceWeight).toBe(3);
@@ -3016,6 +3016,20 @@ describe('latest balance pass', () => {
     expect(unshielded.state.hp).toBe(12);
   });
 
+  it('Head Start keeps its opening guess safe but still spends the free guess', () => {
+    const { state } = start('head-start-free-spend');
+    state.items.push({ instance: 'i-hs', id: 'head-start', data: {}, equipped: true });
+    const round = nextRound(state);
+    setAnswer(round.state, 'crane');
+    round.state.round!.freeLeft = 1;
+    round.state.round!.elapsedMs = 2_000;
+    const beforeHp = round.state.hp;
+    const guessed = act(round.state, { type: 'guess', word: 'slate' });
+    expect(guessed.state.round?.guesses[0].free).toBe(true);
+    expect(guessed.state.round?.freeLeft).toBe(0);
+    expect(guessed.state.hp).toBe(beforeHp);
+  });
+
   it('Ward Engine grants max armor', () => {
     const { state } = start('ward-engine');
     state.items.push({ instance: 'i-ward', id: 'ward-engine', data: { used: 0 }, equipped: true });
@@ -3204,6 +3218,18 @@ describe('latest balance pass', () => {
       (event) => event.type === 'spellCast' && event.auto,
     )).toBe(true);
     expect(current.items.find((item) => item.id === 'scattershot')?.data.used).toBe(1);
+  });
+
+  it('Scattershot ignores autoguesses', () => {
+    const { state } = start('scattershot-friend');
+    state.items.push({ instance: 'i-scatter', id: 'scattershot', data: { used: 0 }, equipped: true });
+    state.items.push({ instance: 'i-echo', id: 'dark-echo', data: { used: 0 }, equipped: true });
+    setAnswer(state, 'clots');
+    state.round!.freeLeft = 0;
+    const guessed = act(state, { type: 'guess', word: 'slate' });
+    expect(guessed.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
+    expect(guessed.events.some((event) => event.type === 'spellCast')).toBe(false);
+    expect(guessed.state.items.find((item) => item.id === 'scattershot')?.data.used).toBe(0);
   });
 
   it('Yellow1 autoguesses once per round on one yellow and no green', () => {
@@ -3515,7 +3541,7 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('counterweight')?.description).toContain('Completely blocked hit');
     expect(ITEM_BY_ID.get('encore')?.description).toContain('last solved answer');
     expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('pay 13% of your max HP');
-    expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('reveals an extra random letter this round');
+    expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('learns an extra random letter this round');
     expect(ITEM_BY_ID.get('necronomicon')?.description).not.toContain('permanently');
     expect(ITEM_BY_ID.get('necronomicon')?.description).not.toContain('round up');
     expect(FOOD_BY_ID.get('hearty-meal')?.description).toBe('+5 max HP, heal 5. No slot.');
@@ -3540,7 +3566,7 @@ describe('spells and foods', () => {
 
   it('uses the new Time Freeze text', () => {
     expect(SPELL_BY_ID.get('time-freeze')?.description)
-      .toBe('Get a free and unobscured guess. Doesn\'t count towards the number of guesses (for certain items). Freeze the clock until your next guess.');
+      .toBe('Get a free guess that ignores vision curses. It doesn\'t count towards the number of guesses for certain items. Freeze the clock until your next guess.');
   });
 
   it('prices Pen Club at 15 gold for a 1-5 gold payout', () => {
@@ -4654,8 +4680,9 @@ describe('item tuning batch', () => {
     expect(omens).toHaveLength(2);
   });
 
-  it('Placebo heals exactly 1 HP on a player guess', () => {
+  it('Placebo heals exactly 1 HP on any guess, including an autoguess', () => {
     expect(ITEM_BY_ID.get('placebo')?.price).toBe(4);
+    expect(ITEM_BY_ID.get('placebo')?.description).toContain('autoguess');
     const { state } = start('placebo-one');
     state.items.push({ instance: 'i-placebo', id: 'placebo', data: {}, equipped: true });
     state.hp = 5;
@@ -4666,6 +4693,14 @@ describe('item tuning batch', () => {
     expect(guessed.events.filter(
       (event) => event.type === 'healed' && event.source.kind === 'item',
     )).toHaveLength(1);
+
+    const auto = start('placebo-auto');
+    auto.state.items.push({ instance: 'i-placebo-auto', id: 'placebo', data: {}, equipped: true });
+    auto.state.permanentRoundStartWord = 'slate';
+    auto.state.hp = 5;
+    const next = nextRound(auto.state);
+    expect(next.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
+    expect(next.state.hp).toBe(6);
   });
 
   it('Loyalty Card pays a slot after 10 purchases', () => {

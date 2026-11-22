@@ -2845,8 +2845,8 @@ button {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 9px 11px 11px;
+  gap: 8px;
+  padding: 9px 11px 10px;
   overflow: hidden;
   border: 1px solid rgba(231, 184, 90, 0.3);
   border-radius: 9px;
@@ -2886,18 +2886,140 @@ button {
   letter-spacing: 0.06em;
 }
 
-.rail-level-bar {
-  height: 2px;
-  overflow: hidden;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.06);
+.rail-map {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.rail-level-bar i {
-  display: block;
-  height: 100%;
-  background: linear-gradient(90deg, var(--gold), var(--gold-soft));
-  transition: width 320ms linear;
+/* Connector line behind the pips, fading out at both ends. */
+.rail-map::before {
+  content: '';
+  position: absolute;
+  top: 7px;
+  bottom: 7px;
+  left: 6px;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    rgba(231, 184, 90, 0.04),
+    rgba(231, 184, 90, 0.28) 16%,
+    rgba(231, 184, 90, 0.28) 84%,
+    rgba(231, 184, 90, 0.04)
+  );
+  pointer-events: none;
+}
+
+.rail-node {
+  position: relative;
+  display: grid;
+  grid-template-columns: 13px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 14px;
+  padding-right: 4px;
+  border-radius: 4px;
+  outline: none;
+}
+
+.rail-node:not(.is-empty) {
+  cursor: help;
+}
+
+.rail-node:focus-visible {
+  box-shadow: 0 0 0 1px rgba(231, 184, 90, 0.55);
+}
+
+.rail-node.is-empty {
+  min-height: 14px;
+}
+
+.rail-node-pip {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 13px;
+  height: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.17);
+  border-radius: 50%;
+  background: var(--bg-2);
+  color: var(--muted);
+  font-size: 0.46rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.rail-node-floor {
+  color: var(--muted);
+  font-size: 0.55rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+  line-height: 1;
+}
+
+.rail-node.kind-round .rail-node-pip { color: #cbbfa8; }
+.rail-node.kind-shop .rail-node-pip { color: var(--gold); }
+.rail-node.kind-curse .rail-node-pip { color: var(--red); }
+.rail-node.kind-happening .rail-node-pip { color: var(--violet); }
+.rail-node.kind-boss .rail-node-pip {
+  border-color: rgba(223, 97, 90, 0.55);
+  color: var(--red);
+}
+.rail-node.kind-start .rail-node-pip { color: var(--muted); }
+
+.rail-node.future .rail-node-pip {
+  border-style: dashed;
+  opacity: 0.68;
+}
+
+.rail-node.future .rail-node-floor {
+  opacity: 0.72;
+}
+
+.rail-node.past .rail-node-pip {
+  opacity: 0.58;
+}
+
+.rail-node.past .rail-node-floor {
+  color: var(--faint);
+}
+
+.rail-node.current {
+  background: linear-gradient(90deg, rgba(231, 184, 90, 0.16), rgba(231, 184, 90, 0.02));
+}
+
+.rail-node.current .rail-node-pip {
+  border-color: var(--gold);
+  border-style: solid;
+  background: radial-gradient(circle at 50% 35%, rgba(231, 184, 90, 0.34), var(--bg-2) 72%);
+  box-shadow: 0 0 0 3px rgba(231, 184, 90, 0.1);
+  color: var(--gold-soft);
+  opacity: 1;
+}
+
+.rail-node.current .rail-node-floor {
+  color: var(--gold-soft);
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+
+/* Small notch for floors that also hold an event. */
+.rail-node.has-event .rail-node-pip::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--violet);
+  box-shadow: 0 0 0 2px var(--bg-2);
 }
 
 .battle-rail .timer {
@@ -2930,10 +3052,12 @@ button {
 }
 
 .guess-damage span {
+  max-width: 62%;
   color: var(--faint);
-  font-size: 0.48rem;
+  font-size: 0.46rem;
   font-weight: 800;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
+  line-height: 1.15;
 }
 
 .guess-damage b {
@@ -3373,6 +3497,117 @@ button {
   .damage-warning {
     animation: none;
   }
+}
+
+/* free guess callout */
+#free-guess-root {
+  position: fixed;
+  inset: 0;
+  z-index: 124;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 16vh;
+  pointer-events: none;
+  text-align: center;
+}
+
+.free-guess-pop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15em;
+  font-family: var(--serif);
+  text-transform: uppercase;
+  animation: free-guess-pop 2.4s cubic-bezier(0.2, 0.9, 0.25, 1) both;
+}
+
+.free-guess-kicker,
+.free-guess-source {
+  paint-order: stroke fill;
+  -webkit-text-stroke: 3px #050409;
+  text-shadow:
+    0 0 34px rgba(143, 216, 230, 0.7),
+    0 0 70px rgba(139, 107, 217, 0.45),
+    0 6px 20px #000;
+}
+
+.free-guess-kicker {
+  color: #8fd8e6;
+  font-size: clamp(2rem, 6vw, 4rem);
+  font-weight: 700;
+  letter-spacing: 0.07em;
+}
+
+.free-guess-source {
+  color: var(--gold);
+  font-family: var(--sans);
+  font-size: clamp(0.65rem, 1.7vw, 0.95rem);
+  font-weight: 800;
+  letter-spacing: 0.2em;
+}
+
+@keyframes free-guess-pop {
+  0% { opacity: 0; transform: translateY(10px) scale(0.9); }
+  14% { opacity: 1; transform: translateY(0) scale(1.04); }
+  26% { transform: scale(0.99); }
+  34% { transform: scale(1); }
+  78% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: translateY(-6px) scale(1.02); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .free-guess-pop {
+    animation: none;
+  }
+}
+
+/* first-damage tutorial */
+.damage-tutorial .modal-card {
+  max-width: 460px;
+}
+
+.damage-tutorial .muted {
+  margin: 0 0 10px;
+}
+
+.tutorial-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 16px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.tutorial-check:hover {
+  color: var(--ink);
+}
+
+.tutorial-box {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--line-2);
+  border-radius: 5px;
+  background: rgba(10, 8, 15, 0.7);
+  color: var(--gold);
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.tutorial-check.checked .tutorial-box {
+  border-color: var(--gold);
+  background: rgba(231, 184, 90, 0.16);
 }
 
 /* item proc feed */

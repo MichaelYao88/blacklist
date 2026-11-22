@@ -716,7 +716,7 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'omen',
         label: 'Trade Omen',
-        description: 'Lose Omen. Permanently reveal a random letter.',
+        description: 'Lose Omen. Permanently learn a random letter.',
         requiresSpell: 'omen',
         outcomes: [{
           chancePct: 100,
@@ -730,7 +730,7 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'phone-friend',
         label: 'Trade Phone a Friend',
-        description: 'Lose Phone a Friend. Permanently reveal a random letter.',
+        description: 'Lose Phone a Friend. Permanently learn a random letter.',
         requiresSpell: 'phone-friend',
         outcomes: [{
           chancePct: 100,

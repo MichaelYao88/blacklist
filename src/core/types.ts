@@ -871,6 +871,12 @@ export type GameEvent =
       index: number;
       guess: PresentedGuess;
       free: boolean;
+      /** Set when an item or spell made the guess free with a make-guess-free effect. */
+      freeSource?: Source;
+      /** True when this was the round's first player guess. */
+      firstPlayerGuess?: boolean;
+      /** True when Time Freeze made the guess free and unobscured. */
+      unobscured?: boolean;
       word: string;
       solved: boolean;
     }

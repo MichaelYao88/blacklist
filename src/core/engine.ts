@@ -2360,7 +2360,9 @@ export function createCore(content: Content): Core {
 
     const shieldedFree = by === 'player' && round.elapsedMs < round.immuneUntilMs;
     const naturalFree = by === 'friend' || round.freeLeft > 0;
-    const consumesFree = by === 'player' && naturalFree && !shieldedFree;
+    // Head Start and other timed immunity still protect the guess, but the
+    // round's normal free guess is spent by it rather than being preserved.
+    const consumesFree = by === 'player' && naturalFree;
     const unobscured = consumesFree && round.nextFreeUnobscured;
     if (consumesFree) {
       round.freeLeft--;
@@ -2428,6 +2430,9 @@ export function createCore(content: Content): Core {
       index: guess.index,
       guess: presented,
       free: guess.free,
+      freeSource: madeFree ? freeSource : undefined,
+      firstPlayerGuess: by === 'player' && round.playerGuesses === 1,
+      unobscured,
       word,
       solved,
     });

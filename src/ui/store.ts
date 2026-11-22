@@ -38,6 +38,8 @@ export interface Meta {
   purchases: Record<string, number>;
   /** Foods eaten by definition id, across all runs. */
   foodCounts: Record<string, number>;
+  /** The player asked not to see the first-damage tutorial again. */
+  damageTutorialDismissed: boolean;
   history: RunRecord[];
   itemCounts: Record<string, number>;
   curseCounts: Record<string, number>;
@@ -60,6 +62,7 @@ const DEFAULT_META: Meta = {
   victoriousCharacters: [],
   purchases: {},
   foodCounts: {},
+  damageTutorialDismissed: false,
   history: [],
   itemCounts: {},
   curseCounts: {},
@@ -159,6 +162,7 @@ export function readMeta(): Meta {
         }
         return counts;
       })(),
+      damageTutorialDismissed: Boolean(parsed.damageTutorialDismissed),
       history: Array.isArray(parsed.history)
         ? parsed.history.map((run) => ({
             ...run,
@@ -275,6 +279,13 @@ export function recordPurchase(defId: string): number {
   meta.purchases[defId] = next;
   writeMeta(meta);
   return next;
+}
+
+/** Permanently hides the first-damage tutorial. */
+export function dismissDamageTutorial(): void {
+  const meta = readMeta();
+  meta.damageTutorialDismissed = true;
+  writeMeta(meta);
 }
 
 /** Records a food eaten and returns its new lifetime count. */

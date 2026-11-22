@@ -18,7 +18,7 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'only-u',
     name: 'U-nagi',
-    description: 'Every round: U is revealed. No slot.',
+    description: 'Every round: Learn whether the answer has U. No slot.',
     price: 14,
     rarity: 'rare',
     unique: true,
@@ -134,7 +134,7 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'knafeh',
     name: 'Knafeh',
-    description: 'Every round: K is revealed. No slot.',
+    description: 'Every round: Learn whether the answer has K. No slot.',
     price: 11,
     rarity: 'rare',
     unique: true,
@@ -143,7 +143,7 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'kase',
     name: 'Double Dip',
-    description: '+1 max armor. Next round: the last solved answer is guessed for free. No slot.',
+    description: '+1 max armor. Next round: autoguess the last solved answer. No slot.',
     price: 6,
     unique: true,
     effects: [
@@ -172,7 +172,7 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'corn',
     name: 'Corn',
-    description: '+2 max HP. Next round: C, O, R and N are revealed. No slot.',
+    description: '+2 max HP. Next round: Learn whether the answer has C, O, R and N. No slot.',
     price: 3,
     effects: [
       { type: 'maxHp', delta: 2 },
@@ -191,7 +191,7 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'old-mcdonald',
     name: "Old McDonald's",
-    description: 'Next round: EIEIO is guessed for free. No slot.',
+    description: 'Next round: autoguess EIEIO. No slot.',
     price: 4,
     unique: true,
     effects: [{ type: 'queueNextRoundWord', word: 'eieio' }],
@@ -522,7 +522,7 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'a-steak',
     name: 'A-Steak',
-    description: 'Every round: reveal whether the answer has A. No slot.',
+    description: 'Every round: Learn whether the answer has A. No slot.',
     price: 13,
     rarity: 'rare',
     unique: true,
@@ -531,7 +531,7 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'b-file',
     name: 'B-Fsteak',
-    description: 'Every round: reveal whether the answer has B. No slot.',
+    description: 'Every round: Learn whether the answer has B. No slot.',
     price: 13,
     rarity: 'rare',
     unique: true,
@@ -540,7 +540,7 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'x-ray',
     name: 'X-Ray Cake',
-    description: 'Every round: reveal whether the answer has X. No slot.',
+    description: 'Every round: Learn whether the answer has X. No slot.',
     price: 8,
     rarity: 'rare',
     unique: true,
@@ -549,7 +549,7 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'q-tip',
     name: 'Q-Tip',
-    description: 'Every round: reveal whether the answer has Q. No slot.',
+    description: 'Every round: Learn whether the answer has Q. No slot.',
     price: 6,
     rarity: 'rare',
     unique: true,
@@ -558,7 +558,7 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'gg-gum',
     name: 'GG Gum',
-    description: 'Every round: G is revealed. No slot.',
+    description: 'Every round: Learn whether the answer has G. No slot.',
     price: 16,
     rarity: 'rare',
     unique: true,
@@ -567,7 +567,7 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'i-spy',
     name: 'I-Cee',
-    description: 'Every round: I is revealed. No slot.',
+    description: 'Every round: Learn whether the answer has I. No slot.',
     price: 16,
     rarity: 'rare',
     unique: true,
@@ -576,7 +576,7 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'reveal-the-d',
     name: 'Reveal the D',
-    description: 'Every round: D is revealed. No slot.',
+    description: 'Every round: Learn whether the answer has D. No slot.',
     price: 18,
     rarity: 'rare',
     unique: true,
@@ -585,7 +585,7 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'o-toro',
     name: 'O-Toro',
-    description: 'Every round: reveal whether the answer has O. No slot.',
+    description: 'Every round: Learn whether the answer has O. No slot.',
     price: 18,
     rarity: 'rare',
     unique: true,
@@ -594,7 +594,7 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'yin-yang',
     name: 'NY Cheesecake',
-    description: 'Every round: Y and N are revealed. No slot.',
+    description: 'Every round: Learn whether the answer has Y and N. No slot.',
     price: 18,
     rarity: 'rare',
     unique: true,
@@ -606,7 +606,7 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'e-fu-noodles',
     name: 'E-Fu Noodles',
-    description: 'Every round: E is revealed. No slot.',
+    description: 'Every round: Learn whether the answer has E. No slot.',
     price: 21,
     rarity: 'rare',
     unique: true,
@@ -615,7 +615,7 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 't-bone',
     name: 'T-Bone',
-    description: 'Every round: T is revealed. No slot.',
+    description: 'Every round: Learn whether the answer has T. No slot.',
     price: 14,
     rarity: 'rare',
     unique: true,
@@ -624,7 +624,7 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'j-ello',
     name: 'J-Ello',
-    description: 'Every round: J is revealed. No slot.',
+    description: 'Every round: Learn whether the answer has J. No slot.',
     price: 8,
     rarity: 'rare',
     unique: true,
@@ -633,7 +633,7 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'c-urchin',
     name: 'C-Urchin',
-    description: 'Every round: C is revealed. No slot.',
+    description: 'Every round: Learn whether the answer has C. No slot.',
     price: 14,
     rarity: 'rare',
     unique: true,
@@ -642,7 +642,7 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'f-unnel-cake',
     name: 'F-Unnel Cake',
-    description: 'Every round: F is revealed. No slot.',
+    description: 'Every round: Learn whether the answer has F. No slot.',
     price: 13,
     rarity: 'rare',
     unique: true,
@@ -651,7 +651,7 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'h-erring',
     name: 'H-Erring',
-    description: 'Every round: H is revealed. No slot.',
+    description: 'Every round: Learn whether the answer has H. No slot.',
     price: 13,
     rarity: 'rare',
     unique: true,
@@ -660,7 +660,7 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'p-stachio',
     name: 'P-Stachio',
-    description: 'Every round: P is revealed. No slot.',
+    description: 'Every round: Learn whether the answer has P. No slot.',
     price: 13,
     rarity: 'rare',
     unique: true,
@@ -669,7 +669,7 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'l-bacore-tuna',
     name: 'L-Bacore Tuna',
-    description: 'Every round: L is revealed. No slot.',
+    description: 'Every round: Learn whether the answer has L. No slot.',
     price: 16,
     rarity: 'rare',
     unique: true,
@@ -678,7 +678,7 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'w-asabi',
     name: 'W-Asabi',
-    description: 'Every round: W is revealed. No slot.',
+    description: 'Every round: Learn whether the answer has W. No slot.',
     price: 10,
     rarity: 'rare',
     unique: true,

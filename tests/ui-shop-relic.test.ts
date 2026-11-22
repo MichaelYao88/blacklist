@@ -77,7 +77,7 @@ describe('shop relic labelling', () => {
   });
 
   it('uses shop banner overrides for common-rarity specials', () => {
-    for (const name of ['Poppy Seeds', 'Tally Lens', 'Without U', 'Purge the D', 'Pay Respects to F']) {
+    for (const name of ['Poppy Seeds', 'Counter-Intelligence', 'Without U', 'Purge the D', 'Pay Respects to F']) {
       const card = [...root.querySelectorAll<HTMLElement>('.offer-card')]
         .find((entry) => entry.textContent?.includes(name));
       expect(card?.classList.contains('uncommon')).toBe(true);
