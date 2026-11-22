@@ -47,7 +47,7 @@ export const CHARACTERS: CharacterDef[] = [
     armor: 4,
     startingGold: 17,
     items: [],
-    curses: ['toll'],
+    curses: ['without-d'],
     sprite: 'kitsune',
     startingPurges: 4,
     unlockHint: 'Eat 2 Inkcap across any runs.',

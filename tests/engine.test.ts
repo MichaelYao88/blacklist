@@ -169,7 +169,7 @@ describe('cursed run setup', () => {
     expect(purgamist.phase).toBe('purge');
     expect(purgamist.level).toBe(0);
     expect(purgamist.round).toBeUndefined();
-    expect(purgamist.curses.some((curse) => curse.id === 'toll')).toBe(true);
+    expect(purgamist.curses.some((curse) => curse.id === 'without-d')).toBe(true);
 
     const gourmand = game.newRun({ seed: 'preset-gourmand', character: 'gourmand' }).state;
     expect(gourmand.character).toBe('gourmand');
