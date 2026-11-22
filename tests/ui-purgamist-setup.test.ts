@@ -19,10 +19,11 @@ describe('Purgamist setup', () => {
   it('shows the purge modal before the round countdown starts', () => {
     expect(root.querySelector('.modal')).not.toBeNull();
     expect(root.querySelector('.countdown-overlay')).toBeNull();
-    expect(root.textContent).toContain('3 purges pending');
+    expect(root.textContent).toContain('4 purges pending');
+    expect(root.querySelector('.rail-level-value')?.textContent).toBe('0/51');
   });
 
-  it('starts the countdown after all three letters are purged', () => {
+  it('starts the countdown after all four letters are purged', () => {
     const letters = 'abcdefghijklmnopqrstuvwxyz'.split('');
     for (const letter of letters) {
       if (!root.querySelector('.modal')) break;

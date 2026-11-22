@@ -3884,6 +3884,9 @@ export function createCore(content: Content): Core {
   function view(state: RunState): RunView {
     let phase: PhaseView;
     switch (state.phase) {
+      case 'purge':
+        phase = { kind: 'purge' };
+        break;
       case 'round':
         phase = {
           kind: 'round',
@@ -4068,7 +4071,12 @@ export function createCore(content: Content): Core {
           emit(rt, { type: 'message', text: 'You have nothing to purge.' });
           break;
         }
-        if (purgeLetterNow(rt, cmd.letter)) draft.pendingPurge--;
+        if (purgeLetterNow(rt, cmd.letter)) {
+          draft.pendingPurge--;
+          if (draft.phase === 'purge' && draft.pendingPurge <= 0) {
+            beginRunAfterSetup(rt);
+          }
+        }
         break;
       case 'tick':
         tick(rt, cmd.dtMs);
@@ -4137,6 +4145,13 @@ export function createCore(content: Content): Core {
     // Floor 51: three final curse drafts, then the Floor Boss fight.
     nodes.push({ kind: 'boss', level: MAX_LEVEL + 1, boss: 'floor-boss' });
     state.nodes = nodes;
+  }
+
+  /** Begin the run proper after any pre-run setup, such as starting purges. */
+  function beginRunAfterSetup(rt: Runtime): void {
+    const state = rt.state;
+    if (state.pendingStartingCurses > 0) openCurseDraft(rt, true);
+    else enterNode(rt);
   }
 
   function newRun(opts: { seed: string; ascension?: number; character?: CharacterId }): StepResult {
@@ -4228,8 +4243,14 @@ export function createCore(content: Content): Core {
     if ((character.startingPurges ?? 0) > 0) {
       state.pendingPurge += character.startingPurges ?? 0;
     }
-    if (startingCurses > 0) openCurseDraft(rt, true);
-    else enterNode(rt);
+    if (state.pendingPurge > 0) {
+      // Level 0: purge before the first word is drawn so no live answer blocks
+      // a choice. The run begins once every starting purge is spent.
+      state.phase = 'purge';
+      state.level = 0;
+    } else {
+      beginRunAfterSetup(rt);
+    }
     return { state, events: rt.events };
   }
 

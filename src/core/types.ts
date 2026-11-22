@@ -40,7 +40,7 @@ export type Source =
   | { kind: 'inn' };
 
 export type NodeKind = 'round' | 'boss' | 'shop' | 'happening' | 'curse';
-export type PhaseKind = 'round' | 'summary' | 'reward' | 'shop' | 'shopChoice' | 'happening' | 'bossIntro' | 'curse' | 'over';
+export type PhaseKind = 'purge' | 'round' | 'summary' | 'reward' | 'shop' | 'shopChoice' | 'happening' | 'bossIntro' | 'curse' | 'over';
 export type CurseTag = 'vision' | 'damage' | 'clock' | 'list' | 'shop' | 'body' | 'economy' | 'rule';
 export type ItemKind = 'gear' | 'consumable';
 export type OfferKind = 'item' | 'spell' | 'eat';
@@ -746,6 +746,7 @@ export interface BoardView {
 }
 
 export type PhaseView =
+  | { kind: 'purge' }
   | { kind: 'round'; boss?: BossId; board: BoardView }
   | {
       kind: 'summary';

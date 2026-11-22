@@ -1803,7 +1803,9 @@ function phaseLabel(view: RunView): string {
                 ? 'SHOP'
                 : phase.kind === 'happening'
                   ? 'INTERRUPTION'
-                  : 'THE LIST';
+                  : phase.kind === 'purge'
+                    ? 'SETUP'
+                    : 'THE LIST';
 }
 
 function damageOverlayHtml(): string {
@@ -2623,16 +2625,18 @@ function renderOver(phase: Extract<PhaseView, { kind: 'over' }>): string {
 function renderPurgeModal(view: RunView): string {
   if (view.pendingPurge <= 0) return '';
   const letters = 'abcdefghijklmnopqrstuvwxyz'.split('');
+  const setup = view.phase.kind === 'purge';
+  const purgeLabel = `${view.pendingPurge} purge${view.pendingPurge === 1 ? '' : 's'} pending`;
   return `
   <div class="modal">
     <div class="modal-card">
-      <p class="panel-kicker">LETTER PURGE</p>
-      <h2>Erase a letter</h2>
-      <p class="muted">The letter will never appear in a future answer, and you can never guess it again. Choose carefully. If a purge would leave no legal words, a random purged letter is restored.</p>
+      <p class="panel-kicker">${setup ? 'BEFORE THE FIRST FLOOR' : 'LETTER PURGE'}</p>
+      <h2>${setup ? `Erase ${view.pendingPurge} letter${view.pendingPurge === 1 ? '' : 's'}` : 'Erase a letter'}</h2>
+      <p class="muted">${setup ? 'No word has been drawn yet, so every letter is fair game. ' : ''}The letter will never appear in a future answer, and you can never guess it again. Choose carefully. If a purge would leave no legal words, a random purged letter is restored.</p>
       <div class="purge-grid">
         ${letters.map((letter) => `<button class="purge-key ${view.purged.includes(letter) ? 'used' : ''}" data-action="purge" data-letter="${letter}" ${view.purged.includes(letter) ? 'disabled' : ''}>${letter.toUpperCase()}</button>`).join('')}
       </div>
-      <p class="hint">${view.pendingPurge} purge${view.pendingPurge === 1 ? '' : 's'} pending. The clock is paused while this is open.</p>
+      <p class="hint">${purgeLabel}. ${setup ? 'The run begins after the last purge.' : 'The clock is paused while this is open.'}</p>
     </div>
   </div>`;
 }
@@ -2668,6 +2672,12 @@ function renderBossIntro(view: RunView, phase: Extract<PhaseView, { kind: 'bossI
 function phasePanel(view: RunView): string {
   const phase = view.phase;
   switch (phase.kind) {
+    case 'purge':
+      return `<section class="phase-card purge-setup">
+        <p class="panel-kicker">BEFORE THE FIRST FLOOR</p>
+        <h2>Erase what you can</h2>
+        <p class="muted">No word has been drawn yet. Choose every letter to purge before the run begins.</p>
+      </section>`;
     case 'round':
       return `<section class="board-panel">${renderBoard(phase.board)}</section>`;
     case 'summary':
