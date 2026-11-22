@@ -20,6 +20,15 @@ import {
   SPELL_BY_ID,
 } from '../content';
 import { LocalStore, hasSave, readMeta, recordFood, recordPurchase, recordRun, recordStart, unlockCharacter } from './store';
+import {
+  trackBossReached,
+  trackEventChoice,
+  trackGameLoaded,
+  trackRunAbandoned,
+  trackRunEnded,
+  trackRunResumed,
+  trackRunStarted,
+} from './analytics';
 import { escapeHtml, formatTime, reasonText, roman } from './format';
 import { glossaryText } from './glossary';
 import {
@@ -150,6 +159,7 @@ function spriteStyle(sprite: CharacterSprite): string {
 
 const app = document.getElementById('app');
 if (!app) throw new Error('Missing #app root');
+document.documentElement.classList.add('ph-no-capture');
 
 // Damage feedback lives outside the main render tree so unrelated re-renders
 // (timer ticks, shake cleanup) cannot restart its animation mid-flight.
@@ -714,7 +724,17 @@ function processEvents(events: GameEvent[]): void {
     if (event.type === 'message') notify(event.text, 'info');
     if (event.type === 'spellCast') showSpellPopup(event.spell.id, Boolean(event.auto));
     if (event.type === 'itemProc') showProc(event.item, event.text);
-    if (event.type === 'happeningResolved') notify(event.text, event.success ? 'good' : 'bad');
+    if (event.type === 'happeningResolved') {
+      notify(event.text, event.success ? 'good' : 'bad');
+      const happeningView = host.view();
+      trackEventChoice({
+        runNumber: readMeta().runs,
+        happening: event.happening,
+        option: event.option,
+        success: event.success,
+        level: happeningView?.level ?? 0,
+      });
+    }
     if (event.type === 'damageTaken') {
       if (event.hp <= 0) playerDied = true;
       if (event.dealt > 0 || event.armorUsed > 0) {
@@ -779,6 +799,16 @@ function processEvents(events: GameEvent[]): void {
       }
     }
     if (event.type === 'rewardChosen' || event.type === 'offerBought') sfx.play('buy');
+    if (event.type === 'bossIntro') {
+      const bossView = host.view();
+      trackBossReached({
+        runNumber: readMeta().runs,
+        boss: event.boss,
+        level: bossView?.level ?? 0,
+        character: bossView?.character ?? 'runner',
+        ascension: bossView?.ascension ?? 0,
+      });
+    }
     if (event.type === 'runEnded') {
       if (event.result === 'defeat') {
         playerDied = true;
@@ -810,6 +840,20 @@ function processEvents(events: GameEvent[]): void {
         event.result === 'victory' ? 'good' : 'bad',
       );
       sfx.play(event.result === 'victory' ? 'win' : 'death');
+      const endedBy = event.result === 'victory'
+        ? 'cleared'
+        : events.some((item) => item.type === 'timeExpired')
+          ? 'timeout'
+          : 'hp';
+      trackRunEnded({
+        runNumber: readMeta().runs,
+        result: event.result === 'victory' ? 'won' : 'lost',
+        endedBy,
+        level: view?.level ?? 0,
+        durationMs: event.stats.playMs,
+        character: finalState?.character ?? 'runner',
+        ascension: view?.ascension ?? 0,
+      });
     }
   }
 
@@ -849,6 +893,14 @@ function startNewRun(preferredCharacter?: string): void {
   if (hasSave() && !host.current?.over) {
     const ok = window.confirm('Start a new run? Your active run will be lost.');
     if (!ok) return;
+    const view = host.view();
+    trackRunAbandoned({
+      runNumber: readMeta().runs,
+      reason: 'replaced',
+      level: view?.level ?? 0,
+      character: view?.character ?? selectedCharacter,
+      ascension: view?.ascension ?? selectedAscension,
+    });
   }
   const seed = `bl-${Date.now().toString(36)}-${Math.floor(Math.random() * 1_000_000).toString(36)}`;
   const unlocked = readMeta().characters;
@@ -858,6 +910,11 @@ function startNewRun(preferredCharacter?: string): void {
   const events = host.start(seed, selectedAscension, character);
   music.beginRun();
   recordStart();
+  trackRunStarted({
+    runNumber: readMeta().runs,
+    character,
+    ascension: selectedAscension,
+  });
   screen = 'run';
   input = '';
   notice = null;
@@ -930,6 +987,12 @@ function resumeRun(): void {
   countdownUntil = 0;
   music.resume();
   lastTick = performance.now();
+  trackRunResumed({
+    runNumber: readMeta().runs,
+    character: resumedView?.character ?? 'runner',
+    ascension: resumedView?.ascension ?? 0,
+    level: resumedView?.level ?? 0,
+  });
   render();
 }
 
@@ -1081,6 +1144,14 @@ app.addEventListener('click', (event) => {
       break;
     case 'abandon': {
       if (!window.confirm('Abandon this run? The save will be wiped.')) return;
+      const view = host.view();
+      trackRunAbandoned({
+        runNumber: readMeta().runs,
+        reason: 'abandon',
+        level: view?.level ?? 0,
+        character: view?.character ?? 'runner',
+        ascension: view?.ascension ?? 0,
+      });
       host.discard();
       screen = 'title';
       input = '';
@@ -2786,3 +2857,4 @@ function syncFoodUnlocks(): void {
 
 syncFoodUnlocks();
 render();
+trackGameLoaded(hasSave(), readMeta().runs);

@@ -22,5 +22,8 @@
     "typescript": "^5.8.3",
     "vite": "^7.1.0",
     "vitest": "^5.1.0"
+  },
+  "dependencies": {
+    "posthog-js": "^1.453.2"
   }
 }

@@ -269,7 +269,54 @@ npm run build      # typecheck + production build
 npm run preview    # preview the production build
 ```
 
-The site deploys automatically from `main` through `.github/workflows/pages.yml`.
+The site deploys automatically from `main` through `.github/workflows/pages.yml`. The itch.io demo is published by `.github/workflows/itch.yml`.
+
+---
+
+## itch.io
+
+Pushes to `main` build the game and upload it to itch.io with [butler](https://itch.io/docs/butler/) on the `html5` channel. GitHub Pages keeps its own workflow. The configured project is [mikelyaps.itch.io/blacklist](https://mikelyaps.itch.io/blacklist).
+
+Vite's `base` is `./`, so script and stylesheet URLs are relative to the page. The same build loads on GitHub Pages (`/blacklist/`) and inside an itch.io iframe at whatever path itch serves.
+
+The workflow reads the target from repository variables `vars.ITCH_USER` and `vars.ITCH_GAME` and the API key from the `BUTLER_API_KEY` secret. It zips the files inside `dist/` (so `index.html` is the archive root, not `dist/index.html`) and pushes that zip to `ITCH_USER/ITCH_GAME:html5`.
+
+The job skips the upload and stays green until these are set under repository **Settings → Secrets and variables → Actions**:
+
+| Name | Where | Value |
+|---|---|---|
+| `BUTLER_API_KEY` | Secret | Key from `butler login`, or an itch.io API key whose source is `wharf` |
+| `ITCH_USER` | Variable | itch.io username (`mikelyaps`) |
+| `ITCH_GAME` | Variable | Project slug (`blacklist`) |
+
+Create the key with `butler login` ([login docs](https://itch.io/docs/butler/login.html)). On Linux the key is written to `~/.config/itch/butler_creds`. Paste that value into the `BUTLER_API_KEY` secret and do not commit it. The project kind is HTML, which is what the `html5` channel plays.
+
+## Analytics
+
+Production builds send anonymous [PostHog](https://posthog.com/) events from `src/ui/analytics.ts`. `npm test` and `npm run dev` do not send anything. Do Not Track (`1` or `yes`) opts the browser out. The client does not call `identify`, does not record sessions, and does not autocapture clicks or typed words.
+
+Every event carries super properties `site` and `platform`:
+
+- `itch` when the page host is `*.itch.zone` or `*.itch.io`, or the referrer or parent frame is itch.io
+- `github-pages` when the page host is `*.github.io`
+- `local` for a localhost preview of the production build
+- `other` for any other host
+
+| Event | When | Properties |
+|---|---|---|
+| `game_loaded` | The shell has rendered | `has_save`, `prior_runs` |
+| `run_started` | A new run begins | `run_number`, `run_id`, `character`, `ascension` |
+| `run_ended` | The run is won or lost | `result` (`won` or `lost`), `ended_by` (`cleared`, `timeout`, or `hp`), `level`, `gauntlet_floors` (50), `duration_ms`, `run_number`, `run_id`, `character`, `ascension` |
+| `run_resumed` | A saved run continues | `run_number`, `run_id`, `level`, `character`, `ascension` |
+| `run_abandoned` | Abandon, or replace an active run | `reason` (`abandon` or `replaced`), `level`, `run_number`, `run_id`, `character`, `ascension` |
+| `boss_reached` | The miniboss or floor boss starts | `boss`, `level`, `run_number`, `run_id`, `character`, `ascension` |
+| `event_choice` | A happening resolves | `happening`, `option`, `success`, `level`, `run_number`, `run_id` |
+
+`run_number` is how many runs this browser has started, the same counter as the stats page. A continued save sends `run_resumed` and keeps that number. `duration_ms` is the run's recorded play time. Floors 1–50 are the gauntlet and the floor boss is level 51, so a win reports `level` 51.
+
+Finish rate is `run_ended` over `run_started`. A second run is `run_started` with `run_number` of 2 or more. Players who come back on a later day show up in a retention insight on `game_loaded`. Itch and GitHub Pages are separate origins, so break those charts down by `site`.
+
+To drop IP addresses, enable **Discard client IP data** in the PostHog project privacy settings.
 
 ---
 
