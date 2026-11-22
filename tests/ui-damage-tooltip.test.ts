@@ -40,5 +40,9 @@ describe('damage tooltip versus damage animation', () => {
 
     expect(root.querySelector<HTMLElement>('.hp-numbers')?.textContent).not.toBe(hpBefore);
     expect(document.querySelector('#fx-root .damage-overlay')).toBeNull();
+    expect(document.querySelector('.damage-warning')).toBeNull();
+    expect(document.querySelector('.shell.shake')).toBeNull();
+    expect(document.querySelector('.battle-rail.hit')).toBeNull();
+    expect(document.querySelector('.enemy-side.attacking')).toBeNull();
   });
 });
