@@ -5398,9 +5398,18 @@ describe('damage doubling and slots', () => {
     expect(phase.board.rawNextGuessDamage).toBe(4);
     expect(phase.board.nextGuessBase).toBe(4);
     expect(phase.board.nextGuessMultiplier).toBe(1);
+    expect(phase.board.damageRampEarly).toBe(0);
 
     const guessed = act(state, { type: 'guess', word: 'slate' });
     expect(guessed.state.hp).toBe(11);
+  });
+
+  it('exposes the Short Fuse ramp for the guess outline', () => {
+    const { state } = start('short-fuse-outline');
+    state.curses.push({ id: 'short-fuse', stacks: 1 });
+    const phase = game.view(state).phase;
+    if (phase.kind !== 'round') throw new Error('expected round');
+    expect(phase.board.damageRampEarly).toBe(2);
   });
 
   it('counts equipped slots only, not unused capacity', () => {

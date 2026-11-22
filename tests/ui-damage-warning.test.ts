@@ -42,5 +42,11 @@ describe('damage multiplier warning', () => {
     expect(warning?.querySelector('.damage-warning-kicker')?.textContent).toContain('WATCH OUT!');
     expect(warning?.querySelector('.damage-warning-mult')?.textContent).toContain('3 × 2 = 6');
     expect(warning?.querySelector('.damage-warning-label')?.textContent).toContain('DAMAGE');
+
+    const danger = root.querySelector<HTMLElement>('.board-row.danger');
+    expect(danger).not.toBeNull();
+    expect(danger?.classList.contains('tier-2')).toBe(true);
+    expect(danger?.getAttribute('data-marks')).toBe('!');
+    expect(danger?.getAttribute('data-tip')).toContain('×2 damage');
   });
 });
