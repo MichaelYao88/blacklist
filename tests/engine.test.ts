@@ -2521,6 +2521,36 @@ describe('latest balance pass', () => {
     ))).flatMap((effect) => (effect.type === 'autoGuess' ? [effect.word] : []));
     expect(mythos).toEqual(expect.arrayContaining(['ryleh', 'cthul', 'dagon']));
 
+    const tier1 = necronomiconPool(1);
+    const optionWith = (pool: Effect[][], prefix: string): Effect[] | undefined =>
+      pool.find((option) => option.some(
+        (effect) => effect.type === 'proc' && effect.text.startsWith(prefix),
+      ));
+    const twinOmens = optionWith(tier0, 'Twin Omens');
+    expect(twinOmens?.filter(
+      (effect) => effect.type === 'castSpell' && effect.spell === 'omen',
+    )).toHaveLength(2);
+    const bounty = optionWith(tier0, 'Bounty');
+    expect(bounty?.some((effect) => effect.type === 'gold' && effect.amount === 5)).toBe(true);
+    const mend = optionWith(tier0, 'Mend');
+    expect(mend?.some(
+      (effect) => effect.type === 'healMissingPercent' && effect.percent === 100,
+    )).toBe(true);
+    expect(mend?.some((effect) => effect.type === 'refillArmor')).toBe(true);
+    expect(optionWith(tier0, 'Ward')).toBeUndefined();
+    const unwrite0 = optionWith(tier0, 'Unwrite');
+    expect(unwrite0?.some(
+      (effect) => effect.type === 'revealAbsent' && effect.count === 3,
+    )).toBe(true);
+    const unwrite1 = optionWith(tier1, 'Unwrite');
+    expect(unwrite1?.some(
+      (effect) => effect.type === 'revealAbsent' && effect.count === 4,
+    )).toBe(true);
+    const twinImmunity = optionWith(tier1, 'Twin Immunity');
+    expect(twinImmunity?.filter(
+      (effect) => effect.type === 'castSpell' && effect.spell === 'immunity',
+    )).toHaveLength(2);
+
     expect(has(tier0, 'gold')).toBe(true);
     expect(has(tier0, 'slots')).toBe(false);
     expect(has(tier2, 'purgeRandomLetter')).toBe(true);

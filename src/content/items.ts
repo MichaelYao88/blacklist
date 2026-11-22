@@ -55,6 +55,7 @@ export function necronomiconPool(tier: number): Effect[][] {
   const scale = tier;
   const reveal = 1 + Math.floor(tier / 2);
   const armor = 1 + Math.floor(tier / 2);
+  const ruleOut = 3 + tier;
   const whisperChoices: Effect[][] = MYTHOS_WORDS.map((word) => [
     necroProc(`Whisper — autoguess ${word.toUpperCase()}.`),
     { type: 'autoGuess', word },
@@ -86,21 +87,26 @@ export function necronomiconPool(tier: number): Effect[][] {
   options.push(
     [necroProc('Omen — a yellow letter surfaces.'), { type: 'castSpell', spell: 'omen' }],
     [
-      necroProc(`Pocket Change — ${3 + 2 * scale} gold.`),
-      { type: 'gold', amount: 3 + 2 * scale },
+      necroProc('Twin Omens — two yellow letters surface.'),
+      { type: 'castSpell', spell: 'omen' },
+      { type: 'castSpell', spell: 'omen' },
     ],
     [
-      necroProc(`Mend — heal ${2 + 2 * scale} HP.`),
-      { type: 'heal', amount: 2 + 2 * scale },
+      necroProc(`Bounty — ${5 + 2 * scale} gold.`),
+      { type: 'gold', amount: 5 + 2 * scale },
     ],
-    [necroProc('Ward — armor refills.'), { type: 'refillArmor' }],
+    [
+      necroProc('Mend — heal to full and refill armor.'),
+      { type: 'healMissingPercent', percent: 100 },
+      { type: 'refillArmor' },
+    ],
     [
       necroProc(`Glimpse — reveal ${reveal} letter${reveal === 1 ? '' : 's'}.`),
       { type: 'revealRandom', count: reveal },
     ],
     [
-      necroProc(`Unwrite — rule out ${reveal} letter${reveal === 1 ? '' : 's'}.`),
-      { type: 'revealAbsent', count: reveal },
+      necroProc(`Unwrite — rule out ${ruleOut} letters.`),
+      { type: 'revealAbsent', count: ruleOut },
     ],
     [necroProc('Wild Spark — cast a random spell.'), { type: 'castSpell', spell: 'random' }],
   );
@@ -109,7 +115,11 @@ export function necronomiconPool(tier: number): Effect[][] {
     options.push(
       [necroProc('Second Chance — +1 free guess.'), { type: 'freeGuesses', count: 1 }],
       [necroProc('Freeze — the clock stops.'), { type: 'castSpell', spell: 'time-freeze' }],
-      [necroProc('Immunity — the next hit is free.'), { type: 'castSpell', spell: 'immunity' }],
+      [
+        necroProc('Twin Immunity — cast Immunity twice.'),
+        { type: 'castSpell', spell: 'immunity' },
+        { type: 'castSpell', spell: 'immunity' },
+      ],
       [necroProc(`Growth — +${1 + scale} max HP.`), { type: 'maxHp', delta: 1 + scale }],
       [necroProc(`Plating — +${armor} max armor.`), { type: 'maxArmor', delta: armor }],
       [necroProc('Feast — eat something.'), { type: 'eatRandom' }],
