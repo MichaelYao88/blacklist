@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it } from 'vitest';
-import { readMeta, recordFood, recordPurchase, recordRun, recordStart, unlockCharacter } from '../src/ui/store';
+import { readMeta, recordFood, recordPurchase, recordPurge, recordRun, recordStart, unlockCharacter } from '../src/ui/store';
 
 const stats = (overrides: Partial<Parameters<typeof recordRun>[0]['stats']> = {}) => ({
   rounds: 10,
@@ -47,6 +47,13 @@ describe('run history store', () => {
       'double-cheeseburger': 2,
       inkcap: 1,
     });
+  });
+
+  it('counts purged letters across runs', () => {
+    expect(readMeta().purgedCount).toBe(0);
+    expect(recordPurge()).toBe(1);
+    expect(recordPurge()).toBe(2);
+    expect(readMeta().purgedCount).toBe(2);
   });
 
   it('migrates Maze Runner to Pathfinder and keeps purchase counts', () => {
@@ -180,6 +187,7 @@ describe('run history store', () => {
     expect(meta.curseCounts).toEqual({});
     expect(meta.characters).toEqual(['runner']);
     expect(meta.victoriousCharacters).toEqual([]);
+    expect(meta.purgedCount).toBe(0);
     expect(meta.totalSolves).toBe(0);
   });
 
