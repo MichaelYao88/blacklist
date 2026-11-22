@@ -6,6 +6,7 @@ import type {
   Core,
   CurseDef,
   CurseId,
+  DamageLine,
   Effect,
   GameEvent,
   HappeningDef,
@@ -1875,6 +1876,14 @@ export function createCore(content: Content): Core {
       ),
     );
     const baseDamage = normalBaseDamage + (boss?.damageBonus ?? 0);
+    const baseParts = {
+      flat: 3,
+      curses: curseDamage,
+      startingPenalty: startingCursePenalty,
+      heavyHand: damageMultiplier(state),
+      permanent: state.bonusBaseDamage,
+      boss: boss?.damageBonus ?? 0,
+    };
 
     const round: RoundState = {
       answer,
@@ -1883,6 +1892,7 @@ export function createCore(content: Content): Core {
       freeLeft: Math.max(0, 1 + freeGuessPenalty(state) + state.freeGuessBonus),
       paidGuesses: 0,
       baseDamage,
+      baseParts,
       damageRamp: 0,
       elapsedMs: 0,
       remainingMs: remaining,
@@ -2152,9 +2162,11 @@ export function createCore(content: Content): Core {
     state: RunState,
     round: RoundState,
     next = false,
-  ): { base: number; multiplier: number; total: number } {
+  ): { base: number; multiplier: number; total: number; lines: DamageLine[] } {
     const boss = round.boss ? bossById.get(round.boss) : undefined;
-    if (boss?.noGuessDamage) return { base: 0, multiplier: 1, total: 0 };
+    if (boss?.noGuessDamage) {
+      return { base: 0, multiplier: 1, total: 0, lines: [] };
+    }
     const previous = next
       ? round.guesses[round.guesses.length - 1]
       : round.guesses[round.guesses.length - 2];
@@ -2165,9 +2177,10 @@ export function createCore(content: Content): Core {
     const firstCounts = firstPlayerGuess
       ? truthCounts(firstPlayerGuess.truth)
       : { correct: 0, present: 0 };
-    const curseBonus =
-      previousCounts.correct * damagePerGreen(state) +
+    const greenDamage = previousCounts.correct * damagePerGreen(state);
+    const revealDamage =
       (firstCounts.correct + firstCounts.present) * damagePerFirstReveal(state);
+    const curseBonus = greenDamage + revealDamage;
     const base = boss?.damageFor
       ? boss.damageFor(state, next ? { ...round, totalGuesses: round.totalGuesses + 1 } : round)
       : round.baseDamage;
@@ -2177,11 +2190,47 @@ export function createCore(content: Content): Core {
     const goldBonus = Math.floor((state.goldSpent ?? 0) / 60);
     const raw = base + curseBonus + goldBonus + slotBonus;
     const multiplier = guessDamageMultiplier(state, round, next);
-    return {
-      base: Math.max(0, raw),
-      multiplier,
-      total: Math.max(0, Math.round(raw * multiplier)),
-    };
+    const total = Math.max(0, Math.round(raw * multiplier));
+
+    const lines: DamageLine[] = [];
+    if (boss?.damageFor) {
+      lines.push({ label: boss.name, amount: base, kind: 'add' });
+    } else if (round.baseParts) {
+      const parts = round.baseParts;
+      if (parts.flat !== 0) lines.push({ label: 'Base', amount: parts.flat, kind: 'add' });
+      if (parts.curses !== 0) lines.push({ label: 'Curse count', amount: parts.curses, kind: 'add' });
+      if (parts.startingPenalty !== 0) {
+        lines.push({ label: 'Starting curses', amount: -parts.startingPenalty, kind: 'add' });
+      }
+      if (parts.heavyHand !== 1) {
+        lines.push({ label: 'Heavy Hand', amount: parts.heavyHand, kind: 'mult' });
+      }
+      if (parts.permanent !== 0) {
+        lines.push({ label: 'Permanent bonus', amount: parts.permanent, kind: 'add' });
+      }
+      if (parts.boss !== 0) {
+        lines.push({ label: 'Boss bonus', amount: parts.boss, kind: 'add' });
+      }
+    } else {
+      lines.push({ label: 'Base', amount: base, kind: 'add' });
+    }
+    if (greenDamage > 0) {
+      const def = curseDefs(state)
+        .find((entry) => (entry.def.damagePerGreen ?? 0) > 0)?.def;
+      lines.push({ label: def?.name ?? 'Green curse', amount: greenDamage, kind: 'add' });
+    }
+    if (revealDamage > 0) {
+      const def = curseDefs(state)
+        .find((entry) => (entry.def.damagePerFirstReveal ?? 0) > 0)?.def;
+      lines.push({ label: def?.name ?? 'Reveal curse', amount: revealDamage, kind: 'add' });
+    }
+    if (goldBonus > 0) lines.push({ label: 'Gold spent', amount: goldBonus, kind: 'add' });
+    if (slotBonus > 0) lines.push({ label: 'Extra slots', amount: slotBonus, kind: 'add' });
+    if (multiplier > 1) {
+      lines.push({ label: 'Guess multiplier', amount: multiplier, kind: 'mult' });
+    }
+
+    return { base: Math.max(0, raw), multiplier, total, lines };
   }
 
   function guessDamageFor(state: RunState, round: RoundState, next = false): number {
@@ -3875,6 +3924,7 @@ export function createCore(content: Content): Core {
       rawNextGuessDamage: rawNext,
       nextGuessBase: nextParts.base,
       nextGuessMultiplier: nextParts.multiplier,
+      damageBreakdown: nextParts.lines,
       damageRampEarly: damageRampEarly(state),
       remainingMs: round.remainingMs,
       timerStartMs: round.timerStartMs,

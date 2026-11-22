@@ -59,6 +59,8 @@ describe('damage multiplier warning', () => {
 
     const value = root.querySelector<HTMLElement>('.guess-damage-value');
     expect(value?.classList.contains('tip-dots')).toBe(true);
-    expect(value?.getAttribute('data-tip')).toContain('3 × 2 = 6');
+    expect(value?.getAttribute('data-tip')).toContain('Base +3');
+    expect(value?.getAttribute('data-tip')).toContain('Guess multiplier ×2');
+    expect(value?.getAttribute('data-tip')).toContain('= 6 damage');
   });
 });

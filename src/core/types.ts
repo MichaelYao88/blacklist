@@ -123,6 +123,15 @@ export interface RoundState {
   freeLeft: number;
   paidGuesses: number;
   baseDamage: number;
+  /** Damage components fixed at round start, used by the HUD breakdown. */
+  baseParts?: {
+    flat: number;
+    curses: number;
+    startingPenalty: number;
+    heavyHand: number;
+    permanent: number;
+    boss: number;
+  };
   /** Extra damage added to each later wrong, non-free guess this round. */
   damageRamp: number;
   elapsedMs: number;
@@ -722,6 +731,12 @@ export interface SpellView {
   id: SpellId;
 }
 
+export interface DamageLine {
+  label: string;
+  amount: number;
+  kind: 'add' | 'mult';
+}
+
 export interface BoardView {
   guesses: PresentedGuess[];
   freeGuessesLeft: number;
@@ -731,6 +746,8 @@ export interface BoardView {
   nextGuessBase: number;
   /** Multiplier for the next wrong guess; 1 during the first five guesses. */
   nextGuessMultiplier: number;
+  /** Named modifiers behind the next wrong guess, for the HUD tooltip. */
+  damageBreakdown: DamageLine[];
   /** Extra early ramp steps from curses such as Short Fuse. */
   damageRampEarly: number;
   remainingMs: number | null;

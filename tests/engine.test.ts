@@ -5399,6 +5399,8 @@ describe('damage doubling and slots', () => {
     expect(phase.board.nextGuessBase).toBe(4);
     expect(phase.board.nextGuessMultiplier).toBe(1);
     expect(phase.board.damageRampEarly).toBe(0);
+    expect(phase.board.damageBreakdown).toContainEqual({ label: 'Base', amount: 3, kind: 'add' });
+    expect(phase.board.damageBreakdown).toContainEqual({ label: 'Extra slots', amount: 1, kind: 'add' });
 
     const guessed = act(state, { type: 'guess', word: 'slate' });
     expect(guessed.state.hp).toBe(11);

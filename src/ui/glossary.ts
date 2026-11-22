@@ -16,8 +16,7 @@ export const INCOMING_DAMAGE_TIP =
   'Every wrong guess that is not free makes the monster hit you. '
   + 'Armor reduces that damage first; any damage that gets through becomes a Hit to HP. '
   + 'The attack is the monster\'s base damage plus bonuses from curses, bosses and items '
-  + '(such as extra damage per green, per 60 gold spent, or per equipped slot over five). '
-  + 'After the fifth guess in a round a multiplier kicks in; the WATCH OUT banner shows that calculation.';
+  + '(such as extra damage per green, per 60 gold spent, or per equipped slot over five).';
 
 // Order matters: longer or more specific phrases must come before the shorter
 // word they contain, because earlier matches become placeholders.

@@ -2036,18 +2036,23 @@ function guessDamageHtml(board: BoardView): string {
     || board.shielded
     || board.guessImmuneMsLeft > 0;
   const value = safe ? 0 : board.nextGuessDamage;
-  const mult = board.nextGuessMultiplier;
-  const base = board.nextGuessBase;
-  const baseText = Number.isInteger(base) ? String(base) : base.toFixed(1);
-  const eq = Math.abs(base * mult - value) < 0.05 ? '=' : '≈';
+  const fmt = (amount: number): string => (
+    Number.isInteger(amount) ? String(amount) : amount.toFixed(1)
+  );
   const labelTip = 'Your first guess each round is free. Every wrong guess after that is attacked by the monster. '
-    + 'Armor reduces that damage first; whatever is left over becomes a Hit to HP. '
-    + 'After the safe limit each wrong guess deals multiplied damage: ×2, ×3, ×4, and so on.';
+    + 'Armor reduces that damage first; whatever is left over becomes a Hit to HP.';
   const calcTip = safe
     ? 'Your next guess is free, so there is no damage to calculate.'
-    : mult > 1
-      ? `Damage calculation: ${baseText} × ${mult} ${eq} ${value}. The base includes curse, boss, gold and slot bonuses.`
-      : `Damage calculation: ${value}. The multiplier starts after the safe limit.`;
+    : value <= 0 && board.noGuessDamage
+      ? 'This boss takes no damage from guesses.'
+      : [
+        ...board.damageBreakdown.map((line) => (
+          line.kind === 'mult'
+            ? `${line.label} ×${fmt(line.amount)}`
+            : `${line.label} ${line.amount >= 0 ? '+' : ''}${fmt(line.amount)}`
+        )),
+        `= ${value} damage`,
+      ].join('\n');
   return `<div class="guess-damage ${safe ? 'safe' : ''}">
     <span class="guess-damage-label tip-dots" tabindex="0" data-tip="${escapeHtml(labelTip)}" aria-label="${escapeHtml(labelTip)}">INCOMING DAMAGE</span>
     <b class="guess-damage-value tip-dots" tabindex="0" data-tip="${escapeHtml(calcTip)}" aria-label="${escapeHtml(calcTip)}">${safe ? 'FREE' : `⚔️ ${value} ⚔️`}</b>
