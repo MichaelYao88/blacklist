@@ -2458,13 +2458,14 @@ function renderItem(view: RunView, item: ItemView): string {
   const description = def?.dynamicDescription?.(item.data) ?? def?.description ?? '';
   const data = Object.entries(item.data)
     .filter(([key, value]) => (
-      value !== 0
+      (value !== 0 || key === 'fed')
       && !key.startsWith('_')
       && key !== 'used'
-      && key !== 'fed'
       && key !== 'paid'
     ))
-    .map(([key, value]) => `<span class="data-chip">${escapeHtml(key)} ${value}</span>`)
+    .map(([key, value]) => (
+      `<span class="data-chip">${escapeHtml(key === 'fed' ? 'FED' : key)} ${value}</span>`
+    ))
     .join('');
   const spent = def?.initial?.used !== undefined && (item.data.used ?? 0) > 0;
   const usedThisRound = Boolean(def?.onUse) && (item.data._uses ?? 0) > 0;

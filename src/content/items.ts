@@ -26,7 +26,11 @@ function everyThreeFoodsOrSolves(self: { data: Record<string, number> }): Effect
   ];
 }
 
-const MYTHOS_WORDS = ['ryleh', 'cthul'] as const;
+const MYTHOS_WORDS = [
+  'ryleh', 'cthul', 'dagon', 'nyarl', 'azath', 'tsath', 'hypno',
+  'elder', 'abyss', 'omens', 'sigil', 'ghoul', 'spawn', 'crawl',
+  'dread', 'night', 'chaos', 'lunar', 'haunt', 'runes',
+] as const;
 
 /** Fed thresholds: 0, 13, 39, 79, 129, 189, 259. */
 export function necronomiconTier(fed: number): number {
@@ -55,20 +59,29 @@ export function necronomiconPool(tier: number): Effect[][] {
     necroProc(`Whisper — autoguess ${word.toUpperCase()}.`),
     { type: 'autoGuess', word },
   ]);
+  const twinChoices: Effect[][] = [];
+  for (let first = 0; first < MYTHOS_WORDS.length; first++) {
+    for (let second = first + 1; second < MYTHOS_WORDS.length; second++) {
+      const a = MYTHOS_WORDS[first];
+      const b = MYTHOS_WORDS[second];
+      twinChoices.push([
+        necroProc(`Twin Whispers — autoguess ${a.toUpperCase()} and ${b.toUpperCase()}.`),
+        { type: 'autoGuess', word: a },
+        { type: 'autoGuess', word: b },
+      ]);
+    }
+  }
   const whisper = (): Effect[] => [
     { type: 'randomChoice', options: whisperChoices },
+  ];
+  const twin = (): Effect[] => [
+    { type: 'randomChoice', options: twinChoices },
   ];
   const options: Effect[][] = [];
 
   // Both autoguess gifts are deliberately three times as likely as the rest.
   for (let index = 0; index < 3; index++) options.push(whisper());
-  for (let index = 0; index < 3; index++) {
-    options.push([
-      necroProc('Twin Whispers — autoguess RYLEH and CTHUL.'),
-      { type: 'autoGuess', word: 'ryleh' },
-      { type: 'autoGuess', word: 'cthul' },
-    ]);
-  }
+  for (let index = 0; index < 3; index++) options.push(twin());
 
   options.push(
     [necroProc('Omen — a yellow letter surfaces.'), { type: 'castSpell', spell: 'omen' }],
@@ -448,11 +461,6 @@ export const ITEMS: ItemDef[] = [
     kind: 'gear',
     rarity: 'rare',
     initial: { fed: 0, _uses: 0 },
-    dynamicDescription: (data) => {
-      const fed = data.fed ?? data.paid ?? 0;
-      return `Use during a fight: lose 13% max HP for a random gift. `
-        + `The book grows stronger as you feed it. Fed ${fed} (Tier ${necronomiconTier(fed)}). Once per round.`;
-    },
     onUse: (ctx) => {
       if (!ctx.self.equipped) {
         return [{ type: 'message', text: 'Equip the book first.' }];

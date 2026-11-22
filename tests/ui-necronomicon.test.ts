@@ -32,11 +32,15 @@ describe('Necronomicon use state', () => {
     const button = findCard()?.querySelector<HTMLButtonElement>('[data-action="use"]');
     expect(button).not.toBeNull();
     expect(button?.disabled).toBe(false);
+    expect(findCard()?.textContent).toContain('FED 0');
+    expect(findCard()?.textContent).not.toContain('Tier');
 
     button!.click();
 
     const card = findCard();
     expect(card?.textContent).toContain('USED');
+    expect(card?.textContent).toContain('FED 13');
+    expect(card?.textContent).not.toContain('Tier');
     const usedButton = card?.querySelector<HTMLButtonElement>('[data-action="use"]');
     expect(usedButton?.disabled).toBe(true);
     expect(document.querySelector<HTMLElement>('.proc-pop')?.textContent)

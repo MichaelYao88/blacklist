@@ -2503,14 +2503,23 @@ describe('latest balance pass', () => {
     const tier6 = necronomiconPool(6);
 
     expect(tier0).toHaveLength(13); // 3 Whisper + 3 Twin + 7 basics
-    expect(tier0.filter(
+    const singleChoices = tier0.filter(
       (option) => option.length === 1 && option[0].type === 'randomChoice',
-    )).toHaveLength(3);
-    expect(tier0.filter(
-      (option) => option.some(
-        (effect) => effect.type === 'proc' && effect.text.startsWith('Twin Whispers'),
-      ),
-    )).toHaveLength(3);
+    );
+    expect(singleChoices).toHaveLength(6); // 3 Whisper + 3 Twin
+    const hasNestedProc = (option: Effect[], prefix: string): boolean => {
+      if (option.length !== 1 || option[0].type !== 'randomChoice') return false;
+      return option[0].options.some((nested) => nested.some(
+        (effect) => effect.type === 'proc' && effect.text.startsWith(prefix),
+      ));
+    };
+    expect(singleChoices.filter((option) => hasNestedProc(option, 'Whisper'))).toHaveLength(3);
+    expect(singleChoices.filter((option) => hasNestedProc(option, 'Twin Whispers'))).toHaveLength(3);
+
+    const mythos = tier0.flatMap((option) => option.flatMap((effect) => (
+      effect.type === 'randomChoice' ? effect.options.flat() : [effect]
+    ))).flatMap((effect) => (effect.type === 'autoGuess' ? [effect.word] : []));
+    expect(mythos).toEqual(expect.arrayContaining(['ryleh', 'cthul', 'dagon']));
 
     expect(has(tier0, 'gold')).toBe(true);
     expect(has(tier0, 'slots')).toBe(false);
