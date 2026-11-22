@@ -17,7 +17,6 @@ describe('Necromancer unlock purchases', () => {
     state.shop = {
       offers: [
         { id: 'o0', kind: 'item', def: 'necronomicon', price: 13 },
-        { id: 'o1', kind: 'item', def: 'necronomicon', price: 13 },
       ],
       rerollCost: 2,
       rerolls: 0,
@@ -33,13 +32,9 @@ describe('Necromancer unlock purchases', () => {
     root.querySelector<HTMLElement>('[data-action="resume"]')!.click();
   });
 
-  it('requires two Necronomicon purchases', () => {
+  it('unlocks The Necromancer on the first Necronomicon purchase', () => {
     root.querySelector<HTMLElement>('[data-action="buy"][data-id="o0"]')!.click();
     expect(readMeta().purchases.necronomicon).toBe(1);
-    expect(readMeta().characters).not.toContain('necromancer');
-
-    root.querySelector<HTMLElement>('[data-action="buy"][data-id="o1"]')!.click();
-    expect(readMeta().purchases.necronomicon).toBe(2);
     expect(readMeta().characters).toContain('necromancer');
 
     const overlay = root.querySelector<HTMLElement>('.unlock-overlay');

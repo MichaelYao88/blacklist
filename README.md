@@ -207,7 +207,7 @@ Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title s
 - **The Soldier** is the default: 15 HP, 6 armor, 12 gold, no starting gear or curses.
 - **The Pathfinder** unlocks when The Soldier reaches the first curse screen. They start with **Head Start**, **The List** curse, 14 HP, 3 armor and 9 gold.
 - **The Purgamist** unlocks after purging **6 letters** across any runs. They start with **Without the D**, 12 HP, 4 armor, 17 gold, and purge **4 letters** of your choice on level 0, before any word is drawn.
-- **The Necromancer** unlocks after buying **2 Necronomicons** across any runs. They start with the **Necronomicon**, **The Sleeper** curse, 27 HP, 4 armor and 16 gold.
+- **The Necromancer** unlocks after buying the **Necronomicon** once from a shop. They start with the **Necronomicon**, **The Sleeper** curse, 27 HP, 4 armor and 16 gold.
 - **The Gourmand** unlocks after eating 3 **Double Cheeseburgers** across any runs. They start with **Potluck**, **Porcupine's Dilemma** curse, 25 HP, 2 armor and 6 gold.
 - **The Farmer** unlocks after winning any run. They start with the **Harvest Charm** (character-only, not found in shops), 20 HP, 1 armor and 6 gold.
 - **The Empty Armor** unlocks after winning a run on **Ascension 1**. It starts with **Bulwark**, the character-only **Slow Mending** curse, 1 HP, 11 armor, one extra item slot and 6 gold.

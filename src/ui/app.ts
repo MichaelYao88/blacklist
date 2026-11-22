@@ -735,7 +735,7 @@ function processEvents(events: GameEvent[]): void {
     if (event.type === 'offerBought') {
       const count = recordPurchase(event.def);
       const unlocked = [
-        event.def === 'necronomicon' && count >= 2 ? 'necromancer' : null,
+        event.def === 'necronomicon' && count >= 1 ? 'necromancer' : null,
       ].filter((id): id is string => Boolean(id));
       for (const id of unlocked) {
         if (unlockCharacter(id)) {
@@ -3172,6 +3172,7 @@ function syncMetaUnlocks(): void {
   const unlocked = [
     (meta.foodCounts['double-cheeseburger'] ?? 0) >= 3 ? 'gourmand' : null,
     meta.purgedCount >= 6 ? 'purgamist' : null,
+    (meta.purchases.necronomicon ?? 0) >= 1 ? 'necromancer' : null,
   ].filter((id): id is string => Boolean(id));
   for (const id of unlocked) {
     if (unlockCharacter(id)) queueCharacterUnlock(id);

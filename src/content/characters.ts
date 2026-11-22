@@ -50,7 +50,7 @@ export const CHARACTERS: CharacterDef[] = [
     items: ['necronomicon'],
     curses: ['sleeper'],
     sprite: 'necromancer',
-    unlockHint: 'Buy 2 Necronomicons across any runs.',
+    unlockHint: 'Buy the Necronomicon once from a shop.',
   }),
   defineCharacter({
     id: 'gourmand',
