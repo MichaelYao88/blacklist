@@ -335,6 +335,7 @@ export type Effect =
   | { type: 'healMissingPercent'; percent: number }
   | { type: 'healDiceGold'; min: number; max: number }
   | { type: 'healOverflowMaxHp'; amount: number }
+  | { type: 'healHalfOverheal' }
   | { type: 'maxHp'; delta: number }
   | { type: 'maxHpMultiply'; factor: number }
   | { type: 'hpMultiply'; factor: number }

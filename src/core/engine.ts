@@ -966,6 +966,17 @@ export function createCore(content: Content): Core {
         if (excess > 0) changeGold(rt, excess, source);
         break;
       }
+      case 'healHalfOverheal': {
+        const amount = Math.max(1, Math.ceil(state.maxHp / 2));
+        const adjusted = Math.max(1, Math.round(amount * healMultiplier(state)));
+        const overheal = state.hp + adjusted > state.maxHp;
+        heal(rt, amount, source);
+        if (overheal) {
+          changeMaxHp(rt, 1, source);
+          emit(rt, { type: 'message', text: 'You overheal a bit! +max HP' });
+        }
+        break;
+      }
       case 'healOverflowMaxHp': {
         const adjusted = Math.max(1, Math.round(effect.amount * healMultiplier(state)));
         const before = state.hp;
