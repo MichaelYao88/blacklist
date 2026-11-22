@@ -2279,18 +2279,6 @@ describe('latest balance pass', () => {
     expect(cast.state.hp).toBe(12);
   });
 
-  it('Heal secretly grants another max HP when it overheals', () => {
-    const heal = start('heal-overheal');
-    heal.state.hp = 14;
-    heal.state.spells.push({ instance: 's-heal', id: 'heal' });
-    const cast = act(heal.state, { type: 'castSpell', instance: 's-heal' });
-    expect(cast.state.maxHp).toBe(17);
-    expect(cast.state.hp).toBe(16);
-    expect(cast.events.some(
-      (event) => event.type === 'message' && event.text.includes('overheal a bit'),
-    )).toBe(true);
-  });
-
   it('Second Skin restores half of max armor', () => {
     const { state } = start('second-skin');
     state.items.push({ instance: 'i-skin', id: 'second-skin', data: { used: 0 }, equipped: true });
@@ -2743,8 +2731,8 @@ describe('latest balance pass', () => {
     expect(bought.state.nextSpellDouble).toBe(true);
 
     const cast = act(bought.state, { type: 'castSpell', instance: 's-heal' });
-    expect(cast.state.maxHp).toBe(18); // two Heals raise max HP, plus one overheal bonus
-    expect(cast.state.hp).toBe(17); // the second heal overheals and fills the old cap
+    expect(cast.state.maxHp).toBe(17); // two Heals raise max HP by 1 each
+    expect(cast.state.hp).toBe(17); // heal 8 then 9, capped at 17
     expect(cast.state.nextSpellDouble).toBe(false);
   });
 
@@ -3537,7 +3525,7 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('tithe-box')?.description).toContain('10% chance');
     expect(ITEM_BY_ID.get('mimic-mouth')?.description).toContain('Once per round');
     expect(ITEM_BY_ID.get('second-skin')?.description).toContain('half your max armor');
-    expect(SPELL_BY_ID.get('heal')?.description).toBe('Heal half of your max HP.');
+    expect(SPELL_BY_ID.get('heal')?.description).toBe('Gain +1 max HP, then heal half of your max HP.');
     expect(HAPPENING_BY_ID.get('black-market')?.options.find((option) => option.id === 'spell')?.costGold).toBe(1);
     expect(HAPPENING_BY_ID.get('black-market')?.options.find((option) => option.id === 'armor')?.costGold).toBe(5);
     expect(CURSE_BY_ID.get('tax')?.description).toBe('Encounter gold is reduced by 40%.');
