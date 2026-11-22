@@ -22,7 +22,7 @@ import {
   ITEM_BY_ID,
   SPELL_BY_ID,
 } from '../content';
-import { LocalStore, dismissDamageTutorial, hasSave, readMeta, recordFood, recordPurchase, recordPurge, recordRun, recordStart, unlockCharacter } from './store';
+import { LocalStore, dismissCharacterTip, dismissDamageTutorial, hasSave, readMeta, recordFood, recordPurchase, recordPurge, recordRun, recordStart, unlockCharacter } from './store';
 import { escapeHtml, formatTime, reasonText, roman } from './format';
 import { ARMOR_TIP, PURGED_TIP, glossaryText } from './glossary';
 import {
@@ -359,6 +359,7 @@ const COUNTDOWN_MS = 2_400;
 let selectedAscension = 0;
 let selectedCharacter = 'runner';
 let characterTip: 'pathfinder' | 'purgamist' | null = null;
+let characterTipMute = false;
 let characterUnlock: string | null = null;
 let characterUnlockQueue: string[] = [];
 let keyboardLayoutNoticeShown = false;
@@ -951,6 +952,7 @@ function dispatchCommand(command: Command): GameEvent[] {
 
 function startNewRun(preferredCharacter?: string): void {
   characterTip = null;
+  characterTipMute = false;
   if (hasSave() && !host.current?.over) {
     const ok = window.confirm('Start a new run? Your active run will be lost.');
     if (!ok) return;
@@ -1001,6 +1003,7 @@ function startNewRun(preferredCharacter?: string): void {
 
 function resumeRun(): void {
   characterTip = null;
+  characterTipMute = false;
   host.resume();
   if (!host.hasRun) {
     notify('No active run found.', 'bad');
@@ -1173,13 +1176,21 @@ app.addEventListener('click', (event) => {
       const id = target.dataset.id ?? '';
       if (readMeta().characters.includes(id)) {
         selectedCharacter = id;
-        characterTip = id === 'pathfinder' || id === 'purgamist' ? id : null;
+        const tipId = id === 'pathfinder' || id === 'purgamist' ? id : null;
+        characterTip = tipId && !readMeta().dismissedCharacterTips.includes(tipId) ? tipId : null;
+        characterTipMute = false;
       }
       render();
       break;
     }
+    case 'toggle-character-tip-mute':
+      characterTipMute = !characterTipMute;
+      render();
+      break;
     case 'dismiss-character-tip':
+      if (characterTip && characterTipMute) dismissCharacterTip(characterTip);
       characterTip = null;
+      characterTipMute = false;
       render();
       break;
     case 'dismiss-unlock':
@@ -1208,6 +1219,7 @@ app.addEventListener('click', (event) => {
       break;
     case 'back':
       characterTip = null;
+      characterTipMute = false;
       screen = host.hasRun ? 'run' : 'title';
       paused = false;
       lastTick = performance.now();
@@ -1215,6 +1227,7 @@ app.addEventListener('click', (event) => {
       break;
     case 'title':
       characterTip = null;
+      characterTipMute = false;
       screen = 'title';
       lastTick = performance.now();
       render();
@@ -1223,6 +1236,7 @@ app.addEventListener('click', (event) => {
       if (!window.confirm('Abandon this run? The save will be wiped.')) return;
       host.discard();
       characterTip = null;
+      characterTipMute = false;
       screen = 'title';
       input = '';
       damageFx = null;
@@ -1755,6 +1769,10 @@ function renderCharacterTip(): string {
       <p class="panel-kicker">${escapeHtml(tip.kicker)}</p>
       <h2>${escapeHtml(tip.title)}</h2>
       ${tip.lines.map((line) => `<p class="muted">${escapeHtml(line)}</p>`).join('')}
+      <button class="tutorial-check ${characterTipMute ? 'checked' : ''}" data-action="toggle-character-tip-mute" role="checkbox" aria-checked="${characterTipMute}">
+        <span class="tutorial-box" aria-hidden="true">${characterTipMute ? '✓' : ''}</span>
+        Don't remind me
+      </button>
       <button class="btn primary big" data-action="dismiss-character-tip">GOT IT</button>
     </div>
   </div>`;

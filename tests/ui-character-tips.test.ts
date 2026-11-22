@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeAll, describe, expect, it } from 'vitest';
+import { readMeta } from '../src/ui/store';
 
 describe('character selection tips', () => {
   let root: HTMLElement;
@@ -27,16 +28,28 @@ describe('character selection tips', () => {
     expect(root.querySelector('.character-tip-modal')).toBeNull();
   });
 
-  it('opens the Purgamist tip as a modal', () => {
+  it('opens the Purgamist tip as a modal and can stop reminding', () => {
     root.querySelector<HTMLElement>('[data-action="character"][data-id="purgamist"]')!.click();
     const modal = root.querySelector<HTMLElement>('.character-tip-modal');
     expect(modal?.textContent).toContain('PURGAMIST TIP');
     expect(modal?.textContent).toContain('14');
     expect(modal?.textContent).toContain('Y');
+
+    root.querySelector<HTMLElement>('[data-action="toggle-character-tip-mute"]')!.click();
+    expect(root.querySelector('.tutorial-check.checked')).not.toBeNull();
+    root.querySelector<HTMLElement>('[data-action="dismiss-character-tip"]')!.click();
+    expect(root.querySelector('.character-tip-modal')).toBeNull();
+    expect(readMeta().dismissedCharacterTips).toContain('purgamist');
+
+    root.querySelector<HTMLElement>('[data-action="character"][data-id="purgamist"]')!.click();
+    expect(root.querySelector('.character-tip-modal')).toBeNull();
   });
 
   it('does not open a tip for other characters', () => {
     root.querySelector<HTMLElement>('[data-action="character"][data-id="runner"]')!.click();
     expect(root.querySelector('.character-tip-modal')).toBeNull();
+
+    root.querySelector<HTMLElement>('[data-action="character"][data-id="pathfinder"]')!.click();
+    expect(root.querySelector('.character-tip-modal')).not.toBeNull();
   });
 });

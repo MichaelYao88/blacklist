@@ -40,6 +40,8 @@ export interface Meta {
   foodCounts: Record<string, number>;
   /** Letters purged across all runs. */
   purgedCount: number;
+  /** Character tip ids the player asked not to see again. */
+  dismissedCharacterTips: string[];
   /** The player asked not to see the first-damage tutorial again. */
   damageTutorialDismissed: boolean;
   history: RunRecord[];
@@ -65,6 +67,7 @@ const DEFAULT_META: Meta = {
   purchases: {},
   foodCounts: {},
   purgedCount: 0,
+  dismissedCharacterTips: [],
   damageTutorialDismissed: false,
   history: [],
   itemCounts: {},
@@ -167,6 +170,9 @@ export function readMeta(): Meta {
       })(),
       damageTutorialDismissed: Boolean(parsed.damageTutorialDismissed),
       purgedCount: Number(parsed.purgedCount) || 0,
+      dismissedCharacterTips: Array.isArray(parsed.dismissedCharacterTips)
+        ? parsed.dismissedCharacterTips.filter((id): id is string => typeof id === 'string')
+        : [],
       history: Array.isArray(parsed.history)
         ? parsed.history.map((run) => ({
             ...run,
@@ -307,5 +313,14 @@ export function recordPurge(count = 1): number {
   meta.purgedCount += count;
   writeMeta(meta);
   return meta.purgedCount;
+}
+
+/** Remember that a character tip should not show again. */
+export function dismissCharacterTip(id: string): void {
+  const meta = readMeta();
+  if (!meta.dismissedCharacterTips.includes(id)) {
+    meta.dismissedCharacterTips.push(id);
+    writeMeta(meta);
+  }
 }
 
