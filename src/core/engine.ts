@@ -2148,9 +2148,13 @@ export function createCore(content: Content): Core {
     return Math.max(1, guessNumber - 4 + damageRampEarly(state));
   }
 
-  function guessDamageFor(state: RunState, round: RoundState, next = false): number {
+  function guessDamageParts(
+    state: RunState,
+    round: RoundState,
+    next = false,
+  ): { base: number; multiplier: number; total: number } {
     const boss = round.boss ? bossById.get(round.boss) : undefined;
-    if (boss?.noGuessDamage) return 0;
+    if (boss?.noGuessDamage) return { base: 0, multiplier: 1, total: 0 };
     const previous = next
       ? round.guesses[round.guesses.length - 1]
       : round.guesses[round.guesses.length - 2];
@@ -2172,7 +2176,16 @@ export function createCore(content: Content): Core {
     const slotBonus = Math.max(0, usedSlots(state) - 5);
     const goldBonus = Math.floor((state.goldSpent ?? 0) / 60);
     const raw = base + curseBonus + goldBonus + slotBonus;
-    return Math.max(0, Math.round(raw * guessDamageMultiplier(state, round, next)));
+    const multiplier = guessDamageMultiplier(state, round, next);
+    return {
+      base: Math.max(0, raw),
+      multiplier,
+      total: Math.max(0, Math.round(raw * multiplier)),
+    };
+  }
+
+  function guessDamageFor(state: RunState, round: RoundState, next = false): number {
+    return guessDamageParts(state, round, next).total;
   }
 
   function expireRound(rt: Runtime): void {
@@ -3789,7 +3802,8 @@ export function createCore(content: Content): Core {
     const boss = round.boss ? bossById.get(round.boss) : undefined;
     // damageFor describes the hit a wrong guess takes at the round's current
     // progress, so preview the next guess by stepping the counter forward.
-    const rawNext = guessDamageFor(state, round, true);
+    const nextParts = guessDamageParts(state, round, true);
+    const rawNext = nextParts.total;
     const previewNext = state.nextRoundDamageCap !== undefined
       ? Math.min(rawNext, state.nextRoundDamageCap)
       : rawNext;
@@ -3859,6 +3873,8 @@ export function createCore(content: Content): Core {
       freeGuessesLeft: round.freeLeft,
       nextGuessDamage: round.freeLeft > 0 || noGuessDamage ? 0 : previewNext,
       rawNextGuessDamage: rawNext,
+      nextGuessBase: nextParts.base,
+      nextGuessMultiplier: nextParts.multiplier,
       remainingMs: round.remainingMs,
       timerStartMs: round.timerStartMs,
       elapsedMs: round.elapsedMs,

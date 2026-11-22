@@ -24,7 +24,7 @@ import {
 } from '../content';
 import { LocalStore, dismissDamageTutorial, hasSave, readMeta, recordFood, recordPurchase, recordRun, recordStart, unlockCharacter } from './store';
 import { escapeHtml, formatTime, reasonText, roman } from './format';
-import { INCOMING_DAMAGE_TIP, glossaryText } from './glossary';
+import { ARMOR_TIP, INCOMING_DAMAGE_TIP, glossaryText } from './glossary';
 import {
   bossColor,
   bossSigil,
@@ -190,6 +190,41 @@ function showFreeGuessPopup(source: string): void {
     freeGuessRoot.innerHTML = '';
     freeGuessTimer = undefined;
   }, 2_400);
+}
+
+// The countdown lives outside the render tree so the per-second update only
+// swaps the number instead of rebuilding (and restarting) the whole overlay.
+const countdownRoot = document.createElement('div');
+countdownRoot.id = 'countdown-root';
+countdownRoot.setAttribute('aria-live', 'assertive');
+document.body.appendChild(countdownRoot);
+let countdownShown = 0;
+
+function renderCountdown(level: number, count: number): void {
+  if (count <= 0) {
+    if (countdownRoot.innerHTML) countdownRoot.innerHTML = '';
+    countdownShown = 0;
+    return;
+  }
+  if (!countdownRoot.firstElementChild) {
+    countdownRoot.innerHTML = `<div class="countdown-overlay">
+      <div class="countdown-card">
+        <span class="countdown-kicker"></span>
+        <b class="countdown-number"></b>
+        <span class="countdown-label">READ THE LIST</span>
+      </div>
+    </div>`;
+  }
+  const kicker = countdownRoot.querySelector<HTMLElement>('.countdown-kicker');
+  const kickerText = `LEVEL ${level}`;
+  if (kicker && kicker.textContent !== kickerText) kicker.textContent = kickerText;
+  if (count !== countdownShown) {
+    countdownShown = count;
+    const number = countdownRoot.querySelector<HTMLElement>('.countdown-number');
+    if (number) {
+      number.outerHTML = `<b class="countdown-number" data-count="${count}">${count}</b>`;
+    }
+  }
 }
 
 const procRoot = document.createElement('div');
@@ -415,9 +450,20 @@ function triggerArenaAttack(force?: 'player' | 'enemy'): void {
 }
 
 function flashDamageWarning(multiplier: number): void {
+  const view = host.view();
+  const board = view?.phase.kind === 'round' ? view.phase.board : null;
+  const mult = board?.nextGuessMultiplier ?? multiplier;
+  const base = board?.nextGuessBase ?? 0;
+  const total = board?.nextGuessDamage ?? 0;
+  const product = base * mult;
+  const baseText = Number.isInteger(base) ? String(base) : base.toFixed(1);
+  const calc = board && total > 0 && mult > 1
+    ? `${baseText} × ${mult} ${Math.abs(product - total) < 0.05 ? '=' : '≈'} ${total}`
+    : `×${multiplier}`;
   warningRoot.innerHTML = `<div class="damage-warning" role="alert">
     <span class="damage-warning-kicker">WATCH OUT!</span>
-    <span class="damage-warning-mult">×${multiplier} DAMAGE</span>
+    <span class="damage-warning-mult">${calc}</span>
+    <span class="damage-warning-label">DAMAGE</span>
   </div>`;
   if (warningTimer) window.clearTimeout(warningTimer);
   warningTimer = window.setTimeout(() => {
@@ -947,6 +993,8 @@ function startNewRun(preferredCharacter?: string): void {
   if (freeGuessTimer) window.clearTimeout(freeGuessTimer);
   freeGuessTimer = undefined;
   freeGuessRoot.innerHTML = '';
+  countdownShown = 0;
+  countdownRoot.innerHTML = '';
   damageTutorialOpen = false;
   damageTutorialSeen = false;
   damageTutorialMute = false;
@@ -999,6 +1047,8 @@ function resumeRun(): void {
   if (freeGuessTimer) window.clearTimeout(freeGuessTimer);
   freeGuessTimer = undefined;
   freeGuessRoot.innerHTML = '';
+  countdownShown = 0;
+  countdownRoot.innerHTML = '';
   damageTutorialOpen = false;
   damageTutorialSeen = (host.current?.stats.damageTaken ?? 0) > 0
     || readMeta().damageTutorialDismissed;
@@ -1016,7 +1066,7 @@ function resumeRun(): void {
 }
 
 function addLetter(letter: string): void {
-  if (screen !== 'run') return;
+  if (screen !== 'run' || damageTutorialOpen) return;
   const view = host.view();
   if (!view || view.phase.kind !== 'round' || view.pendingPurge > 0) return;
   if (view.purged.includes(letter.toLowerCase())) return;
@@ -1026,6 +1076,7 @@ function addLetter(letter: string): void {
 }
 
 function submitGuess(): void {
+  if (damageTutorialOpen) return;
   const view = host.view();
   if (!view || view.phase.kind !== 'round') return;
   if (view.pendingPurge > 0) {
@@ -1340,17 +1391,19 @@ window.setInterval(() => {
   const now = performance.now();
   const dt = now - lastTick;
   lastTick = now;
-  if (screen !== 'run' || document.hidden || paused) return;
+  if (screen !== 'run' || document.hidden || paused || damageTutorialOpen) return;
   const view = host.view();
   if (!view || view.phase.kind !== 'round') {
     heartbeatSecond = -1;
+    renderCountdown(0, 0);
     return;
   }
   // The clock does not start until the countdown ends.
   if (now < countdownUntil) {
-    render();
+    renderCountdown(view.level, Math.max(1, Math.ceil((countdownUntil - now) / 800)));
     return;
   }
+  renderCountdown(0, 0);
   if (view.pendingPurge > 0) return;
   const events = host.dispatch({ type: 'tick', dtMs: dt });
   if (events.length > 0) processEvents(events);
@@ -1431,6 +1484,15 @@ function render(): void {
 
   renderImmunity(screen === 'run' ? view : null);
   renderOpeningShield(screen === 'run' ? view : null);
+  const countdownActive = screen === 'run'
+    && Boolean(view)
+    && view!.phase.kind === 'round'
+    && !paused
+    && performance.now() < countdownUntil;
+  renderCountdown(
+    countdownActive ? view!.level : 0,
+    countdownActive ? Math.max(1, Math.ceil((countdownUntil - performance.now()) / 800)) : 0,
+  );
 }
 
 function renderImmunity(view: RunView | null): void {
@@ -2172,7 +2234,7 @@ function renderBattleRail(view: RunView, bossId?: string): string {
           <i style="width:${pct}%"></i>
           <span class="hp-gloss"></span>
         </div>
-        <div class="armor-line" title="Armor soaks damage point-for-point before HP. It refills each round. Running out of time ends the run.">
+        <div class="armor-line" tabindex="0" data-tip="${escapeHtml(ARMOR_TIP)}" aria-label="${escapeHtml(ARMOR_TIP)}">
           <span class="armor-bar" role="progressbar" aria-label="Armor" aria-valuemin="0" aria-valuemax="${view.maxArmor}" aria-valuenow="${view.armor}">
             <i style="width:${armorPct}%"></i>
           </span>
@@ -2965,10 +3027,6 @@ function renderRun(view: RunView): string {
     phase.board.remainingMs !== null &&
     phase.board.remainingMs > 0 &&
     phase.board.remainingMs <= 15_000;
-  const now = performance.now();
-  const count = phase.kind === 'round' && !paused && now < countdownUntil
-    ? Math.max(1, Math.ceil((countdownUntil - now) / 800))
-    : 0;
 
   return `
   <div class="shell ${shake ? 'shake' : ''} ${tense ? 'tense' : ''}">
@@ -2987,13 +3045,6 @@ function renderRun(view: RunView): string {
     ${damageTutorialOpen && !over ? renderDamageTutorial() : ''}
     ${renderPurgeModal(view)}
     ${renderCurseRemovalModal(view)}
-    ${count > 0 ? `<div class="countdown-overlay" aria-live="assertive">
-        <div class="countdown-card">
-          <span class="countdown-kicker">LEVEL ${view.level}</span>
-          <b class="countdown-number" data-count="${count}">${count}</b>
-          <span class="countdown-label">READ THE LIST</span>
-        </div>
-      </div>` : ''}
     ${paused && !over ? renderPauseOverlay(view) : ''}
   </div>`;
 }

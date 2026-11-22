@@ -727,6 +727,10 @@ export interface BoardView {
   freeGuessesLeft: number;
   nextGuessDamage: number;
   rawNextGuessDamage: number;
+  /** Damage before the guess multiplier is applied. */
+  nextGuessBase: number;
+  /** Multiplier for the next wrong guess; 1 during the first five guesses. */
+  nextGuessMultiplier: number;
   remainingMs: number | null;
   timerStartMs: number | null;
   elapsedMs: number;

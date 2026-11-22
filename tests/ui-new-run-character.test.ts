@@ -21,6 +21,10 @@ function submit(word: string): void {
 describe('new run keeps the played character', () => {
   let root: HTMLElement;
 
+  function dismissTutorial(): void {
+    root.querySelector<HTMLElement>('[data-action="dismiss-damage-tutorial"]')?.click();
+  }
+
   beforeAll(async () => {
     localStorage.clear();
     localStorage.setItem('blacklist.meta.v1', JSON.stringify({
@@ -48,6 +52,7 @@ describe('new run keeps the played character', () => {
           && !word.split('').some((letter) => state.purged.includes(letter)));
         const word = words[cursor + Math.max(0, index)];
         cursor += Math.max(0, index) + 1;
+        dismissTutorial();
         submit(word);
         continue;
       }

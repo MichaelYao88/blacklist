@@ -5,12 +5,15 @@ interface GlossaryEntry {
   tip: string;
 }
 
+export const ARMOR_TIP =
+  'Armor soaks damage before HP, point for point. It refills at the start of every round. '
+  + 'Damage that gets past armor is a Hit (HP damage). Running out of time ends the run.';
+
 export const INCOMING_DAMAGE_TIP =
   'Every wrong guess that is not free makes the monster hit you. '
-  + 'Damage starts with the monster\'s base hit, then adds bonuses from curses, bosses and items '
+  + 'The hit is the monster\'s base damage plus bonuses from curses, bosses and items '
   + '(such as extra damage per green, per 60 gold spent, or per equipped slot over five). '
-  + 'The multiplier is 1 for the first five guesses; from the 6th guess on it is the guess number minus 4. '
-  + 'Armor soaks it first; the rest is Hit (HP damage).';
+  + 'After the fifth guess in a round a multiplier kicks in; the WATCH OUT banner shows that calculation.';
 
 // Order matters: longer or more specific phrases must come before the shorter
 // word they contain, because earlier matches become placeholders.
@@ -25,7 +28,7 @@ const ENTRIES: GlossaryEntry[] = [
   },
   {
     pattern: /\barmor\b/gi,
-    tip: 'Armor soaks damage before HP, point for point. It refills each round. Running out of time ends the run.',
+    tip: ARMOR_TIP,
   },
   {
     pattern: /\bfree guesses?\b/gi,

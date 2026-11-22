@@ -14,6 +14,10 @@ describe('run-over screen', () => {
   let root: HTMLElement;
   let missed = '';
 
+  function dismissTutorial(): void {
+    root.querySelector<HTMLElement>('[data-action="dismiss-damage-tutorial"]')?.click();
+  }
+
   beforeAll(async () => {
     localStorage.clear();
     document.body.innerHTML = '<div id="app"></div>';
@@ -35,6 +39,7 @@ describe('run-over screen', () => {
       // rest. Fixed encounter damage means the run can take a while to die.
       type(wrong[0]);
       for (let i = 0; i < 40 && localStorage.getItem(RUN_KEY); i++) {
+        dismissTutorial();
         type(wrong[1]);
       }
       if (!localStorage.getItem(RUN_KEY)) missed = answer;

@@ -151,8 +151,8 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - A **STATS** page tracks run history (last 50 runs), win rate, best level, average solve time, favorite items and curses, play time, gold and damage totals
 - The top bar shows gold and area; a persistent slanted floor trail at the top of the battle rail shows the current floor, one cleared floor below it, and the next three floors above, in every phase
 - Clock-gated items such as **Deadline** never appear in shops or rewards until **The Clock** curse exists
-- Compact battle rail on the left: a persistent slanted floor trail, round timer with a hover tooltip for the time limit, an incoming-damage chip with the full damage formula, a side-view mini arena with your character facing the act's monster (or boss), player HP and armor
-- Damage numbers slam into the centre of the screen as `N damage`, with a block message when armor or immunity eats the hit; the first hit of a run opens a one-time damage tutorial with a persistent **Don't remind me again** option
+- Compact battle rail on the left: a persistent slanted floor trail, round timer with a hover tooltip for the time limit, an incoming-damage chip, a hoverable armor bar explaining how armor soaks hits, a side-view mini arena with your character facing the act's monster (or boss), player HP and armor
+- Damage numbers slam into the centre of the screen as `N damage`, with a block message when armor or immunity eats the hit; the **WATCH OUT!** banner shows the hit as a calculation (for example `3 × 2 = 6 DAMAGE`), and the first hit of a run opens a one-time damage tutorial with a persistent **Don't remind me again** option
 - Free guesses show a **FREE GUESS!** pop-up naming the source, such as **First player guess** or **Time Freeze**
 - Spells and the blacklist sit on the right; the item list sits under the battle rail on desktop and at the bottom of the right column on mobile
 - Pause (Space or Esc), independent music/SFX mutes, synthesized SFX, keyboard and on-screen keyboard, colorblind symbols, reduced-motion-friendly CSS

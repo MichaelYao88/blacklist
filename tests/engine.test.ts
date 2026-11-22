@@ -5396,6 +5396,8 @@ describe('damage doubling and slots', () => {
     const phase = game.view(state).phase;
     if (phase.kind !== 'round') throw new Error('expected round');
     expect(phase.board.rawNextGuessDamage).toBe(4);
+    expect(phase.board.nextGuessBase).toBe(4);
+    expect(phase.board.nextGuessMultiplier).toBe(1);
 
     const guessed = act(state, { type: 'guess', word: 'slate' });
     expect(guessed.state.hp).toBe(11);
