@@ -204,7 +204,7 @@ Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title s
 
 ## Characters
 
-- **The Soldier** is the default: 15 HP, 5 armor, 12 gold, no starting gear or curses.
+- **The Soldier** is the default: 15 HP, 6 armor, 12 gold, no starting gear or curses.
 - **The Pathfinder** unlocks when The Soldier reaches the first curse screen. They start with **Head Start**, **The List** curse, 14 HP, 3 armor and 9 gold.
 - **The Necromancer** unlocks after buying the **Necronomicon** once from a shop. They start with the **Necronomicon**, **The Sleeper** curse, 27 HP, 4 armor and 16 gold.
 - **The Purgamist** unlocks after eating 2 **Inkcap** across any runs. They start with **Without the D**, 12 HP, 4 armor, 17 gold, and purge **4 letters** of your choice on level 0, before any word is drawn.
@@ -225,7 +225,7 @@ The Soldier and Orc sprites are from **Tiny RPG Character Asset Pack 01** by [Ze
 | Thing | Value |
 |---|---|
 | Starting HP | 15 for The Soldier; preset characters override this |
-| Starting armor | 5 points for The Soldier; preset characters override this |
+| Starting armor | 6 points for The Soldier; preset characters override this |
 | Starting item slots | 4 (only equipped gear counts; relics use one slot each) |
 | Free guesses per round | 1; timed immunity blocks damage in its window, but the first guess still spends the free guess |
 | Starting gold | 12 |

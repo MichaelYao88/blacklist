@@ -7,7 +7,7 @@ export const CHARACTERS: CharacterDef[] = [
     tagline: 'Armored and ready.',
     description: 'The original listwalker. More armor, fewer hit points, no extra baggage.',
     maxHp: 15,
-    armor: 5,
+    armor: 6,
     items: [],
     curses: [],
     sprite: 'runner',

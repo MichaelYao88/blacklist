@@ -123,7 +123,7 @@ describe('cursed run setup', () => {
     expect(state.level).toBe(1);
     expect(state.hp).toBe(15);
     expect(state.maxHp).toBe(15);
-    expect(state.armor).toBe(5);
+    expect(state.armor).toBe(6);
     expect(state.gold).toBe(12);
     expect(state.slots).toBe(4);
     expect(state.blacklist).toEqual([]);
@@ -139,7 +139,7 @@ describe('cursed run setup', () => {
     const soldier = game.newRun({ seed: 'preset-soldier' }).state;
     expect(soldier.character).toBe('runner');
     expect(soldier.maxHp).toBe(15);
-    expect(soldier.maxArmor).toBe(5);
+    expect(soldier.maxArmor).toBe(6);
     expect(soldier.gold).toBe(12);
 
     const pathfinder = game.newRun({ seed: 'preset-pathfinder', character: 'pathfinder' }).state;
@@ -1061,7 +1061,7 @@ describe('shop curses', () => {
 
     const bought = act(state, { type: 'choose', optionId: 'relic' });
     expect(bought.state.gold).toBe(5);
-    expect(bought.state.maxArmor).toBe(5);
+    expect(bought.state.maxArmor).toBe(6);
     expect(bought.state.items.some((item) => ITEM_BY_ID.get(item.id)?.rarity === 'rare')).toBe(false);
     expect(eventTypes(bought.events)).toContain('message');
   });
@@ -1100,8 +1100,8 @@ describe('shop curses', () => {
     armorState.state.happening = { id: 'babification', options: [] };
     const armorChosen = act(armorState.state, { type: 'choose', optionId: 'armor' });
     expect(armorChosen.state.curses).toHaveLength(1);
-    expect(armorChosen.state.maxArmor).toBe(5);
-    expect(armorChosen.state.armor).toBe(5);
+    expect(armorChosen.state.maxArmor).toBe(6);
+    expect(armorChosen.state.armor).toBe(6);
   });
 
   it('The Redaction costs 5/10 and its rest option triggers an eat', () => {
@@ -1513,7 +1513,7 @@ describe('curse-triggered items', () => {
     const chosen = act(state, { type: 'chooseCurse', curseId: 'censor' });
     expect(chosen.state.maxHp).toBe(21);
     expect(chosen.state.hp).toBe(21);
-    expect(chosen.state.maxArmor).toBe(7);
+    expect(chosen.state.maxArmor).toBe(8);
     expect(chosen.state.slots).toBe(5);
     expect(chosen.state.spells).toHaveLength(1);
   });
@@ -1674,7 +1674,7 @@ describe('new item and event batch', () => {
     brace.state.items.push({ instance: 'i-brace', id: 'brace', data: {}, equipped: true });
     setAnswer(brace.state, 'crane');
     const braced = act(brace.state, { type: 'guess', word: 'crane' });
-    expect(braced.state.maxArmor).toBe(6);
+    expect(braced.state.maxArmor).toBe(7);
     expect(ITEM_BY_ID.get('brace')?.price).toBe(6);
 
     const bloom = start('bloom');
@@ -2928,7 +2928,7 @@ describe('latest balance pass', () => {
     plate.state.phase = 'happening';
     plate.state.happening = { id: 'the-scales', options: [] };
     const plated = act(plate.state, { type: 'choose', optionId: 'plate' });
-    expect(plated.state.maxArmor).toBe(6);
+    expect(plated.state.maxArmor).toBe(7);
   });
 
   it('Growth Chart grants a Time Freeze every 3 max HP gained', () => {
@@ -3035,7 +3035,7 @@ describe('latest balance pass', () => {
     state.items.push({ instance: 'i-ward', id: 'ward-engine', data: { used: 0 }, equipped: true });
     state.spells = [{ instance: 's-imm', id: 'immunity' }];
     const cast = act(state, { type: 'castSpell', instance: 's-imm' });
-    expect(cast.state.maxArmor).toBe(7);
+    expect(cast.state.maxArmor).toBe(8);
   });
 
   it('Clean Slate gives +1 max HP or +1 max armor once per round', () => {
@@ -3117,11 +3117,11 @@ describe('latest balance pass', () => {
       equipped: true,
     });
     expect(ITEM_BY_ID.get('mending-plate')?.description).toContain('per 8 HP');
-    expect(state.maxArmor).toBe(5);
+    expect(state.maxArmor).toBe(6);
     state.hp = 5;
     state.spells = [{ instance: 's-heal', id: 'heal' }];
     const cast = act(state, { type: 'castSpell', instance: 's-heal' });
-    expect(cast.state.maxArmor).toBe(6);
+    expect(cast.state.maxArmor).toBe(7);
   });
 
   it('Mending Plate waits for 8 total HP before paying armor', () => {
@@ -3140,9 +3140,9 @@ describe('latest balance pass', () => {
       { id: 'g1', kind: 'eat', def: 'gumdrop', price: 2 },
     ]);
     const first = act(state, { type: 'buy', offerId: 'g0' });
-    expect(first.state.maxArmor).toBe(5);
+    expect(first.state.maxArmor).toBe(6);
     const second = act(first.state, { type: 'buy', offerId: 'g1' });
-    expect(second.state.maxArmor).toBe(6);
+    expect(second.state.maxArmor).toBe(7);
   });
 
   it('Acquired Taste gives 4 max HP per new food', () => {
@@ -4533,13 +4533,13 @@ describe('spellbroker and ledger additions', () => {
 
     const immunity = trade('immunity', 'immunity');
     expect(immunity.state.spells.some((spell) => spell.id === 'immunity')).toBe(false);
-    expect(immunity.state.maxArmor).toBe(10);
-    expect(immunity.state.armor).toBe(10);
+    expect(immunity.state.maxArmor).toBe(11);
+    expect(immunity.state.armor).toBe(11);
 
     const restore = trade('restore', 'restore');
     expect(restore.state.spells.some((spell) => spell.id === 'restore')).toBe(false);
-    expect(restore.state.maxArmor).toBe(10);
-    expect(restore.state.armor).toBe(10);
+    expect(restore.state.maxArmor).toBe(11);
+    expect(restore.state.armor).toBe(11);
   });
 
   it('will not take a trade without the required spell', () => {
