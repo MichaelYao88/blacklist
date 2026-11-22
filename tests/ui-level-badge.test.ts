@@ -31,6 +31,25 @@ describe('persistent level display', () => {
     expect(badge?.querySelector('.rail-level-value')?.textContent).toBe('1/51');
   });
 
+  it('shows the current floor with one past and three future floors', () => {
+    const badge = levelBadge();
+    const floors = [...badge!.querySelectorAll<HTMLElement>('.rail-node:not(.is-empty)')];
+    expect(floors.map((node) => node.dataset.level)).toEqual(['4', '3', '2', '1']);
+    expect(badge?.querySelectorAll('.rail-node.is-empty').length).toBe(1);
+
+    const current = badge?.querySelector<HTMLElement>('.rail-node.current');
+    expect(current?.dataset.level).toBe('1');
+    expect(current?.getAttribute('aria-current')).toBe('step');
+    expect(current?.getAttribute('data-tip')).toContain('Floor 1');
+
+    const shop = badge?.querySelector<HTMLElement>('.rail-node[data-level="2"]');
+    expect(shop?.getAttribute('data-tip')).toBe('Floor 2 · Shop');
+    expect(shop?.classList.contains('future')).toBe(true);
+
+    const curse = badge?.querySelector<HTMLElement>('.rail-node[data-level="4"]');
+    expect(curse?.getAttribute('data-tip')).toBe('Floor 4 · Curse');
+  });
+
   it('keeps the level visible through summary, reward, and shop phases', () => {
     for (const letter of 'crane') {
       window.dispatchEvent(new KeyboardEvent('keydown', {
@@ -61,5 +80,16 @@ describe('persistent level display', () => {
     root.querySelector<HTMLElement>('[data-action="choose"][data-id="shop"]')!.click();
     expect(root.querySelector('.shop')).not.toBeNull();
     expect(levelBadge()?.querySelector('.rail-level-value')?.textContent).toBe('2/51');
+
+    const badge = levelBadge();
+    const current = badge?.querySelector<HTMLElement>('.rail-node.current');
+    expect(current?.dataset.level).toBe('2');
+    expect(
+      [...badge!.querySelectorAll<HTMLElement>('.rail-node.past')].map((node) => node.dataset.level),
+    ).toEqual(['1']);
+    expect(
+      [...badge!.querySelectorAll<HTMLElement>('.rail-node.future')].map((node) => node.dataset.level),
+    ).toEqual(['5', '4', '3']);
+    expect(badge?.querySelectorAll('.rail-node:not(.is-empty)').length).toBe(5);
   });
 });
