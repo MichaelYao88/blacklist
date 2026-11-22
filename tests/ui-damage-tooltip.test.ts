@@ -27,8 +27,8 @@ describe('damage tooltip versus damage animation', () => {
 
   it('skips the damage slam while the damage tooltip is on screen', () => {
     const hpBefore = root.querySelector<HTMLElement>('.hp-numbers')?.textContent;
-    const chip = root.querySelector<HTMLElement>('.guess-damage')!;
-    chip.dispatchEvent(new Event('pointermove', { bubbles: true }));
+    const value = root.querySelector<HTMLElement>('.guess-damage-value')!;
+    value.dispatchEvent(new Event('pointermove', { bubbles: true }));
     expect(
       document.querySelector<HTMLElement>('.kw-tooltip')?.classList.contains('visible'),
     ).toBe(true);

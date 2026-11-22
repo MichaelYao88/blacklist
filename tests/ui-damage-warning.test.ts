@@ -28,7 +28,7 @@ describe('damage divider and tooltips', () => {
     root.querySelector<HTMLElement>('[data-action="resume"]')!.click();
   });
 
-  it('shows the damage divider and the combined damage tooltip', () => {
+  it('shows the damage divider and split tooltips', () => {
     for (const letter of 'jumpy') {
       window.dispatchEvent(new KeyboardEvent('keydown', {
         key: letter,
@@ -49,17 +49,12 @@ describe('damage divider and tooltips', () => {
 
     const label = root.querySelector<HTMLElement>('.guess-damage-label');
     expect(label?.classList.contains('tip-dots')).toBe(true);
-    expect(label?.getAttribute('data-tip')).toBeNull();
+    expect(label?.getAttribute('data-tip')).toContain('first guess each round is free');
 
     const value = root.querySelector<HTMLElement>('.guess-damage-value');
     expect(value?.classList.contains('tip-dots')).toBe(true);
-    expect(value?.getAttribute('data-tip')).toBeNull();
-
-    const chip = root.querySelector<HTMLElement>('.guess-damage');
-    expect(chip?.hasAttribute('data-tip')).toBe(true);
-    expect(chip?.getAttribute('data-tip')).toContain('first guess each round is free');
-    expect(chip?.getAttribute('data-tip')).toContain('Base +3');
-    expect(chip?.getAttribute('data-tip')).toContain('Guess multiplier ×2');
-    expect(chip?.getAttribute('data-tip')).toContain('= 6 damage');
+    expect(value?.getAttribute('data-tip')).toContain('Base +3');
+    expect(value?.getAttribute('data-tip')).toContain('Guess multiplier ×2');
+    expect(value?.getAttribute('data-tip')).toContain('= 6 damage');
   });
 });

@@ -2220,31 +2220,6 @@ button {
   background: rgba(255, 255, 255, 0.025);
 }
 
-.character-tip {
-  margin-top: 12px;
-  padding: 10px 12px;
-  border: 1px solid var(--line-2);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.02);
-  color: var(--muted);
-  text-align: left;
-  font-size: 0.7rem;
-  line-height: 1.55;
-}
-
-.character-tip-kicker {
-  display: block;
-  margin-bottom: 4px;
-  color: var(--gold);
-  font-size: 0.56rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-}
-
-.character-tip p {
-  margin: 0;
-}
-
 .character-head {
   display: flex;
   align-items: center;
@@ -3090,12 +3065,6 @@ button {
   border-radius: 7px;
   background: rgba(223, 97, 90, 0.07);
   text-align: center;
-  cursor: help;
-}
-
-.guess-damage:focus-visible {
-  outline: 1px solid rgba(231, 184, 90, 0.55);
-  outline-offset: 2px;
 }
 
 .guess-damage-label {
