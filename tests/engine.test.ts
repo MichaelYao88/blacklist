@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { game } from '../src/game';
 import type {
   Command,
+  Effect,
   GameEvent,
   RunNode,
   RunState,
@@ -18,6 +19,7 @@ import {
   SPELL_BY_ID,
   SPELLS,
 } from '../src/content';
+import { necronomiconPool, necronomiconTier } from '../src/content/items';
 
 function start(seed = 'test-seed', ascension = 0): StepResult {
   return game.newRun({ seed, ascension });
@@ -2406,118 +2408,131 @@ describe('latest balance pass', () => {
     expect(guess.state.gold).toBe(before + 2);
   });
 
-  it('Necronomicon pays 13% max HP and casts Omen when used', () => {
+  it('Necronomicon pays 13% max HP for a random gift once per round', () => {
     const def = ITEM_BY_ID.get('necronomicon');
     expect(def?.rarity).toBe('rare');
     expect(def?.onUse).toBeDefined();
-    expect(def?.description).toContain('pay 13% of your max HP');
-    expect(def?.description).not.toContain('permanently');
-    expect(def?.description).toContain('extra random letter');
-    expect(def?.description).not.toContain('round up');
+    expect(def?.description).toContain('13% max HP');
+    expect(def?.description).toContain('random gift');
+    expect(def?.description).toContain('Once per round');
 
     const { state } = start('necronomicon-use');
     state.items.push({
       instance: 'i-nec',
       id: 'necronomicon',
-      data: { paid: 0 },
+      data: { fed: 0, _uses: 0 },
       equipped: true,
     });
     state.spells = [];
     setAnswer(state, 'crane');
     const used = act(state, { type: 'useItem', instance: 'i-nec' });
-    expect(used.state.maxHp).toBe(13); // ceil(15 * 0.13) = 2
-    expect(used.state.items.find((item) => item.id === 'necronomicon')?.data.paid).toBe(2);
-    expect(used.events.some(
-      (event) => event.type === 'spellCast' && event.spell.id === 'omen',
+    const item = used.state.items.find((entry) => entry.id === 'necronomicon');
+    expect(item?.data.fed).toBe(2);
+    expect(item?.data._uses).toBe(1);
+    expect(used.state.maxHp).toBeLessThan(15);
+    expect(used.events.some((event) => event.type === 'itemProc')).toBe(true);
+
+    const again = act(used.state, { type: 'useItem', instance: 'i-nec' });
+    expect(again.state.maxHp).toBe(used.state.maxHp);
+    expect(again.events.some((event) => event.type === 'itemProc')).toBe(false);
+    expect(again.events.some(
+      (event) => event.type === 'message' && event.text.includes('silent'),
     )).toBe(true);
-    expect(used.state.permanentReveals).toHaveLength(0);
+
+    const next = nextRound(again.state);
+    const usedAgain = act(next.state, { type: 'useItem', instance: 'i-nec' });
+    expect(usedAgain.state.maxHp).toBeLessThan(next.state.maxHp);
   });
 
-  it('Necronomicon makes Omen reveal 1 extra random letter per 13 HP paid', () => {
-    const { state } = start('necronomicon-paid');
-    state.items.push({
-      instance: 'i-nec-paid',
-      id: 'necronomicon',
-      data: { paid: 26 },
-      equipped: true,
-    });
-    state.spells = [{ instance: 's-omen', id: 'omen' }];
-    setAnswer(state, 'crane');
-    const cast = act(state, { type: 'castSpell', instance: 's-omen' });
-    expect(cast.state.permanentReveals).toHaveLength(0);
-    expect(Object.keys(cast.state.round?.hints ?? {})).toHaveLength(3);
-    expect(cast.events.some(
-      (event) => event.type === 'spellCast' && event.spell.id === 'omen',
-    )).toBe(true);
-  });
-
-  it('Necronomicon applies newly paid HP to its own Omen cast', () => {
-    const { state } = start('necronomicon-cross');
-    state.items.push({
-      instance: 'i-nec-cross',
-      id: 'necronomicon',
-      data: { paid: 11 },
-      equipped: true,
-    });
-    setAnswer(state, 'crane');
-    const used = act(state, { type: 'useItem', instance: 'i-nec-cross' });
-    expect(used.state.maxHp).toBe(13);
-    expect(used.state.items.find((item) => item.id === 'necronomicon')?.data.paid).toBe(13);
-    expect(used.state.permanentReveals).toHaveLength(0);
-    expect(Object.keys(used.state.round?.hints ?? {})).toHaveLength(2);
-  });
-
-  it('Necronomicon cannot be used for free at 1 max HP', () => {
+  it('Necronomicon cannot be used at 1 max HP', () => {
     const { state } = start('necronomicon-empty');
     state.maxHp = 1;
     state.hp = 1;
     state.items.push({
       instance: 'i-nec-empty',
       id: 'necronomicon',
-      data: { paid: 0 },
+      data: { fed: 0 },
       equipped: true,
     });
     setAnswer(state, 'crane');
     const used = act(state, { type: 'useItem', instance: 'i-nec-empty' });
     expect(used.state.maxHp).toBe(1);
-    expect(used.state.items.find((item) => item.id === 'necronomicon')?.data.paid).toBe(0);
+    expect(used.state.items.find((item) => item.id === 'necronomicon')?.data.fed).toBe(0);
     expect(used.events.some(
       (event) => event.type === 'message' && event.text.includes('more life'),
     )).toBe(true);
   });
 
-  it('secretly limits Necronomicon to 3 uses per round', () => {
-    const { state } = start('necronomicon-three');
-    state.maxHp = 100;
-    state.hp = 100;
+  it('Necronomicon only answers during a fight', () => {
+    const { state } = start('necronomicon-shop');
+    state.phase = 'shop';
+    state.shop = shopState();
     state.items.push({
-      instance: 'i-nec-three',
+      instance: 'i-nec-shop',
       id: 'necronomicon',
-      data: { paid: 0, _uses: 0 },
+      data: { fed: 0 },
       equipped: true,
     });
-    setAnswer(state, 'crane');
+    const used = act(state, { type: 'useItem', instance: 'i-nec-shop' });
+    expect(used.events.some(
+      (event) => event.type === 'message' && event.text.includes('fight'),
+    )).toBe(true);
+  });
 
-    let current = state;
-    for (let index = 0; index < 3; index++) {
-      const before = current.maxHp;
-      const used = act(current, { type: 'useItem', instance: 'i-nec-three' });
-      expect(used.state.maxHp).toBeLessThan(before);
-      current = used.state;
-    }
-    expect(current.items.find((item) => item.id === 'necronomicon')?.data._uses).toBe(3);
+  it('Necronomicon pool unlocks with fed tiers and scales', () => {
+    expect(necronomiconTier(0)).toBe(0);
+    expect(necronomiconTier(12)).toBe(0);
+    expect(necronomiconTier(13)).toBe(1);
+    expect(necronomiconTier(38)).toBe(1);
+    expect(necronomiconTier(39)).toBe(2);
+    expect(necronomiconTier(78)).toBe(2);
+    expect(necronomiconTier(79)).toBe(3);
+    expect(necronomiconTier(128)).toBe(3);
+    expect(necronomiconTier(129)).toBe(4);
+    expect(necronomiconTier(188)).toBe(4);
+    expect(necronomiconTier(189)).toBe(5);
+    expect(necronomiconTier(258)).toBe(5);
+    expect(necronomiconTier(259)).toBe(6);
 
-    const paid = current.items.find((item) => item.id === 'necronomicon')?.data.paid;
-    const maxHp = current.maxHp;
-    const fourth = act(current, { type: 'useItem', instance: 'i-nec-three' });
-    expect(fourth.state.maxHp).toBe(maxHp);
-    expect(fourth.state.items.find((item) => item.id === 'necronomicon')?.data.paid).toBe(paid);
-    expect(fourth.events.some((event) => event.type === 'spellCast')).toBe(false);
+    const has = (pool: Effect[][], type: string): boolean =>
+      pool.some((option) => option.some((effect) => effect.type === type));
+    const tier0 = necronomiconPool(0);
+    const tier2 = necronomiconPool(2);
+    const tier3 = necronomiconPool(3);
+    const tier4 = necronomiconPool(4);
+    const tier6 = necronomiconPool(6);
 
-    const next = nextRound(fourth.state);
-    expect(next.state.items.find((item) => item.id === 'necronomicon')?.data._uses).toBe(0);
-    const usedAgain = act(next.state, { type: 'useItem', instance: 'i-nec-three' });
-    expect(usedAgain.state.maxHp).toBeLessThan(next.state.maxHp);
+    expect(tier0).toHaveLength(13); // 3 Whisper + 3 Twin + 7 basics
+    expect(tier0.filter(
+      (option) => option.length === 1 && option[0].type === 'randomChoice',
+    )).toHaveLength(3);
+    expect(tier0.filter(
+      (option) => option.some(
+        (effect) => effect.type === 'proc' && effect.text.startsWith('Twin Whispers'),
+      ),
+    )).toHaveLength(3);
+
+    expect(has(tier0, 'gold')).toBe(true);
+    expect(has(tier0, 'slots')).toBe(false);
+    expect(has(tier2, 'purgeRandomLetter')).toBe(true);
+    expect(has(tier3, 'slots')).toBe(true);
+    expect(tier3.some(
+      (option) => option.some(
+        (effect) => effect.type === 'maxHpMultiply' && effect.factor === 2,
+      ),
+    )).toBe(true);
+    expect(has(tier4, 'addRandomCurse')).toBe(true);
+
+    // Tiers 5 and 6 add no new outcomes, only bigger numbers.
+    expect(tier6).toHaveLength(tier4.length);
+    const goldAt = (pool: Effect[][]): number[] => pool.flatMap((option) =>
+      option.flatMap((effect) => (effect.type === 'gold' ? [effect.amount] : [])));
+    expect(Math.max(...goldAt(tier6))).toBeGreaterThan(Math.max(...goldAt(tier4)));
+
+    // Clean Slate and Borrowed Time are gone.
+    const removed = [...tier0, ...tier2, ...tier3, ...tier4, ...tier6];
+    expect(has(removed, 'clearBlacklist')).toBe(false);
+    expect(has(removed, 'addTime')).toBe(false);
   });
 
   it('Hearty Meal gives 5 max HP and heals 5', () => {
@@ -2976,7 +2991,7 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('hat-trick')?.initial).toMatchObject({ gold: 1 });
     expect(ITEM_BY_ID.get('necronomicon')?.price).toBe(13);
     expect(ITEM_BY_ID.get('necronomicon')?.rarity).toBe('rare');
-    expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('pay 13% of your max HP');
+    expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('13% max HP');
     expect(ITEM_BY_ID.get('nest-egg')?.price).toBe(4);
     expect(ITEM_BY_ID.get('nest-egg')?.description).toContain('+3 gold');
     expect(ITEM_BY_ID.get('plate-timer')?.price).toBe(7);
@@ -3540,8 +3555,8 @@ describe('latest balance pass', () => {
     expect(FOOD_BY_ID.get('bounty')?.effects).toContainEqual({ type: 'solveGold', amount: 1 });
     expect(ITEM_BY_ID.get('counterweight')?.description).toContain('Completely blocked hit');
     expect(ITEM_BY_ID.get('encore')?.description).toContain('last solved answer');
-    expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('pay 13% of your max HP');
-    expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('learns an extra random letter this round');
+    expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('13% max HP');
+    expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('random gift');
     expect(ITEM_BY_ID.get('necronomicon')?.description).not.toContain('permanently');
     expect(ITEM_BY_ID.get('necronomicon')?.description).not.toContain('round up');
     expect(FOOD_BY_ID.get('hearty-meal')?.description).toBe('+5 max HP, heal 5. No slot.');

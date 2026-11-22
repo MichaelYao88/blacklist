@@ -2457,10 +2457,17 @@ function renderItem(view: RunView, item: ItemView): string {
   const name = def?.name ?? item.id;
   const description = def?.dynamicDescription?.(item.data) ?? def?.description ?? '';
   const data = Object.entries(item.data)
-    .filter(([key, value]) => value !== 0 && !key.startsWith('_') && key !== 'used')
+    .filter(([key, value]) => (
+      value !== 0
+      && !key.startsWith('_')
+      && key !== 'used'
+      && key !== 'fed'
+      && key !== 'paid'
+    ))
     .map(([key, value]) => `<span class="data-chip">${escapeHtml(key)} ${value}</span>`)
     .join('');
   const spent = def?.initial?.used !== undefined && (item.data.used ?? 0) > 0;
+  const usedThisRound = Boolean(def?.onUse) && (item.data._uses ?? 0) > 0;
   const usable = Boolean(def?.onUse);
   const rarity = !item.equipped && item.slots > 0
     ? 'BAG'
@@ -2480,12 +2487,13 @@ function renderItem(view: RunView, item: ItemView): string {
       <span class="item-emoji" aria-hidden="true">${itemIcon(item.id)}</span>
       <b>${escapeHtml(name)}</b>
       ${spent ? `<span class="item-state">SPENT</span>` : ''}
+      ${usedThisRound ? `<span class="item-state">USED</span>` : ''}
       <span class="tag">${rarity}</span>
     </div>
     <p>${glossaryText(description)}</p>
     ${data ? `<div class="data-row">${data}</div>` : ''}
     ${!item.equipped && item.slots > 0 ? `<p class="bag-note">In the bag. Equip it in a shop.</p>` : ''}
-    ${usable ? `<button class="btn tiny" data-action="use" data-id="${escapeHtml(item.instance)}">USE</button>` : ''}
+    ${usable ? `<button class="btn tiny" data-action="use" data-id="${escapeHtml(item.instance)}" ${usedThisRound ? 'disabled' : ''}>${usedThisRound ? 'USED' : 'USE'}</button>` : ''}
   </article>`;
 }
 

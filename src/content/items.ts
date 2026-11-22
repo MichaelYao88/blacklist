@@ -26,9 +26,122 @@ function everyThreeFoodsOrSolves(self: { data: Record<string, number> }): Effect
   ];
 }
 
-/** Necronomicon reveals one extra random letter per 13 HP paid when Omen is cast. */
-function necronomiconLetters(self: { data: Record<string, number> }): number {
-  return Math.floor((self.data.paid ?? 0) / 13);
+const MYTHOS_WORDS = ['ryleh', 'cthul'] as const;
+
+/** Fed thresholds: 0, 13, 39, 79, 129, 189, 259. */
+export function necronomiconTier(fed: number): number {
+  if (fed >= 259) return 6;
+  if (fed >= 189) return 5;
+  if (fed >= 129) return 4;
+  if (fed >= 79) return 3;
+  if (fed >= 39) return 2;
+  if (fed >= 13) return 1;
+  return 0;
+}
+
+function necroProc(text: string): Effect {
+  return { type: 'proc', text };
+}
+
+/**
+ * The book's random gift pool. Tiers 5 and 6 add no new outcomes; they only
+ * make the existing numbers bigger.
+ */
+export function necronomiconPool(tier: number): Effect[][] {
+  const scale = tier;
+  const reveal = 1 + Math.floor(tier / 2);
+  const armor = 1 + Math.floor(tier / 2);
+  const whisperChoices: Effect[][] = MYTHOS_WORDS.map((word) => [
+    necroProc(`Whisper — autoguess ${word.toUpperCase()}.`),
+    { type: 'autoGuess', word },
+  ]);
+  const whisper = (): Effect[] => [
+    { type: 'randomChoice', options: whisperChoices },
+  ];
+  const options: Effect[][] = [];
+
+  // Both autoguess gifts are deliberately three times as likely as the rest.
+  for (let index = 0; index < 3; index++) options.push(whisper());
+  for (let index = 0; index < 3; index++) {
+    options.push([
+      necroProc('Twin Whispers — autoguess RYLEH and CTHUL.'),
+      { type: 'autoGuess', word: 'ryleh' },
+      { type: 'autoGuess', word: 'cthul' },
+    ]);
+  }
+
+  options.push(
+    [necroProc('Omen — a yellow letter surfaces.'), { type: 'castSpell', spell: 'omen' }],
+    [
+      necroProc(`Pocket Change — ${3 + 2 * scale} gold.`),
+      { type: 'gold', amount: 3 + 2 * scale },
+    ],
+    [
+      necroProc(`Mend — heal ${2 + 2 * scale} HP.`),
+      { type: 'heal', amount: 2 + 2 * scale },
+    ],
+    [necroProc('Ward — armor refills.'), { type: 'refillArmor' }],
+    [
+      necroProc(`Glimpse — reveal ${reveal} letter${reveal === 1 ? '' : 's'}.`),
+      { type: 'revealRandom', count: reveal },
+    ],
+    [
+      necroProc(`Unwrite — rule out ${reveal} letter${reveal === 1 ? '' : 's'}.`),
+      { type: 'revealAbsent', count: reveal },
+    ],
+    [necroProc('Wild Spark — cast a random spell.'), { type: 'castSpell', spell: 'random' }],
+  );
+
+  if (tier >= 1) {
+    options.push(
+      [necroProc('Second Chance — +1 free guess.'), { type: 'freeGuesses', count: 1 }],
+      [necroProc('Freeze — the clock stops.'), { type: 'castSpell', spell: 'time-freeze' }],
+      [necroProc('Immunity — the next hit is free.'), { type: 'castSpell', spell: 'immunity' }],
+      [necroProc(`Growth — +${1 + scale} max HP.`), { type: 'maxHp', delta: 1 + scale }],
+      [necroProc(`Plating — +${armor} max armor.`), { type: 'maxArmor', delta: armor }],
+      [necroProc('Feast — eat something.'), { type: 'eatRandom' }],
+    );
+  }
+
+  if (tier >= 2) {
+    options.push(
+      [necroProc('Permanent Glimpse — learn a letter for good.'), { type: 'revealPermanentRandom' }],
+      [necroProc('Erasure — purge a letter.'), { type: 'purgeRandomLetter' }],
+      [
+        necroProc(`Windfall — ${8 + 4 * scale} gold.`),
+        { type: 'gold', amount: 8 + 4 * scale },
+      ],
+      [
+        necroProc(`Counting House — counts for ${2 + scale} rounds.`),
+        { type: 'visionCounts', rounds: 2 + scale },
+      ],
+      [
+        necroProc('Blood Price — the book takes its cut.'),
+        { type: 'damage', amount: 2 + scale, ignoreArmor: true },
+        { type: 'castSpell', spell: 'random' },
+        { type: 'castSpell', spell: 'random' },
+      ],
+    );
+  }
+
+  if (tier >= 3) {
+    options.push(
+      [necroProc('Extra Pocket — +1 item slot.'), { type: 'slots', delta: 1 }],
+      [necroProc('Relic — a rare treasure.'), { type: 'addRandomRelic' }],
+      [necroProc('Unburden — a curse lifts.'), { type: 'removeRandomCurse', chancePct: 100 }],
+      [necroProc('Bloom of Flesh — max HP doubles.'), { type: 'maxHpMultiply', factor: 2 }],
+    );
+  }
+
+  if (tier >= 4) {
+    options.push([
+      necroProc('Cursed Bargain — a relic, and a curse.'),
+      { type: 'addRandomRelic' },
+      { type: 'addRandomCurse' },
+    ]);
+  }
+
+  return options;
 }
 
 function popcount(value: number): number {
@@ -330,19 +443,26 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'necronomicon',
     name: 'Necronomicon',
-    description: 'Click to pay 13% of your max HP and cast Omen. Each Omen cast learns an extra random letter this round for every 13 HP paid to the book.',
+    description: 'Use during a fight: lose 13% max HP for a random gift. The book grows stronger as you feed it. Once per round.',
     price: 13,
     kind: 'gear',
     rarity: 'rare',
-    initial: { paid: 0, _uses: 0 },
+    initial: { fed: 0, _uses: 0 },
+    dynamicDescription: (data) => {
+      const fed = data.fed ?? data.paid ?? 0;
+      return `Use during a fight: lose 13% max HP for a random gift. `
+        + `The book grows stronger as you feed it. Fed ${fed} (Tier ${necronomiconTier(fed)}). Once per round.`;
+    },
     onUse: (ctx) => {
       if (!ctx.self.equipped) {
         return [{ type: 'message', text: 'Equip the book first.' }];
       }
       if (ctx.state.phase !== 'round' || !ctx.state.round) {
-        return [{ type: 'message', text: 'The book only answers during a round.' }];
+        return [{ type: 'message', text: 'The book only answers during a fight.' }];
       }
-      if ((ctx.self.data._uses ?? 0) >= 3) return [];
+      if ((ctx.self.data._uses ?? 0) >= 1) {
+        return [{ type: 'message', text: 'The book is silent until next round.' }];
+      }
       const cost = Math.min(
         Math.ceil(ctx.state.maxHp * 0.13),
         Math.max(0, ctx.state.maxHp - 1),
@@ -350,20 +470,16 @@ export const ITEMS: ItemDef[] = [
       if (cost <= 0) {
         return [{ type: 'message', text: 'The book needs more life to take.' }];
       }
+      const fed = (ctx.self.data.fed ?? ctx.self.data.paid ?? 0) + cost;
       return [
         { type: 'maxHp', delta: -cost },
-        { type: 'setItemData', stat: 'paid', value: (ctx.self.data.paid ?? 0) + cost },
-        { type: 'setItemData', stat: '_uses', value: (ctx.self.data._uses ?? 0) + 1 },
-        { type: 'castSpell', spell: 'omen' },
+        { type: 'setItemData', stat: 'fed', value: fed },
+        { type: 'setItemData', stat: '_uses', value: 1 },
+        { type: 'randomChoice', options: necronomiconPool(necronomiconTier(fed)) },
       ];
     },
     on: {
       onRoundStart: () => [{ type: 'setItemData', stat: '_uses', value: 0 }],
-      onSpellCast: (ctx, p) => {
-        if (p.spell !== 'omen') return [];
-        const count = necronomiconLetters(ctx.self);
-        return count > 0 ? [{ type: 'revealRandom', count }] : [];
-      },
     },
   }),
   defineItem({

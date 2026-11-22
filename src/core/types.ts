@@ -355,6 +355,7 @@ export type Effect =
   | { type: 'muffinArmor' }
   | { type: 'revive'; hp: number }
   | { type: 'gold'; amount: number }
+  | { type: 'proc'; text: string }
   | { type: 'solveGold'; amount: number }
   | { type: 'addTime'; ms: number }
   | { type: 'timeBonus'; ms: number }
@@ -928,7 +929,7 @@ export type GameEvent =
   | { type: 'goldChanged'; delta: number; total: number; source: Source }
   | { type: 'itemAcquired'; item: ItemView }
   | { type: 'itemRemoved'; instance: InstanceId; reason: 'sold' | 'consumed' | 'replaced' }
-  | { type: 'itemProc'; item: ItemId; instance: InstanceId; hook: HookName; text: string }
+  | { type: 'itemProc'; item: ItemId; instance: InstanceId; hook: HookName | 'onUse'; text: string }
   | { type: 'itemGrew'; instance: InstanceId; stat: string; value: number }
   | { type: 'itemEquipped'; instance: InstanceId; equipped: boolean }
   | { type: 'itemDataChanged'; instance: InstanceId; stat: string; value: number }

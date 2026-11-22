@@ -1021,6 +1021,21 @@ export function createCore(content: Content): Core {
       case 'gold':
         changeGold(rt, effect.amount, source);
         break;
+      case 'proc': {
+        const item = rt.self ? findItem(state, rt.self) : undefined;
+        if (item) {
+          emit(rt, {
+            type: 'itemProc',
+            item: item.id,
+            instance: item.instance,
+            hook: 'onUse',
+            text: effect.text,
+          });
+        } else {
+          emit(rt, { type: 'message', text: effect.text });
+        }
+        break;
+      }
       case 'solveGold':
         state.bonusSolveGold = Math.max(0, state.bonusSolveGold + effect.amount);
         emit(rt, { type: 'attributeChanged', stat: 'bonusSolveGold', value: state.bonusSolveGold });

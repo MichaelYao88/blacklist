@@ -92,7 +92,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Immunity** blocks the next hurting guess and any guess for 4 seconds after it
 - **Mending Plate** is a rare item: +1 max armor per 8 HP healed
 - **Bounty** is a 9g rare food: +1 gold per solve
-- **Necronomicon** is a rare item: click it to pay 13% of your max HP and cast Omen. Each Omen cast learns an extra random letter this round for every 13 HP paid to the book
+- **Necronomicon** is a rare item: use it during a fight to lose 13% of your max HP for a random gift. It can only be used once per round, and it grows stronger as you feed it: fed tiers unlock at 0, 13, 39, 79, 129, 189 and 259 max HP paid
 - **Growth Spurt** gives +3 max HP when you solve in 4 guesses or fewer
 - **Growth Chart** is an 8g item: every 3 max HP gained grants +1 Time Freeze
 - **Midas Touch** has a 30% chance to double every gold gain
