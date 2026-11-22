@@ -821,6 +821,27 @@ describe('timer curses', () => {
     expect(view.board.guesses[0].tiles[0]).not.toBe('hidden');
   });
 
+  it('stops the clock until the next guess', () => {
+    const { state } = start('time-freeze-tick');
+    state.curses.push({ id: 'clock', stacks: 1 });
+    setAnswer(state, 'crane');
+    state.round!.remainingMs = 300_000;
+    state.round!.timerStartMs = 300_000;
+    state.round!.freeLeft = 0;
+    state.spells.push({ instance: 's-freeze', id: 'time-freeze' });
+    const cast = act(state, { type: 'castSpell', instance: 's-freeze' });
+    expect(cast.state.round?.frozenUntilGuess).toBe(true);
+
+    const frozen = act(cast.state, { type: 'tick', dtMs: 5_000 });
+    expect(frozen.state.round?.remainingMs).toBe(300_000);
+    expect(frozen.state.round?.frozenUntilGuess).toBe(true);
+
+    const guess = act(frozen.state, { type: 'guess', word: 'slate' });
+    expect(guess.state.round?.frozenUntilGuess).toBe(false);
+    const resumed = act(guess.state, { type: 'tick', dtMs: 1_000 });
+    expect(resumed.state.round?.remainingMs).toBe(299_000);
+  });
+
   it('Restore ignores a position curse for the rest of the round', () => {
     const { state } = start('restore-position');
     state.curses.push({ id: 'censor', stacks: 1 });
@@ -3590,8 +3611,8 @@ describe('spells and foods', () => {
     )).toBe(true);
   });
 
-  it('gives Coffee +5s for 2 gold and The Waffle +24s', () => {
-    expect(FOOD_BY_ID.get('coffee')?.price).toBe(2);
+  it('gives Coffee +5s for 1 gold and The Waffle +24s', () => {
+    expect(FOOD_BY_ID.get('coffee')?.price).toBe(1);
     expect(FOOD_BY_ID.get('coffee')?.effects).toContainEqual({ type: 'timeBonus', ms: 5_000 });
     expect(FOOD_BY_ID.get('chronos')?.name).toBe('The Waffle');
     expect(FOOD_BY_ID.get('chronos')?.price).toBe(6);

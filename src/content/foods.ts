@@ -316,7 +316,7 @@ export const FOODS: FoodDef[] = [
     id: 'coffee',
     name: 'Coffee',
     description: '+5s per round, permanently. No slot.',
-    price: 2,
+    price: 1,
     requiresClock: true,
     effects: [{ type: 'timeBonus', ms: 5_000 }],
   }),
