@@ -2887,139 +2887,92 @@ button {
 }
 
 .rail-map {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
 }
 
-/* Connector line behind the pips, fading out at both ends. */
-.rail-map::before {
-  content: '';
-  position: absolute;
-  top: 7px;
-  bottom: 7px;
-  left: 6px;
-  width: 1px;
-  background: linear-gradient(
-    180deg,
-    rgba(231, 184, 90, 0.04),
-    rgba(231, 184, 90, 0.28) 16%,
-    rgba(231, 184, 90, 0.28) 84%,
-    rgba(231, 184, 90, 0.04)
-  );
+.rail-path {
+  fill: none;
+  stroke: rgba(231, 184, 90, 0.26);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.rail-path.future {
+  stroke-dasharray: 3 6;
+}
+
+.rail-path.past {
+  stroke: rgba(231, 184, 90, 0.62);
+  stroke-width: 2.2;
+  stroke-dasharray: none;
+}
+
+.rail-node.future {
+  opacity: 0.86;
+}
+
+.rail-node.past {
+  opacity: 0.62;
+}
+
+.rail-node-dot {
+  fill: var(--bg-2);
+  stroke: rgba(255, 255, 255, 0.18);
+  stroke-width: 1.4;
+}
+
+.rail-node.future .rail-node-dot {
+  stroke-dasharray: 2 3;
+}
+
+.rail-node.kind-boss .rail-node-dot {
+  stroke: rgba(223, 97, 90, 0.7);
+  stroke-width: 1.8;
+}
+
+.rail-node.kind-round .rail-node-glyph { fill: #cbbfa8; }
+.rail-node.kind-shop .rail-node-glyph { fill: var(--gold); }
+.rail-node.kind-curse .rail-node-glyph { fill: var(--red); }
+.rail-node.kind-happening .rail-node-glyph { fill: var(--violet); }
+.rail-node.kind-boss .rail-node-glyph { fill: var(--red); }
+.rail-node.kind-start .rail-node-glyph { fill: var(--muted); }
+
+.rail-node-glyph {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 700;
   pointer-events: none;
+  user-select: none;
 }
 
-.rail-node {
-  position: relative;
-  display: grid;
-  grid-template-columns: 13px minmax(0, 1fr);
-  align-items: center;
-  gap: 8px;
-  min-height: 14px;
-  padding-right: 4px;
-  border-radius: 4px;
-  outline: none;
+.rail-node-halo {
+  fill: rgba(231, 184, 90, 0.1);
 }
 
-.rail-node:not(.is-empty) {
-  cursor: help;
+.rail-node-core {
+  fill: rgba(231, 184, 90, 0.18);
 }
 
-.rail-node:focus-visible {
-  box-shadow: 0 0 0 1px rgba(231, 184, 90, 0.55);
+.rail-node.current .rail-node-dot {
+  fill: #1b1428;
+  stroke: var(--gold);
+  stroke-width: 2.2;
+  stroke-dasharray: none;
 }
 
-.rail-node.is-empty {
-  min-height: 14px;
+.rail-node.current .rail-node-glyph {
+  fill: var(--gold-soft);
+  font-size: 15px;
 }
 
-.rail-node-pip {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  place-items: center;
-  width: 13px;
-  height: 13px;
-  border: 1px solid rgba(255, 255, 255, 0.17);
-  border-radius: 50%;
-  background: var(--bg-2);
-  color: var(--muted);
-  font-size: 0.46rem;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.rail-node-floor {
-  color: var(--muted);
-  font-size: 0.55rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.05em;
-  line-height: 1;
-}
-
-.rail-node.kind-round .rail-node-pip { color: #cbbfa8; }
-.rail-node.kind-shop .rail-node-pip { color: var(--gold); }
-.rail-node.kind-curse .rail-node-pip { color: var(--red); }
-.rail-node.kind-happening .rail-node-pip { color: var(--violet); }
-.rail-node.kind-boss .rail-node-pip {
-  border-color: rgba(223, 97, 90, 0.55);
-  color: var(--red);
-}
-.rail-node.kind-start .rail-node-pip { color: var(--muted); }
-
-.rail-node.future .rail-node-pip {
-  border-style: dashed;
-  opacity: 0.68;
-}
-
-.rail-node.future .rail-node-floor {
-  opacity: 0.72;
-}
-
-.rail-node.past .rail-node-pip {
-  opacity: 0.58;
-}
-
-.rail-node.past .rail-node-floor {
-  color: var(--faint);
-}
-
-.rail-node.current {
-  background: linear-gradient(90deg, rgba(231, 184, 90, 0.16), rgba(231, 184, 90, 0.02));
-}
-
-.rail-node.current .rail-node-pip {
-  border-color: var(--gold);
-  border-style: solid;
-  background: radial-gradient(circle at 50% 35%, rgba(231, 184, 90, 0.34), var(--bg-2) 72%);
-  box-shadow: 0 0 0 3px rgba(231, 184, 90, 0.1);
-  color: var(--gold-soft);
-  opacity: 1;
-}
-
-.rail-node.current .rail-node-floor {
-  color: var(--gold-soft);
-  font-size: 0.62rem;
-  font-weight: 800;
-}
-
-/* Small notch for floors that also hold an event. */
-.rail-node.has-event .rail-node-pip::after {
-  content: '';
-  position: absolute;
-  top: -3px;
-  right: -3px;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--violet);
-  box-shadow: 0 0 0 2px var(--bg-2);
+.rail-node-event {
+  fill: var(--violet);
+  stroke: var(--bg-2);
+  stroke-width: 1.6;
 }
 
 .battle-rail .timer {

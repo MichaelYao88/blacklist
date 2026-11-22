@@ -40,14 +40,14 @@ describe('persistent level display', () => {
     const current = badge?.querySelector<HTMLElement>('.rail-node.current');
     expect(current?.dataset.level).toBe('1');
     expect(current?.getAttribute('aria-current')).toBe('step');
-    expect(current?.getAttribute('data-tip')).toContain('Floor 1');
 
     const shop = badge?.querySelector<HTMLElement>('.rail-node[data-level="2"]');
-    expect(shop?.getAttribute('data-tip')).toBe('Floor 2 · Shop');
     expect(shop?.classList.contains('future')).toBe(true);
+    expect(shop?.classList.contains('kind-shop')).toBe(true);
 
     const curse = badge?.querySelector<HTMLElement>('.rail-node[data-level="4"]');
-    expect(curse?.getAttribute('data-tip')).toBe('Floor 4 · Curse');
+    expect(curse?.classList.contains('kind-curse')).toBe(true);
+    expect(badge?.querySelector('[data-tip]')).toBeNull();
   });
 
   it('keeps the level visible through summary, reward, and shop phases', () => {

@@ -2015,12 +2015,12 @@ function railFloorAt(view: RunView, level: number): RailFloor | null {
   };
 }
 
-function railFloorLabel(floor: RailFloor): string {
+function railFloorName(floor: RailFloor): string {
   if (floor.kind === 'start') return 'Run start';
-  const name = floor.kind === 'boss'
-    ? (floor.bossId ? BOSS_BY_ID.get(floor.bossId)?.name : undefined) ?? 'Boss'
-    : RAIL_NODE_LABELS[floor.kind];
-  return `Floor ${floor.level} · ${name}${floor.hasEvent ? ' and an event' : ''}`;
+  if (floor.kind === 'boss') {
+    return (floor.bossId ? BOSS_BY_ID.get(floor.bossId)?.name : undefined) ?? 'Boss';
+  }
+  return RAIL_NODE_LABELS[floor.kind];
 }
 
 function railFloorGlyph(floor: RailFloor): string {
@@ -2029,36 +2029,64 @@ function railFloorGlyph(floor: RailFloor): string {
   return RAIL_NODE_GLYPHS[floor.kind];
 }
 
+/** Zig-zag anchors, top to bottom: +3, +2, +1, current, one behind. */
+const RAIL_NODE_POINTS = [
+  { x: 222, y: 16 },
+  { x: 36, y: 40 },
+  { x: 198, y: 78 },
+  { x: 52, y: 104 },
+  { x: 204, y: 128 },
+];
+
 function renderLevelBadge(view: RunView): string {
   const maxLevel = view.nodes.reduce((max, node) => Math.max(max, node.level ?? 0), view.level);
-  // One floor behind, the current floor, and three ahead. Empty slots keep the
-  // ladder the same height at the start and end of the run.
-  const rows = [3, 2, 1, 0, -1].map((offset) => {
+  const slots = [3, 2, 1, 0, -1].map((offset) => {
     const level = view.level + offset;
-    if (level < 0 || level > maxLevel || (level === 0 && view.level !== 0)) {
-      return '<li class="rail-node is-empty" aria-hidden="true"></li>';
-    }
-    const floor = railFloorAt(view, level);
-    if (!floor) return '<li class="rail-node is-empty" aria-hidden="true"></li>';
-    const current = level === view.level;
-    const state = current ? 'current' : level < view.level ? 'past' : 'future';
-    const tip = railFloorLabel(floor);
-    return `<li class="rail-node ${state} kind-${floor.kind}${floor.hasEvent ? ' has-event' : ''}"
-      data-level="${level}"
-      tabindex="0"
-      data-tip="${escapeHtml(tip)}"
-      aria-label="${escapeHtml(tip.replace(' · ', ', '))}"${current ? ' aria-current="step"' : ''}>
-      <span class="rail-node-pip" aria-hidden="true">${railFloorGlyph(floor)}</span>
-      <span class="rail-node-floor">${level}</span>
-    </li>`;
+    if (level < 0 || level > maxLevel || (level === 0 && view.level !== 0)) return null;
+    return railFloorAt(view, level);
+  });
+
+  const segments = slots.flatMap((floor, index) => {
+    if (index === 0 || !floor || !slots[index - 1]) return [];
+    const from = RAIL_NODE_POINTS[index - 1];
+    const to = RAIL_NODE_POINTS[index];
+    const state = index === 4 ? 'past' : 'future';
+    return `<path class="rail-path ${state}" d="M${from.x} ${from.y}L${to.x} ${to.y}" />`;
   }).join('');
+
+  const nodes = slots.map((floor, index) => {
+    if (!floor) return '<g class="rail-node is-empty" aria-hidden="true"></g>';
+    const point = RAIL_NODE_POINTS[index];
+    const current = index === 3;
+    const state = current ? 'current' : index > 3 ? 'past' : 'future';
+    const radius = current ? 15 : floor.kind === 'boss' ? 13 : 11;
+    const glyph = railFloorGlyph(floor);
+    return `<g class="rail-node ${state} kind-${floor.kind}${floor.hasEvent ? ' has-event' : ''}" data-level="${floor.level}"${current ? ' aria-current="step"' : ''}>
+      ${current ? `<circle class="rail-node-halo" cx="${point.x}" cy="${point.y}" r="${radius + 7}" />
+      <circle class="rail-node-core" cx="${point.x}" cy="${point.y}" r="${radius - 5}" />` : ''}
+      <circle class="rail-node-dot" cx="${point.x}" cy="${point.y}" r="${radius}" />
+      <text class="rail-node-glyph" x="${point.x}" y="${point.y}" dy="0.35em" text-anchor="middle">${glyph}</text>
+      ${floor.hasEvent ? `<circle class="rail-node-event" cx="${point.x + radius * 0.68}" cy="${point.y - radius * 0.68}" r="3.4" />` : ''}
+    </g>`;
+  }).join('');
+
+  const summary = slots.flatMap((floor) => {
+    if (!floor) return [];
+    const state = floor.level === view.level
+      ? ', current'
+      : floor.level < view.level ? ', cleared' : '';
+    return [`${floor.level} ${railFloorName(floor)}${state}`];
+  }).join(', ');
 
   return `<div class="rail-level" aria-label="Current level ${view.level} of ${maxLevel}">
     <div class="rail-level-top">
       <span class="rail-level-kicker">LEVEL</span>
       <span class="rail-level-value">${view.level}<i>/${maxLevel}</i></span>
     </div>
-    <ol class="rail-map" aria-label="Nearby floors">${rows}</ol>
+    <svg class="rail-map" viewBox="0 0 252 144" role="img" aria-label="${escapeHtml(`Nearby floors: ${summary}`)}">
+      ${segments}
+      ${nodes}
+    </svg>
   </div>`;
 }
 
