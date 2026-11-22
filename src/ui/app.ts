@@ -1752,7 +1752,7 @@ function renderTopbar(view: RunView): string {
   <header class="topbar">
     <div class="brand">BLACKLIST</div>
     <div class="top-stats">
-      <div class="chip-stat gold" title="Gold">¤ <b>${view.gold}</b></div>
+      <div class="chip-stat gold" title="Gold">🪙 <b>${view.gold}</b></div>
       ${view.ascension > 0 ? `<div class="chip-stat ascension" title="Ascension modifiers are active">A${view.ascension}</div>` : ''}
       <div class="chip-stat" title="Area">AREA ${roman(view.act + 1)}</div>
     </div>
@@ -2239,7 +2239,7 @@ function renderReward(phase: Extract<PhaseView, { kind: 'reward' }>): string {
             ? spellIcon(option.def ?? '')
             : option.kind === 'eat'
               ? foodIcon(option.def ?? '')
-              : '¤';
+              : '🪙';
         const isRelic = option.kind === 'item' && option.rarity === 'rare';
         const tag = isRelic
           ? 'RELIC'
@@ -2449,7 +2449,7 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
         <p class="panel-kicker">SHOP</p>
         <h2>Spend it or lose it</h2>
       </div>
-      <div class="chip-stat gold">¤ <b>${view.gold}</b></div>
+      <div class="chip-stat gold">🪙 <b>${view.gold}</b></div>
     </div>
     ${coupon > 0 ? `<p class="hint coupon-hint">Coupon Book: the first item or food purchase costs ${coupon} less.</p>` : ''}
     <div class="offer-grid">${offers}</div>
