@@ -267,6 +267,8 @@ export interface CharacterDef {
   startingGold?: number;
   items: string[];
   curses: CurseId[];
+  /** Foods applied at the start of the run, as if already eaten. */
+  startingFoods?: string[];
   /** Letters the player must purge during setup, before the first round. */
   startingPurges?: number;
   /** Sprite family used by the battle rail and title portraits. */
@@ -399,6 +401,7 @@ export type Effect =
   | { type: 'addRandomRelic' }
   | { type: 'addRandomCurse' }
   | { type: 'openShop' }
+  | { type: 'shopWildcardSlots'; count: number }
   | { type: 'startBattle' }
   | { type: 'addPreviewItem' }
   | { type: 'addPreviewFood' }
@@ -707,6 +710,8 @@ export interface RunState {
   summary?: SummaryState;
   reward?: RewardState;
   shop?: ShopState;
+  /** Permanent extra wildcard offers in future shops from Shop Upgrade. */
+  shopWildcardBonus: number;
   happening?: HappeningState;
   /** Muffin Tin: number of tins eaten this shop visit, one armor per food per tin. */
   muffinStacks?: number;

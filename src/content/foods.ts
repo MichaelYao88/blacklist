@@ -487,6 +487,15 @@ export const FOODS: FoodDef[] = [
     effects: [{ type: 'slots', delta: 1 }],
   }),
   defineFood({
+    id: 'shop-upgrade',
+    name: 'Shop Upgrade',
+    description: 'Future shops: +2 wildcards (item/food/spell and item/food). No slot.',
+    price: 14,
+    rarity: 'rare',
+    unique: true,
+    effects: [{ type: 'shopWildcardSlots', count: 2 }],
+  }),
+  defineFood({
     id: 'big-eggplant',
     name: 'Big Eggplant',
     description: '+1 item slot, -3 max armor. No slot.',

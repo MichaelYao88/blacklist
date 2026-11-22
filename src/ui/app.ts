@@ -1726,7 +1726,9 @@ function renderCharacterPicker(meta: ReturnType<typeof readMeta>): string {
           .map((id) => ITEM_BY_ID.get(id)?.name ?? id);
         const curses = character.curses
           .map((id) => CURSE_BY_ID.get(id)?.name ?? id);
-        const kit = [...items, ...curses.map((name) => `${name} curse`)].join(', ');
+        const foods = (character.startingFoods ?? [])
+          .map((id) => `${FOOD_BY_ID.get(id)?.name ?? id} food`);
+        const kit = [...items, ...curses.map((name) => `${name} curse`), ...foods].join(', ');
         return `<button class="character-card ${character.id === selectedCharacter ? 'active' : ''} ${locked ? 'locked' : ''}" data-action="character" data-id="${escapeHtml(character.id)}" ${locked ? 'disabled' : ''}>
           <i class="character-portrait ${characterPortraitClass(character.id)}" aria-hidden="true" style="${characterPortraitStyle(character.id)}"></i>
           <span class="character-name">${escapeHtml(character.name)}</span>

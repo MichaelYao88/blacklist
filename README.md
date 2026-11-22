@@ -33,7 +33,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - Within-X solve items count **player guesses only**; solve gold is a random 4-8, independent of guess count and auto-guesses
 - Curse Collector, Curse Bulwark and Reliquary trigger on gaining a curse ("Whenever you gain a curse: Gain …"). Curse Collector grants +6 max HP and heals 6
 - Ascension A1/A2 draft 1/2 starting curses
-- Shops with rerolls that start at 1g and double in price: three items, two foods and one wildcard; the wildcard is always food or a spell, never an item, and one random offer is always 50% off. When your item slots are full, one gear offer is replaced by food
+- Shops with rerolls that start at 1g and double in price: three items, two foods and one wildcard; the wildcard is always food or a spell, never an item, and one random offer is always 50% off. When your item slots are full, one gear offer is replaced by food. **Shop Upgrade** permanently adds two more wildcards: one item/food/spell and one item/food
 - Every spell offered in a shop has a 4g base price; the half-price sale can land on it
 - Four item slots by default. Only equipped gear is active, and each shop has a drag-and-drop loadout
 - **Loose Tongue**, a 12g uncommon item that lets you guess five-letter nonsense for free-form probes
@@ -102,6 +102,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Pen Club** pays a random 1-5 gold for guesses starting with PEN; **Gourmand** gains +1 max HP on eat or spell cast
 - **Old McDonald's** is a 4g unique food: EIEIO is guessed for free once, at the start of the next round
 - **Big Eggplant** and **Jumbo Hot Dog** are uncommon foods that trade max armor or max HP for an item slot
+- **Shop Upgrade** is a 14g rare unique food: future shops gain two wildcard offers, one item/food/spell and one item/food
 - Shops can show up to 2 copies of the same entry; sell rows are hoverable
 - Solve gold is a random 4-8 per solve, independent of guess count
 - **The Endless Table** fires every on-eat effect 7 times or pays 7 gold
@@ -208,7 +209,7 @@ Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title s
 - **The Pathfinder** unlocks when The Soldier reaches the first curse screen. They start with **Head Start**, **The List** curse, 14 HP, 3 armor and 9 gold.
 - **The Purgamist** unlocks after purging **6 letters** across any runs. They start with **Without the D**, 12 HP, 4 armor, 17 gold, and purge **4 letters** of your choice on level 0, before any word is drawn.
 - **The Necromancer** unlocks after buying the **Necronomicon** once from a shop. They start with the **Necronomicon**, **The Sleeper** curse, 27 HP, 4 armor and 16 gold.
-- **The Gourmand** unlocks after eating 3 **Double Cheeseburgers** across any runs. They start with **Potluck**, **Porcupine's Dilemma** curse, 25 HP, 2 armor and 6 gold.
+- **The Gourmand** unlocks after eating 3 **Double Cheeseburgers** across any runs. They start with **Potluck**, **Porcupine's Dilemma** curse, **Shop Upgrade** already eaten, 25 HP, 2 armor and 6 gold.
 - **The Farmer** unlocks after winning any run. They start with the **Harvest Charm** (character-only, not found in shops), 20 HP, 1 armor and 6 gold.
 - **The Empty Armor** unlocks after winning a run on **Ascension 1**. It starts with **Bulwark**, the character-only **Slow Mending** curse, 1 HP, 11 armor, one extra item slot and 6 gold.
 - **The Werewolf** unlocks after winning runs with **2 different characters**. It starts with **Dark Echo**, **Thorn Crown**, the **Weak Plate** and **Tight Slots** curses, 69 HP, no armor and 6 gold.

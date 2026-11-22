@@ -1439,6 +1439,13 @@ export function createCore(content: Content): Core {
         }
         break;
       }
+      case 'shopWildcardSlots':
+        state.shopWildcardBonus += effect.count;
+        emit(rt, {
+          type: 'message',
+          text: `Future shops gain ${effect.count} wildcard slot${effect.count === 1 ? '' : 's'}.`,
+        });
+        break;
       case 'pendingPurge':
         state.pendingPurge += effect.count;
         break;
@@ -2876,6 +2883,17 @@ export function createCore(content: Content): Core {
       pickFood(food);
       return true;
     };
+    const pickWildcard = (categories: Array<'item' | 'eat' | 'spell'>): boolean => {
+      for (const category of rngShuffle(state, categories)) {
+        if (category === 'item' && pickRandomItem()) return true;
+        if (category === 'eat' && pickRandomFood()) return true;
+        if (category === 'spell' && content.spells.length > 0) {
+          pickSpell(rngPick(state, content.spells));
+          return true;
+        }
+      }
+      return false;
+    };
 
     for (let index = 0; index < itemTarget; index++) {
       pickRandomItem();
@@ -2888,6 +2906,12 @@ export function createCore(content: Content): Core {
       if (content.spells.length > 0) pickSpell(rngPick(state, content.spells));
     } else {
       pickRandomFood();
+    }
+
+    // Shop Upgrade: alternate an any-type slot with an item/food slot.
+    const extraWildcards = Math.max(0, state.shopWildcardBonus ?? 0);
+    for (let index = 0; index < extraWildcards; index++) {
+      pickWildcard(index % 2 === 0 ? ['item', 'eat', 'spell'] : ['item', 'eat']);
     }
 
     // One random offer is half price. It can land on an item, a food, or the
@@ -4278,6 +4302,7 @@ export function createCore(content: Content): Core {
       pendingStartingCurses: startingCurses,
       bossCursesLeft: 0,
       pendingCurseRemoval: 0,
+      shopWildcardBonus: 0,
       phase: 'round',
       stats: {
         rounds: 0,
@@ -4312,6 +4337,13 @@ export function createCore(content: Content): Core {
     if (content.spells.length > 0) addSpell(rt, rngPick(state, content.spells).id);
     for (const item of character.items) addItem(rt, item);
     for (const curse of character.curses) applyCurse(rt, curse, true);
+    for (const foodId of character.startingFoods ?? []) {
+      const food = foodById.get(foodId);
+      if (!food) continue;
+      if (food.unique && !state.eatenFoods.includes(food.id)) state.eatenFoods.push(food.id);
+      emit(rt, { type: 'foodEaten', food: food.id, name: food.name });
+      applyEffects(rt, food.effects, { kind: 'food', food: food.id });
+    }
     if ((character.startingPurges ?? 0) > 0) {
       state.pendingPurge += character.startingPurges ?? 0;
     }
@@ -4478,6 +4510,7 @@ export function createCore(content: Content): Core {
           state.round.damageRamp = 0;
         }
       }
+      if (typeof state.shopWildcardBonus !== 'number') state.shopWildcardBonus = 0;
       // Older saves can still have the retired upgrade offer kind. Drop those
       // entries rather than rendering a shelf the new client cannot price.
       if (state.shop) {

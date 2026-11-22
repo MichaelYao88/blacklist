@@ -1807,6 +1807,37 @@ describe('new item and event batch', () => {
     expect(sawDuplicate).toBe(true);
   });
 
+  it('Shop Upgrade is a 14g rare unique food that grants two extra wildcards', () => {
+    const food = FOOD_BY_ID.get('shop-upgrade');
+    expect(food?.price).toBe(14);
+    expect(food?.rarity).toBe('rare');
+    expect(food?.unique).toBe(true);
+    expect(food?.effects).toEqual([{ type: 'shopWildcardSlots', count: 2 }]);
+  });
+
+  it('Shop Upgrade adds two offers to future shops', () => {
+    const control = start('shop-upgrade-slots');
+    control.state.nodeIndex = 0;
+    control.state.nodes[1] = { kind: 'shop', level: 1 };
+    control.state.phase = 'shop';
+    const baseOffers = enterShop(control.state).state.shop?.offers ?? [];
+
+    const upgraded = start('shop-upgrade-slots');
+    upgraded.state.shopWildcardBonus = 2;
+    upgraded.state.nodeIndex = 0;
+    upgraded.state.nodes[1] = { kind: 'shop', level: 1 };
+    upgraded.state.phase = 'shop';
+    const upgradedOffers = enterShop(upgraded.state).state.shop?.offers ?? [];
+
+    expect(upgradedOffers.length).toBe(baseOffers.length + 2);
+  });
+
+  it('The Gourmand starts with Shop Upgrade already eaten', () => {
+    const { state } = game.newRun({ seed: 'gourmand-shop-upgrade', character: 'gourmand' });
+    expect(state.eatenFoods).toContain('shop-upgrade');
+    expect(state.shopWildcardBonus).toBe(2);
+  });
+
   it('The Endless Table fires on-eat effects 7 times', () => {
     const { state } = start('endless-table');
     state.items.push({ instance: 'i-gour', id: 'gourmand', data: {}, equipped: true });

@@ -62,6 +62,7 @@ export const CHARACTERS: CharacterDef[] = [
     startingGold: 6,
     items: ['potluck'],
     curses: ['porcupine'],
+    startingFoods: ['shop-upgrade'],
     sprite: 'tengu',
     unlockHint: 'Eat 3 Double Cheeseburgers across any runs.',
   }),
