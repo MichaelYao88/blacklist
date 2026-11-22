@@ -210,10 +210,12 @@ export function createCore(content: Content): Core {
     );
 
   const damageRampEarly = (state: RunState): number =>
-    curseDefs(state).reduce(
-      (sum, entry) => sum + (entry.def.damageRampEarly ?? 0) * entry.stacks,
-      0,
-    );
+    curseDefs(state).reduce((sum, entry) => {
+      const first = entry.def.damageRampEarly ?? 0;
+      if (first === 0) return sum;
+      const perExtra = entry.def.damageRampEarlyPerStack ?? first;
+      return sum + first + Math.max(0, entry.stacks - 1) * perExtra;
+    }, 0);
 
   /** Guesses made before the damage multiplier starts. */
   const damageSafeGuesses = (state: RunState): number =>

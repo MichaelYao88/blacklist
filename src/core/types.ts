@@ -209,8 +209,10 @@ export interface CurseDef {
   /** Extra damage per revealed letter in the player's first guess, per stack. */
   damagePerFirstReveal?: number;
   damageMultiplier?: number;
-  /** Starts the damage multiplier this many guesses earlier per stack. */
+  /** Starts the damage multiplier this many guesses earlier on the first stack. */
   damageRampEarly?: number;
+  /** Additional guesses earlier per stack after the first. Defaults to damageRampEarly. */
+  damageRampEarlyPerStack?: number;
   shopItemDelta?: number;
   shopFoodDelta?: number;
   shopPriceAdd?: number;
