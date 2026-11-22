@@ -27,7 +27,7 @@ describe('persistent level display', () => {
   it('shows the level during a round', () => {
     const badge = levelBadge();
     expect(badge).not.toBeNull();
-    expect(badge?.querySelector('.rail-level-kicker')?.textContent).toBe('LEVEL');
+    expect(badge?.querySelector('.rail-level-kicker')?.textContent).toBe('FLOOR');
     expect(badge?.querySelector('.rail-level-value')?.textContent).toBe('1/51');
   });
 
@@ -40,14 +40,18 @@ describe('persistent level display', () => {
     const current = badge?.querySelector<HTMLElement>('.rail-node.current');
     expect(current?.dataset.level).toBe('1');
     expect(current?.getAttribute('aria-current')).toBe('step');
+    expect(current?.getAttribute('tabindex')).toBe('0');
+    expect(current?.getAttribute('data-tip')?.startsWith('Fight')).toBe(true);
 
     const shop = badge?.querySelector<HTMLElement>('.rail-node[data-level="2"]');
     expect(shop?.classList.contains('future')).toBe(true);
     expect(shop?.classList.contains('kind-shop')).toBe(true);
+    expect(shop?.getAttribute('data-tip')).toBe('Shop');
 
     const curse = badge?.querySelector<HTMLElement>('.rail-node[data-level="4"]');
     expect(curse?.classList.contains('kind-curse')).toBe(true);
-    expect(badge?.querySelector('[data-tip]')).toBeNull();
+    expect(curse?.getAttribute('data-tip')).toBe('Curse');
+    expect(badge?.textContent).not.toContain('Floor');
   });
 
   it('keeps the level visible through summary, reward, and shop phases', () => {

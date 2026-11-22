@@ -116,7 +116,6 @@ button {
   max-width: 264px;
   padding: 9px 11px;
   border: 1px solid var(--line-2);
-  border-left: 3px solid var(--gold);
   border-radius: 8px;
   background: rgba(18, 14, 26, 0.98);
   color: var(--ink);
@@ -926,6 +925,45 @@ button {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 7px;
+}
+
+/* Guesses past the safe limit are outlined by damage tier. Pseudo-elements
+   place the warning marks outside the row so the tiles never shift. */
+.board-row.danger {
+  position: relative;
+  outline: 2px solid var(--tier);
+  outline-offset: 3px;
+  border-radius: 8px;
+  box-shadow: 0 0 16px -4px var(--tier);
+  cursor: help;
+}
+
+.board-row.danger.tier-2 { --tier: #d7b64f; }
+.board-row.danger.tier-3 { --tier: #e08a3c; }
+.board-row.danger.tier-4 { --tier: #df615a; }
+.board-row.danger.tier-5 { --tier: #b06be0; }
+
+.board-row.danger::before,
+.board-row.danger::after {
+  content: attr(data-marks);
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--tier);
+  font-family: var(--sans);
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  text-shadow: 0 0 8px var(--tier), 0 1px 3px #000;
+  pointer-events: none;
+}
+
+.board-row.danger::before { left: -1.15em; }
+.board-row.danger::after { right: -1.15em; }
+
+.board-row.danger:focus-visible {
+  outline-offset: 4px;
 }
 
 .counts {
@@ -2845,8 +2883,8 @@ button {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 9px 11px 10px;
+  gap: 6px;
+  padding: 8px 11px 9px;
   overflow: hidden;
   border: 1px solid rgba(231, 184, 90, 0.3);
   border-radius: 9px;
@@ -2862,15 +2900,15 @@ button {
 
 .rail-level-kicker {
   color: var(--gold);
-  font-size: 0.52rem;
+  font-size: 0.64rem;
   font-weight: 800;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
 }
 
 .rail-level-value {
   color: var(--gold-soft);
   font-family: var(--serif);
-  font-size: 1.35rem;
+  font-size: 1.5rem;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   line-height: 1;
@@ -2899,6 +2937,21 @@ button {
   stroke-width: 1.6;
   stroke-linecap: round;
   stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.rail-node:not(.is-empty) {
+  cursor: help;
+}
+
+.rail-node:focus {
+  outline: none;
+}
+
+.rail-node:focus-visible .rail-node-dot {
+  stroke: var(--gold-soft);
+  stroke-width: 2.4;
+  stroke-dasharray: none;
 }
 
 .rail-path.future {
@@ -2995,30 +3048,30 @@ button {
 
 .guess-damage {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 5px 9px;
+  gap: 3px;
+  padding: 6px 9px 7px;
   border: 1px solid rgba(223, 97, 90, 0.32);
   border-radius: 7px;
   background: rgba(223, 97, 90, 0.07);
+  text-align: center;
 }
 
-.guess-damage span {
-  max-width: 62%;
+.guess-damage-label {
   color: var(--faint);
-  font-size: 0.46rem;
+  font-size: 0.66rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
-  line-height: 1.15;
+  letter-spacing: 0.09em;
+  line-height: 1.1;
 }
 
-.guess-damage b {
+.guess-damage-value {
   color: #ff8b84;
   font-family: var(--sans);
-  font-size: 0.82rem;
+  font-size: 0.98rem;
   font-weight: 900;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   line-height: 1;
   white-space: nowrap;
 }
@@ -3028,10 +3081,9 @@ button {
   background: rgba(88, 180, 198, 0.06);
 }
 
-.guess-damage.safe b {
+.guess-damage.safe .guess-damage-value {
   color: #8fd8e6;
-  font-family: var(--sans);
-  font-size: 0.62rem;
+  font-size: 0.8rem;
   letter-spacing: 0.1em;
 }
 

@@ -1996,8 +1996,8 @@ function guessDamageHtml(board: BoardView): string {
     ? `Your next guess is free and deals no damage. ${INCOMING_DAMAGE_TIP}`
     : `A wrong guess will deal ${value} damage right now. ${INCOMING_DAMAGE_TIP}`;
   return `<div class="guess-damage ${safe ? 'safe' : ''}" tabindex="0" data-tip="${escapeHtml(tip)}" aria-label="${escapeHtml(tip)}">
-    <span>INCOMING DAMAGE</span>
-    <b>${safe ? 'FREE' : `${value} damage`}</b>
+    <span class="guess-damage-label">INCOMING DAMAGE</span>
+    <b class="guess-damage-value">${safe ? 'FREE' : `⚔️ ${value} ⚔️`}</b>
   </div>`;
 }
 
@@ -2091,13 +2091,18 @@ function railFloorGlyph(floor: RailFloor): string {
   return RAIL_NODE_GLYPHS[floor.kind];
 }
 
+function railFloorTip(floor: RailFloor): string {
+  const name = railFloorName(floor);
+  return floor.hasEvent ? `${name} + event` : name;
+}
+
 /** Zig-zag anchors, top to bottom: +3, +2, +1, current, one behind. */
 const RAIL_NODE_POINTS = [
-  { x: 222, y: 16 },
-  { x: 36, y: 40 },
-  { x: 198, y: 78 },
-  { x: 52, y: 104 },
-  { x: 204, y: 128 },
+  { x: 222, y: 17 },
+  { x: 36, y: 37 },
+  { x: 198, y: 70 },
+  { x: 52, y: 92 },
+  { x: 204, y: 112 },
 ];
 
 function renderLevelBadge(view: RunView): string {
@@ -2107,13 +2112,22 @@ function renderLevelBadge(view: RunView): string {
     if (level < 0 || level > maxLevel || (level === 0 && view.level !== 0)) return null;
     return railFloorAt(view, level);
   });
+  const visible = slots.flatMap((floor, slot) => (
+    floor ? [{ floor, slot, point: RAIL_NODE_POINTS[slot] }] : []
+  ));
 
-  const segments = slots.flatMap((floor, index) => {
-    if (index === 0 || !floor || !slots[index - 1]) return [];
-    const from = RAIL_NODE_POINTS[index - 1];
-    const to = RAIL_NODE_POINTS[index];
-    const state = index === 4 ? 'past' : 'future';
-    return `<path class="rail-path ${state}" d="M${from.x} ${from.y}L${to.x} ${to.y}" />`;
+  const segments = visible.slice(1).map((entry, index) => {
+    const previous = visible[index - 1]?.point ?? visible[index].point;
+    const from = visible[index].point;
+    const to = entry.point;
+    const next = visible[index + 2]?.point ?? to;
+    // Catmull-Rom control points keep the curve flowing through each node.
+    const cp1x = from.x + (to.x - previous.x) / 6;
+    const cp1y = from.y + (to.y - previous.y) / 6;
+    const cp2x = to.x - (next.x - from.x) / 6;
+    const cp2y = to.y - (next.y - from.y) / 6;
+    const state = entry.slot === 4 ? 'past' : 'future';
+    return `<path class="rail-path ${state}" d="M${from.x} ${from.y}C${cp1x} ${cp1y} ${cp2x} ${cp2y} ${to.x} ${to.y}" />`;
   }).join('');
 
   const nodes = slots.map((floor, index) => {
@@ -2123,7 +2137,13 @@ function renderLevelBadge(view: RunView): string {
     const state = current ? 'current' : index > 3 ? 'past' : 'future';
     const radius = current ? 15 : floor.kind === 'boss' ? 13 : 11;
     const glyph = railFloorGlyph(floor);
-    return `<g class="rail-node ${state} kind-${floor.kind}${floor.hasEvent ? ' has-event' : ''}" data-level="${floor.level}"${current ? ' aria-current="step"' : ''}>
+    const tip = railFloorTip(floor);
+    return `<g class="rail-node ${state} kind-${floor.kind}${floor.hasEvent ? ' has-event' : ''}"
+      data-level="${floor.level}"
+      data-tip="${escapeHtml(tip)}"
+      tabindex="0"
+      role="img"
+      aria-label="${escapeHtml(tip)}"${current ? ' aria-current="step"' : ''}>
       ${current ? `<circle class="rail-node-halo" cx="${point.x}" cy="${point.y}" r="${radius + 7}" />
       <circle class="rail-node-core" cx="${point.x}" cy="${point.y}" r="${radius - 5}" />` : ''}
       <circle class="rail-node-dot" cx="${point.x}" cy="${point.y}" r="${radius}" />
@@ -2137,15 +2157,15 @@ function renderLevelBadge(view: RunView): string {
     const state = floor.level === view.level
       ? ', current'
       : floor.level < view.level ? ', cleared' : '';
-    return [`${floor.level} ${railFloorName(floor)}${state}`];
+    return [`${railFloorTip(floor)}${state}`];
   }).join(', ');
 
   return `<div class="rail-level" aria-label="Current level ${view.level} of ${maxLevel}">
     <div class="rail-level-top">
-      <span class="rail-level-kicker">LEVEL</span>
+      <span class="rail-level-kicker">FLOOR</span>
       <span class="rail-level-value">${view.level}<i>/${maxLevel}</i></span>
     </div>
-    <svg class="rail-map" viewBox="0 0 252 144" role="img" aria-label="${escapeHtml(`Nearby floors: ${summary}`)}">
+    <svg class="rail-map" viewBox="0 0 252 128" role="group" aria-label="${escapeHtml(`Nearby floors: ${summary}`)}">
       ${segments}
       ${nodes}
     </svg>
@@ -2176,7 +2196,7 @@ function renderBattleRail(view: RunView, bossId?: string): string {
   const playerLabel = playerDef?.name ?? 'The Soldier';
   const facts = board
     ? [
-        `<span class="fact">FREE ${board.freeGuessesLeft}</span>`,
+        board.freeGuessesLeft > 0 ? `<span class="fact">FREE ${board.freeGuessesLeft}</span>` : '',
         board.shielded ? `<span class="fact shield">IMMUNE ${formatTime(board.shieldMsLeft)}</span>` : '',
         board.gauntletTotal > 1 ? `<span class="fact gauntlet">PUZZLE ${board.gauntletIndex + 1}/${board.gauntletTotal}</span>` : '',
         view.items.some((item) => item.id === 'loose-tongue' && item.equipped) ? `<span class="fact free-speech">ANY WORD</span>` : '',
@@ -2394,6 +2414,9 @@ function tileRow(
   letters: string[],
   tiles?: string[],
   extraClass = '',
+  rowClass = '',
+  rowMarks = '',
+  rowTip = '',
 ): string {
   const cells = Array.from({ length: 5 }, (_, index) => {
     const letter = letters[index] ?? '';
@@ -2404,22 +2427,44 @@ function tileRow(
       ${symbol ? `<span class="tile-mark">${symbol}</span>` : ''}
     </div>`;
   }).join('');
-  return `<div class="board-row">${cells}</div>`;
+  const attrs = rowTip
+    ? ` tabindex="0" data-tip="${escapeHtml(rowTip)}" aria-label="${escapeHtml(rowTip)}" data-marks="${escapeHtml(rowMarks)}"`
+    : '';
+  return `<div class="board-row ${rowClass}"${attrs}>${cells}</div>`;
 }
 
 function renderBoard(board: BoardView): string {
   const rows: string[] = [];
   const guesses = board.guesses;
   const totalRows = Math.max(6, guesses.length + 1);
+
+  // The engine starts multiplying damage once the guess number passes the
+  // safe limit; Short Fuse moves that limit earlier. Deriving the tier here
+  // keeps the outline aligned with the real hit without changing behavior.
+  const tierAt = (index: number): { multiplier: number; tier: number; marks: string; tip: string } | null => {
+    const multiplier = Math.max(1, index + 1 - 4 + board.damageRampEarly);
+    if (multiplier <= 1) return null;
+    return {
+      multiplier,
+      tier: Math.min(5, multiplier),
+      marks: '!'.repeat(Math.min(3, multiplier - 1)),
+      tip: `A wrong guess here takes ×${multiplier} damage.`,
+    };
+  };
+
   for (let index = 0; index < totalRows; index++) {
+    const danger = tierAt(index);
+    const rowClass = danger ? `danger tier-${danger.tier}` : '';
+    const marks = danger?.marks ?? '';
+    const tip = danger?.tip ?? '';
     if (index < guesses.length) {
       const guess = guesses[index];
       const counts = guess.counts
         ? `<div class="counts">${guess.counts.correct} in place · ${guess.counts.present} misplaced</div>`
         : '';
-      rows.push(tileRow(guess.word.split(''), guess.tiles) + counts);
+      rows.push(tileRow(guess.word.split(''), guess.tiles, '', rowClass, marks, tip) + counts);
     } else if (index === guesses.length) {
-      rows.push(tileRow(input.split(''), undefined, 'input'));
+      rows.push(tileRow(input.split(''), undefined, 'input', rowClass, marks, tip));
     } else {
       rows.push(tileRow([]));
     }
