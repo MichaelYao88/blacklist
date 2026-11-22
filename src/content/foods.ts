@@ -517,17 +517,6 @@ export const FOODS: FoodDef[] = [
     ],
   }),
   defineFood({
-    id: 'sundial',
-    name: 'Sundial',
-    description: '+2 minutes per round, -1 free guess per round. No slot.',
-    price: 9,
-    requiresClock: true,
-    effects: [
-      { type: 'timeBonus', ms: 120_000 },
-      { type: 'freeGuessBonus', delta: -1 },
-    ],
-  }),
-  defineFood({
     id: 'bounty',
     name: 'Bounty',
     description: '+1 gold per solve. No slot.',

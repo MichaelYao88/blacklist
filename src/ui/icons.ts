@@ -30,7 +30,6 @@ const ITEM_ICONS: Record<string, string> = {
   'fast-learner': '🎓',
   untouchable: '✨',
   spellhoarder: '🧪',
-  sundial: '☀️',
   'loose-tongue': '👅',
   'waste-basket': '🗑️',
   'mimic-mouth': '👄',

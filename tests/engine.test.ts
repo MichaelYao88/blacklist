@@ -740,13 +740,14 @@ describe('timer curses', () => {
     again.state.spells = [{ instance: 's-heal', id: 'heal' }];
     const healed = act(again.state, { type: 'castSpell', instance: 's-heal' });
     expect(healed.state.hp).toBeGreaterThanOrEqual(10.5);
+    expect(healed.state.maxHp).toBe(19);
     expect(healed.state.items.find((item) => item.id === 'adrenaline')?.data.armed).toBe(1);
 
     healed.state.hp = 10;
     healed.state.armor = 0;
     const second = act(healed.state, { type: 'guess', word: 'fizzy' });
     expect(second.state.hp).toBe(7);
-    expect(second.state.maxHp).toBe(21);
+    expect(second.state.maxHp).toBe(22);
     expect(second.state.maxArmor).toBe(2);
     expect(ITEM_BY_ID.get('adrenaline')?.price).toBe(10);
     expect(ITEM_BY_ID.get('adrenaline')?.description).toContain('+3 max HP');
@@ -2211,11 +2212,12 @@ describe('latest balance pass', () => {
     }
   });
 
-  it('Heal restores half max HP', () => {
+  it('Heal raises max HP by 1 and restores half of the new max HP', () => {
     const heal = start('heal-half');
     heal.state.hp = 4;
     heal.state.spells.push({ instance: 's-heal', id: 'heal' });
     const cast = act(heal.state, { type: 'castSpell', instance: 's-heal' });
+    expect(cast.state.maxHp).toBe(16);
     expect(cast.state.hp).toBe(12);
   });
 
@@ -2671,7 +2673,8 @@ describe('latest balance pass', () => {
     expect(bought.state.nextSpellDouble).toBe(true);
 
     const cast = act(bought.state, { type: 'castSpell', instance: 's-heal' });
-    expect(cast.state.hp).toBe(15); // heal 8 twice, capped at 15
+    expect(cast.state.maxHp).toBe(17); // two Heals raise max HP by 1 each
+    expect(cast.state.hp).toBe(17); // heal 8 then 9, capped at 17
     expect(cast.state.nextSpellDouble).toBe(false);
   });
 
@@ -2902,7 +2905,7 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('time-dilation')).toBeUndefined();
     expect(ITEM_BY_ID.get('deja-vu')).toBeUndefined();
     expect(ITEM_BY_ID.get('sundial')).toBeUndefined();
-    expect(FOOD_BY_ID.get('sundial')).toBeDefined();
+    expect(FOOD_BY_ID.get('sundial')).toBeUndefined();
   });
 
   it('applies the new prices and text', () => {
@@ -3006,19 +3009,6 @@ describe('latest balance pass', () => {
       if (autoCasts.length >= 2) sawOrbCast = true;
     }
     expect(sawOrbCast).toBe(true);
-  });
-
-  it('Sundial is food that adds time and removes a free guess', () => {
-    const { state } = start('sundial');
-    state.curses.push({ id: 'clock', stacks: 1 });
-    state.phase = 'shop';
-    state.gold = 20;
-    state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'sundial', price: 9 }]);
-    const eaten = act(state, { type: 'buy', offerId: 'o0' });
-    expect(eaten.state.bonusTimeMs).toBe(120_000);
-    expect(eaten.state.freeGuessBonus).toBe(-1);
-    const next = nextRound(eaten.state);
-    expect(next.state.round?.freeLeft).toBe(0);
   });
 
   it('keeps Echo Chamber and removes Ritual Circle and Second Wind', () => {
@@ -3484,7 +3474,7 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('tithe-box')?.description).toContain('10% chance');
     expect(ITEM_BY_ID.get('mimic-mouth')?.description).toContain('Once per round');
     expect(ITEM_BY_ID.get('second-skin')?.description).toContain('half your max armor');
-    expect(SPELL_BY_ID.get('heal')?.description).toBe('Heal half of your max HP.');
+    expect(SPELL_BY_ID.get('heal')?.description).toBe('Gain +1 max HP, then heal half of your max HP.');
     expect(HAPPENING_BY_ID.get('black-market')?.options.find((option) => option.id === 'spell')?.costGold).toBe(1);
     expect(HAPPENING_BY_ID.get('black-market')?.options.find((option) => option.id === 'armor')?.costGold).toBe(5);
     expect(CURSE_BY_ID.get('tax')?.description).toBe('Encounter gold is reduced by 40%.');

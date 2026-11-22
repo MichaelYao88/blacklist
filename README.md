@@ -76,6 +76,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Encore** now costs 7g
 - **Panacea Pouch** (formerly Spellhoarder) is a 9g item: every 3rd spell cast casts Heal
 - **Omen** ignores letters whose only revealing tile was hidden by a position curse, so it can still find them
+- **Heal** raises max HP by 1, then heals half of the new max HP
 - **Vowel Tithe** is an 8g item: each spell cast has a 25% chance to cast Omen
 - **Wild Magic** is a 9g item: each spell cast has a 25% chance to cast a random spell and a 25% chance to autoguess a random word
 - **Acquired Taste** is a 7g uncommon item: each different food you eat this run gives +4 max HP
