@@ -22,7 +22,7 @@ import {
   ITEM_BY_ID,
   SPELL_BY_ID,
 } from '../content';
-import { LocalStore, dismissDamageTutorial, hasSave, readMeta, recordFood, recordPurchase, recordRun, recordStart, unlockCharacter } from './store';
+import { LocalStore, dismissDamageTutorial, hasSave, readMeta, recordFood, recordPurchase, recordPurge, recordRun, recordStart, unlockCharacter } from './store';
 import { escapeHtml, formatTime, reasonText, roman } from './format';
 import { ARMOR_TIP, PURGED_TIP, glossaryText } from './glossary';
 import {
@@ -358,6 +358,7 @@ let setupPurge = false;
 const COUNTDOWN_MS = 2_400;
 let selectedAscension = 0;
 let selectedCharacter = 'runner';
+let characterTip: 'pathfinder' | 'purgamist' | null = null;
 let characterUnlock: string | null = null;
 let characterUnlockQueue: string[] = [];
 let keyboardLayoutNoticeShown = false;
@@ -734,7 +735,7 @@ function processEvents(events: GameEvent[]): void {
     if (event.type === 'offerBought') {
       const count = recordPurchase(event.def);
       const unlocked = [
-        event.def === 'necronomicon' && count >= 1 ? 'necromancer' : null,
+        event.def === 'necronomicon' && count >= 2 ? 'necromancer' : null,
       ].filter((id): id is string => Boolean(id));
       for (const id of unlocked) {
         if (unlockCharacter(id)) {
@@ -747,13 +748,19 @@ function processEvents(events: GameEvent[]): void {
       const count = recordFood(event.food);
       const unlocked = [
         event.food === 'double-cheeseburger' && count >= 3 ? 'gourmand' : null,
-        event.food === 'inkcap' && count >= 2 ? 'purgamist' : null,
       ].filter((id): id is string => Boolean(id));
       for (const id of unlocked) {
         if (unlockCharacter(id)) {
           queueCharacterUnlock(id);
           sfx.play('win');
         }
+      }
+    }
+    if (event.type === 'letterPurged') {
+      const purged = recordPurge();
+      if (purged >= 6 && unlockCharacter('purgamist')) {
+        queueCharacterUnlock('purgamist');
+        sfx.play('win');
       }
     }
     if (event.type === 'runEnded' && event.result === 'victory') {
@@ -943,6 +950,7 @@ function dispatchCommand(command: Command): GameEvent[] {
 }
 
 function startNewRun(preferredCharacter?: string): void {
+  characterTip = null;
   if (hasSave() && !host.current?.over) {
     const ok = window.confirm('Start a new run? Your active run will be lost.');
     if (!ok) return;
@@ -992,6 +1000,7 @@ function startNewRun(preferredCharacter?: string): void {
 }
 
 function resumeRun(): void {
+  characterTip = null;
   host.resume();
   if (!host.hasRun) {
     notify('No active run found.', 'bad');
@@ -1162,10 +1171,17 @@ app.addEventListener('click', (event) => {
       break;
     case 'character': {
       const id = target.dataset.id ?? '';
-      if (readMeta().characters.includes(id)) selectedCharacter = id;
+      if (readMeta().characters.includes(id)) {
+        selectedCharacter = id;
+        characterTip = id === 'pathfinder' || id === 'purgamist' ? id : null;
+      }
       render();
       break;
     }
+    case 'dismiss-character-tip':
+      characterTip = null;
+      render();
+      break;
     case 'dismiss-unlock':
       nextCharacterUnlock();
       render();
@@ -1191,12 +1207,14 @@ app.addEventListener('click', (event) => {
       render();
       break;
     case 'back':
+      characterTip = null;
       screen = host.hasRun ? 'run' : 'title';
       paused = false;
       lastTick = performance.now();
       render();
       break;
     case 'title':
+      characterTip = null;
       screen = 'title';
       lastTick = performance.now();
       render();
@@ -1204,6 +1222,7 @@ app.addEventListener('click', (event) => {
     case 'abandon': {
       if (!window.confirm('Abandon this run? The save will be wiped.')) return;
       host.discard();
+      characterTip = null;
       screen = 'title';
       input = '';
       damageFx = null;
@@ -1708,6 +1727,39 @@ function renderCharacterPicker(meta: ReturnType<typeof readMeta>): string {
   </div>`;
 }
 
+const CHARACTER_TIPS: Record<string, { kicker: string; title: string; lines: string[] }> = {
+  pathfinder: {
+    kicker: 'PATHFINDER TIP',
+    title: 'Spam first, solve later.',
+    lines: [
+      'For players who like to open with four covering words, then solve from what is left.',
+      'Spam four words that cover 20 letters. The blacklist blocks repeats, so vary your spam words.',
+      'Try TUBES-WINDY-CHAMP-BLING or GATED-FORKS-IMPLY-BUNCH.',
+    ],
+  },
+  purgamist: {
+    kicker: 'PURGAMIST TIP',
+    title: 'Pick your favorite vowel.',
+    lines: [
+      'Purge A, E, I, O and U: only 14 dictionary words remain, all with Y as the vowel.',
+    ],
+  },
+};
+
+function renderCharacterTip(): string {
+  const tip = characterTip ? CHARACTER_TIPS[characterTip] : undefined;
+  if (!tip) return '';
+  return `
+  <div class="modal character-tip-modal">
+    <div class="modal-card">
+      <p class="panel-kicker">${escapeHtml(tip.kicker)}</p>
+      <h2>${escapeHtml(tip.title)}</h2>
+      ${tip.lines.map((line) => `<p class="muted">${escapeHtml(line)}</p>`).join('')}
+      <button class="btn primary big" data-action="dismiss-character-tip">GOT IT</button>
+    </div>
+  </div>`;
+}
+
 function renderTitle(): string {
   const meta = readMeta();
   const saved = hasSave();
@@ -1760,7 +1812,8 @@ function renderTitle(): string {
     </div>
     ${metaLine}
     <p class="title-foot">BLACKLIST · v0.1 · a pure-core word roguelike</p>
-  </div>`;
+  </div>
+  ${renderCharacterTip()}`;
 }
 
 function renderHelp(): string {

@@ -3523,6 +3523,14 @@ button {
   margin: 0 0 10px;
 }
 
+.character-tip-modal .modal-card {
+  max-width: 460px;
+}
+
+.character-tip-modal .muted {
+  margin: 0 0 10px;
+}
+
 .tutorial-check {
   display: flex;
   align-items: center;
