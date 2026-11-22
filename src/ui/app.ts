@@ -24,7 +24,7 @@ import {
 } from '../content';
 import { LocalStore, dismissDamageTutorial, hasSave, readMeta, recordFood, recordPurchase, recordRun, recordStart, unlockCharacter } from './store';
 import { escapeHtml, formatTime, reasonText, roman } from './format';
-import { ARMOR_TIP, INCOMING_DAMAGE_TIP, glossaryText } from './glossary';
+import { ARMOR_TIP, glossaryText } from './glossary';
 import {
   bossColor,
   bossSigil,
@@ -1992,12 +1992,20 @@ function guessDamageHtml(board: BoardView): string {
     || board.shielded
     || board.guessImmuneMsLeft > 0;
   const value = safe ? 0 : board.nextGuessDamage;
-  const tip = safe
-    ? `Your next guess is free and deals no damage. ${INCOMING_DAMAGE_TIP}`
-    : `A wrong guess will deal ${value} damage right now. ${INCOMING_DAMAGE_TIP}`;
-  return `<div class="guess-damage ${safe ? 'safe' : ''}" tabindex="0" data-tip="${escapeHtml(tip)}" aria-label="${escapeHtml(tip)}">
-    <span class="guess-damage-label">INCOMING DAMAGE</span>
-    <b class="guess-damage-value">${safe ? 'FREE' : `⚔️ ${value} ⚔️`}</b>
+  const mult = board.nextGuessMultiplier;
+  const base = board.nextGuessBase;
+  const baseText = Number.isInteger(base) ? String(base) : base.toFixed(1);
+  const eq = Math.abs(base * mult - value) < 0.05 ? '=' : '≈';
+  const labelTip = 'Your first guess each round is free. Every wrong guess after that is a Hit (HP damage) from the monster. '
+    + 'After the safe limit each wrong guess deals multiplied damage: ×2, ×3, ×4, and so on.';
+  const calcTip = safe
+    ? 'Your next guess is free, so there is no damage to calculate.'
+    : mult > 1
+      ? `Damage calculation: ${baseText} × ${mult} ${eq} ${value}. The base includes curse, boss, gold and slot bonuses.`
+      : `Damage calculation: ${value}. The multiplier starts after the safe limit.`;
+  return `<div class="guess-damage ${safe ? 'safe' : ''}">
+    <span class="guess-damage-label tip-dots" tabindex="0" data-tip="${escapeHtml(labelTip)}" aria-label="${escapeHtml(labelTip)}">INCOMING DAMAGE</span>
+    <b class="guess-damage-value tip-dots" tabindex="0" data-tip="${escapeHtml(calcTip)}" aria-label="${escapeHtml(calcTip)}">${safe ? 'FREE' : `⚔️ ${value} ⚔️`}</b>
   </div>`;
 }
 
@@ -2414,9 +2422,6 @@ function tileRow(
   letters: string[],
   tiles?: string[],
   extraClass = '',
-  rowClass = '',
-  rowMarks = '',
-  rowTip = '',
 ): string {
   const cells = Array.from({ length: 5 }, (_, index) => {
     const letter = letters[index] ?? '';
@@ -2427,10 +2432,7 @@ function tileRow(
       ${symbol ? `<span class="tile-mark">${symbol}</span>` : ''}
     </div>`;
   }).join('');
-  const attrs = rowTip
-    ? ` tabindex="0" data-tip="${escapeHtml(rowTip)}" aria-label="${escapeHtml(rowTip)}" data-marks="${escapeHtml(rowMarks)}"`
-    : '';
-  return `<div class="board-row ${rowClass}"${attrs}>${cells}</div>`;
+  return `<div class="board-row">${cells}</div>`;
 }
 
 function renderBoard(board: BoardView): string {
@@ -2438,33 +2440,31 @@ function renderBoard(board: BoardView): string {
   const guesses = board.guesses;
   const totalRows = Math.max(6, guesses.length + 1);
 
-  // The engine starts multiplying damage once the guess number passes the
-  // safe limit; Short Fuse moves that limit earlier. Deriving the tier here
-  // keeps the outline aligned with the real hit without changing behavior.
-  const tierAt = (index: number): { multiplier: number; tier: number; marks: string; tip: string } | null => {
-    const multiplier = Math.max(1, index + 1 - 4 + board.damageRampEarly);
-    if (multiplier <= 1) return null;
-    return {
-      multiplier,
-      tier: Math.min(5, multiplier),
-      marks: '!'.repeat(Math.min(3, multiplier - 1)),
-      tip: `A wrong guess here takes ×${multiplier} damage.`,
-    };
-  };
+  // The engine starts multiplying damage at this row. Short Fuse moves the
+  // boundary earlier; the divider is purely visual and never changes behavior.
+  const firstMultiplied = Math.max(0, 5 - board.damageRampEarly);
+  const dividerTip = 'Damage is multiplied after this guess. '
+    + 'Wrong guesses below take ×2 damage, then ×3, ×4 and so on.'
+    + (board.damageRampEarly > 0 ? ' Short Fuse moved this line earlier.' : '');
 
   for (let index = 0; index < totalRows; index++) {
-    const danger = tierAt(index);
-    const rowClass = danger ? `danger tier-${danger.tier}` : '';
-    const marks = danger?.marks ?? '';
-    const tip = danger?.tip ?? '';
+    if (index === firstMultiplied) {
+      rows.push(`<div class="board-divider" tabindex="0" data-tip="${escapeHtml(dividerTip)}" aria-label="${escapeHtml(dividerTip)}">
+        <span class="board-divider-mark" aria-hidden="true">!</span>
+        <span class="board-divider-rule" aria-hidden="true"></span>
+        <span class="board-divider-icon" aria-hidden="true">⚔️</span>
+        <span class="board-divider-rule" aria-hidden="true"></span>
+        <span class="board-divider-mark" aria-hidden="true">!</span>
+      </div>`);
+    }
     if (index < guesses.length) {
       const guess = guesses[index];
       const counts = guess.counts
         ? `<div class="counts">${guess.counts.correct} in place · ${guess.counts.present} misplaced</div>`
         : '';
-      rows.push(tileRow(guess.word.split(''), guess.tiles, '', rowClass, marks, tip) + counts);
+      rows.push(tileRow(guess.word.split(''), guess.tiles) + counts);
     } else if (index === guesses.length) {
-      rows.push(tileRow(input.split(''), undefined, 'input', rowClass, marks, tip));
+      rows.push(tileRow(input.split(''), undefined, 'input'));
     } else {
       rows.push(tileRow([]));
     }

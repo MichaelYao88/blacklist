@@ -44,9 +44,20 @@ describe('damage multiplier warning', () => {
     expect(warning?.querySelector('.damage-warning-label')?.textContent).toContain('DAMAGE');
 
     const danger = root.querySelector<HTMLElement>('.board-row.danger');
-    expect(danger).not.toBeNull();
-    expect(danger?.classList.contains('tier-2')).toBe(true);
-    expect(danger?.getAttribute('data-marks')).toBe('!');
-    expect(danger?.getAttribute('data-tip')).toContain('×2 damage');
+    expect(danger).toBeNull();
+
+    const divider = root.querySelector<HTMLElement>('.board-divider');
+    expect(divider).not.toBeNull();
+    expect(divider?.getAttribute('data-tip')).toContain('Damage is multiplied after this guess');
+    expect(divider?.textContent).toContain('⚔️');
+    expect(divider?.nextElementSibling?.classList.contains('board-row')).toBe(true);
+
+    const label = root.querySelector<HTMLElement>('.guess-damage-label');
+    expect(label?.classList.contains('tip-dots')).toBe(true);
+    expect(label?.getAttribute('data-tip')).toContain('first guess each round is free');
+
+    const value = root.querySelector<HTMLElement>('.guess-damage-value');
+    expect(value?.classList.contains('tip-dots')).toBe(true);
+    expect(value?.getAttribute('data-tip')).toContain('3 × 2 = 6');
   });
 });

@@ -110,6 +110,16 @@ button {
   border-bottom-color: var(--gold);
 }
 
+.tip-dots {
+  border-bottom: 1px dotted rgba(231, 184, 90, 0.5);
+  cursor: help;
+}
+
+.tip-dots:hover,
+.tip-dots:focus-visible {
+  border-bottom-color: var(--gold);
+}
+
 .kw-tooltip {
   position: fixed;
   z-index: 120;
@@ -927,43 +937,40 @@ button {
   gap: 7px;
 }
 
-/* Guesses past the safe limit are outlined by damage tier. Pseudo-elements
-   place the warning marks outside the row so the tiles never shift. */
-.board-row.danger {
-  position: relative;
-  outline: 2px solid var(--tier);
-  outline-offset: 3px;
-  border-radius: 8px;
-  box-shadow: 0 0 16px -4px var(--tier);
+/* Dotted divider at the point where damage starts multiplying. The marks
+   sit on either side and the swords icon sits in the middle. */
+.board-divider {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 1px 0;
+  color: #e08a3c;
   cursor: help;
+  outline: none;
 }
 
-.board-row.danger.tier-2 { --tier: #d7b64f; }
-.board-row.danger.tier-3 { --tier: #e08a3c; }
-.board-row.danger.tier-4 { --tier: #df615a; }
-.board-row.danger.tier-5 { --tier: #b06be0; }
+.board-divider-rule {
+  flex: 1;
+  border-top: 2px dotted currentColor;
+  opacity: 0.8;
+}
 
-.board-row.danger::before,
-.board-row.danger::after {
-  content: attr(data-marks);
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--tier);
+.board-divider-mark {
   font-family: var(--sans);
-  font-size: 0.74rem;
+  font-size: 0.9rem;
   font-weight: 900;
-  letter-spacing: 0.02em;
   line-height: 1;
-  text-shadow: 0 0 8px var(--tier), 0 1px 3px #000;
-  pointer-events: none;
+  text-shadow: 0 0 8px currentColor;
 }
 
-.board-row.danger::before { left: -1.15em; }
-.board-row.danger::after { right: -1.15em; }
+.board-divider-icon {
+  font-size: 0.9rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 5px currentColor);
+}
 
-.board-row.danger:focus-visible {
-  outline-offset: 4px;
+.board-divider:focus-visible .board-divider-rule {
+  opacity: 1;
 }
 
 .counts {
@@ -3994,6 +4001,7 @@ button {
   align-items: center;
   gap: 7px;
   margin-top: 6px;
+  cursor: help;
 }
 
 .armor-bar {
@@ -4021,6 +4029,12 @@ button {
   font-weight: 800;
   letter-spacing: 0.1em;
   white-space: nowrap;
+  border-bottom: 1px dotted rgba(231, 184, 90, 0.45);
+}
+
+.armor-line:hover .armor-text,
+.armor-line:focus-visible .armor-text {
+  border-bottom-color: var(--gold);
 }
 
 .vs-divider {
