@@ -731,6 +731,8 @@ export interface BoardView {
   nextGuessBase: number;
   /** Multiplier for the next wrong guess; 1 during the first five guesses. */
   nextGuessMultiplier: number;
+  /** Extra early ramp steps from curses such as Short Fuse. */
+  damageRampEarly: number;
   remainingMs: number | null;
   timerStartMs: number | null;
   elapsedMs: number;

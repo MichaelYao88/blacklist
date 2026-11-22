@@ -3875,6 +3875,7 @@ export function createCore(content: Content): Core {
       rawNextGuessDamage: rawNext,
       nextGuessBase: nextParts.base,
       nextGuessMultiplier: nextParts.multiplier,
+      damageRampEarly: damageRampEarly(state),
       remainingMs: round.remainingMs,
       timerStartMs: round.timerStartMs,
       elapsedMs: round.elapsedMs,
