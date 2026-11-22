@@ -2033,7 +2033,11 @@ function renderSidePanel(view: RunView): string {
       <div class="panel-head"><span class="panel-kicker">BLACKLIST</span><span class="count">${view.blacklist.length}</span></div>
       <ol class="blacklist">${blacklist}</ol>
     </section>` : ''}
-    ${(view.revealed.length || view.purged.length) ? `<section>
+    ${(view.collectedReveals.length || view.revealed.length || view.purged.length) ? `<section>
+      ${view.collectedReveals.length ? `<div class="revealed collected">
+        <span class="panel-kicker">COLLECTED LETTERS</span>
+        <div>${view.collectedReveals.map((letter) => `<span class="letter-chip" tabindex="0" data-tip="Permanently revealed for the rest of the run">${escapeHtml(letter.toUpperCase())}</span>`).join('')}</div>
+      </div>` : ''}
       ${view.revealed.length ? `<div class="revealed">
         <span class="panel-kicker">${view.phase.kind === 'round' || view.phase.kind === 'summary' ? 'REVEALED THIS PUZZLE' : 'REVEALED'}</span>
         <div>${view.revealed.map(({ letter, status }) => `<span class="reveal-chip ${status}"><b>${escapeHtml(letter.toUpperCase())}</b><em>${status === 'present' ? 'IN WORD' : 'RULED OUT'}</em></span>`).join('')}</div>

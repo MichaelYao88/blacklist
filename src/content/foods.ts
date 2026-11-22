@@ -180,15 +180,6 @@ export const FOODS: FoodDef[] = [
     ],
   }),
   defineFood({
-    id: 'oracles-banquet',
-    name: "Oracle's Banquet",
-    description: 'Each round: autoguess a random word. No slot.',
-    price: 28,
-    rarity: 'rare',
-    unique: true,
-    effects: [{ type: 'permanentRandomGuesses', count: 1 }],
-  }),
-  defineFood({
     id: 'moon-cake',
     name: 'Moon Cake',
     description: 'Each round: autocast a free Omen. No slot.',
@@ -480,11 +471,12 @@ export const FOODS: FoodDef[] = [
   }),
   defineFood({
     id: 'chronos',
-    name: 'Chronos',
-    description: '+12s per round. No slot.',
+    name: 'The Waffle',
+    description: '+24s per round. No slot.',
     price: 6,
+    rarity: 'rare',
     requiresClock: true,
-    effects: [{ type: 'timeBonus', ms: 12_000 }],
+    effects: [{ type: 'timeBonus', ms: 24_000 }],
   }),
   defineFood({
     id: 'satchel',

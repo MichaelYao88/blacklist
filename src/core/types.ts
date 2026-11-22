@@ -814,6 +814,7 @@ export interface RunView {
   blacklist: string[];
   purged: Letter[];
   revealed: Array<{ letter: Letter; status: 'present' | 'absent' }>;
+  collectedReveals: Letter[];
   pendingPurge: number;
   lastAnswer?: string;
   stats: RunStats;

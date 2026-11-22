@@ -42,15 +42,6 @@ function popcount(value: number): number {
 
 export const ITEMS: ItemDef[] = [
   defineItem({
-    id: 'hourglass',
-    name: 'Hourglass',
-    description: '+15s per round.',
-    price: 6,
-    kind: 'gear',
-    requiresClock: true,
-    on: { onRoundStart: () => [{ type: 'addTime', ms: 15_000 }] },
-  }),
-  defineItem({
     id: 'early-bird',
     name: 'Early Bird',
     description: 'Solve in under a minute: gain 2 gold. +1 more gold each time this triggers.',
@@ -149,22 +140,6 @@ export const ITEMS: ItemDef[] = [
     rarity: 'rare',
     on: {
       onRoundStart: () => [{ type: 'timedImmunity', ms: 7_000 }],
-    },
-  }),
-  defineItem({
-    id: 'daredevil',
-    name: 'Daredevil',
-    description: 'Rounds start 25% shorter. Every guess: +1 gold.',
-    price: 10,
-    kind: 'gear',
-    requiresClock: true,
-    on: {
-      onRoundStart: (ctx) => {
-        const remaining = ctx.state.round?.remainingMs;
-        if (remaining === null || remaining === undefined) return [];
-        return [{ type: 'addTime', ms: -Math.ceil(remaining * 0.25) }];
-      },
-      onGuessScored: () => [{ type: 'gold', amount: 1 }],
     },
   }),
   defineItem({

@@ -8,7 +8,7 @@ describe('sell menu item tooltips', () => {
   beforeAll(async () => {
     localStorage.clear();
     const { state } = game.newRun({ seed: 'sell-hover' });
-    state.items.push({ instance: 'i-hour', id: 'hourglass', data: {}, equipped: true });
+    state.items.push({ instance: 'i-hour', id: 'turtle-shell', data: {}, equipped: true });
     state.phase = 'shop';
     state.shop = {
       offers: [],
@@ -31,11 +31,11 @@ describe('sell menu item tooltips', () => {
     const name = root.querySelector<HTMLElement>('.sell-name');
     expect(name).not.toBeNull();
     expect(name?.getAttribute('tabindex')).toBe('0');
-    expect(name?.dataset.tip).toContain('+15s per round');
+    expect(name?.dataset.tip).toContain('reduced by 50%');
 
     name!.dispatchEvent(new Event('pointermove', { bubbles: true }));
     const tip = document.querySelector<HTMLElement>('.kw-tooltip');
     expect(tip?.classList.contains('visible')).toBe(true);
-    expect(tip?.textContent).toContain('+15s per round');
+    expect(tip?.textContent).toContain('reduced by 50%');
   });
 });

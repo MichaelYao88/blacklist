@@ -763,9 +763,9 @@ describe('timer curses', () => {
 
     solved.state.phase = 'shop';
     solved.state.shop = shopState();
-    solved.state.items.push({ instance: 'i-glass', id: 'hourglass', data: {}, equipped: true });
+    solved.state.items.push({ instance: 'i-glass', id: 'turtle-shell', data: {}, equipped: true });
     const before = solved.state.gold;
-    const base = Math.floor((ITEM_BY_ID.get('hourglass')?.price ?? 2) / 2);
+    const base = Math.floor((ITEM_BY_ID.get('turtle-shell')?.price ?? 2) / 2);
     const sold = act(solved.state, { type: 'sell', instance: 'i-glass' });
     expect(sold.state.gold).toBe(before + base + 1); // sale gold + 1 bonus
 
@@ -956,7 +956,7 @@ describe('shop curses', () => {
         .map((item) => item.id),
     );
     expect(gatedItems.size).toBeGreaterThan(0);
-    expect(gatedItems.has('hourglass')).toBe(true);
+    expect(gatedItems.has('deadline')).toBe(true);
 
     let sawGatedItem = false;
     let sawGatedFood = false;
@@ -1382,7 +1382,7 @@ describe('shop curses', () => {
     state.phase = 'shop';
     state.shop = shopState();
     state.curses.push({ id: 'chained', stacks: 1 });
-    state.items.push({ instance: 'i-hour', id: 'hourglass', data: {}, equipped: true });
+    state.items.push({ instance: 'i-hour', id: 'piggy-bank', data: {}, equipped: true });
     const sold = act(state, { type: 'sell', instance: 'i-hour' });
     expect(sold.state.items).toHaveLength(1);
     expect(eventTypes(sold.events)).toContain('message');
@@ -1703,7 +1703,7 @@ describe('new item and event batch', () => {
     for (let index = 0; index < 5; index++) {
       state.items.push({
         instance: `i-hour-${index}`,
-        id: 'hourglass',
+        id: 'piggy-bank',
         data: {},
         equipped: true,
       });
@@ -1721,7 +1721,7 @@ describe('new item and event batch', () => {
     for (let index = 0; index < 4; index++) {
       state.items.push({
         instance: `i-full-${index}`,
-        id: 'hourglass',
+        id: 'piggy-bank',
         data: {},
         equipped: true,
       });
@@ -2154,6 +2154,15 @@ describe('latest balance pass', () => {
     const view = game.view(state);
     expect(view.revealed).toContainEqual({ letter: 'a', status: 'present' });
     expect(view.revealed).toContainEqual({ letter: 'z', status: 'absent' });
+  });
+
+  it('separates collected permanent reveals from this puzzle reveals', () => {
+    const { state } = start('collected-reveals');
+    state.permanentReveals = ['a', 'z'];
+    state.round!.hints = { a: 'present', z: 'absent', q: 'present' };
+    const view = game.view(state);
+    expect(view.collectedReveals).toEqual(['a', 'z']);
+    expect(view.revealed).toEqual([{ letter: 'q', status: 'present' }]);
   });
 
   it('Tally Lens is weighted but no longer guaranteed after a vision curse', () => {
@@ -2682,14 +2691,14 @@ describe('latest balance pass', () => {
     const { state } = start('chilaquiles');
     state.phase = 'shop';
     state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'chilaquiles', price: 2 }]);
-    state.items.push({ instance: 'i-glass', id: 'hourglass', data: {}, equipped: true });
-    state.items.push({ instance: 'i-glass-2', id: 'hourglass', data: {}, equipped: true });
+    state.items.push({ instance: 'i-glass', id: 'turtle-shell', data: {}, equipped: true });
+    state.items.push({ instance: 'i-glass-2', id: 'turtle-shell', data: {}, equipped: true });
     const goldBefore = state.gold;
     const eaten = act(state, { type: 'buy', offerId: 'o0' });
     expect(eaten.state.gold).toBe(goldBefore - 2);
     expect(eaten.state.nextSaleDoubles).toBe(2);
     const sold = act(eaten.state, { type: 'sell', instance: 'i-glass' });
-    const base = Math.floor((ITEM_BY_ID.get('hourglass')?.price ?? 2) / 2);
+    const base = Math.floor((ITEM_BY_ID.get('turtle-shell')?.price ?? 2) / 2);
     expect(sold.state.gold - goldBefore).toBe(base * 2 - 2);
     expect(sold.state.nextSaleDoubles).toBe(1);
     const soldAgain = act(sold.state, { type: 'sell', instance: 'i-glass-2' });
@@ -3295,7 +3304,7 @@ describe('latest balance pass', () => {
     shop.state.phase = 'shop';
     shop.state.gold = 20;
     shop.state.shop = shopState([
-      { id: 'o0', kind: 'item', def: 'hourglass', price: 6 },
+      { id: 'o0', kind: 'item', def: 'deadline', price: 8 },
       { id: 'o1', kind: 'eat', def: 'coffee', price: 6 },
     ]);
     const item = act(shop.state, { type: 'buy', offerId: 'o0' });
@@ -3313,9 +3322,9 @@ describe('latest balance pass', () => {
       options: [{
         id: 'i0',
         kind: 'item',
-        def: 'hourglass',
-        label: 'Hourglass',
-        description: '+15s per round.',
+        def: 'deadline',
+        label: 'Deadline',
+        description: 'As soon as the clock drops below 30s each round: +1 free guess.',
       }],
     };
     const chosen = act(reward.state, { type: 'chooseReward', optionId: 'i0' });
@@ -3439,18 +3448,11 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('frozen-durian')?.price).toBe(8);
   });
 
-  it('removes Ice Cream Sundae from the content set', () => {
+  it('removes retired items and foods from the content set', () => {
     expect(ITEM_BY_ID.get('ice-cream-sundae')).toBeUndefined();
-  });
-
-  it('Daredevil is clock-gated and shortens rounds by 25%', () => {
-    const { state } = start('daredevil');
-    state.curses.push({ id: 'clock', stacks: 1 });
-    state.items.push({ instance: 'i-dare', id: 'daredevil', data: {}, equipped: true });
-    const next = nextRound(state);
-    expect(next.state.round?.remainingMs).toBe(225_000);
-    expect(ITEM_BY_ID.get('daredevil')?.requiresClock).toBe(true);
-    expect(ITEM_BY_ID.get('daredevil')?.description).toContain('25% shorter');
+    expect(ITEM_BY_ID.get('daredevil')).toBeUndefined();
+    expect(ITEM_BY_ID.get('hourglass')).toBeUndefined();
+    expect(FOOD_BY_ID.get('oracles-banquet')).toBeUndefined();
   });
 
   it('applies the latest prices and text', () => {
@@ -3588,11 +3590,13 @@ describe('spells and foods', () => {
     )).toBe(true);
   });
 
-  it('gives Coffee +5s for 2 gold and Chronos +12s', () => {
+  it('gives Coffee +5s for 2 gold and The Waffle +24s', () => {
     expect(FOOD_BY_ID.get('coffee')?.price).toBe(2);
     expect(FOOD_BY_ID.get('coffee')?.effects).toContainEqual({ type: 'timeBonus', ms: 5_000 });
+    expect(FOOD_BY_ID.get('chronos')?.name).toBe('The Waffle');
     expect(FOOD_BY_ID.get('chronos')?.price).toBe(6);
-    expect(FOOD_BY_ID.get('chronos')?.effects).toContainEqual({ type: 'timeBonus', ms: 12_000 });
+    expect(FOOD_BY_ID.get('chronos')?.rarity).toBe('rare');
+    expect(FOOD_BY_ID.get('chronos')?.effects).toContainEqual({ type: 'timeBonus', ms: 24_000 });
   });
 
   it('Snake Oil has a 30% chance to remove a random curse', () => {
@@ -4238,29 +4242,6 @@ describe('round-start autoguess foods', () => {
     expect(FOOD_BY_ID.get('moon-cake')?.unique).toBe(true);
     expect(FOOD_BY_ID.get('moon-cake')?.effects)
       .toContainEqual({ type: 'permanentRoundStartSpell', spell: 'omen' });
-  });
-
-  it("Oracle's Banquet autoguesses at the start of every round", () => {
-    const { state } = start('oracles-banquet');
-    state.phase = 'shop';
-    state.gold = 40;
-    state.shop = shopState([{ id: 'f0', kind: 'eat', def: 'oracles-banquet', price: 28 }]);
-    const bought = act(state, { type: 'buy', offerId: 'f0' });
-    expect(bought.state.permanentRandomGuesses).toBe(1);
-
-    const first = nextRound(bought.state);
-    expect(first.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
-    expect(first.state.permanentRandomGuesses).toBe(1);
-
-    const second = nextRound(first.state);
-    expect(second.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
-    expect(second.state.permanentRandomGuesses).toBe(1);
-
-    expect(FOOD_BY_ID.get('oracles-banquet')?.price).toBe(28);
-    expect(FOOD_BY_ID.get('oracles-banquet')?.rarity).toBe('rare');
-    expect(FOOD_BY_ID.get('oracles-banquet')?.unique).toBe(true);
-    expect(FOOD_BY_ID.get('oracles-banquet')?.effects)
-      .toContainEqual({ type: 'permanentRandomGuesses', count: 1 });
   });
 });
 
@@ -4941,7 +4922,7 @@ describe('The Spammer', () => {
       for (let index = 0; index < state.slots; index++) {
         state.items.push({
           instance: `i-fill-${index}`,
-          id: 'hourglass',
+          id: 'piggy-bank',
           data: {},
           equipped: true,
         });
@@ -5290,7 +5271,7 @@ describe('damage doubling and slots', () => {
     for (let index = 0; index < 6; index++) {
       state.items.push({
         instance: `i-slot-${index}`,
-        id: 'hourglass',
+        id: 'piggy-bank',
         data: {},
         equipped: true,
       });
@@ -5315,7 +5296,7 @@ describe('damage doubling and slots', () => {
     for (let index = 0; index < 4; index++) {
       state.items.push({
         instance: `i-slot-${index}`,
-        id: 'hourglass',
+        id: 'piggy-bank',
         data: {},
         equipped: true,
       });

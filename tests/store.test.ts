@@ -72,8 +72,8 @@ describe('run history store', () => {
       ascension: 0,
       character: 'runner',
       curses: ['clock', 'censor'],
-      items: ['hourglass', 'tally-lens', 'bloom'],
-      equippedItems: ['hourglass', 'tally-lens'],
+      items: ['piggy-bank', 'tally-lens', 'bloom'],
+      equippedItems: ['piggy-bank', 'tally-lens'],
       stats: stats(),
     });
     recordStart();
@@ -83,8 +83,8 @@ describe('run history store', () => {
       act: 2,
       ascension: 1,
       curses: ['clock'],
-      items: ['hourglass'],
-      equippedItems: ['hourglass'],
+      items: ['piggy-bank'],
+      equippedItems: ['piggy-bank'],
       stats: stats({ rounds: 5, guesses: 20, solves: 4, solveMs: 80_000, playMs: 120_000 }),
     });
 
@@ -94,7 +94,7 @@ describe('run history store', () => {
     expect(meta.victoriousCharacters).toEqual(['runner']);
     expect(meta.ascension).toBe(1);
     expect(meta.bestLevel).toBe(50);
-    expect(meta.itemCounts).toEqual({ hourglass: 2, 'tally-lens': 1 });
+    expect(meta.itemCounts).toEqual({ 'piggy-bank': 2, 'tally-lens': 1 });
     expect(meta.curseCounts).toEqual({ clock: 2, censor: 1 });
     expect(meta.totalRounds).toBe(15);
     expect(meta.totalSolves).toBe(13);
@@ -104,7 +104,7 @@ describe('run history store', () => {
     expect(meta.history[0].result).toBe('defeat');
     expect(meta.history[1].result).toBe('victory');
     expect(meta.history[1].curses).toEqual(['clock', 'censor']);
-    expect(meta.history[1].equippedItems).toEqual(['hourglass', 'tally-lens']);
+    expect(meta.history[1].equippedItems).toEqual(['piggy-bank', 'tally-lens']);
   });
 
   it('tracks distinct characters that have won runs', () => {
@@ -154,7 +154,7 @@ describe('run history store', () => {
           level: 4,
           act: 0,
           curses: [],
-          items: ['hourglass'],
+          items: ['piggy-bank'],
           goldEarned: 1,
           damageTaken: 1,
           rounds: 1,
@@ -165,7 +165,7 @@ describe('run history store', () => {
         }],
       }),
     );
-    expect(readMeta().history[0].equippedItems).toEqual(['hourglass']);
+    expect(readMeta().history[0].equippedItems).toEqual(['piggy-bank']);
   });
 
   it('migrates legacy meta without history or level tracking', () => {

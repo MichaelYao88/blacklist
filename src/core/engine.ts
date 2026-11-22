@@ -3987,8 +3987,13 @@ export function createCore(content: Content): Core {
       blacklist: state.blacklist.slice(),
       purged: state.purged.slice(),
       revealed: Object.entries(state.round?.hints ?? {})
-        .filter((entry): entry is [string, 'present' | 'absent'] => Boolean(entry[1]))
+        .filter((entry): entry is [string, 'present' | 'absent'] => (
+          Boolean(entry[1]) && !state.permanentReveals.includes(entry[0] as Letter)
+        ))
         .map(([letter, status]) => ({ letter, status })),
+      collectedReveals: state.permanentReveals
+        .filter((letter) => !state.purged.includes(letter))
+        .slice(),
       pendingPurge: state.pendingPurge,
       lastAnswer: state.lastAnswer,
       stats: statsCopy(state),

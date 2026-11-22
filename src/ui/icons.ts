@@ -1,5 +1,4 @@
 const ITEM_ICONS: Record<string, string> = {
-  hourglass: '⏳',
   'early-bird': '🐦',
   'hat-trick': '🎩',
   brace: '🦾',
@@ -8,7 +7,6 @@ const ITEM_ICONS: Record<string, string> = {
   'four-leaf-clover': '🍀',
   'doggy-bag': '🐶',
   'head-start': '🏃',
-  daredevil: '😈',
   encore: '🔁',
   tally: '🧮',
   scattershot: '🎯',
@@ -185,7 +183,6 @@ const FOOD_ICONS: Record<string, string> = {
   'fortune-cookie': '🥠',
   enoki: '🍄',
   corn: '🌽',
-  'oracles-banquet': '🍽️',
   'moon-cake': '🥮',
   'e-fu-noodles': '🍜',
   't-bone': '🥩',

@@ -42,14 +42,14 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - Happenings with visible odds and persistent consequences
 - **Purge the Letter** offers two random letters: the first has a 100% chance to purge and the second has an 80% chance; you may also leave
 - Short item, spell and offer text with hover tooltips for keywords like armor, reveal, ruled out, free guesses, blacklist, relic and timeout
-- Revealed letters stay marked on the keyboard and in a Revealed panel for the puzzle; random reveals lean toward letters that are not in the answer; letter-reveal foods are permanent for the run
+- Revealed letters stay marked on the keyboard and in a Revealed panel for the puzzle; permanent food/item reveals are listed separately as collected letters; random reveals lean toward letters that are not in the answer; letter-reveal foods are permanent for the run
 - Vision-hidden letters show the hatched hidden key only when the letter has no other visible status; visible results, reveals and rule-outs take priority over that layer
 - Every finished encounter pays gold; solves offer coins, usually a spell, and only rarely gear or a meal
 - Opening shields such as **Head Start** (7s, rare) make guesses in their window count as free guesses and show a floating timer banner with the remaining seconds
 - Rarity uses cumulative floors: 40% pulls from rare, uncommon or common, 45% pulls from uncommon or common, and 15% pulls from common only. If a tier is empty, it falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on bosses)
-- 100 items (90 shop items + 10 rare relics), 6 spells, 84 foods and 32 happenings
+- 98 items (88 shop items + 10 rare relics), 6 spells, 83 foods and 32 happenings
 - New foods include **U-nagi**, **Donut Holes**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with one random spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
@@ -115,7 +115,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **The Spell Tithe** event trades one random spell for either permanent knowledge of a specific letter or a permanent purge of a specific letter; the trades are locked when you have no spells
 - **The Spammer** event offers Head Start plus an immediate battle when you have a free slot, pays 10 gold if you already own Head Start, or lets you leave
 - **Fortune Cookie** is a 2g food with a hidden 5× appearance weight: it queues one autoguess for the next round
-- **Oracle's Banquet** is a 28g rare unique food: it permanently autoguesses at the start of every round
+- **The Waffle** is a 6g rare food: +24s per round
 - **Tally** counts every guess, including ally and autoguesses
 - **Harvest Charm**, **Empty Mouth**, **Empty Orb**, **Empty Phone**, **Detour**, **Dark Echo**, **Black Eye**, **Palindrome**, **Oasis 15**, **Shellshock**, **Echo Chamber**, **Panic Button**, and **Wild Magic** are the new autoguess/autocast items
 - **Detour** is a 10g item that autoguesses once per round after a guess sharing no letters with the previous guess
@@ -150,7 +150,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - One exact-state autosave slot. Defeat clears it. Victory clears it and updates meta stats.
 - A **STATS** page tracks run history (last 50 runs), win rate, best level, average solve time, favorite items and curses, play time, gold and damage totals
 - The top bar shows gold and area; a persistent level badge at the top of the battle rail shows the current floor and run progress in every phase
-- Clock-gated items such as **Hourglass** never appear in shops or rewards until **The Clock** curse exists
+- Clock-gated items such as **Deadline** never appear in shops or rewards until **The Clock** curse exists
 - Compact battle rail on the left: a persistent level badge, round timer with a hover tooltip for the time limit, a wrong-guess damage chip, a side-view mini arena with your character facing the act's monster (or boss), player HP and armor
 - Damage numbers slam into the centre of the screen as `N damage`, with a block message when armor or immunity eats the hit
 - Spells and the blacklist sit on the right; the item list sits under the battle rail on desktop and at the bottom of the right column on mobile
