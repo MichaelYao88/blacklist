@@ -3830,7 +3830,7 @@ describe('unique shop items', () => {
 
 describe('autocast and random-guess batch', () => {
   it('ships a non-native guess pool including etude and butte', () => {
-    expect(CONTENT.nonnative).toHaveLength(214);
+    expect(CONTENT.nonnative).toHaveLength(216);
     expect(CONTENT.nonnative).toContain('patsy');
     expect(CONTENT.nonnative).toContain('wharf');
     expect(CONTENT.nonnative).toContain('rajah');
@@ -3846,8 +3846,10 @@ describe('autocast and random-guess batch', () => {
     expect(CONTENT.nonnative).toContain('caput');
     expect(CONTENT.nonnative).toContain('etude');
     expect(CONTENT.nonnative).toContain('butte');
+    expect(CONTENT.nonnative).toContain('easel');
+    expect(CONTENT.nonnative).toContain('smock');
     expect(CONTENT.nonnative).not.toContain('daisy');
-    expect(new Set(CONTENT.nonnative).size).toBe(214);
+    expect(new Set(CONTENT.nonnative).size).toBe(216);
     for (const word of CONTENT.nonnative) {
       expect(word, word).toMatch(/^[a-z]{5}$/);
     }
