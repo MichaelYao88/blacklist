@@ -217,7 +217,7 @@ export function createCore(content: Content): Core {
 
   /** Guesses made before the damage multiplier starts. */
   const damageSafeGuesses = (state: RunState): number =>
-    Math.max(0, 6 - damageRampEarly(state));
+    Math.max(0, 5 - damageRampEarly(state));
 
   const itemAvailable = (state: RunState, def: ItemDef): boolean => {
     if (def.requiresClock && !hasClock(state)) return false;
@@ -2143,7 +2143,7 @@ export function createCore(content: Content): Core {
 
   function guessDamageMultiplier(state: RunState, round: RoundState, next = false): number {
     const guessNumber = round.guesses.length + (next ? 1 : 0);
-    return Math.max(1, guessNumber - 5 + damageRampEarly(state));
+    return Math.max(1, guessNumber - 4 + damageRampEarly(state));
   }
 
   function guessDamageFor(state: RunState, round: RoundState, next = false): number {

@@ -23,7 +23,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - Floor 51 is the Floor Boss: draft 3 curses, then beat three words. It deals **+10 base damage**. Bosses ignore the **Second Wind** curse
 - **Second Wind** is a rare curse: after you solve a word, a second word appears with one free guess
 - The Toll is only offered through level 40; The Tax and The Chained are only offered through level 20
-- Base encounter damage is **3 + 1.3 per curse stack, rounded down**, plus **+1 for every 60 gold spent this run**; characters that start with curses subtract **1.3 per starting curse stack**, and Heavy Hand multiplies the base by **1.5 per stack**. After the sixth guess in each puzzle, each later wrong guess increases the damage multiplier (**×2, ×3, ×4...**), counting autoguesses; the warning appears as soon as the safe guess limit is reached, the multiplier resets on Second Wind and each boss puzzle, and any remaining free guess is lost at that point. Every paid wrong guess adds **+1 per occupied item slot above 5**
+- Base encounter damage is **3 + 1.3 per curse stack, rounded down**, plus **+1 for every 60 gold spent this run**; characters that start with curses subtract **1.3 per starting curse stack**, and Heavy Hand multiplies the base by **1.5 per stack**. After the fifth guess in each puzzle, each later wrong guess increases the damage multiplier (**×2, ×3, ×4...**), counting autoguesses; the warning appears as soon as the safe guess limit is reached, the multiplier resets on Second Wind and each boss puzzle, and any remaining free guess is lost at that point. Every paid wrong guess adds **+1 per occupied item slot above 5**
 - Vision curses are usually rare. **Take the L** is common, while **Hard R**, **Without the D**, and **IP Theft** are uncommon; the first/second/third/fourth/fifth position curses hide their tile **50% of the time**
 - The blacklist is disabled and hidden until **The List** curse is taken; The List is a single curse, never stacks, and arrives stocked with the first guess from every earlier round
 - The clock is disabled until **The Clock** curse is taken; the first stack gives 5:00 and each further stack shrinks it by 40%. If the clock reaches zero, the run ends immediately
@@ -234,7 +234,7 @@ The Soldier and Orc sprites are from **Tiny RPG Character Asset Pack 01** by [Ze
 | Miniboss | floor 27, 2 words, 1 curse draft, +5 base damage |
 | Floor Boss | floor 51, 3 words, 3 curse drafts, shared clock if active |
 | Base damage | `3 + floor(1.3 × total curse stacks) − (1.3 × starting curse stacks) + floor(gold spent / 60)`, then Heavy Hand and other modifiers apply |
-| Paid guess damage | curse-scaled base; after the sixth guess in each puzzle each later wrong guess increases the multiplier (`×2, ×3, ×4...`), counting autoguesses |
+| Paid guess damage | curse-scaled base; after the fifth guess in each puzzle each later wrong guess increases the multiplier (`×2, ×3, ×4...`), counting autoguesses |
 | Boss damage | Miniboss +5 base, Floor Boss +10 base, plus curses |
 | Timeout | ends the run immediately; armor, immunity and boss mechanics cannot prevent it |
 | Armor | a pool that soaks damage point-for-point before HP; refills each round |

@@ -5025,7 +5025,7 @@ describe('The Spammer', () => {
 });
 
 describe('damage doubling and slots', () => {
-  it('increases wrong-guess damage after the sixth guess', () => {
+  it('increases wrong-guess damage after the fifth guess', () => {
     const { state } = start('damage-doubling');
     setAnswer(state, 'crane');
     state.round!.baseDamage = 3;
@@ -5045,7 +5045,7 @@ describe('damage doubling and slots', () => {
       damages.push(before - result.state.hp);
       current = result.state;
     }
-    expect(damages).toEqual([3, 3, 3, 3, 3, 3, 6, 9, 12]);
+    expect(damages).toEqual([3, 3, 3, 3, 3, 6, 9, 12, 15]);
   });
 
   it('consumes any remaining free guess when the safe guess limit is reached', () => {
@@ -5058,19 +5058,19 @@ describe('damage doubling and slots', () => {
     state.hp = 200;
     state.maxHp = 200;
     let current = state;
-    for (const word of ['slate', 'brick', 'plumb', 'chunk', 'vamps']) {
+    for (const word of ['slate', 'brick', 'plumb', 'chunk']) {
       current = act(current, { type: 'guess', word }).state;
     }
 
-    // The sixth guess is the last safe guess. It spends one free guess and the
+    // The fifth guess is the last safe guess. It spends one free guess and the
     // limit consumes the spare.
     current.round!.freeLeft = 2;
-    const sixth = act(current, { type: 'guess', word: 'fizzy' });
-    expect(sixth.state.round?.freeLeft).toBe(0);
-    expect(sixth.events.some(
+    const fifth = act(current, { type: 'guess', word: 'vamps' });
+    expect(fifth.state.round?.freeLeft).toBe(0);
+    expect(fifth.events.some(
       (event) => event.type === 'freeGuessesChanged' && event.remaining === 0,
     )).toBe(true);
-    expect(sixth.events.some(
+    expect(fifth.events.some(
       (event) => event.type === 'damageMultiplier' && event.multiplier === 2,
     )).toBe(true);
   });
@@ -5086,16 +5086,16 @@ describe('damage doubling and slots', () => {
     state.hp = 200;
     state.maxHp = 200;
     let current = state;
-    for (const word of ['slate', 'brick', 'plumb']) {
+    for (const word of ['slate', 'brick']) {
       current = act(current, { type: 'guess', word }).state;
     }
     current.round!.freeLeft = 2;
-    const fourth = act(current, { type: 'guess', word: 'chunk' });
-    expect(fourth.state.round?.freeLeft).toBe(0);
-    expect(fourth.events.some(
+    const third = act(current, { type: 'guess', word: 'plumb' });
+    expect(third.state.round?.freeLeft).toBe(0);
+    expect(third.events.some(
       (event) => event.type === 'freeGuessesChanged' && event.remaining === 0,
     )).toBe(true);
-    expect(fourth.events.some(
+    expect(third.events.some(
       (event) => event.type === 'damageMultiplier' && event.multiplier === 2,
     )).toBe(true);
 
@@ -5103,19 +5103,18 @@ describe('damage doubling and slots', () => {
     two.state.curses.push({ id: 'short-fuse', stacks: 2 });
     setAnswer(two.state, 'crane');
     two.state.round!.baseDamage = 3;
-    two.state.round!.freeLeft = 0;
+    two.state.round!.freeLeft = 2;
     two.state.armor = 0;
     two.state.maxArmor = 0;
     two.state.hp = 200;
     two.state.maxHp = 200;
-    current = act(two.state, { type: 'guess', word: 'slate' }).state;
-    current.round!.freeLeft = 2;
-    const second = act(current, { type: 'guess', word: 'brick' });
-    expect(second.state.round?.freeLeft).toBe(0);
-    expect(second.events.some(
+    const first = act(two.state, { type: 'guess', word: 'slate' });
+    current = first.state;
+    expect(first.state.round?.freeLeft).toBe(0);
+    expect(first.events.some(
       (event) => event.type === 'freeGuessesChanged' && event.remaining === 0,
     )).toBe(true);
-    expect(second.events.some(
+    expect(first.events.some(
       (event) => event.type === 'damageMultiplier' && event.multiplier === 2,
     )).toBe(true);
 
@@ -5136,15 +5135,15 @@ describe('damage doubling and slots', () => {
     state.maxHp = 200;
 
     let current = state;
-    for (const word of ['slate', 'brick', 'plumb', 'chunk', 'vamps']) {
+    for (const word of ['slate', 'brick', 'plumb', 'chunk']) {
       current = act(current, { type: 'guess', word }).state;
     }
-    const sixth = act(current, { type: 'guess', word: 'fizzy' });
-    expect(sixth.events.some(
+    const fifth = act(current, { type: 'guess', word: 'vamps' });
+    expect(fifth.events.some(
       (event) => event.type === 'damageMultiplier' && event.multiplier === 2,
     )).toBe(true);
-    const seventh = act(sixth.state, { type: 'guess', word: 'jumpy' });
-    expect(seventh.events.some(
+    const sixth = act(fifth.state, { type: 'guess', word: 'fizzy' });
+    expect(sixth.events.some(
       (event) => event.type === 'damageMultiplier' && event.multiplier === 3,
     )).toBe(true);
   });
@@ -5160,7 +5159,7 @@ describe('damage doubling and slots', () => {
     state.maxHp = 200;
 
     let current = state;
-    for (const word of ['slate', 'brick', 'plumb', 'chunk', 'vamps']) {
+    for (const word of ['slate', 'brick', 'plumb', 'chunk']) {
       current = act(current, { type: 'guess', word }).state;
     }
     const solved = act(current, { type: 'guess', word: 'crane' });
@@ -5168,7 +5167,7 @@ describe('damage doubling and slots', () => {
     expect(solved.events.some((event) => event.type === 'damageMultiplier')).toBe(false);
   });
 
-  it('does not show the multiplier warning when the sixth guess kills you', () => {
+  it('does not show the multiplier warning when the fifth guess kills you', () => {
     const { state } = start('damage-doubling-death');
     setAnswer(state, 'crane');
     state.round!.baseDamage = 3;
@@ -5179,16 +5178,16 @@ describe('damage doubling and slots', () => {
     state.maxHp = 200;
 
     let current = state;
-    for (const word of ['slate', 'brick', 'plumb', 'chunk', 'vamps']) {
+    for (const word of ['slate', 'brick', 'plumb', 'chunk']) {
       current = act(current, { type: 'guess', word }).state;
     }
     current.hp = 3;
-    const fatal = act(current, { type: 'guess', word: 'fizzy' });
+    const fatal = act(current, { type: 'guess', word: 'vamps' });
     expect(fatal.state.phase).toBe('over');
     expect(fatal.events.some((event) => event.type === 'damageMultiplier')).toBe(false);
   });
 
-  it('counts autoguesses toward the sixth-guess threshold', () => {
+  it('counts autoguesses toward the fifth-guess threshold', () => {
     let started: ReturnType<typeof nextRound> | undefined;
     for (let index = 0; index < 20 && !started; index++) {
       const run = start(`autoguess-double-${index}`);
@@ -5209,12 +5208,12 @@ describe('damage doubling and slots', () => {
     started!.state.maxHp = 200;
 
     let current = started!.state;
-    for (const word of ['brick', 'plumb', 'chunk', 'vamps', 'fizzy']) {
+    for (const word of ['brick', 'plumb', 'chunk', 'vamps']) {
       current = act(current, { type: 'guess', word }).state;
     }
     const before = current.hp;
-    const seventh = act(current, { type: 'guess', word: 'jumpy' });
-    expect(before - seventh.state.hp).toBe(6);
+    const sixth = act(current, { type: 'guess', word: 'fizzy' });
+    expect(before - sixth.state.hp).toBe(6);
   });
 
   it('Short Fuse starts the multiplier two guesses earlier per stack', () => {
@@ -5228,12 +5227,12 @@ describe('damage doubling and slots', () => {
     one.state.hp = 200;
     one.state.maxHp = 200;
     let current = one.state;
-    for (const word of ['slate', 'brick', 'plumb', 'chunk']) {
+    for (const word of ['slate', 'brick', 'plumb']) {
       current = act(current, { type: 'guess', word }).state;
     }
     const before = current.hp;
-    const fifth = act(current, { type: 'guess', word: 'vamps' });
-    expect(before - fifth.state.hp).toBe(6);
+    const fourth = act(current, { type: 'guess', word: 'chunk' });
+    expect(before - fourth.state.hp).toBe(6);
 
     const two = start('short-fuse-two');
     two.state.curses.push({ id: 'short-fuse', stacks: 2 });
@@ -5245,12 +5244,12 @@ describe('damage doubling and slots', () => {
     two.state.hp = 200;
     two.state.maxHp = 200;
     current = two.state;
-    for (const word of ['slate', 'brick']) {
+    for (const word of ['slate']) {
       current = act(current, { type: 'guess', word }).state;
     }
     const stackedBefore = current.hp;
-    const third = act(current, { type: 'guess', word: 'plumb' });
-    expect(stackedBefore - third.state.hp).toBe(6);
+    const second = act(current, { type: 'guess', word: 'brick' });
+    expect(stackedBefore - second.state.hp).toBe(6);
 
     const three = start('short-fuse-three');
     three.state.curses.push({ id: 'short-fuse', stacks: 3 });
@@ -5262,7 +5261,7 @@ describe('damage doubling and slots', () => {
     three.state.hp = 200;
     three.state.maxHp = 200;
     const first = act(three.state, { type: 'guess', word: 'slate' });
-    expect(three.state.hp - first.state.hp).toBe(6);
+    expect(three.state.hp - first.state.hp).toBe(9);
   });
 
   it('resets the damage multiplier on Second Wind puzzles', () => {
