@@ -3167,16 +3167,16 @@ function renderRun(view: RunView): string {
   </div>`;
 }
 
-function syncFoodUnlocks(): void {
+function syncMetaUnlocks(): void {
   const meta = readMeta();
   const unlocked = [
     (meta.foodCounts['double-cheeseburger'] ?? 0) >= 3 ? 'gourmand' : null,
-    (meta.foodCounts.inkcap ?? 0) >= 2 ? 'purgamist' : null,
+    meta.purgedCount >= 6 ? 'purgamist' : null,
   ].filter((id): id is string => Boolean(id));
   for (const id of unlocked) {
     if (unlockCharacter(id)) queueCharacterUnlock(id);
   }
 }
 
-syncFoodUnlocks();
+syncMetaUnlocks();
 render();
