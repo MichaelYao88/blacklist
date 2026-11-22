@@ -2,7 +2,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { game } from '../src/game';
 
-describe('damage multiplier warning', () => {
+describe('damage divider and tooltips', () => {
   let root: HTMLElement;
 
   beforeAll(async () => {
@@ -28,7 +28,7 @@ describe('damage multiplier warning', () => {
     root.querySelector<HTMLElement>('[data-action="resume"]')!.click();
   });
 
-  it('shows a large WATCH OUT multiplier banner', () => {
+  it('shows the damage divider and split tooltips', () => {
     for (const letter of 'jumpy') {
       window.dispatchEvent(new KeyboardEvent('keydown', {
         key: letter,
@@ -36,12 +36,6 @@ describe('damage multiplier warning', () => {
       }));
     }
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter' }));
-
-    const warning = document.querySelector<HTMLElement>('.damage-warning');
-    expect(warning).not.toBeNull();
-    expect(warning?.querySelector('.damage-warning-kicker')?.textContent).toContain('WATCH OUT!');
-    expect(warning?.querySelector('.damage-warning-mult')?.textContent).toContain('3 × 2 = 6');
-    expect(warning?.querySelector('.damage-warning-label')?.textContent).toContain('DAMAGE');
 
     const danger = root.querySelector<HTMLElement>('.board-row.danger');
     expect(danger).toBeNull();

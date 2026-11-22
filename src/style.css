@@ -3451,78 +3451,6 @@ button {
   pointer-events: none;
 }
 
-/* damage multiplier warning */
-#damage-warning-root {
-  position: fixed;
-  inset: 0;
-  z-index: 125;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  text-align: center;
-}
-
-.damage-warning {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.08em;
-  font-family: var(--serif);
-  text-transform: uppercase;
-  animation: damage-warning-pop 2.8s cubic-bezier(0.2, 0.9, 0.25, 1) both;
-}
-
-.damage-warning-kicker,
-.damage-warning-mult {
-  paint-order: stroke fill;
-  -webkit-text-stroke: 4px #050409;
-  text-shadow:
-    0 0 42px rgba(255, 80, 70, 0.85),
-    0 0 90px rgba(255, 180, 60, 0.5),
-    0 6px 24px #000;
-}
-
-.damage-warning-kicker {
-  color: #ff5a4f;
-  font-size: clamp(2.4rem, 8vw, 5.5rem);
-  font-weight: 700;
-  letter-spacing: 0.09em;
-}
-
-.damage-warning-mult {
-  color: #ffd166;
-  font-size: clamp(2rem, 7vw, 4.6rem);
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  line-height: 0.95;
-  white-space: nowrap;
-}
-
-.damage-warning-label {
-  color: #ff6a5f;
-  font-size: clamp(0.85rem, 2.6vw, 1.5rem);
-  font-weight: 800;
-  letter-spacing: 0.42em;
-  text-indent: 0.42em;
-  text-shadow: 0 0 18px rgba(255, 80, 70, 0.7), 0 3px 10px #000;
-}
-
-@keyframes damage-warning-pop {
-  0% { opacity: 0; transform: scale(0.55) rotate(-4deg); }
-  12% { opacity: 1; transform: scale(1.14) rotate(2deg); }
-  22% { transform: scale(0.98) rotate(-1deg); }
-  32% { transform: scale(1.04) rotate(0deg); }
-  78% { opacity: 1; transform: scale(1); }
-  100% { opacity: 0; transform: scale(1.06); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .damage-warning {
-    animation: none;
-  }
-}
-
 /* free guess callout */
 #free-guess-root {
   position: fixed;
@@ -3596,22 +3524,26 @@ button {
 }
 
 .tutorial-check {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 6px 0 16px;
-  padding: 0;
-  border: 0;
-  background: none;
+  gap: 9px;
+  width: 100%;
+  margin: 8px 0 18px;
+  padding: 9px 11px;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
   color: var(--muted);
   font-family: var(--sans);
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.04em;
+  text-align: left;
   cursor: pointer;
 }
 
 .tutorial-check:hover {
+  border-color: rgba(231, 184, 90, 0.4);
   color: var(--ink);
 }
 

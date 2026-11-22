@@ -166,12 +166,6 @@ const phraseRoot = document.createElement('div');
 phraseRoot.id = 'phrase-root';
 document.body.appendChild(phraseRoot);
 
-const warningRoot = document.createElement('div');
-warningRoot.id = 'damage-warning-root';
-warningRoot.setAttribute('aria-live', 'assertive');
-document.body.appendChild(warningRoot);
-let warningTimer: number | undefined;
-
 // Free-guess callout. It lives outside the render tree so timer ticks cannot
 // restart the pop animation.
 const freeGuessRoot = document.createElement('div');
@@ -457,30 +451,6 @@ function triggerArenaAttack(force?: 'player' | 'enemy'): void {
     arenaAttackTimer = undefined;
     render();
   }, ATTACK_CLEAR_MS);
-}
-
-function flashDamageWarning(multiplier: number): void {
-  if (isDamageTooltipOpen()) return;
-  const view = host.view();
-  const board = view?.phase.kind === 'round' ? view.phase.board : null;
-  const mult = board?.nextGuessMultiplier ?? multiplier;
-  const base = board?.nextGuessBase ?? 0;
-  const total = board?.nextGuessDamage ?? 0;
-  const product = base * mult;
-  const baseText = Number.isInteger(base) ? String(base) : base.toFixed(1);
-  const calc = board && total > 0 && mult > 1
-    ? `${baseText} × ${mult} ${Math.abs(product - total) < 0.05 ? '=' : '≈'} ${total}`
-    : `×${multiplier}`;
-  warningRoot.innerHTML = `<div class="damage-warning" role="alert">
-    <span class="damage-warning-kicker">WATCH OUT!</span>
-    <span class="damage-warning-mult">${calc}</span>
-    <span class="damage-warning-label">DAMAGE</span>
-  </div>`;
-  if (warningTimer) window.clearTimeout(warningTimer);
-  warningTimer = window.setTimeout(() => {
-    warningRoot.innerHTML = '';
-    warningTimer = undefined;
-  }, 2_800);
 }
 
 function flashFriendPhrases(words: string[], callout?: string): void {
@@ -814,7 +784,6 @@ function processEvents(events: GameEvent[]): void {
       sfx.play('error');
     }
     if (event.type === 'damageMultiplier') {
-      flashDamageWarning(event.multiplier);
       logChronicle('bad', `Damage ×${event.multiplier}`);
     }
     if (event.type === 'message') notify(event.text, 'info');
@@ -939,10 +908,12 @@ function processEvents(events: GameEvent[]): void {
     }
   }
 
-  if (playerDied) {
-    triggerArenaAttack('enemy');
-  } else if (playerGuessed) {
-    triggerArenaAttack(playerFreeGuess || solvedByPlayer ? 'player' : undefined);
+  if (!isDamageTooltipOpen()) {
+    if (playerDied) {
+      triggerArenaAttack('enemy');
+    } else if (playerGuessed) {
+      triggerArenaAttack(playerFreeGuess || solvedByPlayer ? 'player' : undefined);
+    }
   }
 
   const phoneFriend = events.some(
@@ -998,9 +969,6 @@ function startNewRun(preferredCharacter?: string): void {
   orcDeathTimer = undefined;
   playerDeathStartedAt = null;
   phraseRoot.innerHTML = '';
-  if (warningTimer) window.clearTimeout(warningTimer);
-  warningTimer = undefined;
-  warningRoot.innerHTML = '';
   if (freeGuessTimer) window.clearTimeout(freeGuessTimer);
   freeGuessTimer = undefined;
   freeGuessRoot.innerHTML = '';
@@ -1634,10 +1602,6 @@ function clearDamageFeedback(): void {
     window.clearTimeout(damageTimer);
     damageTimer = undefined;
   }
-  if (warningTimer) {
-    window.clearTimeout(warningTimer);
-    warningTimer = undefined;
-  }
   if (shakeTimer) {
     window.clearTimeout(shakeTimer);
     shakeTimer = undefined;
@@ -1645,7 +1609,6 @@ function clearDamageFeedback(): void {
   damageFx = null;
   damageRendered = 0;
   fxRoot.innerHTML = '';
-  warningRoot.innerHTML = '';
   shake = false;
   app?.querySelector('.shell')?.classList.remove('shake');
 }
@@ -2241,7 +2204,9 @@ function renderBattleRail(view: RunView, bossId?: string): string {
   const pct = Math.max(0, Math.min(100, (view.hp / Math.max(1, view.maxHp)) * 100));
   const armorPct = Math.max(0, Math.min(100, (view.armor / Math.max(1, view.maxArmor)) * 100));
   const low = view.hp <= view.maxHp * 0.3;
-  const hit = Boolean(damageFx && damageFx.hpLost > 0 && performance.now() - damageFx.at < 600);
+  const hit = Boolean(
+    damageFx?.showOverlay && damageFx.hpLost > 0 && performance.now() - damageFx.at < 600,
+  );
   const enemyIsOrc = view.act === 0 && !bossId;
   const now = performance.now();
   const walkDelay = -((now - spritesStartedAt) % WALK_MS);
