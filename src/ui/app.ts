@@ -2122,10 +2122,10 @@ function renderLevelBadge(view: RunView): string {
     const to = entry.point;
     const next = visible[index + 2]?.point ?? to;
     // Catmull-Rom control points keep the curve flowing through each node.
-    const cp1x = from.x + (to.x - previous.x) / 6;
-    const cp1y = from.y + (to.y - previous.y) / 6;
-    const cp2x = to.x - (next.x - from.x) / 6;
-    const cp2y = to.y - (next.y - from.y) / 6;
+    const cp1x = from.x + (to.x - previous.x) / 3.5;
+    const cp1y = from.y + (to.y - previous.y) / 3.5;
+    const cp2x = to.x - (next.x - from.x) / 3.5;
+    const cp2y = to.y - (next.y - from.y) / 3.5;
     const state = entry.slot === 4 ? 'past' : 'future';
     return `<path class="rail-path ${state}" d="M${from.x} ${from.y}C${cp1x} ${cp1y} ${cp2x} ${cp2y} ${to.x} ${to.y}" />`;
   }).join('');

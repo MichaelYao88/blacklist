@@ -2900,15 +2900,15 @@ button {
 
 .rail-level-kicker {
   color: var(--gold);
-  font-size: 0.64rem;
+  font-size: 0.76rem;
   font-weight: 800;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
 }
 
 .rail-level-value {
   color: var(--gold-soft);
   font-family: var(--serif);
-  font-size: 1.5rem;
+  font-size: 1.34rem;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   line-height: 1;
