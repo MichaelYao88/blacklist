@@ -88,7 +88,7 @@ jobs:
           unzip -q butler.zip -d "$RUNNER_TEMP/butler"
           chmod +x "$RUNNER_TEMP/butler/butler"
           echo "$RUNNER_TEMP/butler" >> "$GITHUB_PATH"
-          butler version
+          "$RUNNER_TEMP/butler/butler" version
 
       - name: Publish to itch.io
         if: steps.creds.outputs.skip != 'true'
