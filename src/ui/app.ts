@@ -2327,9 +2327,7 @@ function renderBattleRail(view: RunView, bossId?: string): string {
           <span class="mini-label">YOU</span>
         </div>
         <div class="mini-center">
-          ${phase.kind === 'shop'
-            ? `<span class="mini-shop-gold"><span>SHOP</span><b>🪙 ${view.gold}</b></span>`
-            : `<span class="mini-phase">${phaseLabel(view)}</span>`}
+          <span class="mini-phase">${phaseLabel(view)}</span>
           <div class="mini-vs"><span>VS</span></div>
         </div>
         <div class="mini-side enemy-side ${(hit || (enemyAttacking && !enemyIsOrc)) ? 'attacking' : ''}">
@@ -2364,6 +2362,64 @@ function renderBattleRail(view: RunView, bossId?: string): string {
       </div>
     </section>
     ${facts ? `<div class="mini-facts">${facts}</div>` : ''}
+  </aside>`;
+}
+
+function renderRailFighters(view: RunView, bossId?: string): string {
+  const enemyIsOrc = view.act === 0 && !bossId;
+  const now = performance.now();
+  const walkDelay = -((now - spritesStartedAt) % WALK_MS);
+  const playerSprite = characterSprite(view.character);
+  const playerDef = CHARACTER_BY_ID.get(view.character);
+  const playerLabel = playerDef?.name ?? 'The Soldier';
+  return `<div class="mini-stage rail-fighters-stage">
+    <div class="mini-side player-side">
+      <div class="sprite player-sprite">
+        <i
+          class="character-sprite ${characterPortraitClass(view.character)}"
+          role="img"
+          aria-label="${escapeHtml(playerLabel)}"
+          style="${spriteStyle(playerSprite)};--walk-delay:${walkDelay}ms"
+        ></i>
+      </div>
+    </div>
+    <div class="mini-center">
+      <div class="mini-vs"><span>VS</span></div>
+    </div>
+    <div class="mini-side enemy-side">
+      <div class="sprite enemy-sprite">
+        ${enemyIsOrc
+          ? `<i
+              class="character-sprite orc"
+              role="img"
+              aria-label="The Orc"
+              style="--walk:url('${orcWalk}');--attack:url('${orcAttack}');--death:url('${orcDeath}');--walk-delay:${walkDelay}ms"
+            ></i>`
+          : enemySprite(bossId)}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderShopRail(view: RunView, bossId?: string): string {
+  const enemy = arenaEnemy(view, bossId);
+  return `<aside class="panel shop-rail" style="--enemy:${enemy.color}" aria-label="Shop">
+    <div class="shop-rail-head">
+      <span class="panel-kicker">SHOP</span>
+      <b class="shop-rail-gold">🪙 ${view.gold}</b>
+    </div>
+    ${renderRailFighters(view, bossId)}
+  </aside>`;
+}
+
+function renderCurseRail(view: RunView, bossId?: string): string {
+  const enemy = arenaEnemy(view, bossId);
+  return `<aside class="panel curse-rail" style="--enemy:${enemy.color}" aria-label="Curse floor">
+    <div class="shop-rail-head">
+      <span class="panel-kicker">CURSE</span>
+      <b class="shop-rail-floor">FLOOR ${view.level}</b>
+    </div>
+    ${renderRailFighters(view, bossId)}
   </aside>`;
 }
 
@@ -3162,7 +3218,9 @@ function renderRun(view: RunView): string {
   const phase = view.phase;
   const bossId = phase.kind === 'round' || phase.kind === 'summary' || phase.kind === 'bossIntro'
     ? phase.boss
-    : undefined;
+    : phase.kind === 'curse'
+      ? view.nodes[view.nodeIndex]?.boss
+      : undefined;
   const over = phase.kind === 'over';
   const tense =
     phase.kind === 'round' &&
@@ -3178,8 +3236,11 @@ function renderRun(view: RunView): string {
       ? `<main class="over-layout">${phasePanel(view)}</main>`
       : `<main class="layout">
           <div class="rail-column">
-            ${renderBattleRail(view, bossId)}
-            ${renderItemsPanel(view)}
+            ${phase.kind === 'shop'
+              ? `${renderShopRail(view, bossId)}${renderItemsPanel(view)}`
+              : phase.kind === 'curse'
+                ? `${renderCurseRail(view, bossId)}${renderItemsPanel(view)}`
+                : `${renderBattleRail(view, bossId)}${renderItemsPanel(view)}`}
           </div>
           <section class="center-column">${phasePanel(view)}</section>
           ${renderSidePanel(view)}

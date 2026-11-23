@@ -3095,6 +3095,45 @@ button {
     linear-gradient(180deg, #15101f 0%, #0d0a13 78%);
 }
 
+.shop-rail,
+.curse-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+}
+
+.shop-rail-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.shop-rail-gold {
+  color: var(--gold-soft);
+  font-family: var(--serif);
+  font-size: 1.7rem;
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.shop-rail-floor {
+  color: var(--gold-soft);
+  font-family: var(--serif);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.rail-fighters-stage {
+  padding: 6px 0 2px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #15101f 0%, #0d0a13 78%);
+}
+
 .mini-sky {
   position: absolute;
   inset: 0;
@@ -3307,31 +3346,6 @@ button {
   font-weight: 800;
   letter-spacing: 0.12em;
   white-space: nowrap;
-}
-
-.mini-shop-gold {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1px;
-  padding: 3px 8px;
-  border: 1px solid rgba(231, 184, 90, 0.35);
-  border-radius: 6px;
-  background: rgba(231, 184, 90, 0.08);
-  color: var(--gold);
-  font-size: 0.44rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  line-height: 1;
-  white-space: nowrap;
-}
-
-.mini-shop-gold b {
-  color: var(--gold-soft);
-  font-family: var(--sans);
-  font-size: 0.58rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
 }
 
 .mini-vs {
@@ -4758,7 +4772,9 @@ button {
     display: contents;
   }
 
-  .battle-rail {
+  .battle-rail,
+  .shop-rail,
+  .curse-rail {
     grid-column: 1;
     grid-row: auto;
     order: 0;

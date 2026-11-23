@@ -70,9 +70,9 @@ describe('shop relic labelling', () => {
     expect(uncommonFood?.querySelector('.tag')?.textContent?.trim()).toBe('UNCOMMON');
   });
 
-  it('keeps the inventory in the rail column directly under the battle rail', () => {
+  it('keeps the inventory in the rail column directly under the shop rail', () => {
     const railColumn = root.querySelector('.rail-column');
-    expect(railColumn?.querySelector('.battle-rail')).not.toBeNull();
+    expect(railColumn?.querySelector('.shop-rail')).not.toBeNull();
     expect(railColumn?.querySelector('.items-panel')).not.toBeNull();
   });
 
