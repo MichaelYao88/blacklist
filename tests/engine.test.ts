@@ -1194,6 +1194,60 @@ describe('shop curses', () => {
       { type: 'addPreviewFood' },
       { type: 'addPreviewCurse' },
     ]);
+
+    const market = HAPPENING_BY_ID.get('flesh-market');
+    expect(market?.options.map((option) => option.id)).toEqual(['hp', 'armor', 'leave']);
+  });
+
+  it('The Flesh Market sells half your max HP for twice that much gold', () => {
+    const run = findHappeningById('flesh-market-hp', 'flesh-market');
+    const option = run.state.happening!.options.find((entry) => entry.id === 'hp')!;
+    const loss = Math.min(Math.floor(run.state.maxHp / 2), run.state.maxHp - 1);
+    const paid = loss * 2;
+    expect(option.description).toContain(`${loss} max HP`);
+    expect(option.description).toContain(`${paid} gold`);
+    expect(option.locked).toBe(false);
+
+    const maxHpBefore = run.state.maxHp;
+    const goldBefore = run.state.gold;
+    const sold = act(run.state, { type: 'choose', optionId: 'hp' });
+    expect(sold.state.maxHp).toBe(maxHpBefore - loss);
+    expect(sold.state.gold).toBe(goldBefore + paid);
+    expect(sold.state.happening?.resolved?.success).toBe(true);
+  });
+
+  it('The Flesh Market sells all your armor for four times that much gold', () => {
+    const run = findHappeningById('flesh-market-armor', 'flesh-market');
+    const option = run.state.happening!.options.find((entry) => entry.id === 'armor')!;
+    const armorBefore = run.state.maxArmor;
+    expect(option.description).toContain(`${armorBefore} max armor`);
+    expect(option.description).toContain(`${armorBefore * 4} gold`);
+    expect(option.locked).toBe(false);
+
+    const goldBefore = run.state.gold;
+    const sold = act(run.state, { type: 'choose', optionId: 'armor' });
+    expect(sold.state.maxArmor).toBe(0);
+    expect(sold.state.armor).toBe(0);
+    expect(sold.state.gold).toBe(goldBefore + armorBefore * 4);
+    expect(sold.state.happening?.resolved?.success).toBe(true);
+  });
+
+  it('locks the Flesh Market armor sale when there is no armor', () => {
+    let found: StepResult | undefined;
+    for (let index = 0; index < 900 && !found; index++) {
+      const run = start(`flesh-market-broke-${index}`);
+      run.state.maxArmor = 0;
+      run.state.armor = 0;
+      const next = nextHappening(run.state);
+      if (next.state.happening?.id === 'flesh-market') found = next;
+    }
+    expect(found).toBeDefined();
+    const option = found!.state.happening!.options.find((entry) => entry.id === 'armor')!;
+    expect(option.locked).toBe(true);
+    expect(option.description).toContain('no armor');
+    const refused = act(found!.state, { type: 'choose', optionId: 'armor' });
+    expect(refused.state.happening?.resolved).toBeUndefined();
+    expect(refused.state.maxArmor).toBe(0);
   });
 
   it('resolves The Hollow Pocket slot loss and curse gamble', () => {
@@ -4440,6 +4494,34 @@ describe('round-start autoguess foods', () => {
     expect(FOOD_BY_ID.get('moon-cake')?.effects)
       .toContainEqual({ type: 'permanentRoundStartSpell', spell: 'omen' });
   });
+
+  it('Heartstone is a rare relic that autocasts Heal at the start of every round', () => {
+    const { state } = start('heartstone');
+    state.items.push({
+      instance: 'i-heartstone',
+      id: 'heartstone',
+      data: {},
+      equipped: true,
+    });
+    state.hp = 4;
+    const maxHpBefore = state.maxHp;
+
+    const first = nextRound(state);
+    expect(first.events.some(
+      (event) => event.type === 'spellCast' && event.auto && event.spell.id === 'heal',
+    )).toBe(true);
+    expect(first.state.hp).toBeGreaterThan(4);
+    expect(first.state.maxHp).toBe(maxHpBefore + 1);
+
+    const second = nextRound(first.state);
+    expect(second.events.some(
+      (event) => event.type === 'spellCast' && event.auto && event.spell.id === 'heal',
+    )).toBe(true);
+
+    expect(ITEM_BY_ID.get('heartstone')?.price).toBe(15);
+    expect(ITEM_BY_ID.get('heartstone')?.rarity).toBe('rare');
+    expect(ITEM_BY_ID.get('heartstone')?.unique).toBe(true);
+  });
 });
 
 describe('content and rules batch', () => {
@@ -4557,7 +4639,7 @@ describe('relic uniqueness', () => {
     .map((item) => item.id);
 
   it('never offers a relic already in the player inventory', () => {
-    expect(relicIds).toHaveLength(10);
+    expect(relicIds).toHaveLength(11);
     let sawOtherRelic = false;
     for (let index = 0; index < 60; index++) {
       const { state } = start(`relic-owned-${index}`);

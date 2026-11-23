@@ -43,6 +43,7 @@ const ITEM_ICONS: Record<string, string> = {
   'oracle-skull': '💀',
   'thorn-crown': '👑',
   'phoenix-egg': '🥚',
+  heartstone: '🫀',
   'chrono-anchor': '⚓',
   'speed-dial': '📞',
   'vowel-sigil': '🔮',

@@ -49,7 +49,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - Rarity uses cumulative floors: 40% pulls from rare, uncommon or common, 45% pulls from uncommon or common, and 15% pulls from common only. If a tier is empty, it falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on bosses)
-- 97 items (87 shop items + 10 rare relics), 6 spells, 83 foods and 31 happenings
+- 98 items (87 shop items + 11 rare relics), 6 spells, 83 foods and 32 happenings
 - New foods include **U-nagi**, **Donut Holes**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with an Omen spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
@@ -90,6 +90,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Guardian Angel** is an 8g item: after every 10 HP damage taken, autocast a free Immunity
 - **Immunity** blocks the next hurting guess and any guess for 4 seconds after it
 - **Mending Plate** is a rare item: +1 max armor per 8 HP healed
+- **Heartstone** is a 15g rare relic: autocast a free Heal at the start of every round
 - **Goldbutter** is a 9g rare food: +1 gold per solve
 - **Necronomicon** is a rare item: use it during a fight to lose 13% of your max HP for a random gift. It can only be used once per round, and it grows stronger as you feed it: fed thresholds unlock at 0, 13, 39, 79, 129, 189 and 259 max HP paid. Whisper and Twin Whispers autoguess Mythos words such as RYLEH, CTHUL and DAGON
 - **Growth Spurt** gives +3 max HP when you solve in 4 guesses or fewer
@@ -113,6 +114,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Black Market Ledger** is an 8g item: every shop purchase or event arrival has a 50% chance to add a random spell
 - **The Spellbroker** event trades your spells for permanent value: Omen or Phone a Friend becomes a random permanent letter, Heal becomes +10 max HP and a 10 HP heal, and Immunity or Restore becomes +5 armor
 - **The Spell Tithe** event trades one random spell for either permanent knowledge of a specific letter or a permanent purge of a specific letter; the trades are locked when you have no spells
+- **The Flesh Market** event sells half your max HP for 2 gold per point lost or all your max armor for 4 gold per point lost, and locks whichever body part you cannot spare
 - **Fortune Cookie** is a 2g food with a hidden 5× appearance weight: it queues one autoguess for the next round
 - **The Waffle** is a 6g rare food: +24s per round
 - **Tally** counts every guess, including ally and autoguesses

@@ -861,6 +861,39 @@ export const HAPPENINGS: HappeningDef[] = [
       },
     ],
   }),
+  defineHappening({
+    id: 'flesh-market',
+    name: 'The Flesh Market',
+    description: 'A butcher with a ledger instead of a cleaver. He pays by the pound.',
+    options: [
+      {
+        id: 'hp',
+        label: 'Sell half your max HP',
+        description: 'Lose half your max HP. Gain 2 gold per max HP lost.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'You sign, and the butcher measures you twice.',
+          effects: [],
+        }],
+      },
+      {
+        id: 'armor',
+        label: 'Sell all your armor',
+        description: 'Lose all your max armor. Gain 4 gold per max armor lost.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'The butcher weighs the plate and pays without a word.',
+          effects: [],
+        }],
+      },
+      {
+        id: 'leave',
+        label: 'Leave',
+        description: 'Nothing happens.',
+        outcomes: [{ chancePct: 100, text: 'You keep your body to yourself.', effects: [] }],
+      },
+    ],
+  }),
 ];
 
 export const HAPPENING_BY_ID = new Map(HAPPENINGS.map((h) => [h.id, h]));

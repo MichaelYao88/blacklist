@@ -1568,6 +1568,18 @@ export const ITEMS: ItemDef[] = [
     },
   }),
   defineItem({
+    id: 'heartstone',
+    name: 'Heartstone',
+    description: 'Round start: autocast a free Heal.',
+    price: 15,
+    kind: 'gear',
+    rarity: 'rare',
+    unique: true,
+    on: {
+      onRoundStart: () => [{ type: 'castSpell', spell: 'heal' }],
+    },
+  }),
+  defineItem({
     id: 'speed-dial',
     name: 'Speed Dial',
     description: 'Round start: autocast a free Phone a Friend.',

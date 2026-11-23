@@ -3101,7 +3101,8 @@ export function createCore(content: Content): Core {
     const pool = content.happenings.filter(
       (happening) => (happening.requiresCurseCount ?? 0) <= state.curses.length
         && (!happening.requiresClock || hasClock(state))
-        && (happening.id !== 'forbidden-feast' || rareFoodsAvailable.length > 0),
+        && (happening.id !== 'forbidden-feast' || rareFoodsAvailable.length > 0)
+        && (happening.id !== 'flesh-market' || state.maxHp > 1 || state.maxArmor > 0),
     );
     if (pool.length === 0) {
       advanceNode(rt);
@@ -3251,6 +3252,45 @@ export function createCore(content: Content): Core {
         };
       });
     }
+    if (def.id === 'flesh-market') {
+      const hpLoss = Math.min(Math.floor(state.maxHp / 2), state.maxHp - 1);
+      const hpGold = hpLoss * 2;
+      const armorLoss = state.maxArmor;
+      const armorGold = armorLoss * 4;
+      state.happening.options = state.happening.options.map((option) => {
+        if (option.id === 'hp') {
+          return {
+            ...option,
+            locked: hpLoss <= 0,
+            description: hpLoss > 0
+              ? `Lose ${hpLoss} max HP. Gain ${hpGold} gold.`
+              : 'You have no max HP to spare.',
+            outcomes: [{
+              chancePct: 100,
+              text: hpLoss > 0
+                ? `You sell ${hpLoss} max HP for ${hpGold} gold.`
+                : 'You have nothing to sell.',
+            }],
+          };
+        }
+        if (option.id === 'armor') {
+          return {
+            ...option,
+            locked: armorLoss <= 0,
+            description: armorLoss > 0
+              ? `Lose ${armorLoss} max armor. Gain ${armorGold} gold.`
+              : 'You have no armor to sell.',
+            outcomes: [{
+              chancePct: 100,
+              text: armorLoss > 0
+                ? `You sell ${armorLoss} max armor for ${armorGold} gold.`
+                : 'You have nothing to sell.',
+            }],
+          };
+        }
+        return option;
+      });
+    }
     state.phase = 'happening';
     emit(rt, {
       type: 'happeningOffered',
@@ -3341,6 +3381,39 @@ export function createCore(content: Content): Core {
     }
     if (happening.options.find((entry) => entry.id === option.id)?.locked) {
       emit(rt, { type: 'message', text: 'That option is locked.' });
+      return;
+    }
+
+    if (def.id === 'flesh-market' && (optionId === 'hp' || optionId === 'armor')) {
+      const loss = optionId === 'hp'
+        ? Math.min(Math.floor(state.maxHp / 2), state.maxHp - 1)
+        : state.maxArmor;
+      if (loss <= 0) {
+        emit(rt, {
+          type: 'message',
+          text: optionId === 'hp' ? 'You have no max HP to spare.' : 'You have no armor to sell.',
+        });
+        return;
+      }
+      const paid = loss * (optionId === 'hp' ? 2 : 4);
+      applyEffects(
+        rt,
+        optionId === 'hp'
+          ? [{ type: 'maxHp', delta: -loss }, { type: 'gold', amount: paid }]
+          : [{ type: 'maxArmor', delta: -loss }, { type: 'gold', amount: paid }],
+        { kind: 'happening', happening: def.id },
+      );
+      const text = optionId === 'hp'
+        ? `You sell ${loss} max HP for ${paid} gold.`
+        : `You sell ${loss} max armor for ${paid} gold.`;
+      happening.resolved = { option: optionId, success: true, text };
+      emit(rt, {
+        type: 'happeningResolved',
+        happening: def.id,
+        option: optionId,
+        success: true,
+        text,
+      });
       return;
     }
 
