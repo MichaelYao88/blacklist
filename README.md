@@ -111,7 +111,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Without U** is a 3g common-rarity unique food that permanently purges U and shows an uncommon shop banner; **Purge the D** is also common-rarity with an uncommon shop banner
 - **Reveal the D** is an 18g rare food; **Pay Respects to F** is an 8g common-rarity food with an uncommon banner that permanently purges F
 - **A-Steak** is a 13g rare food that learns whether A is in the answer every round; all permanent letter-learn foods cost 2g more
-- **Black Market Ledger** is an 8g item: every shop purchase or event arrival has a 40% chance to add a random spell
+- **Black Market Ledger** is an 8g item: every shop purchase or event arrival has a 50% chance to add a random spell
 - **The Spellbroker** event trades your spells for permanent value: Omen or Phone a Friend becomes a random permanent letter, Heal becomes +10 max HP and a 10 HP heal, and Immunity or Restore becomes +5 armor
 - **The Spell Tithe** event trades one random spell for either permanent knowledge of a specific letter or a permanent purge of a specific letter; the trades are locked when you have no spells
 - **The Spammer** event offers Head Start plus an immediate battle when you have a free slot, pays 10 gold if you already own Head Start, or lets you leave

@@ -4736,7 +4736,12 @@ describe('spellbroker and ledger additions', () => {
     const ledger = ITEM_BY_ID.get('black-market-ledger');
     expect(ledger?.on?.onPurchase).toBeTypeOf('function');
     expect(ledger?.on?.onHappening).toBeTypeOf('function');
+    expect(ledger?.description).toContain('50%');
     expect(ledger?.description).toContain('event');
+    expect(ledger?.on?.onPurchase?.(undefined as never, undefined as never))
+      .toContainEqual({ type: 'giveSpell', spell: 'random', chancePct: 50 });
+    expect(ledger?.on?.onHappening?.(undefined as never, undefined as never))
+      .toContainEqual({ type: 'giveSpell', spell: 'random', chancePct: 50 });
   });
 
   it('Fortune Cookie survives a second shop before the next round', () => {
