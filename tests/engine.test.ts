@@ -186,7 +186,7 @@ describe('cursed run setup', () => {
     expect(farmer.maxHp).toBe(10);
     expect(farmer.maxArmor).toBe(3);
     expect(farmer.armor).toBe(3);
-    expect(farmer.gold).toBe(6);
+    expect(farmer.gold).toBe(2);
     expect(farmer.items.filter((item) => item.id === 'harvest-charm' && item.equipped))
       .toHaveLength(3);
     expect(farmer.items.some((item) => item.id === 'early-bird' && item.equipped)).toBe(true);

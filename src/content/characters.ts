@@ -73,7 +73,7 @@ export const CHARACTERS: CharacterDef[] = [
     description: 'Three points of armor, three harvest charms, an early bird, and a stubborn ten hit points.',
     maxHp: 10,
     armor: 3,
-    startingGold: 6,
+    startingGold: 2,
     items: ['harvest-charm', 'harvest-charm', 'harvest-charm', 'early-bird'],
     curses: [],
     sprite: 'farmer',
