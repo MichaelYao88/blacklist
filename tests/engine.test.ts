@@ -146,7 +146,7 @@ describe('cursed run setup', () => {
 
     const pathfinder = game.newRun({ seed: 'preset-pathfinder', character: 'pathfinder' }).state;
     expect(pathfinder.character).toBe('pathfinder');
-    expect(pathfinder.maxHp).toBe(14);
+    expect(pathfinder.maxHp).toBe(21);
     expect(pathfinder.maxArmor).toBe(3);
     expect(pathfinder.armor).toBe(3);
     expect(pathfinder.gold).toBe(9);
@@ -155,7 +155,7 @@ describe('cursed run setup', () => {
 
     const necro = game.newRun({ seed: 'preset-necro', character: 'necromancer' }).state;
     expect(necro.character).toBe('necromancer');
-    expect(necro.maxHp).toBe(27);
+    expect(necro.maxHp).toBe(31);
     expect(necro.maxArmor).toBe(4);
     expect(necro.armor).toBe(4);
     expect(necro.gold).toBe(16);
@@ -164,7 +164,7 @@ describe('cursed run setup', () => {
 
     const purgamist = game.newRun({ seed: 'preset-purgamist', character: 'purgamist' }).state;
     expect(purgamist.character).toBe('purgamist');
-    expect(purgamist.maxHp).toBe(12);
+    expect(purgamist.maxHp).toBe(18);
     expect(purgamist.maxArmor).toBe(5);
     expect(purgamist.gold).toBe(17);
     expect(purgamist.pendingPurge).toBe(4);
