@@ -190,7 +190,7 @@ describe('cursed run setup', () => {
     expect(farmer.items.filter((item) => item.id === 'harvest-charm' && item.equipped))
       .toHaveLength(3);
     expect(farmer.items.some((item) => item.id === 'early-bird' && item.equipped)).toBe(true);
-    expect(farmer.curses).toEqual([]);
+    expect(farmer.curses).toEqual([{ id: 'short-fuse', stacks: 1 }]);
 
     const emptyArmor = game.newRun({ seed: 'preset-empty-armor', character: 'empty-armor' }).state;
     expect(emptyArmor.character).toBe('empty-armor');
