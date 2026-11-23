@@ -2,7 +2,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { game } from '../src/game';
 
-describe('damage multiplier warning', () => {
+describe('damage divider and tooltips', () => {
   let root: HTMLElement;
 
   beforeAll(async () => {
@@ -28,7 +28,7 @@ describe('damage multiplier warning', () => {
     root.querySelector<HTMLElement>('[data-action="resume"]')!.click();
   });
 
-  it('shows a large WATCH OUT multiplier banner', () => {
+  it('shows the damage divider and split tooltips', () => {
     for (const letter of 'jumpy') {
       window.dispatchEvent(new KeyboardEvent('keydown', {
         key: letter,
@@ -37,9 +37,24 @@ describe('damage multiplier warning', () => {
     }
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter' }));
 
-    const warning = document.querySelector<HTMLElement>('.damage-warning');
-    expect(warning).not.toBeNull();
-    expect(warning?.querySelector('.damage-warning-kicker')?.textContent).toContain('WATCH OUT!');
-    expect(warning?.querySelector('.damage-warning-mult')?.textContent).toContain('×2 DAMAGE');
+    const danger = root.querySelector<HTMLElement>('.board-row.danger');
+    expect(danger).toBeNull();
+
+    const divider = root.querySelector<HTMLElement>('.board-divider');
+    expect(divider).not.toBeNull();
+    expect(divider?.getAttribute('data-tip')).toContain('Damage is multiplied after this guess');
+    expect(divider?.getAttribute('data-tip')).toContain('free guesses are lost');
+    expect(divider?.textContent).toContain('⚔️');
+    expect(divider?.nextElementSibling?.classList.contains('board-row')).toBe(true);
+
+    const label = root.querySelector<HTMLElement>('.guess-damage-label');
+    expect(label?.classList.contains('tip-dots')).toBe(true);
+    expect(label?.getAttribute('data-tip')).toContain('first guess each round is free');
+
+    const value = root.querySelector<HTMLElement>('.guess-damage-value');
+    expect(value?.classList.contains('tip-dots')).toBe(true);
+    expect(value?.getAttribute('data-tip')).toContain('Base +3');
+    expect(value?.getAttribute('data-tip')).toContain('Guess multiplier ×2');
+    expect(value?.getAttribute('data-tip')).toContain('= 6 damage');
   });
 });

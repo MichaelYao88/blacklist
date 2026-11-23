@@ -18,7 +18,7 @@ describe('Purgamist setup', () => {
 
   it('shows the purge modal before the round countdown starts', () => {
     expect(root.querySelector('.modal')).not.toBeNull();
-    expect(root.querySelector('.countdown-overlay')).toBeNull();
+    expect(document.querySelector('.countdown-overlay')).toBeNull();
     expect(root.textContent).toContain('4 purges pending');
     expect(root.querySelector('.rail-level-value')?.textContent).toBe('0/51');
   });
@@ -33,6 +33,7 @@ describe('Purgamist setup', () => {
       if (key && !key.disabled) key.click();
     }
     expect(root.querySelector('.modal')).toBeNull();
-    expect(root.querySelector('.countdown-overlay')).not.toBeNull();
+    expect(document.querySelector('.countdown-overlay')).not.toBeNull();
+    expect(root.querySelector('.purged[data-tip]')?.getAttribute('data-tip')).toContain('no puzzle answer');
   });
 });

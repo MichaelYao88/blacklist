@@ -2,7 +2,7 @@
  * Ascension is only starting curses. There are no stat modifiers.
  */
 
-export const ASCENSION_MAX = 2;
+export const ASCENSION_MAX = 10;
 
 export function ascensionStartingCurses(level: number): number {
   return Math.max(0, Math.min(ASCENSION_MAX, Math.floor(level) || 0));

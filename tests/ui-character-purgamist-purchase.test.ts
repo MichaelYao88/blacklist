@@ -3,22 +3,22 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { game } from '../src/game';
 import { readMeta } from '../src/ui/store';
 
-describe('Purgamist unlock purchases', () => {
+describe('Purgamist unlock purges', () => {
   let root: HTMLElement;
 
   beforeAll(async () => {
     localStorage.clear();
     localStorage.setItem('blacklist.meta.v1', JSON.stringify({
       characters: ['runner'],
-      purchases: { inkcap: 1, 'poppy-seeds': 2 },
+      purgedCount: 5,
     }));
-    const { state } = game.newRun({ seed: 'purgamist-purchase', character: 'runner' });
+    const { state } = game.newRun({ seed: 'purgamist-purge', character: 'runner' });
     state.phase = 'shop';
     state.gold = 50;
     state.shop = {
       offers: [
-        { id: 'o0', kind: 'eat', def: 'poppy-seeds', price: 6 },
-        { id: 'o1', kind: 'eat', def: 'inkcap', price: 12 },
+        { id: 'o0', kind: 'eat', def: 'snack', price: 3 },
+        { id: 'o1', kind: 'eat', def: 'without-u', price: 3 },
       ],
       rerollCost: 2,
       rerolls: 0,
@@ -34,16 +34,17 @@ describe('Purgamist unlock purchases', () => {
     root.querySelector<HTMLElement>('[data-action="resume"]')!.click();
   });
 
-  it('requires two Inkcap purchases and ignores Poppy Seeds', () => {
+  it('requires six lifetime purges and ignores ordinary food', () => {
     root.querySelector<HTMLElement>('[data-action="buy"][data-id="o0"]')!.click();
-    expect(readMeta().purchases['poppy-seeds']).toBe(3);
+    expect(readMeta().purgedCount).toBe(5);
     expect(readMeta().characters).not.toContain('purgamist');
 
     root.querySelector<HTMLElement>('[data-action="buy"][data-id="o1"]')!.click();
-    expect(readMeta().purchases.inkcap).toBe(2);
+    expect(readMeta().purgedCount).toBe(6);
     expect(readMeta().characters).toContain('purgamist');
 
     const overlay = root.querySelector<HTMLElement>('.unlock-overlay');
     expect(overlay?.textContent).toContain('The Purgamist');
+    expect(overlay?.textContent).toContain('Pick your favorite vowel.');
   });
 });

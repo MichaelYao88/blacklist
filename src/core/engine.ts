@@ -6,6 +6,7 @@ import type {
   Core,
   CurseDef,
   CurseId,
+  DamageLine,
   Effect,
   GameEvent,
   HappeningDef,
@@ -1020,6 +1021,21 @@ export function createCore(content: Content): Core {
       case 'gold':
         changeGold(rt, effect.amount, source);
         break;
+      case 'proc': {
+        const item = rt.self ? findItem(state, rt.self) : undefined;
+        if (item) {
+          emit(rt, {
+            type: 'itemProc',
+            item: item.id,
+            instance: item.instance,
+            hook: 'onUse',
+            text: effect.text,
+          });
+        } else {
+          emit(rt, { type: 'message', text: effect.text });
+        }
+        break;
+      }
       case 'solveGold':
         state.bonusSolveGold = Math.max(0, state.bonusSolveGold + effect.amount);
         emit(rt, { type: 'attributeChanged', stat: 'bonusSolveGold', value: state.bonusSolveGold });
@@ -1286,7 +1302,6 @@ export function createCore(content: Content): Core {
         const word = normalizeWord(effect.word);
         if (word.length !== WORD_LENGTH) break;
         if (state.blacklist.includes(word)) break;
-        if (word.split('').some((ch) => state.purged.includes(ch))) break;
         if (round.guesses.some((guess) => guess.word === word)) break;
         scorePlayerGuess(rt, word, 'friend');
         break;
@@ -1424,6 +1439,13 @@ export function createCore(content: Content): Core {
         }
         break;
       }
+      case 'shopWildcardSlots':
+        state.shopWildcardBonus += effect.count;
+        emit(rt, {
+          type: 'message',
+          text: `Future shops gain ${effect.count} wildcard slot${effect.count === 1 ? '' : 's'}.`,
+        });
+        break;
       case 'pendingPurge':
         state.pendingPurge += effect.count;
         break;
@@ -1875,6 +1897,14 @@ export function createCore(content: Content): Core {
       ),
     );
     const baseDamage = normalBaseDamage + (boss?.damageBonus ?? 0);
+    const baseParts = {
+      flat: 3,
+      curses: curseDamage,
+      startingPenalty: startingCursePenalty,
+      heavyHand: damageMultiplier(state),
+      permanent: state.bonusBaseDamage,
+      boss: boss?.damageBonus ?? 0,
+    };
 
     const round: RoundState = {
       answer,
@@ -1883,6 +1913,7 @@ export function createCore(content: Content): Core {
       freeLeft: Math.max(0, 1 + freeGuessPenalty(state) + state.freeGuessBonus),
       paidGuesses: 0,
       baseDamage,
+      baseParts,
       damageRamp: 0,
       elapsedMs: 0,
       remainingMs: remaining,
@@ -1967,7 +1998,6 @@ export function createCore(content: Content): Core {
         !autoguessFails(state)
         && word.length === WORD_LENGTH
         && !state.blacklist.includes(word)
-        && !word.split('').some((ch) => state.purged.includes(ch))
         && !round.guesses.some((guess) => guess.word === word)
       ) {
         scorePlayerGuess(rt, word, 'friend');
@@ -1982,7 +2012,6 @@ export function createCore(content: Content): Core {
         !autoguessFails(state)
         && word.length === WORD_LENGTH
         && !state.blacklist.includes(word)
-        && !word.split('').some((ch) => state.purged.includes(ch))
         && !round.guesses.some((guess) => guess.word === word)
       ) {
         scorePlayerGuess(rt, word, 'friend');
@@ -1996,7 +2025,6 @@ export function createCore(content: Content): Core {
         !autoguessFails(state)
         && word.length === WORD_LENGTH
         && !state.blacklist.includes(word)
-        && !word.split('').some((ch) => state.purged.includes(ch))
         && !round.guesses.some((guess) => guess.word === word)
       ) {
         scorePlayerGuess(rt, word, 'friend');
@@ -2060,7 +2088,7 @@ export function createCore(content: Content): Core {
     }
 
     // Every finished encounter pays a prize. Solve gold drops with each guess:
-    // 8 for a one-guess solve, then 7, 6, 5 and 4. Bounty-style bonuses still
+    // 8 for a one-guess solve, then 7, 6, 5 and 4. Solve-gold bonuses still
     // add on top.
     let baseGold = 0;
     if (outcome === 'solved') {
@@ -2148,9 +2176,15 @@ export function createCore(content: Content): Core {
     return Math.max(1, guessNumber - 4 + damageRampEarly(state));
   }
 
-  function guessDamageFor(state: RunState, round: RoundState, next = false): number {
+  function guessDamageParts(
+    state: RunState,
+    round: RoundState,
+    next = false,
+  ): { base: number; multiplier: number; total: number; lines: DamageLine[] } {
     const boss = round.boss ? bossById.get(round.boss) : undefined;
-    if (boss?.noGuessDamage) return 0;
+    if (boss?.noGuessDamage) {
+      return { base: 0, multiplier: 1, total: 0, lines: [] };
+    }
     const previous = next
       ? round.guesses[round.guesses.length - 1]
       : round.guesses[round.guesses.length - 2];
@@ -2161,9 +2195,10 @@ export function createCore(content: Content): Core {
     const firstCounts = firstPlayerGuess
       ? truthCounts(firstPlayerGuess.truth)
       : { correct: 0, present: 0 };
-    const curseBonus =
-      previousCounts.correct * damagePerGreen(state) +
+    const greenDamage = previousCounts.correct * damagePerGreen(state);
+    const revealDamage =
       (firstCounts.correct + firstCounts.present) * damagePerFirstReveal(state);
+    const curseBonus = greenDamage + revealDamage;
     const base = boss?.damageFor
       ? boss.damageFor(state, next ? { ...round, totalGuesses: round.totalGuesses + 1 } : round)
       : round.baseDamage;
@@ -2172,7 +2207,52 @@ export function createCore(content: Content): Core {
     const slotBonus = Math.max(0, usedSlots(state) - 5);
     const goldBonus = Math.floor((state.goldSpent ?? 0) / 60);
     const raw = base + curseBonus + goldBonus + slotBonus;
-    return Math.max(0, Math.round(raw * guessDamageMultiplier(state, round, next)));
+    const multiplier = guessDamageMultiplier(state, round, next);
+    const total = Math.max(0, Math.round(raw * multiplier));
+
+    const lines: DamageLine[] = [];
+    if (boss?.damageFor) {
+      lines.push({ label: boss.name, amount: base, kind: 'add' });
+    } else if (round.baseParts) {
+      const parts = round.baseParts;
+      if (parts.flat !== 0) lines.push({ label: 'Base', amount: parts.flat, kind: 'add' });
+      if (parts.curses !== 0) lines.push({ label: 'Curse count', amount: parts.curses, kind: 'add' });
+      if (parts.startingPenalty !== 0) {
+        lines.push({ label: 'Starting curses', amount: -parts.startingPenalty, kind: 'add' });
+      }
+      if (parts.heavyHand !== 1) {
+        lines.push({ label: 'Heavy Hand', amount: parts.heavyHand, kind: 'mult' });
+      }
+      if (parts.permanent !== 0) {
+        lines.push({ label: 'Permanent bonus', amount: parts.permanent, kind: 'add' });
+      }
+      if (parts.boss !== 0) {
+        lines.push({ label: 'Boss bonus', amount: parts.boss, kind: 'add' });
+      }
+    } else {
+      lines.push({ label: 'Base', amount: base, kind: 'add' });
+    }
+    if (greenDamage > 0) {
+      const def = curseDefs(state)
+        .find((entry) => (entry.def.damagePerGreen ?? 0) > 0)?.def;
+      lines.push({ label: def?.name ?? 'Green curse', amount: greenDamage, kind: 'add' });
+    }
+    if (revealDamage > 0) {
+      const def = curseDefs(state)
+        .find((entry) => (entry.def.damagePerFirstReveal ?? 0) > 0)?.def;
+      lines.push({ label: def?.name ?? 'Reveal curse', amount: revealDamage, kind: 'add' });
+    }
+    if (goldBonus > 0) lines.push({ label: 'Gold spent', amount: goldBonus, kind: 'add' });
+    if (slotBonus > 0) lines.push({ label: 'Extra slots', amount: slotBonus, kind: 'add' });
+    if (multiplier > 1) {
+      lines.push({ label: 'Guess multiplier', amount: multiplier, kind: 'mult' });
+    }
+
+    return { base: Math.max(0, raw), multiplier, total, lines };
+  }
+
+  function guessDamageFor(state: RunState, round: RoundState, next = false): number {
+    return guessDamageParts(state, round, next).total;
   }
 
   function expireRound(rt: Runtime): void {
@@ -2260,8 +2340,7 @@ export function createCore(content: Content): Core {
       return (
         w.length === WORD_LENGTH &&
         !taken.has(w) &&
-        !state.blacklist.includes(w) &&
-        !w.split('').some((ch) => state.purged.includes(ch))
+        !state.blacklist.includes(w)
       );
     };
 
@@ -2272,8 +2351,8 @@ export function createCore(content: Content): Core {
       const phrases = content.friendPhrases.filter(
         ([first, second]) => available(first, taken) && available(second, taken),
       );
-      // When purges shrink the phrase pool below three options, fall back to
-      // single words so Phone a Friend does not repeat the same two phrases.
+      // When the phrase pool is too small, fall back to single words so Phone
+      // a Friend does not repeat the same two phrases.
       if (phrases.length >= 3) {
         const [first, second] = rngPick(state, phrases);
         if (first === 'pizza' && second === 'pzazz') {
@@ -2318,7 +2397,6 @@ export function createCore(content: Content): Core {
         w.length === WORD_LENGTH
         && !taken.has(w)
         && !state.blacklist.includes(w)
-        && !w.split('').some((ch) => state.purged.includes(ch))
         && !w.split('').some((ch) => blocked.has(ch))
       );
     };
@@ -2360,7 +2438,9 @@ export function createCore(content: Content): Core {
 
     const shieldedFree = by === 'player' && round.elapsedMs < round.immuneUntilMs;
     const naturalFree = by === 'friend' || round.freeLeft > 0;
-    const consumesFree = by === 'player' && naturalFree && !shieldedFree;
+    // Head Start and other timed immunity still protect the guess, but the
+    // round's normal free guess is spent by it rather than being preserved.
+    const consumesFree = by === 'player' && naturalFree;
     const unobscured = consumesFree && round.nextFreeUnobscured;
     if (consumesFree) {
       round.freeLeft--;
@@ -2428,6 +2508,9 @@ export function createCore(content: Content): Core {
       index: guess.index,
       guess: presented,
       free: guess.free,
+      freeSource: madeFree ? freeSource : undefined,
+      firstPlayerGuess: by === 'player' && round.playerGuesses === 1,
+      unobscured,
       word,
       solved,
     });
@@ -2800,6 +2883,17 @@ export function createCore(content: Content): Core {
       pickFood(food);
       return true;
     };
+    const pickWildcard = (categories: Array<'item' | 'eat' | 'spell'>): boolean => {
+      for (const category of rngShuffle(state, categories)) {
+        if (category === 'item' && pickRandomItem()) return true;
+        if (category === 'eat' && pickRandomFood()) return true;
+        if (category === 'spell' && content.spells.length > 0) {
+          pickSpell(rngPick(state, content.spells));
+          return true;
+        }
+      }
+      return false;
+    };
 
     for (let index = 0; index < itemTarget; index++) {
       pickRandomItem();
@@ -2812,6 +2906,12 @@ export function createCore(content: Content): Core {
       if (content.spells.length > 0) pickSpell(rngPick(state, content.spells));
     } else {
       pickRandomFood();
+    }
+
+    // Shop Upgrade: alternate an any-type slot with an item/food slot.
+    const extraWildcards = Math.max(0, state.shopWildcardBonus ?? 0);
+    for (let index = 0; index < extraWildcards; index++) {
+      pickWildcard(index % 2 === 0 ? ['item', 'eat', 'spell'] : ['item', 'eat']);
     }
 
     // One random offer is half price. It can land on an item, a food, or the
@@ -3001,7 +3101,8 @@ export function createCore(content: Content): Core {
     const pool = content.happenings.filter(
       (happening) => (happening.requiresCurseCount ?? 0) <= state.curses.length
         && (!happening.requiresClock || hasClock(state))
-        && (happening.id !== 'forbidden-feast' || rareFoodsAvailable.length > 0),
+        && (happening.id !== 'forbidden-feast' || rareFoodsAvailable.length > 0)
+        && (happening.id !== 'flesh-market' || state.maxHp > 1 || state.maxArmor > 0),
     );
     if (pool.length === 0) {
       advanceNode(rt);
@@ -3104,21 +3205,6 @@ export function createCore(content: Content): Core {
       const leave = baseOptions.find((option) => option.id === 'leave');
       options = [...trades, ...(leave ? [leave] : [])];
     }
-    if (def.id === 'the-spammer') {
-      const ownsHeadStart = state.items.some((item) => item.id === 'head-start');
-      const headStartDef = itemById.get('head-start');
-      const headStartSlots = headStartDef ? itemSlots(headStartDef) : 1;
-      const hasFreeSlot = usedSlots(state) + headStartSlots <= state.slots;
-      options = options.map((option) => {
-        if (option.id === 'battle') {
-          return { ...option, locked: ownsHeadStart || !hasFreeSlot };
-        }
-        if (option.id === 'fan') {
-          return { ...option, locked: !ownsHeadStart };
-        }
-        return option;
-      });
-    }
     state.happening = {
       id: def.id,
       options,
@@ -3164,6 +3250,45 @@ export function createCore(content: Content): Core {
           locked: !food,
           description: parts.join(' '),
         };
+      });
+    }
+    if (def.id === 'flesh-market') {
+      const hpLoss = Math.min(Math.floor(state.maxHp / 2), state.maxHp - 1);
+      const hpGold = hpLoss * 2;
+      const armorLoss = state.maxArmor;
+      const armorGold = armorLoss * 4;
+      state.happening.options = state.happening.options.map((option) => {
+        if (option.id === 'hp') {
+          return {
+            ...option,
+            locked: hpLoss <= 0,
+            description: hpLoss > 0
+              ? `Lose ${hpLoss} max HP. Gain ${hpGold} gold.`
+              : 'You have no max HP to spare.',
+            outcomes: [{
+              chancePct: 100,
+              text: hpLoss > 0
+                ? `You sell ${hpLoss} max HP for ${hpGold} gold.`
+                : 'You have nothing to sell.',
+            }],
+          };
+        }
+        if (option.id === 'armor') {
+          return {
+            ...option,
+            locked: armorLoss <= 0,
+            description: armorLoss > 0
+              ? `Lose ${armorLoss} max armor. Gain ${armorGold} gold.`
+              : 'You have no armor to sell.',
+            outcomes: [{
+              chancePct: 100,
+              text: armorLoss > 0
+                ? `You sell ${armorLoss} max armor for ${armorGold} gold.`
+                : 'You have nothing to sell.',
+            }],
+          };
+        }
+        return option;
       });
     }
     state.phase = 'happening';
@@ -3256,6 +3381,39 @@ export function createCore(content: Content): Core {
     }
     if (happening.options.find((entry) => entry.id === option.id)?.locked) {
       emit(rt, { type: 'message', text: 'That option is locked.' });
+      return;
+    }
+
+    if (def.id === 'flesh-market' && (optionId === 'hp' || optionId === 'armor')) {
+      const loss = optionId === 'hp'
+        ? Math.min(Math.floor(state.maxHp / 2), state.maxHp - 1)
+        : state.maxArmor;
+      if (loss <= 0) {
+        emit(rt, {
+          type: 'message',
+          text: optionId === 'hp' ? 'You have no max HP to spare.' : 'You have no armor to sell.',
+        });
+        return;
+      }
+      const paid = loss * (optionId === 'hp' ? 2 : 4);
+      applyEffects(
+        rt,
+        optionId === 'hp'
+          ? [{ type: 'maxHp', delta: -loss }, { type: 'gold', amount: paid }]
+          : [{ type: 'maxArmor', delta: -loss }, { type: 'gold', amount: paid }],
+        { kind: 'happening', happening: def.id },
+      );
+      const text = optionId === 'hp'
+        ? `You sell ${loss} max HP for ${paid} gold.`
+        : `You sell ${loss} max armor for ${paid} gold.`;
+      happening.resolved = { option: optionId, success: true, text };
+      emit(rt, {
+        type: 'happeningResolved',
+        happening: def.id,
+        option: optionId,
+        success: true,
+        text,
+      });
       return;
     }
 
@@ -3784,7 +3942,8 @@ export function createCore(content: Content): Core {
     const boss = round.boss ? bossById.get(round.boss) : undefined;
     // damageFor describes the hit a wrong guess takes at the round's current
     // progress, so preview the next guess by stepping the counter forward.
-    const rawNext = guessDamageFor(state, round, true);
+    const nextParts = guessDamageParts(state, round, true);
+    const rawNext = nextParts.total;
     const previewNext = state.nextRoundDamageCap !== undefined
       ? Math.min(rawNext, state.nextRoundDamageCap)
       : rawNext;
@@ -3854,6 +4013,10 @@ export function createCore(content: Content): Core {
       freeGuessesLeft: round.freeLeft,
       nextGuessDamage: round.freeLeft > 0 || noGuessDamage ? 0 : previewNext,
       rawNextGuessDamage: rawNext,
+      nextGuessBase: nextParts.base,
+      nextGuessMultiplier: nextParts.multiplier,
+      damageBreakdown: nextParts.lines,
+      damageRampEarly: damageRampEarly(state),
       remainingMs: round.remainingMs,
       timerStartMs: round.timerStartMs,
       elapsedMs: round.elapsedMs,
@@ -4197,6 +4360,7 @@ export function createCore(content: Content): Core {
       pendingStartingCurses: startingCurses,
       bossCursesLeft: 0,
       pendingCurseRemoval: 0,
+      shopWildcardBonus: 0,
       phase: 'round',
       stats: {
         rounds: 0,
@@ -4228,9 +4392,16 @@ export function createCore(content: Content): Core {
       ascension,
       nodes: clone(state.nodes),
     });
-    if (content.spells.length > 0) addSpell(rt, rngPick(state, content.spells).id);
+    if (spellById.has('omen')) addSpell(rt, 'omen');
     for (const item of character.items) addItem(rt, item);
     for (const curse of character.curses) applyCurse(rt, curse, true);
+    for (const foodId of character.startingFoods ?? []) {
+      const food = foodById.get(foodId);
+      if (!food) continue;
+      if (food.unique && !state.eatenFoods.includes(food.id)) state.eatenFoods.push(food.id);
+      emit(rt, { type: 'foodEaten', food: food.id, name: food.name });
+      applyEffects(rt, food.effects, { kind: 'food', food: food.id });
+    }
     if ((character.startingPurges ?? 0) > 0) {
       state.pendingPurge += character.startingPurges ?? 0;
     }
@@ -4397,6 +4568,7 @@ export function createCore(content: Content): Core {
           state.round.damageRamp = 0;
         }
       }
+      if (typeof state.shopWildcardBonus !== 'number') state.shopWildcardBonus = 0;
       // Older saves can still have the retired upgrade offer kind. Drop those
       // entries rather than rendering a shelf the new client cannot price.
       if (state.shop) {

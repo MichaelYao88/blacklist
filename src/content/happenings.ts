@@ -716,7 +716,7 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'omen',
         label: 'Trade Omen',
-        description: 'Lose Omen. Permanently reveal a random letter.',
+        description: 'Lose Omen. Permanently learn a random letter.',
         requiresSpell: 'omen',
         outcomes: [{
           chancePct: 100,
@@ -730,7 +730,7 @@ export const HAPPENINGS: HappeningDef[] = [
       {
         id: 'phone-friend',
         label: 'Trade Phone a Friend',
-        description: 'Lose Phone a Friend. Permanently reveal a random letter.',
+        description: 'Lose Phone a Friend. Permanently learn a random letter.',
         requiresSpell: 'phone-friend',
         outcomes: [{
           chancePct: 100,
@@ -791,42 +791,6 @@ export const HAPPENINGS: HappeningDef[] = [
         label: 'Keep your spells',
         description: 'Nothing happens.',
         outcomes: [{ chancePct: 100, text: 'The merchant bows and steps aside.', effects: [] }],
-      },
-    ],
-  }),
-  defineHappening({
-    id: 'the-spammer',
-    name: 'The Spammer',
-    description: '"TUBES->BLING->CHAMP->WORDY, STARE->WHOMP->FLICK->BUNGY, SLANT->PRICE->DOUGH->BALMY, BLIND->GRUMP->STOVE->WHACK." "I spam these fast and then I solve!"',
-    options: [
-      {
-        id: 'battle',
-        label: 'Take the Head Start',
-        description: 'Gain Head Start and start a battle. Needs a free item slot and no Head Start.',
-        outcomes: [{
-          chancePct: 100,
-          text: 'You take the Head Start. The Spammer grins and throws you into a match.',
-          effects: [
-            { type: 'addItem', item: 'head-start' },
-            { type: 'startBattle' },
-          ],
-        }],
-      },
-      {
-        id: 'fan',
-        label: "I'm already a fan",
-        description: 'Gain 10 gold for already owning Head Start.',
-        outcomes: [{
-          chancePct: 100,
-          text: 'The Spammer tosses you 10 gold for being a fan.',
-          effects: [{ type: 'gold', amount: 10 }],
-        }],
-      },
-      {
-        id: 'leave',
-        label: 'Leave the Spammer',
-        description: 'Nothing happens.',
-        outcomes: [{ chancePct: 100, text: 'The Spammer keeps typing.', effects: [] }],
       },
     ],
   }),
@@ -894,6 +858,39 @@ export const HAPPENINGS: HappeningDef[] = [
         label: 'Walk away',
         description: 'Nothing happens.',
         outcomes: [{ chancePct: 100, text: 'You leave the cover where it lies.', effects: [] }],
+      },
+    ],
+  }),
+  defineHappening({
+    id: 'flesh-market',
+    name: 'The Flesh Market',
+    description: 'A butcher with a ledger instead of a cleaver. He pays by the pound.',
+    options: [
+      {
+        id: 'hp',
+        label: 'Sell half your max HP',
+        description: 'Lose half your max HP. Gain 2 gold per max HP lost.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'You sign, and the butcher measures you twice.',
+          effects: [],
+        }],
+      },
+      {
+        id: 'armor',
+        label: 'Sell all your armor',
+        description: 'Lose all your max armor. Gain 4 gold per max armor lost.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'The butcher weighs the plate and pays without a word.',
+          effects: [],
+        }],
+      },
+      {
+        id: 'leave',
+        label: 'Leave',
+        description: 'Nothing happens.',
+        outcomes: [{ chancePct: 100, text: 'You keep your body to yourself.', effects: [] }],
       },
     ],
   }),

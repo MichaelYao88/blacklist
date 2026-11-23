@@ -1,6 +1,7 @@
 import { defineItem, type Effect, type ItemDef } from '../core/types';
 import { isAllAbsent, sharedLetters, truthCounts } from '../core/score';
 import { FOODS } from './foods';
+import { SPELLS } from './spells';
 
 const SPELL_BITS: Record<string, number> = {
   'time-freeze': 1,
@@ -26,9 +27,145 @@ function everyThreeFoodsOrSolves(self: { data: Record<string, number> }): Effect
   ];
 }
 
-/** Necronomicon reveals one extra random letter per 13 HP paid when Omen is cast. */
-function necronomiconLetters(self: { data: Record<string, number> }): number {
-  return Math.floor((self.data.paid ?? 0) / 13);
+const MYTHOS_WORDS = [
+  'ryleh', 'cthul', 'dagon', 'nyarl', 'azath', 'tsath', 'hypno',
+  'elder', 'abyss', 'omens', 'sigil', 'ghoul', 'spawn', 'crawl',
+  'dread', 'night', 'chaos', 'lunar', 'haunt', 'runes',
+] as const;
+
+/** Fed thresholds: 0, 13, 39, 79, 129, 189, 259. */
+export function necronomiconTier(fed: number): number {
+  if (fed >= 259) return 6;
+  if (fed >= 189) return 5;
+  if (fed >= 129) return 4;
+  if (fed >= 79) return 3;
+  if (fed >= 39) return 2;
+  if (fed >= 13) return 1;
+  return 0;
+}
+
+function necroProc(text: string): Effect {
+  return { type: 'proc', text };
+}
+
+/**
+ * The book's random gift pool. Tiers 5 and 6 add no new outcomes; they only
+ * make the existing numbers bigger.
+ */
+export function necronomiconPool(tier: number): Effect[][] {
+  const scale = tier;
+  const reveal = 1 + Math.floor(tier / 2);
+  const armor = 1 + Math.floor(tier / 2);
+  const ruleOut = 3 + tier;
+  const whisperChoices: Effect[][] = MYTHOS_WORDS.map((word) => [
+    necroProc(`Whisper — autoguess ${word.toUpperCase()}.`),
+    { type: 'autoGuess', word },
+  ]);
+  const twinChoices: Effect[][] = [];
+  for (let first = 0; first < MYTHOS_WORDS.length; first++) {
+    for (let second = first + 1; second < MYTHOS_WORDS.length; second++) {
+      const a = MYTHOS_WORDS[first];
+      const b = MYTHOS_WORDS[second];
+      twinChoices.push([
+        necroProc(`Twin Whispers — autoguess ${a.toUpperCase()} and ${b.toUpperCase()}.`),
+        { type: 'autoGuess', word: a },
+        { type: 'autoGuess', word: b },
+      ]);
+    }
+  }
+  const whisper = (): Effect[] => [
+    { type: 'randomChoice', options: whisperChoices },
+  ];
+  const twin = (): Effect[] => [
+    { type: 'randomChoice', options: twinChoices },
+  ];
+  const options: Effect[][] = [];
+
+  // Both autoguess gifts are deliberately three times as likely as the rest.
+  for (let index = 0; index < 3; index++) options.push(whisper());
+  for (let index = 0; index < 3; index++) options.push(twin());
+
+  options.push(
+    [necroProc('Omen — a yellow letter surfaces.'), { type: 'castSpell', spell: 'omen' }],
+    [
+      necroProc('Twin Omens — two yellow letters surface.'),
+      { type: 'castSpell', spell: 'omen' },
+      { type: 'castSpell', spell: 'omen' },
+    ],
+    [
+      necroProc(`Goldbutter - ${5 + 2 * scale} gold.`),
+      { type: 'gold', amount: 5 + 2 * scale },
+    ],
+    [
+      necroProc('Mend — heal to full and refill armor.'),
+      { type: 'healMissingPercent', percent: 100 },
+      { type: 'refillArmor' },
+    ],
+    [
+      necroProc(`Glimpse — reveal ${reveal} letter${reveal === 1 ? '' : 's'}.`),
+      { type: 'revealRandom', count: reveal },
+    ],
+    [
+      necroProc(`Unwrite — rule out ${ruleOut} letters.`),
+      { type: 'revealAbsent', count: ruleOut },
+    ],
+    [necroProc('Wild Spark — cast a random spell.'), { type: 'castSpell', spell: 'random' }],
+  );
+
+  if (tier >= 1) {
+    options.push(
+      [necroProc('Second Chance — +1 free guess.'), { type: 'freeGuesses', count: 1 }],
+      [necroProc('Freeze — the clock stops.'), { type: 'castSpell', spell: 'time-freeze' }],
+      [
+        necroProc('Twin Immunity — cast Immunity twice.'),
+        { type: 'castSpell', spell: 'immunity' },
+        { type: 'castSpell', spell: 'immunity' },
+      ],
+      [necroProc(`Growth — +${1 + scale} max HP.`), { type: 'maxHp', delta: 1 + scale }],
+      [necroProc(`Plating — +${armor} max armor.`), { type: 'maxArmor', delta: armor }],
+      [necroProc('Feast — eat something.'), { type: 'eatRandom' }],
+    );
+  }
+
+  if (tier >= 2) {
+    options.push(
+      [necroProc('Permanent Glimpse — learn a letter for good.'), { type: 'revealPermanentRandom' }],
+      [necroProc('Erasure — purge a letter.'), { type: 'purgeRandomLetter' }],
+      [
+        necroProc(`Windfall — ${8 + 4 * scale} gold.`),
+        { type: 'gold', amount: 8 + 4 * scale },
+      ],
+      [
+        necroProc(`Counting House — counts for ${2 + scale} rounds.`),
+        { type: 'visionCounts', rounds: 2 + scale },
+      ],
+      [
+        necroProc('Blood Price — the book takes its cut.'),
+        { type: 'damage', amount: 2 + scale, ignoreArmor: true },
+        { type: 'castSpell', spell: 'random' },
+        { type: 'castSpell', spell: 'random' },
+      ],
+    );
+  }
+
+  if (tier >= 3) {
+    options.push(
+      [necroProc('Extra Pocket — +1 item slot.'), { type: 'slots', delta: 1 }],
+      [necroProc('Relic — a rare treasure.'), { type: 'addRandomRelic' }],
+      [necroProc('Unburden — a curse lifts.'), { type: 'removeRandomCurse', chancePct: 100 }],
+      [necroProc('Bloom of Flesh — max HP doubles.'), { type: 'maxHpMultiply', factor: 2 }],
+    );
+  }
+
+  if (tier >= 4) {
+    options.push([
+      necroProc('Cursed Bargain — a relic, and a curse.'),
+      { type: 'addRandomRelic' },
+      { type: 'addRandomCurse' },
+    ]);
+  }
+
+  return options;
 }
 
 function popcount(value: number): number {
@@ -134,8 +271,8 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'head-start',
     name: 'Head Start',
-    description: 'The first 7s of each round: guesses are free.',
-    price: 8,
+    description: 'The first 7s of each round: Immune to damage. Your free guess is still spent by the first guess.',
+    price: 14,
     kind: 'gear',
     rarity: 'rare',
     on: {
@@ -145,7 +282,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'scattershot',
     name: 'Scattershot',
-    description: 'Once per round: a guess sharing no letters with the previous guess autocasts a free random spell.',
+    description: 'Once per round: a player guess sharing no letters with the previous guess autocasts a free random spell.',
     price: 10,
     kind: 'gear',
     rarity: 'uncommon',
@@ -153,7 +290,7 @@ export const ITEMS: ItemDef[] = [
     on: {
       onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
       onGuessScored: (ctx, p) => {
-        if (ctx.self.data.used || !p.previous) return [];
+        if (ctx.self.data.used || !p.previous || p.guess.by !== 'player') return [];
         if (sharedLetters(p.guess.word, p.previous.word) > 0) return [];
         return [
           { type: 'castSpell', spell: 'random' },
@@ -176,7 +313,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'encore',
     name: 'Encore',
-    description: 'Round start: the last solved answer is guessed for free.',
+    description: 'Round start: autoguess the last solved answer.',
     price: 7,
     kind: 'gear',
     appearanceWeight: 3,
@@ -186,7 +323,6 @@ export const ITEMS: ItemDef[] = [
         const answer = ctx.state.lastAnswer;
         if (!answer) return [];
         if (ctx.state.blacklist.includes(answer)) return [];
-        if (answer.split('').some((ch) => ctx.state.purged.includes(ch))) return [];
         return [{ type: 'autoGuess', word: answer }];
       },
     },
@@ -269,12 +405,11 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'placebo',
     name: 'Placebo',
-    description: 'Every guess you make: heal 1 HP.',
+    description: 'Any guess, including an autoguess: heal 1 HP.',
     price: 4,
     kind: 'gear',
     on: {
-      onGuessScored: (_ctx, p) =>
-        p.guess.by === 'player' ? [{ type: 'heal', amount: 1 }] : [],
+      onGuessScored: () => [{ type: 'heal', amount: 1 }],
     },
   }),
   defineItem({
@@ -331,19 +466,21 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'necronomicon',
     name: 'Necronomicon',
-    description: 'Click to pay 13% of your max HP and cast Omen. Each Omen cast reveals an extra random letter this round for every 13 HP paid to the book.',
+    description: 'Use during a fight: lose 13% max HP for a random gift. The book grows stronger as you feed it. Once per round.',
     price: 13,
     kind: 'gear',
     rarity: 'rare',
-    initial: { paid: 0, _uses: 0 },
+    initial: { fed: 0, _uses: 0 },
     onUse: (ctx) => {
       if (!ctx.self.equipped) {
         return [{ type: 'message', text: 'Equip the book first.' }];
       }
       if (ctx.state.phase !== 'round' || !ctx.state.round) {
-        return [{ type: 'message', text: 'The book only answers during a round.' }];
+        return [{ type: 'message', text: 'The book only answers during a fight.' }];
       }
-      if ((ctx.self.data._uses ?? 0) >= 3) return [];
+      if ((ctx.self.data._uses ?? 0) >= 1) {
+        return [{ type: 'message', text: 'The book is silent until next round.' }];
+      }
       const cost = Math.min(
         Math.ceil(ctx.state.maxHp * 0.13),
         Math.max(0, ctx.state.maxHp - 1),
@@ -351,20 +488,16 @@ export const ITEMS: ItemDef[] = [
       if (cost <= 0) {
         return [{ type: 'message', text: 'The book needs more life to take.' }];
       }
+      const fed = (ctx.self.data.fed ?? ctx.self.data.paid ?? 0) + cost;
       return [
         { type: 'maxHp', delta: -cost },
-        { type: 'setItemData', stat: 'paid', value: (ctx.self.data.paid ?? 0) + cost },
-        { type: 'setItemData', stat: '_uses', value: (ctx.self.data._uses ?? 0) + 1 },
-        { type: 'castSpell', spell: 'omen' },
+        { type: 'setItemData', stat: 'fed', value: fed },
+        { type: 'setItemData', stat: '_uses', value: 1 },
+        { type: 'randomChoice', options: necronomiconPool(necronomiconTier(fed)) },
       ];
     },
     on: {
       onRoundStart: () => [{ type: 'setItemData', stat: '_uses', value: 0 }],
-      onSpellCast: (ctx, p) => {
-        if (p.spell !== 'omen') return [];
-        const count = necronomiconLetters(ctx.self);
-        return count > 0 ? [{ type: 'revealRandom', count }] : [];
-      },
     },
   }),
   defineItem({
@@ -386,16 +519,47 @@ export const ITEMS: ItemDef[] = [
     },
   }),
   defineItem({
+    id: 'momentum',
+    name: 'Momentum',
+    description: 'Every 8 player guesses: +1 max armor.',
+    price: 10,
+    kind: 'gear',
+    rarity: 'uncommon',
+    initial: { guesses: 0 },
+    on: {
+      onGuessScored: (ctx, p) => {
+        if (p.guess.by !== 'player') return [];
+        const next = ctx.self.data.guesses + 1;
+        return [
+          { type: 'grow', stat: 'guesses', by: 1 },
+          ...(next % 8 === 0 ? [{ type: 'maxArmor' as const, delta: 1 }] : []),
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'ballast',
+    name: 'Ballast',
+    description: 'Whenever you autoguess: +3 max HP.',
+    price: 10,
+    kind: 'gear',
+    rarity: 'uncommon',
+    on: {
+      onGuessScored: (_ctx, p) =>
+        p.guess.by === 'friend' ? [{ type: 'maxHp', delta: 3 }] : [],
+    },
+  }),
+  defineItem({
     id: 'black-market-ledger',
     name: 'Black Market Ledger',
-    description: 'Shop purchase or event: 40% chance of a random spell.',
+    description: 'Shop purchase or event: 50% chance of a random spell.',
     price: 8,
     kind: 'gear',
     on: {
       onPurchase: () =>
-        [{ type: 'giveSpell', spell: 'random', chancePct: 40 }],
+        [{ type: 'giveSpell', spell: 'random', chancePct: 50 }],
       onHappening: () =>
-        [{ type: 'giveSpell', spell: 'random', chancePct: 40 }],
+        [{ type: 'giveSpell', spell: 'random', chancePct: 50 }],
     },
   }),
   defineItem({
@@ -413,7 +577,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'untouchable',
     name: 'Untouchable',
-    description: 'Solve without damage: Restore.',
+    description: 'Solve without taking a hit: Restore.',
     price: 9,
     kind: 'gear',
     on: {
@@ -441,7 +605,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'loose-tongue',
     name: 'Loose Tongue',
-    description: 'Any five letters are a valid guess. Nonsense still scores.',
+    description: 'Any five letters are a valid guess. Nonsense still scores, and this is the only way to guess an invalid word.',
     price: 12,
     kind: 'gear',
     rarity: 'uncommon',
@@ -606,7 +770,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'field-kit',
     name: 'Field Kit',
-    description: 'Round start, learn 4 letters not in the word.',
+    description: 'Round start: Rule Out 4 letters guaranteed not in the word.',
     price: 10,
     kind: 'gear',
     on: { onRoundStart: () => [{ type: 'revealAbsent', count: 4 }] },
@@ -614,7 +778,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'doggy-bag',
     name: 'Doggy Bag',
-    description: 'Round start: learn 2 letters not in the word. Eating food: 1 more next round.',
+    description: 'Round start: Rule Out 2 letters guaranteed not in the word. Eating food: 1 more next round.',
     price: 11,
     kind: 'gear',
     on: {
@@ -900,26 +1064,6 @@ export const ITEMS: ItemDef[] = [
   // ── timer, shop and engine items ─────────────────────────────────────────
 
   defineItem({
-    id: 'deadline',
-    name: 'Deadline',
-    description: 'As soon as the clock drops below 30s each round: +1 free guess.',
-    price: 8,
-    kind: 'gear',
-    requiresClock: true,
-    initial: { used: 0 },
-    on: {
-      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
-      onTimerTick: (ctx, p) => {
-        if (ctx.self.data.used) return [];
-        if (p.remainingMs === null || p.remainingMs >= 30_000) return [];
-        return [
-          { type: 'freeGuesses', count: 1 },
-          { type: 'setItemData', stat: 'used', value: 1 },
-        ];
-      },
-    },
-  }),
-  defineItem({
     id: 'second-skin',
     name: 'Second Skin',
     description: 'First time armor hits 0 each round: restore half your max armor.',
@@ -1147,7 +1291,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'off-road',
     name: 'Off-Road',
-    description: 'Once per round: a guess sharing no letters with the previous guess autocasts a free random spell.',
+    description: 'Once per round: a player guess sharing no letters with the previous guess autocasts a free random spell.',
     price: 9,
     kind: 'gear',
     initial: { used: 0 },
@@ -1216,7 +1360,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'turtle-shell',
     name: 'Turtle Shell',
-    description: 'Hits that armor does not soak are reduced by 50%.',
+    description: 'A Hit (HP damage) that armor does not soak is reduced by 50%.',
     price: 8,
     kind: 'gear',
     unarmoredHitMultiplier: 0.5,
@@ -1367,7 +1511,7 @@ export const ITEMS: ItemDef[] = [
 
   defineItem({
     id: 'tally-lens',
-    name: 'Tally Lens',
+    name: 'Counter-Intelligence',
     description: 'While a vision curse is active, guesses show correct and misplaced counts.',
     price: 12,
     kind: 'gear',
@@ -1442,16 +1586,28 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'phoenix-egg',
     name: 'Phoenix Egg',
-    description: 'First death: revive at 50% HP, autocast a free Restore. Consumed.',
+    description: 'First death: revive and autocast every spell. Consumed.',
     price: 18,
     kind: 'gear',
     rarity: 'rare',
     on: {
       onDeath: (ctx) => [
-        { type: 'revive', hp: Math.ceil(ctx.state.maxHp * 0.5) },
-        { type: 'castSpell', spell: 'restore' },
+        { type: 'revive', hp: ctx.state.maxHp },
+        ...SPELLS.map((spell) => ({ type: 'castSpell' as const, spell: spell.id })),
         { type: 'consumeSelf' },
       ],
+    },
+  }),
+  defineItem({
+    id: 'heartstone',
+    name: 'Heartstone',
+    description: 'Round start: autocast a free Heal.',
+    price: 15,
+    kind: 'gear',
+    rarity: 'rare',
+    unique: true,
+    on: {
+      onRoundStart: () => [{ type: 'castSpell', spell: 'heal' }],
     },
   }),
   defineItem({

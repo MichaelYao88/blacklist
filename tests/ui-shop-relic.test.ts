@@ -70,14 +70,14 @@ describe('shop relic labelling', () => {
     expect(uncommonFood?.querySelector('.tag')?.textContent?.trim()).toBe('UNCOMMON');
   });
 
-  it('keeps the inventory in the rail column directly under the battle rail', () => {
+  it('keeps the inventory in the rail column directly under the shop rail', () => {
     const railColumn = root.querySelector('.rail-column');
-    expect(railColumn?.querySelector('.battle-rail')).not.toBeNull();
+    expect(railColumn?.querySelector('.shop-rail')).not.toBeNull();
     expect(railColumn?.querySelector('.items-panel')).not.toBeNull();
   });
 
   it('uses shop banner overrides for common-rarity specials', () => {
-    for (const name of ['Poppy Seeds', 'Tally Lens', 'Without U', 'Purge the D', 'Pay Respects to F']) {
+    for (const name of ['Poppy Seeds', 'Counter-Intelligence', 'Without U', 'Purge the D', 'Pay Respects to F']) {
       const card = [...root.querySelectorAll<HTMLElement>('.offer-card')]
         .find((entry) => entry.textContent?.includes(name));
       expect(card?.classList.contains('uncommon')).toBe(true);

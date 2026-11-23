@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it } from 'vitest';
-import { readMeta, recordFood, recordPurchase, recordRun, recordStart, unlockCharacter } from '../src/ui/store';
+import { dismissCharacterTip, readMeta, recordFood, recordPurchase, recordPurge, recordRun, recordStart, unlockCharacter } from '../src/ui/store';
 
 const stats = (overrides: Partial<Parameters<typeof recordRun>[0]['stats']> = {}) => ({
   rounds: 10,
@@ -47,6 +47,21 @@ describe('run history store', () => {
       'double-cheeseburger': 2,
       inkcap: 1,
     });
+  });
+
+  it('counts purged letters across runs', () => {
+    expect(readMeta().purgedCount).toBe(0);
+    expect(recordPurge()).toBe(1);
+    expect(recordPurge()).toBe(2);
+    expect(readMeta().purgedCount).toBe(2);
+  });
+
+  it('remembers dismissed character tips', () => {
+    expect(readMeta().dismissedCharacterTips).toEqual([]);
+    dismissCharacterTip('pathfinder');
+    dismissCharacterTip('pathfinder');
+    dismissCharacterTip('purgamist');
+    expect(readMeta().dismissedCharacterTips).toEqual(['pathfinder', 'purgamist']);
   });
 
   it('migrates Maze Runner to Pathfinder and keeps purchase counts', () => {
@@ -105,6 +120,36 @@ describe('run history store', () => {
     expect(meta.history[1].result).toBe('victory');
     expect(meta.history[1].curses).toEqual(['clock', 'censor']);
     expect(meta.history[1].equippedItems).toEqual(['piggy-bank', 'tally-lens']);
+  });
+
+  it('unlocks Ascension 10 from a win at 9 and caps there', () => {
+    recordStart();
+    recordRun({
+      result: 'victory',
+      level: 50,
+      act: 4,
+      ascension: 9,
+      character: 'runner',
+      curses: [],
+      items: [],
+      equippedItems: [],
+      stats: stats(),
+    });
+    expect(readMeta().ascension).toBe(10);
+
+    recordStart();
+    recordRun({
+      result: 'victory',
+      level: 50,
+      act: 4,
+      ascension: 10,
+      character: 'runner',
+      curses: [],
+      items: [],
+      equippedItems: [],
+      stats: stats(),
+    });
+    expect(readMeta().ascension).toBe(10);
   });
 
   it('tracks distinct characters that have won runs', () => {
@@ -180,6 +225,8 @@ describe('run history store', () => {
     expect(meta.curseCounts).toEqual({});
     expect(meta.characters).toEqual(['runner']);
     expect(meta.victoriousCharacters).toEqual([]);
+    expect(meta.purgedCount).toBe(0);
+    expect(meta.dismissedCharacterTips).toEqual([]);
     expect(meta.totalSolves).toBe(0);
   });
 

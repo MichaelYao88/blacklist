@@ -5,9 +5,26 @@ interface GlossaryEntry {
   tip: string;
 }
 
+export const ARMOR_TIP =
+  'Armor soaks damage before HP, point for point. It refills at the start of every round. '
+  + 'Damage that gets past armor is a Hit (HP damage).';
+
+export const PURGED_TIP =
+  'A purged letter can\'t be manually guessed again, and no puzzle answer will ever contain it. Autoguesses can still use it.';
+
+export const INCOMING_DAMAGE_TIP =
+  'Every wrong guess that is not free makes the monster hit you. '
+  + 'Armor reduces that damage first; any damage that gets through becomes a Hit to HP. '
+  + 'The attack is the monster\'s base damage plus bonuses from curses, bosses and items '
+  + '(such as extra damage per green, per 60 gold spent, or per equipped slot over five).';
+
 // Order matters: longer or more specific phrases must come before the shorter
 // word they contain, because earlier matches become placeholders.
 const ENTRIES: GlossaryEntry[] = [
+  {
+    pattern: /\bhit \(hp damage\)/gi,
+    tip: 'Damage to your HP, not your armor. Armor soaks the monster\'s attack first; whatever is left over becomes Hit (HP damage).',
+  },
   {
     pattern: /\bmax(?:imum)? HP\b/gi,
     tip: 'Your hit point ceiling. Healing cannot push HP past it.',
@@ -18,23 +35,35 @@ const ENTRIES: GlossaryEntry[] = [
   },
   {
     pattern: /\barmor\b/gi,
-    tip: 'Armor soaks damage before HP, point for point. It refills each round. Running out of time ends the run.',
+    tip: ARMOR_TIP,
   },
   {
     pattern: /\bfree guesses?\b/gi,
-    tip: 'A guess that costs no HP. The first guess of every round is free.',
+    tip: 'Each round a player gets one free guess. Other guesses will take damage from the monster. If you haven\'t used your free guess by the 5th guess, you lose it.',
   },
   {
     pattern: /\bpaid guesses?\b/gi,
-    tip: 'A guess that costs HP. The monster hit is fixed for the whole encounter.',
+    tip: 'A guess that costs HP. Damage grows after the first five guesses of a round.',
   },
   {
     pattern: /\brandom spells?\b/gi,
     tip: 'One spell picked at random from the spell pool.',
   },
   {
-    pattern: /\bautocast(?:s|ing)?\b/gi,
-    tip: 'The item casts the spell immediately. It never enters your spell list.',
+    pattern: /\bauto[- ]?cast(?:s|ing)?\b/gi,
+    tip: 'The item casts the spell immediately and for free. It never enters your spell list, but it still counts as a spell cast, so it triggers and advances cast-based items.',
+  },
+  {
+    pattern: /\bauto[- ]?guess(?:es|ed|ing)?\b/gi,
+    tip: 'A guess made by an item or the Phone a Friend spell. It is always free, never deals damage, and does not spend a free guess. It does add to the round\'s total guess count.',
+  },
+  {
+    pattern: /\bplayer guesses?\b/gi,
+    tip: 'Manual Guess only.',
+  },
+  {
+    pattern: /\bmanual guesses?\b/gi,
+    tip: 'Player only. Autoguesses and friend guesses are not manual.',
   },
   {
     pattern: /\bspells?\b/gi,
@@ -61,8 +90,8 @@ const ENTRIES: GlossaryEntry[] = [
     tip: 'Words you can never guess again. It has no limit, and the first guess of each round joins it forever.',
   },
   {
-    pattern: /\bpurge(?:d)?\b/gi,
-    tip: 'Remove a letter from every future answer. You can never guess that letter again.',
+    pattern: /\bpurge(?:s|d|ing)?\b/gi,
+    tip: PURGED_TIP,
   },
   {
     pattern: /\bsolve(?:d)?\b/gi,
@@ -86,7 +115,7 @@ const ENTRIES: GlossaryEntry[] = [
   },
   {
     pattern: /\bOmen\b/g,
-    tip: 'Spell: reveal one yellow (misplaced) letter in the answer.',
+    tip: 'Spell: Reveal one guaranteed yellow (misplaced) letter in the answer.',
   },
   {
     pattern: /\bHeal\b/g,
@@ -161,6 +190,10 @@ const ENTRIES: GlossaryEntry[] = [
     tip: 'A guess where none of the five letters is in the answer.',
   },
   {
+    pattern: /\brule out\b/gi,
+    tip: 'A letter guaranteed not to be in the answer. It is marked RULED OUT on the keyboard and never appears in the word.',
+  },
+  {
     pattern: /\bruled[- ]out\b/gi,
     tip: 'A letter proven absent from this answer. Explorer effects count distinct ruled-out letters.',
   },
@@ -169,20 +202,32 @@ const ENTRIES: GlossaryEntry[] = [
     tip: 'A guaranteed absent letter. It is marked RULED OUT on the keyboard and in the Revealed panel.',
   },
   {
+    pattern: /\blearn(?:s|ed|ing)?\b/gi,
+    tip: 'A letter you learn may be in the answer or absent. Check its mark: IN WORD means present; RULED OUT means absent.',
+  },
+  {
     pattern: /\brevealed letters?\b/gi,
     tip: 'Any letter marked by a guess or a reveal. IN WORD means present; RULED OUT means absent.',
   },
   {
     pattern: /\breveal(?:ed|s|ing|ation)?\b/gi,
-    tip: 'A revealed letter is marked on the keyboard and listed in the Revealed panel. IN WORD means present; RULED OUT means absent.',
+    tip: 'A guaranteed yellow letter: it is in the answer, but not in that position.',
+  },
+  {
+    pattern: /\bimmune to (?:guess )?damage\b/gi,
+    tip: 'Damage does not reach you. Timed immunity blocks every hit for its duration; the Immunity spell blocks one hit.',
   },
   {
     pattern: /\bblocked\b/gi,
     tip: 'Damage stopped by armor or immunity before it reached HP.',
   },
   {
+    pattern: /\bincoming damage\b/gi,
+    tip: INCOMING_DAMAGE_TIP,
+  },
+  {
     pattern: /\bhits?\b/gi,
-    tip: 'One damage event. Armor reduces it point for point.',
+    tip: 'One incoming attack. Armor reduces it point for point; damage that gets through is dealt to HP as a Hit.',
   },
 ];
 

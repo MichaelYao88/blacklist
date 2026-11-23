@@ -32,8 +32,8 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Time Freeze** gives a free, unobscured guess that does not count towards solve-count items (Hat Trick, Bloom, Growth Spurt, etc.); the clock stays frozen until your next own guess, and autoguesses or friend guesses do not end it; Time Freeze and Immunity lock until your next guess
 - Within-X solve items count **player guesses only**; solve gold is a random 4-8, independent of guess count and auto-guesses
 - Curse Collector, Curse Bulwark and Reliquary trigger on gaining a curse ("Whenever you gain a curse: Gain …"). Curse Collector grants +6 max HP and heals 6
-- Ascension A1/A2 draft 1/2 starting curses
-- Shops with rerolls that start at 1g and double in price: three items, two foods and one wildcard; the wildcard is always food or a spell, never an item, and one random offer is always 50% off. When your item slots are full, one gear offer is replaced by food
+- Ascension A1–A10 draft 1–10 starting curses
+- Shops with rerolls that start at 1g and double in price: three items, two foods and one wildcard; the wildcard is always food or a spell, never an item, and one random offer is always 50% off. When your item slots are full, one gear offer is replaced by food. **Shop Upgrade** permanently adds two more wildcards: one item/food/spell and one item/food
 - Every spell offered in a shop has a 4g base price; the half-price sale can land on it
 - Four item slots by default. Only equipped gear is active, and each shop has a drag-and-drop loadout
 - **Loose Tongue**, a 12g uncommon item that lets you guess five-letter nonsense for free-form probes
@@ -41,19 +41,19 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Restore** clears the blacklist, refills armor, and ignores vision curses — including position curses — for the rest of the round; **Contrapuntal** turns into a random relic if you cast all six spell types
 - Happenings with visible odds and persistent consequences
 - **Purge the Letter** offers two random letters: the first has a 100% chance to purge and the second has an 80% chance; you may also leave
-- Short item, spell and offer text with hover tooltips for keywords like armor, reveal, ruled out, free guesses, blacklist, relic and timeout
+- Short item, spell and offer text with hover tooltips for keywords like autocast, autoguess, player guess, free guess, reveal, learn, rule out, purged, incoming damage, hit, armor, blacklist, relic and timeout
 - Revealed letters stay marked on the keyboard and in a Revealed panel for the puzzle; permanent food/item reveals are listed separately as collected letters; random reveals lean toward letters that are not in the answer; letter-reveal foods are permanent for the run
 - Vision-hidden letters show the hatched hidden key only when the letter has no other visible status; visible results, reveals and rule-outs take priority over that layer
 - Every finished encounter pays gold; solves offer coins, usually a spell, and only rarely gear or a meal
-- Opening shields such as **Head Start** (7s, rare) make guesses in their window count as free guesses and show a floating timer banner with the remaining seconds
+- Opening shields such as **Head Start** (7s, rare) make guesses in their window **Immune to damage** and show a floating timer banner with the remaining seconds; the first guess still spends the round's free guess
 - Rarity uses cumulative floors: 40% pulls from rare, uncommon or common, 45% pulls from uncommon or common, and 15% pulls from common only. If a tier is empty, it falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on bosses)
-- 98 items (88 shop items + 10 rare relics), 6 spells, 83 foods and 32 happenings
+- 100 items (89 shop items + 11 rare relics), 6 spells, 83 foods and 32 happenings
 - New foods include **U-nagi**, **Donut Holes**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
-- Every run starts with one random spell
+- Every run starts with an Omen spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
-- **Field Kit** reveals exactly 4 letters that are not in the word; **Doggy Bag** reveals 2 and queues another after every food
+- **Field Kit** Rules Out exactly 4 letters guaranteed not in the word; **Doggy Bag** Rules Out 2 and queues another after every food
 - Letter foods cover A, B, C, D, E, F, G, H, I, J, K, L, O, P, Q, T, U, W, X, and Y+N; every letter food is rare, unique, and stops appearing once all its letters are permanently revealed. A-Steak and B-Fsteak reveal whether their letter is in the answer
 - New solve rewards: **Brace** (6g, +1 max armor), **Bloom** (+5 max HP, +1 per trigger), **Patch Kit** (heal 30% of max HP +1)
 - **Four-Leaf Clover** has a 20% chance of a random spell when you eat or cast
@@ -68,7 +68,6 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Ricochet** is a 7g item: every 10 armor lost, autoguess a random word
 - **Scattershot** is a 10g uncommon item that autocasts a free random spell once per round after a guess sharing no letters with the previous guess
 - **Yellow1** is a 14g rare item that autoguesses once per round on your player guess with exactly one yellow and no green; **Green1** is a 14g uncommon item that does the same for exactly one green and no yellow. Neither counts ally or auto-guesses
-- **Deadline** grants +1 free guess as soon as the clock drops below 30s each round
 - **Second Hand** and **Counterclockwise** (formerly Engine) are 8g items that cross-cast spells on cast at 80%
 - **Last Cast** only reacts to spells you cast manually; autocast spells never trigger it
 - **Genie Summon** is an 8g uncommon item: after your 3rd player guess each round, autocast a free random spell
@@ -91,8 +90,9 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Guardian Angel** is an 8g item: after every 10 HP damage taken, autocast a free Immunity
 - **Immunity** blocks the next hurting guess and any guess for 4 seconds after it
 - **Mending Plate** is a rare item: +1 max armor per 8 HP healed
-- **Bounty** is a 9g rare food: +1 gold per solve
-- **Necronomicon** is a rare item: click it to pay 13% of your max HP and cast Omen. Each Omen cast reveals an extra random letter this round for every 13 HP paid to the book
+- **Heartstone** is a 15g rare relic: autocast a free Heal at the start of every round
+- **Goldbutter** is a 9g rare food: +1 gold per solve
+- **Necronomicon** is a rare item: use it during a fight to lose 13% of your max HP for a random gift. It can only be used once per round, and it grows stronger as you feed it: fed thresholds unlock at 0, 13, 39, 79, 129, 189 and 259 max HP paid. Whisper and Twin Whispers autoguess Mythos words such as RYLEH, CTHUL and DAGON
 - **Growth Spurt** gives +3 max HP when you solve in 4 guesses or fewer
 - **Growth Chart** is an 8g item: every 3 max HP gained grants +1 Time Freeze
 - **Midas Touch** has a 30% chance to double every gold gain
@@ -102,21 +102,24 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Pen Club** pays a random 1-5 gold for guesses starting with PEN; **Gourmand** gains +1 max HP on eat or spell cast
 - **Old McDonald's** is a 4g unique food: EIEIO is guessed for free once, at the start of the next round
 - **Big Eggplant** and **Jumbo Hot Dog** are uncommon foods that trade max armor or max HP for an item slot
+- **Shop Upgrade** is a 14g rare unique food: future shops gain two wildcard offers, one item/food/spell and one item/food
 - Shops can show up to 2 copies of the same entry; sell rows are hoverable
 - Solve gold is a random 4-8 per solve, independent of guess count
 - **The Endless Table** fires every on-eat effect 7 times or pays 7 gold
-- **Tally Lens** is a 12g common-rarity unique item with an uncommon shop banner and a 3x appearance weight while a vision curse is active; it is no longer guaranteed in a shop and shows correct/misplaced counts. **Tally** is never offered while you already own one
+- **Counter-Intelligence** is a 12g common-rarity unique item with an uncommon shop banner and a 3x appearance weight while a vision curse is active; it is no longer guaranteed in a shop and shows correct/misplaced counts. **Tally** is never offered while you already own one
 - **Encore** is unique and appears three times as often as an average common item; **Poppy Seeds** is a 6g common-rarity food that shows an uncommon shop banner
 - **Without U** is a 3g common-rarity unique food that permanently purges U and shows an uncommon shop banner; **Purge the D** is also common-rarity with an uncommon shop banner
 - **Reveal the D** is an 18g rare food; **Pay Respects to F** is an 8g common-rarity food with an uncommon banner that permanently purges F
-- **A-Steak** is a 13g rare food that reveals whether A is in the answer every round; all permanent letter-reveal foods cost 2g more
-- **Black Market Ledger** is an 8g item: every shop purchase or event arrival has a 40% chance to add a random spell
+- **A-Steak** is a 13g rare food that learns whether A is in the answer every round; all permanent letter-learn foods cost 2g more
+- **Black Market Ledger** is an 8g item: every shop purchase or event arrival has a 50% chance to add a random spell
 - **The Spellbroker** event trades your spells for permanent value: Omen or Phone a Friend becomes a random permanent letter, Heal becomes +10 max HP and a 10 HP heal, and Immunity or Restore becomes +5 armor
 - **The Spell Tithe** event trades one random spell for either permanent knowledge of a specific letter or a permanent purge of a specific letter; the trades are locked when you have no spells
-- **The Spammer** event offers Head Start plus an immediate battle when you have a free slot, pays 10 gold if you already own Head Start, or lets you leave
+- **The Flesh Market** event sells half your max HP for 2 gold per point lost or all your max armor for 4 gold per point lost, and locks whichever body part you cannot spare
 - **Fortune Cookie** is a 2g food with a hidden 5× appearance weight: it queues one autoguess for the next round
 - **The Waffle** is a 6g rare food: +24s per round
 - **Tally** counts every guess, including ally and autoguesses
+- **Momentum** is a 10g uncommon item: every 8 player guesses grants +1 max armor
+- **Ballast** is a 10g uncommon item: every autoguess grants +3 max HP
 - **Harvest Charm**, **Empty Mouth**, **Empty Orb**, **Empty Phone**, **Detour**, **Dark Echo**, **Black Eye**, **Palindrome**, **Oasis 15**, **Shellshock**, **Echo Chamber**, **Panic Button**, and **Wild Magic** are the new autoguess/autocast items
 - **Detour** is a 10g item that autoguesses once per round after a guess sharing no letters with the previous guess
 - **Black Eye** is an 8g item: a hit that deals HP damage has an 80% chance to autoguess a random word; **Thorn Crown** is a 14g item with an 80% chance to autocast a free random spell instead
@@ -125,7 +128,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Moon Cake** is a 25g rare unique food: autocast a free Omen at the start of every round
 - **Empty Orb** is a 7g item that autocasts a free Omen when a round starts with no spells; **Empty Phone** is the 9g Phone a Friend version that does the same
 - **Enoki** is a 4g food: +3 max HP and one autoguess next round
-- **Corn** is a 3g food: +2 max HP and reveals C, O, R and N for the next round only
+- **Corn** is a 3g food: +2 max HP and learns whether C, O, R and N are in the word for the next round only
 - **Iron Ration** is a 12g rare food: +2 max armor. **One Bo Hue** is a 4g uncommon food; **Plating** is uncommon; **Taco Pizza Party** is rare
 - **Clean Slate** gives +1 max HP or +1 max armor at random when its condition triggers, once per round
 - **Double Dip** is Kase's new name; it keeps the +1 max armor and queued-answer effect
@@ -136,7 +139,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - Every spell cast plays an animated pop-up, including item autocasts; spell pop-ups appear 2 seconds apart, and every pop-up stays visible for 5 seconds
 - **Cyrniki** is a 3g food: heal 50% of missing HP, then 50% a spell / 50% a shop reroll
 - **Babification** removes a random curse, but you must choose between resetting item slots or max armor to their starting values
-- **Short Fuse** is a common curse that stacks up to 3 times: the first stack starts the damage multiplier 2 guesses earlier, and each extra stack starts it 1 more guess earlier
+- **Short Fuse** is a common curse that stacks up to 4 times: each stack starts the damage multiplier 1 guess earlier
 - **Triggerless** is a common level-20+ curse: item and food autoguesses and round-start guesses fail 50% of the time
 - **Regurgitation** is an uncommon level-20+ curse: food reveals fail 50% of the time
 - **The Tax** reduces encounter gold by 40% and is unique; **The Sleeper** adds +2 damage per revealed letter in your first player guess, per stack; **The Curse Broker** charges 12g for a relic or 15g to remove a random curse; **The Confessional** sells 45/75/100% random curse removal for 5/10/15g
@@ -149,16 +152,19 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - Purge is an event (The Redaction) and foods (Poppy Seeds, rare Inkcap, Purge the D, Pay Respects to F); its rest option triggers an eat and a 10% random curse removal
 - One exact-state autosave slot. Defeat clears it. Victory clears it and updates meta stats.
 - A **STATS** page tracks run history (last 50 runs), win rate, best level, average solve time, favorite items and curses, play time, gold and damage totals
-- The top bar shows gold and area; a persistent level badge at the top of the battle rail shows the current floor and run progress in every phase
-- Clock-gated items such as **Deadline** never appear in shops or rewards until **The Clock** curse exists
-- Compact battle rail on the left: a persistent level badge, round timer with a hover tooltip for the time limit, a wrong-guess damage chip, a side-view mini arena with your character facing the act's monster (or boss), player HP and armor
-- Damage numbers slam into the centre of the screen as `N damage`, with a block message when armor or immunity eats the hit
+- The top bar shows gold and area; a persistent slanted floor trail at the top of the battle rail shows the current floor, one cleared floor below it, and the next three floors above, in every phase. Hover or focus a node to see its type
+- Clock-gated items such as **Meal Timer** never appear in shops or rewards until **The Clock** curse exists
+- Compact battle rail on the left: a persistent slanted floor trail, round timer with a hover tooltip for the time limit, an incoming-damage chip with separate hovers for the rule and the named damage modifiers (base, curses, curses such as The Sleeper, gold spent, extra slots, multiplier), a hoverable armor bar explaining how armor soaks hits, a side-view mini arena with your character facing the act's monster (or boss), player HP and armor
+- Shop floors replace the battle rail with a larger **SHOP** card showing the current gold and the character-vs-monster strip; curse floors use the same treatment with **CURSE** and the floor number. The offers or curse draft stay in the center
+- Damage numbers slam into the centre of the screen as `N damage`, with a block message when armor or immunity eats the hit; the first hit of a run opens a one-time damage tutorial with a persistent **Don't remind me** option
+- A dotted divider with `!` marks and crossed swords sits where damage starts multiplying (the 6th guess, or earlier with Short Fuse); hover or focus it to see the ×2, ×3, ×4 progression and that any remaining free guesses are lost there
+- Free guesses show a **FREE GUESS!** pop-up naming the source, such as **First player guess** or **Time Freeze**
 - Spells and the blacklist sit on the right; the item list sits under the battle rail on desktop and at the bottom of the right column on mobile
 - Pause (Space or Esc), independent music/SFX mutes, synthesized SFX, keyboard and on-screen keyboard, colorblind symbols, reduced-motion-friendly CSS
 - Non-English keyboard layouts fall back to physical QWERTY key positions and show a one-time notice
 - Soundtrack opens every run on Dark Synthwave and rerolls to a random regular track every 7 levels (repeats allowed). Click the **MUSIC** control to cycle manually. More Power is reserved for bosses and is not in the carousel. Music sits below the SFX mix.
 
-Not in this version: daily seeds, Ascension above A2, dordle grids, Antiwordle, liar clues, Green Warden. The state and seed plumbing is already there for those.
+Not in this version: daily seeds, Ascension above A10, dordle grids, Antiwordle, liar clues, Green Warden. The state and seed plumbing is already there for those.
 
 ---
 
@@ -202,13 +208,13 @@ Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title s
 
 ## Characters
 
-- **The Soldier** is the default: 15 HP, 5 armor, 12 gold, no starting gear or curses.
-- **The Pathfinder** unlocks when The Soldier reaches the first curse screen. They start with **Head Start**, **The List** curse, 14 HP, 3 armor and 9 gold.
-- **The Necromancer** unlocks after buying the **Necronomicon** once from a shop. They start with the **Necronomicon**, **The Sleeper** curse, 27 HP, 4 armor and 16 gold.
-- **The Purgamist** unlocks after eating 2 **Inkcap** across any runs. They start with **Without the D**, 12 HP, 4 armor, 17 gold, and purge **4 letters** of your choice on level 0, before any word is drawn.
-- **The Gourmand** unlocks after eating 3 **Double Cheeseburgers** across any runs. They start with **Potluck**, **Porcupine's Dilemma** curse, 25 HP, 2 armor and 6 gold.
-- **The Farmer** unlocks after winning any run. They start with the **Harvest Charm** (character-only, not found in shops), 20 HP, 1 armor and 6 gold.
-- **The Empty Armor** unlocks after winning a run on **Ascension 1**. It starts with **Bulwark**, the character-only **Slow Mending** curse, 1 HP, 11 armor, one extra item slot and 6 gold.
+- **The Soldier** is the default: 15 HP, 7 armor, 12 gold, no starting gear or curses.
+- **The Pathfinder** unlocks when The Soldier reaches the first curse screen. They start with **Head Start**, **The List** curse, 21 HP, 3 armor and 9 gold.
+- **The Purgamist** unlocks after purging **6 letters** across any runs. They start with **Without the D**, 18 HP, 5 armor, 17 gold, and purge **4 letters** of your choice on level 0, before any word is drawn.
+- **The Necromancer** unlocks after buying the **Necronomicon** once from a shop. They start with the **Necronomicon**, **The Sleeper** curse, 31 HP, 4 armor and 16 gold.
+- **The Gourmand** unlocks after eating 3 **Double Cheeseburgers** across any runs. They start with **Potluck**, **Porcupine's Dilemma** curse, **Shop Upgrade** already eaten, 25 HP, 4 armor and 6 gold.
+- **The Farmer** unlocks after winning any run. They start with three **Harvest Charms**, **Early Bird**, 17 HP, 3 armor and 2 gold.
+- **The Empty Armor** unlocks after winning a run on **Ascension 1**. It starts with **Bulwark**, the character-only **Slow Mending** curse, 1 HP, 13 armor, one extra item slot and 6 gold.
 - **The Werewolf** unlocks after winning runs with **2 different characters**. It starts with **Dark Echo**, **Thorn Crown**, the **Weak Plate** and **Tight Slots** curses, 69 HP, no armor and 6 gold.
 - Once any character is unlocked, the title screen shows all eight character cards (locked cards list their unlock hint). Unlocks persist across runs and a large popup announces each new character.
 
@@ -223,11 +229,11 @@ The Soldier and Orc sprites are from **Tiny RPG Character Asset Pack 01** by [Ze
 | Thing | Value |
 |---|---|
 | Starting HP | 15 for The Soldier; preset characters override this |
-| Starting armor | 5 points for The Soldier; preset characters override this |
+| Starting armor | 7 points for The Soldier; preset characters override this |
 | Starting item slots | 4 (only equipped gear counts; relics use one slot each) |
-| Free guesses per round | 1, plus every guess made inside a timed shield |
+| Free guesses per round | 1; timed immunity blocks damage in its window, but the first guess still spends the free guess |
 | Starting gold | 12 |
-| Starting spells | 1 random spell |
+| Starting spells | Omen |
 | Blacklist | disabled until The List curse; unlimited once active |
 | Normal timer | none until The Clock curse |
 | Clock curse | first stack 5:00, each later stack -40%, floor 0:30 |
@@ -252,8 +258,9 @@ Ascension is only starting curses.
 |---|---|
 | A1 | Draft 1 extra curse before level 1 |
 | A2 | Draft 2 extra curses before level 1 |
+| A3–A10 | Draft 3–10 extra curses before level 1 |
 
-Beating a run unlocks the next Ascension, up to A2.
+Beating a run unlocks the next Ascension, up to A10.
 
 The answer pool excludes the blacklist, already-used answers and purged letters. If purging would leave no legal answer, the game restores a random purged letter and explains why.
 

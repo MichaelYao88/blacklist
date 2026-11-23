@@ -38,6 +38,12 @@ export interface Meta {
   purchases: Record<string, number>;
   /** Foods eaten by definition id, across all runs. */
   foodCounts: Record<string, number>;
+  /** Letters purged across all runs. */
+  purgedCount: number;
+  /** Character tip ids the player asked not to see again. */
+  dismissedCharacterTips: string[];
+  /** The player asked not to see the first-damage tutorial again. */
+  damageTutorialDismissed: boolean;
   history: RunRecord[];
   itemCounts: Record<string, number>;
   curseCounts: Record<string, number>;
@@ -60,6 +66,9 @@ const DEFAULT_META: Meta = {
   victoriousCharacters: [],
   purchases: {},
   foodCounts: {},
+  purgedCount: 0,
+  dismissedCharacterTips: [],
+  damageTutorialDismissed: false,
   history: [],
   itemCounts: {},
   curseCounts: {},
@@ -159,6 +168,11 @@ export function readMeta(): Meta {
         }
         return counts;
       })(),
+      damageTutorialDismissed: Boolean(parsed.damageTutorialDismissed),
+      purgedCount: Number(parsed.purgedCount) || 0,
+      dismissedCharacterTips: Array.isArray(parsed.dismissedCharacterTips)
+        ? parsed.dismissedCharacterTips.filter((id): id is string => typeof id === 'string')
+        : [],
       history: Array.isArray(parsed.history)
         ? parsed.history.map((run) => ({
             ...run,
@@ -277,6 +291,13 @@ export function recordPurchase(defId: string): number {
   return next;
 }
 
+/** Permanently hides the first-damage tutorial. */
+export function dismissDamageTutorial(): void {
+  const meta = readMeta();
+  meta.damageTutorialDismissed = true;
+  writeMeta(meta);
+}
+
 /** Records a food eaten and returns its new lifetime count. */
 export function recordFood(defId: string): number {
   const meta = readMeta();
@@ -284,5 +305,22 @@ export function recordFood(defId: string): number {
   meta.foodCounts[defId] = next;
   writeMeta(meta);
   return next;
+}
+
+/** Records one letter purged and returns the new lifetime count. */
+export function recordPurge(count = 1): number {
+  const meta = readMeta();
+  meta.purgedCount += count;
+  writeMeta(meta);
+  return meta.purgedCount;
+}
+
+/** Remember that a character tip should not show again. */
+export function dismissCharacterTip(id: string): void {
+  const meta = readMeta();
+  if (!meta.dismissedCharacterTips.includes(id)) {
+    meta.dismissedCharacterTips.push(id);
+    writeMeta(meta);
+  }
 }
 

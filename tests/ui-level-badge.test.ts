@@ -27,11 +27,34 @@ describe('persistent level display', () => {
   it('shows the level during a round', () => {
     const badge = levelBadge();
     expect(badge).not.toBeNull();
-    expect(badge?.querySelector('.rail-level-kicker')?.textContent).toBe('LEVEL');
+    expect(badge?.querySelector('.rail-level-kicker')?.textContent).toBe('FLOOR');
     expect(badge?.querySelector('.rail-level-value')?.textContent).toBe('1/51');
   });
 
-  it('keeps the level visible through summary, reward, and shop phases', () => {
+  it('shows the current floor with one past and three future floors', () => {
+    const badge = levelBadge();
+    const floors = [...badge!.querySelectorAll<HTMLElement>('.rail-node:not(.is-empty)')];
+    expect(floors.map((node) => node.dataset.level)).toEqual(['4', '3', '2', '1']);
+    expect(badge?.querySelectorAll('.rail-node.is-empty').length).toBe(1);
+
+    const current = badge?.querySelector<HTMLElement>('.rail-node.current');
+    expect(current?.dataset.level).toBe('1');
+    expect(current?.getAttribute('aria-current')).toBe('step');
+    expect(current?.getAttribute('tabindex')).toBe('0');
+    expect(current?.getAttribute('data-tip')?.startsWith('Fight')).toBe(true);
+
+    const shop = badge?.querySelector<HTMLElement>('.rail-node[data-level="2"]');
+    expect(shop?.classList.contains('future')).toBe(true);
+    expect(shop?.classList.contains('kind-shop')).toBe(true);
+    expect(shop?.getAttribute('data-tip')).toBe('Shop');
+
+    const curse = badge?.querySelector<HTMLElement>('.rail-node[data-level="4"]');
+    expect(curse?.classList.contains('kind-curse')).toBe(true);
+    expect(curse?.getAttribute('data-tip')).toBe('Curse');
+    expect(badge?.textContent).not.toContain('Floor');
+  });
+
+  it('keeps the level through summary and reward, then swaps to the shop rail', () => {
     for (const letter of 'crane') {
       window.dispatchEvent(new KeyboardEvent('keydown', {
         key: letter,
@@ -61,5 +84,14 @@ describe('persistent level display', () => {
     root.querySelector<HTMLElement>('[data-action="choose"][data-id="shop"]')!.click();
     expect(root.querySelector('.shop')).not.toBeNull();
     expect(levelBadge()?.querySelector('.rail-level-value')?.textContent).toBe('2/51');
+    expect(root.querySelector('.battle-rail')).toBeNull();
+    expect(root.querySelector('.shop-rail')).not.toBeNull();
+    expect(root.querySelector('.shop-rail .rail-level')).not.toBeNull();
+    expect(root.querySelector('.shop-rail .panel-kicker')?.textContent).toBe('SHOP');
+    expect(root.querySelector('.shop-rail-gold')).not.toBeNull();
+    expect(root.querySelector('.shop-rail .mini-player')).not.toBeNull();
+    expect(root.querySelector('.shop-rail .big-hp')).not.toBeNull();
+    expect(root.querySelector('.shop-rail .armor-line')).not.toBeNull();
+    expect(root.querySelector('.shop-rail .mini-vs')).toBeNull();
   });
 });

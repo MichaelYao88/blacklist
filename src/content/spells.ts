@@ -4,7 +4,7 @@ export const SPELLS: SpellDef[] = [
   defineSpell({
     id: 'time-freeze',
     name: 'Time Freeze',
-    description: 'Get a free and unobscured guess. Doesn\'t count towards the number of guesses (for certain items). Freeze the clock until your next guess.',
+    description: 'Get a free guess that ignores vision curses. It doesn\'t count towards the number of guesses for certain items. Freeze the clock until your next guess.',
     price: 7,
     usable: 'round',
     cast: () => [{ type: 'freezeUntilGuess' }],
@@ -12,7 +12,7 @@ export const SPELLS: SpellDef[] = [
   defineSpell({
     id: 'omen',
     name: 'Omen',
-    description: 'Reveal one yellow letter in the answer.',
+    description: 'Reveal one guaranteed yellow letter in the answer.',
     price: 5,
     usable: 'round',
     cast: () => [{ type: 'revealYellow' }],
@@ -43,7 +43,7 @@ export const SPELLS: SpellDef[] = [
   defineSpell({
     id: 'immunity',
     name: 'Immunity',
-    description: 'The next hurting guess and any guess for 4 seconds after deal no damage.',
+    description: 'The next hurting guess deals no damage, and guesses stay Immune to damage for 4 seconds after.',
     price: 7,
     usable: 'round',
     cast: () => [{ type: 'immunity', guesses: 1 }],

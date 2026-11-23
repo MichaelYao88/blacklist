@@ -123,6 +123,15 @@ export interface RoundState {
   freeLeft: number;
   paidGuesses: number;
   baseDamage: number;
+  /** Damage components fixed at round start, used by the HUD breakdown. */
+  baseParts?: {
+    flat: number;
+    curses: number;
+    startingPenalty: number;
+    heavyHand: number;
+    permanent: number;
+    boss: number;
+  };
   /** Extra damage added to each later wrong, non-free guess this round. */
   damageRamp: number;
   elapsedMs: number;
@@ -258,6 +267,8 @@ export interface CharacterDef {
   startingGold?: number;
   items: string[];
   curses: CurseId[];
+  /** Foods applied at the start of the run, as if already eaten. */
+  startingFoods?: string[];
   /** Letters the player must purge during setup, before the first round. */
   startingPurges?: number;
   /** Sprite family used by the battle rail and title portraits. */
@@ -346,6 +357,7 @@ export type Effect =
   | { type: 'muffinArmor' }
   | { type: 'revive'; hp: number }
   | { type: 'gold'; amount: number }
+  | { type: 'proc'; text: string }
   | { type: 'solveGold'; amount: number }
   | { type: 'addTime'; ms: number }
   | { type: 'timeBonus'; ms: number }
@@ -389,6 +401,7 @@ export type Effect =
   | { type: 'addRandomRelic' }
   | { type: 'addRandomCurse' }
   | { type: 'openShop' }
+  | { type: 'shopWildcardSlots'; count: number }
   | { type: 'startBattle' }
   | { type: 'addPreviewItem' }
   | { type: 'addPreviewFood' }
@@ -697,6 +710,8 @@ export interface RunState {
   summary?: SummaryState;
   reward?: RewardState;
   shop?: ShopState;
+  /** Permanent extra wildcard offers in future shops from Shop Upgrade. */
+  shopWildcardBonus: number;
   happening?: HappeningState;
   /** Muffin Tin: number of tins eaten this shop visit, one armor per food per tin. */
   muffinStacks?: number;
@@ -722,11 +737,25 @@ export interface SpellView {
   id: SpellId;
 }
 
+export interface DamageLine {
+  label: string;
+  amount: number;
+  kind: 'add' | 'mult';
+}
+
 export interface BoardView {
   guesses: PresentedGuess[];
   freeGuessesLeft: number;
   nextGuessDamage: number;
   rawNextGuessDamage: number;
+  /** Damage before the guess multiplier is applied. */
+  nextGuessBase: number;
+  /** Multiplier for the next wrong guess; 1 during the first five guesses. */
+  nextGuessMultiplier: number;
+  /** Named modifiers behind the next wrong guess, for the HUD tooltip. */
+  damageBreakdown: DamageLine[];
+  /** Extra early ramp steps from curses such as Short Fuse. */
+  damageRampEarly: number;
   remainingMs: number | null;
   timerStartMs: number | null;
   elapsedMs: number;
@@ -871,6 +900,12 @@ export type GameEvent =
       index: number;
       guess: PresentedGuess;
       free: boolean;
+      /** Set when an item or spell made the guess free with a make-guess-free effect. */
+      freeSource?: Source;
+      /** True when this was the round's first player guess. */
+      firstPlayerGuess?: boolean;
+      /** True when Time Freeze made the guess free and unobscured. */
+      unobscured?: boolean;
       word: string;
       solved: boolean;
     }
@@ -899,7 +934,7 @@ export type GameEvent =
   | { type: 'goldChanged'; delta: number; total: number; source: Source }
   | { type: 'itemAcquired'; item: ItemView }
   | { type: 'itemRemoved'; instance: InstanceId; reason: 'sold' | 'consumed' | 'replaced' }
-  | { type: 'itemProc'; item: ItemId; instance: InstanceId; hook: HookName; text: string }
+  | { type: 'itemProc'; item: ItemId; instance: InstanceId; hook: HookName | 'onUse'; text: string }
   | { type: 'itemGrew'; instance: InstanceId; stat: string; value: number }
   | { type: 'itemEquipped'; instance: InstanceId; equipped: boolean }
   | { type: 'itemDataChanged'; instance: InstanceId; stat: string; value: number }

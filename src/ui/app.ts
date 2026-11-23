@@ -1,12 +1,15 @@
 import { game, CoreHost } from '../game';
 import type {
   BoardView,
+  BossId,
   Command,
   GameEvent,
   ItemView,
+  NodeKind,
   Offer,
   PhaseView,
   RunView,
+  Source,
   SpellView,
 } from '../game';
 import {
@@ -19,7 +22,7 @@ import {
   ITEM_BY_ID,
   SPELL_BY_ID,
 } from '../content';
-import { LocalStore, hasSave, readMeta, recordFood, recordPurchase, recordRun, recordStart, unlockCharacter } from './store';
+import { LocalStore, dismissCharacterTip, dismissDamageTutorial, hasSave, readMeta, recordFood, recordPurchase, recordPurge, recordRun, recordStart, unlockCharacter } from './store';
 import {
   trackBossReached,
   trackEventChoice,
@@ -30,9 +33,10 @@ import {
   trackRunStarted,
 } from './analytics';
 import { escapeHtml, formatTime, reasonText, roman } from './format';
-import { glossaryText } from './glossary';
+import { ARMOR_TIP, PURGED_TIP, glossaryText } from './glossary';
 import {
   bossColor,
+  bossSigil,
   enemyArt,
   enemySprite,
   foodIcon,
@@ -172,11 +176,60 @@ const phraseRoot = document.createElement('div');
 phraseRoot.id = 'phrase-root';
 document.body.appendChild(phraseRoot);
 
-const warningRoot = document.createElement('div');
-warningRoot.id = 'damage-warning-root';
-warningRoot.setAttribute('aria-live', 'assertive');
-document.body.appendChild(warningRoot);
-let warningTimer: number | undefined;
+// Free-guess callout. It lives outside the render tree so timer ticks cannot
+// restart the pop animation.
+const freeGuessRoot = document.createElement('div');
+freeGuessRoot.id = 'free-guess-root';
+freeGuessRoot.setAttribute('aria-live', 'polite');
+document.body.appendChild(freeGuessRoot);
+let freeGuessTimer: number | undefined;
+
+function showFreeGuessPopup(source: string): void {
+  freeGuessRoot.innerHTML = `<div class="free-guess-pop">
+    <span class="free-guess-kicker">FREE GUESS!</span>
+    <span class="free-guess-source">(${escapeHtml(source)})</span>
+  </div>`;
+  if (freeGuessTimer) window.clearTimeout(freeGuessTimer);
+  freeGuessTimer = window.setTimeout(() => {
+    freeGuessRoot.innerHTML = '';
+    freeGuessTimer = undefined;
+  }, 2_400);
+}
+
+// The countdown lives outside the render tree so the per-second update only
+// swaps the number instead of rebuilding (and restarting) the whole overlay.
+const countdownRoot = document.createElement('div');
+countdownRoot.id = 'countdown-root';
+countdownRoot.setAttribute('aria-live', 'assertive');
+document.body.appendChild(countdownRoot);
+let countdownShown = 0;
+
+function renderCountdown(level: number, count: number): void {
+  if (count <= 0) {
+    if (countdownRoot.innerHTML) countdownRoot.innerHTML = '';
+    countdownShown = 0;
+    return;
+  }
+  if (!countdownRoot.firstElementChild) {
+    countdownRoot.innerHTML = `<div class="countdown-overlay">
+      <div class="countdown-card">
+        <span class="countdown-kicker"></span>
+        <b class="countdown-number"></b>
+        <span class="countdown-label">READ THE LIST</span>
+      </div>
+    </div>`;
+  }
+  const kicker = countdownRoot.querySelector<HTMLElement>('.countdown-kicker');
+  const kickerText = `LEVEL ${level}`;
+  if (kicker && kicker.textContent !== kickerText) kicker.textContent = kickerText;
+  if (count !== countdownShown) {
+    countdownShown = count;
+    const number = countdownRoot.querySelector<HTMLElement>('.countdown-number');
+    if (number) {
+      number.outerHTML = `<b class="countdown-number" data-count="${count}">${count}</b>`;
+    }
+  }
+}
 
 const procRoot = document.createElement('div');
 procRoot.id = 'proc-root';
@@ -270,6 +323,9 @@ interface Notice {
   kind: 'info' | 'good' | 'bad';
 }
 let screen: Screen = 'title';
+let damageTutorialOpen = false;
+let damageTutorialSeen = false;
+let damageTutorialMute = false;
 let input = '';
 let notice: Notice | null = null;
 let noticeTimer: number | undefined;
@@ -287,6 +343,8 @@ interface DamageFx {
   armorSpent: number;
   incoming: number;
   at: number;
+  /** Suppressed while a damage tooltip is open. */
+  showOverlay: boolean;
 }
 let damageFx: DamageFx | null = null;
 let damageTimer: number | undefined;
@@ -310,6 +368,8 @@ let setupPurge = false;
 const COUNTDOWN_MS = 2_400;
 let selectedAscension = 0;
 let selectedCharacter = 'runner';
+let characterTip: 'pathfinder' | 'purgamist' | null = null;
+let characterTipMute = false;
 let characterUnlock: string | null = null;
 let characterUnlockQueue: string[] = [];
 let keyboardLayoutNoticeShown = false;
@@ -370,9 +430,17 @@ function notify(text: string, kind: Notice['kind'] = 'info'): void {
 }
 
 function flashDamage(hpLost: number, armorSpent: number, incoming: number): void {
+  const tooltipOpen = isDamageTooltipOpen();
   damageSeq += 1;
-  damageFx = { id: damageSeq, hpLost, armorSpent, incoming, at: performance.now() };
-  shake = hpLost > 0;
+  damageFx = {
+    id: damageSeq,
+    hpLost,
+    armorSpent,
+    incoming,
+    at: performance.now(),
+    showOverlay: !tooltipOpen,
+  };
+  shake = hpLost > 0 && !tooltipOpen;
   if (shakeTimer) window.clearTimeout(shakeTimer);
   shakeTimer = window.setTimeout(() => {
     shake = false;
@@ -395,18 +463,6 @@ function triggerArenaAttack(force?: 'player' | 'enemy'): void {
     arenaAttackTimer = undefined;
     render();
   }, ATTACK_CLEAR_MS);
-}
-
-function flashDamageWarning(multiplier: number): void {
-  warningRoot.innerHTML = `<div class="damage-warning" role="alert">
-    <span class="damage-warning-kicker">WATCH OUT!</span>
-    <span class="damage-warning-mult">×${multiplier} DAMAGE</span>
-  </div>`;
-  if (warningTimer) window.clearTimeout(warningTimer);
-  warningTimer = window.setTimeout(() => {
-    warningRoot.innerHTML = '';
-    warningTimer = undefined;
-  }, 2_800);
 }
 
 function flashFriendPhrases(words: string[], callout?: string): void {
@@ -653,6 +709,28 @@ function logGameEvent(event: GameEvent): void {
   }
 }
 
+function freeSourceLabel(source: Source | undefined): string {
+  if (!source) return 'Free guess';
+  switch (source.kind) {
+    case 'item': {
+      const item = host.current?.items.find((entry) => entry.instance === source.instance);
+      return item ? ITEM_BY_ID.get(item.id)?.name ?? 'Item' : 'Item';
+    }
+    case 'spell':
+      return SPELL_BY_ID.get(source.spell)?.name ?? 'Spell';
+    case 'food':
+      return FOOD_BY_ID.get(source.food)?.name ?? 'Food';
+    case 'boss':
+      return BOSS_BY_ID.get(source.boss)?.name ?? 'Boss';
+    case 'happening':
+      return HAPPENING_BY_ID.get(source.happening)?.name ?? 'Happening';
+    case 'inn':
+      return 'Inn';
+    default:
+      return 'Free guess';
+  }
+}
+
 function processEvents(events: GameEvent[]): void {
   let playerGuessed = false;
   let playerFreeGuess = false;
@@ -681,13 +759,19 @@ function processEvents(events: GameEvent[]): void {
       const count = recordFood(event.food);
       const unlocked = [
         event.food === 'double-cheeseburger' && count >= 3 ? 'gourmand' : null,
-        event.food === 'inkcap' && count >= 2 ? 'purgamist' : null,
       ].filter((id): id is string => Boolean(id));
       for (const id of unlocked) {
         if (unlockCharacter(id)) {
           queueCharacterUnlock(id);
           sfx.play('win');
         }
+      }
+    }
+    if (event.type === 'letterPurged') {
+      const purged = recordPurge();
+      if (purged >= 6 && unlockCharacter('purgamist')) {
+        queueCharacterUnlock('purgamist');
+        sfx.play('win');
       }
     }
     if (event.type === 'runEnded' && event.result === 'victory') {
@@ -718,7 +802,6 @@ function processEvents(events: GameEvent[]): void {
       sfx.play('error');
     }
     if (event.type === 'damageMultiplier') {
-      flashDamageWarning(event.multiplier);
       logChronicle('bad', `Damage ×${event.multiplier}`);
     }
     if (event.type === 'message') notify(event.text, 'info');
@@ -744,10 +827,30 @@ function processEvents(events: GameEvent[]): void {
         flashDamage(0, 0, event.incoming);
         sfx.play('block');
       }
+      if (
+        event.incoming > 0
+        && !damageTutorialSeen
+        && !readMeta().damageTutorialDismissed
+      ) {
+        damageTutorialSeen = true;
+        damageTutorialOpen = true;
+      }
     }
     if (event.type === 'guessScored' && event.by === 'player') {
       playerGuessed = true;
-      if (event.free) playerFreeGuess = true;
+      if (event.free) {
+        playerFreeGuess = true;
+        const view = host.view();
+        const shielded = view?.phase.kind === 'round' ? view.phase.board.shielded : false;
+        const label = event.unobscured
+          ? 'Time Freeze'
+          : event.firstPlayerGuess
+            ? 'First player guess'
+            : event.freeSource
+              ? freeSourceLabel(event.freeSource)
+              : shielded ? 'Immune to damage' : 'Free guess';
+        showFreeGuessPopup(label);
+      }
       if (event.solved) solvedByPlayer = true;
     }
     if (event.type === 'healed') sfx.play('coin');
@@ -857,10 +960,12 @@ function processEvents(events: GameEvent[]): void {
     }
   }
 
-  if (playerDied) {
-    triggerArenaAttack('enemy');
-  } else if (playerGuessed) {
-    triggerArenaAttack(playerFreeGuess || solvedByPlayer ? 'player' : undefined);
+  if (!isDamageTooltipOpen()) {
+    if (playerDied) {
+      triggerArenaAttack('enemy');
+    } else if (playerGuessed) {
+      triggerArenaAttack(playerFreeGuess || solvedByPlayer ? 'player' : undefined);
+    }
   }
 
   const phoneFriend = events.some(
@@ -890,6 +995,8 @@ function dispatchCommand(command: Command): GameEvent[] {
 }
 
 function startNewRun(preferredCharacter?: string): void {
+  characterTip = null;
+  characterTipMute = false;
   if (hasSave() && !host.current?.over) {
     const ok = window.confirm('Start a new run? Your active run will be lost.');
     if (!ok) return;
@@ -929,9 +1036,14 @@ function startNewRun(preferredCharacter?: string): void {
   orcDeathTimer = undefined;
   playerDeathStartedAt = null;
   phraseRoot.innerHTML = '';
-  if (warningTimer) window.clearTimeout(warningTimer);
-  warningTimer = undefined;
-  warningRoot.innerHTML = '';
+  if (freeGuessTimer) window.clearTimeout(freeGuessTimer);
+  freeGuessTimer = undefined;
+  freeGuessRoot.innerHTML = '';
+  countdownShown = 0;
+  countdownRoot.innerHTML = '';
+  damageTutorialOpen = false;
+  damageTutorialSeen = false;
+  damageTutorialMute = false;
   clearProcFeed();
   clearSpellPopups();
   clearChronicle();
@@ -947,6 +1059,8 @@ function startNewRun(preferredCharacter?: string): void {
 }
 
 function resumeRun(): void {
+  characterTip = null;
+  characterTipMute = false;
   host.resume();
   if (!host.hasRun) {
     notify('No active run found.', 'bad');
@@ -978,6 +1092,15 @@ function resumeRun(): void {
   if (orcDeathTimer) window.clearTimeout(orcDeathTimer);
   orcDeathTimer = undefined;
   playerDeathStartedAt = null;
+  if (freeGuessTimer) window.clearTimeout(freeGuessTimer);
+  freeGuessTimer = undefined;
+  freeGuessRoot.innerHTML = '';
+  countdownShown = 0;
+  countdownRoot.innerHTML = '';
+  damageTutorialOpen = false;
+  damageTutorialSeen = (host.current?.stats.damageTaken ?? 0) > 0
+    || readMeta().damageTutorialDismissed;
+  damageTutorialMute = false;
   clearProcFeed();
   clearSpellPopups();
   clearChronicle();
@@ -997,7 +1120,7 @@ function resumeRun(): void {
 }
 
 function addLetter(letter: string): void {
-  if (screen !== 'run') return;
+  if (screen !== 'run' || damageTutorialOpen) return;
   const view = host.view();
   if (!view || view.phase.kind !== 'round' || view.pendingPurge > 0) return;
   if (view.purged.includes(letter.toLowerCase())) return;
@@ -1007,6 +1130,7 @@ function addLetter(letter: string): void {
 }
 
 function submitGuess(): void {
+  if (damageTutorialOpen) return;
   const view = host.view();
   if (!view || view.phase.kind !== 'round') return;
   if (view.pendingPurge > 0) {
@@ -1113,12 +1237,37 @@ app.addEventListener('click', (event) => {
       break;
     case 'character': {
       const id = target.dataset.id ?? '';
-      if (readMeta().characters.includes(id)) selectedCharacter = id;
+      if (readMeta().characters.includes(id)) {
+        selectedCharacter = id;
+        const tipId = id === 'pathfinder' || id === 'purgamist' ? id : null;
+        characterTip = tipId && !readMeta().dismissedCharacterTips.includes(tipId) ? tipId : null;
+        characterTipMute = false;
+      }
       render();
       break;
     }
+    case 'toggle-character-tip-mute':
+      characterTipMute = !characterTipMute;
+      render();
+      break;
+    case 'dismiss-character-tip':
+      if (characterTip && characterTipMute) dismissCharacterTip(characterTip);
+      characterTip = null;
+      characterTipMute = false;
+      render();
+      break;
     case 'dismiss-unlock':
       nextCharacterUnlock();
+      render();
+      break;
+    case 'toggle-damage-tutorial-mute':
+      damageTutorialMute = !damageTutorialMute;
+      render();
+      break;
+    case 'dismiss-damage-tutorial':
+      if (damageTutorialMute) dismissDamageTutorial();
+      damageTutorialOpen = false;
+      damageTutorialMute = false;
       render();
       break;
     case 'help':
@@ -1132,12 +1281,16 @@ app.addEventListener('click', (event) => {
       render();
       break;
     case 'back':
+      characterTip = null;
+      characterTipMute = false;
       screen = host.hasRun ? 'run' : 'title';
       paused = false;
       lastTick = performance.now();
       render();
       break;
     case 'title':
+      characterTip = null;
+      characterTipMute = false;
       screen = 'title';
       lastTick = performance.now();
       render();
@@ -1153,6 +1306,8 @@ app.addEventListener('click', (event) => {
         ascension: view?.ascension ?? 0,
       });
       host.discard();
+      characterTip = null;
+      characterTipMute = false;
       screen = 'title';
       input = '';
       damageFx = null;
@@ -1319,17 +1474,19 @@ window.setInterval(() => {
   const now = performance.now();
   const dt = now - lastTick;
   lastTick = now;
-  if (screen !== 'run' || document.hidden || paused) return;
+  if (screen !== 'run' || document.hidden || paused || damageTutorialOpen) return;
   const view = host.view();
   if (!view || view.phase.kind !== 'round') {
     heartbeatSecond = -1;
+    renderCountdown(0, 0);
     return;
   }
   // The clock does not start until the countdown ends.
   if (now < countdownUntil) {
-    render();
+    renderCountdown(view.level, Math.max(1, Math.ceil((countdownUntil - now) / 800)));
     return;
   }
+  renderCountdown(0, 0);
   if (view.pendingPurge > 0) return;
   const events = host.dispatch({ type: 'tick', dtMs: dt });
   if (events.length > 0) processEvents(events);
@@ -1410,6 +1567,15 @@ function render(): void {
 
   renderImmunity(screen === 'run' ? view : null);
   renderOpeningShield(screen === 'run' ? view : null);
+  const countdownActive = screen === 'run'
+    && Boolean(view)
+    && view!.phase.kind === 'round'
+    && !paused
+    && performance.now() < countdownUntil;
+  renderCountdown(
+    countdownActive ? view!.level : 0,
+    countdownActive ? Math.max(1, Math.ceil((countdownUntil - performance.now()) / 800)) : 0,
+  );
 }
 
 function renderImmunity(view: RunView | null): void {
@@ -1525,6 +1691,31 @@ function renderCharacterUnlock(): string {
 
 let tipEl: HTMLDivElement | null = null;
 let tipTarget: HTMLElement | null = null;
+let damageTipOpen = false;
+
+const DAMAGE_TIP_SELECTOR = '.guess-damage, .board-divider';
+
+/** True while the incoming-damage or multiplier tooltip is on screen. */
+function isDamageTooltipOpen(): boolean {
+  return damageTipOpen;
+}
+
+/** Clear competing damage feedback without re-rendering the page. */
+function clearDamageFeedback(): void {
+  if (damageTimer) {
+    window.clearTimeout(damageTimer);
+    damageTimer = undefined;
+  }
+  if (shakeTimer) {
+    window.clearTimeout(shakeTimer);
+    shakeTimer = undefined;
+  }
+  damageFx = null;
+  damageRendered = 0;
+  fxRoot.innerHTML = '';
+  shake = false;
+  app?.querySelector('.shell')?.classList.remove('shake');
+}
 
 function ensureTip(): HTMLDivElement {
   if (!tipEl) {
@@ -1543,6 +1734,8 @@ function showTip(target: HTMLElement): void {
   tipTarget = target;
   el.textContent = text;
   el.classList.add('visible');
+  damageTipOpen = Boolean(target.closest(DAMAGE_TIP_SELECTOR));
+  if (damageTipOpen) clearDamageFeedback();
 
   const rect = target.getBoundingClientRect();
   const size = el.getBoundingClientRect();
@@ -1558,6 +1751,7 @@ function showTip(target: HTMLElement): void {
 function hideTip(): void {
   tipEl?.classList.remove('visible');
   tipTarget = null;
+  damageTipOpen = false;
 }
 
 document.addEventListener('pointermove', (event) => {
@@ -1603,7 +1797,9 @@ function renderCharacterPicker(meta: ReturnType<typeof readMeta>): string {
           .map((id) => ITEM_BY_ID.get(id)?.name ?? id);
         const curses = character.curses
           .map((id) => CURSE_BY_ID.get(id)?.name ?? id);
-        const kit = [...items, ...curses.map((name) => `${name} curse`)].join(', ');
+        const foods = (character.startingFoods ?? [])
+          .map((id) => `${FOOD_BY_ID.get(id)?.name ?? id} food`);
+        const kit = [...items, ...curses.map((name) => `${name} curse`), ...foods].join(', ');
         return `<button class="character-card ${character.id === selectedCharacter ? 'active' : ''} ${locked ? 'locked' : ''}" data-action="character" data-id="${escapeHtml(character.id)}" ${locked ? 'disabled' : ''}>
           <i class="character-portrait ${characterPortraitClass(character.id)}" aria-hidden="true" style="${characterPortraitStyle(character.id)}"></i>
           <span class="character-name">${escapeHtml(character.name)}</span>
@@ -1614,6 +1810,43 @@ function renderCharacterPicker(meta: ReturnType<typeof readMeta>): string {
             : `<span class="character-kit">${escapeHtml(kit || 'No starting gear')}</span>`}
         </button>`;
       }).join('')}
+    </div>
+  </div>`;
+}
+
+const CHARACTER_TIPS: Record<string, { kicker: string; title: string; lines: string[] }> = {
+  pathfinder: {
+    kicker: 'PATHFINDER TIP',
+    title: 'Spam first, solve later.',
+    lines: [
+      'For players who like to open with four covering words, then solve from what is left.',
+      'Spam four words that cover 20 letters. The blacklist blocks repeats, so vary your spam words.',
+      'Try TUBES-WINDY-CHAMP-BLING or GATED-FORKS-IMPLY-BUNCH.',
+    ],
+  },
+  purgamist: {
+    kicker: 'PURGAMIST TIP',
+    title: 'Pick your favorite vowel.',
+    lines: [
+      'Purge A, E, I, O and U: only 14 dictionary words remain, all with Y as the vowel.',
+    ],
+  },
+};
+
+function renderCharacterTip(): string {
+  const tip = characterTip ? CHARACTER_TIPS[characterTip] : undefined;
+  if (!tip) return '';
+  return `
+  <div class="modal character-tip-modal">
+    <div class="modal-card">
+      <p class="panel-kicker">${escapeHtml(tip.kicker)}</p>
+      <h2>${escapeHtml(tip.title)}</h2>
+      ${tip.lines.map((line) => `<p class="muted">${escapeHtml(line)}</p>`).join('')}
+      <button class="tutorial-check ${characterTipMute ? 'checked' : ''}" data-action="toggle-character-tip-mute" role="checkbox" aria-checked="${characterTipMute}">
+        <span class="tutorial-box" aria-hidden="true">${characterTipMute ? '✓' : ''}</span>
+        Don't remind me
+      </button>
+      <button class="btn primary big" data-action="dismiss-character-tip">GOT IT</button>
     </div>
   </div>`;
 }
@@ -1670,7 +1903,8 @@ function renderTitle(): string {
     </div>
     ${metaLine}
     <p class="title-foot">BLACKLIST · v0.1 · a pure-core word roguelike</p>
-  </div>`;
+  </div>
+  ${renderCharacterTip()}`;
 }
 
 function renderHelp(): string {
@@ -1689,19 +1923,23 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>Damage</h3>
-        <p>Your first guess each round is free. Wrong paid guesses take <b>3 damage</b> before curses, plus <b>1.3 per curse stack</b> rounded down. Damage never grows with level; only curses change it. A correct guess never hurts you.</p>
+        <p>Your first guess each round is free. Every wrong guess after that is a <b>Hit (HP damage)</b>. Damage starts at <b>3</b>, plus bonuses from curses, bosses and items. The first five guesses use a ×1 multiplier; from the <b>6th guess</b> on, damage is multiplied by the guess number minus 4. Armor soaks it first. A correct guess never hurts you, and autoguesses are always free.</p>
       </article>
       <article class="rule-card">
         <h3>Armor</h3>
-        <p>Armor is a pool of damage reduction. Each point soaks one point of an incoming hit before HP is touched. The pool refills at the start of every round. If the clock reaches zero, the run ends regardless of armor.</p>
+        <p>Armor is a pool of damage reduction. Each point soaks one point of an incoming hit before HP is touched. The pool refills at the start of every round.</p>
       </article>
       <article class="rule-card">
         <h3>The clock</h3>
-        <p>There is no clock until you take <b>The Clock</b> curse. The first stack gives 5:00; each later stack cuts 40%. Reveal-time items show a count-up timer, while clock rounds show a count-down. If the clock reaches zero, the run ends immediately.</p>
+        <p>There is no clock until you take <b>The Clock</b> curse. The first stack gives 5:00; each later stack cuts 40%. Reveal-time items show a count-up timer, while clock rounds show a count-down. If the clock reaches zero, the run ends immediately, even if armor remains.</p>
       </article>
       <article class="rule-card">
         <h3>Curses</h3>
-        <p>Curses are permanent rules. Vision curses hide tiles or letters; others change damage, shops, healing, slots, HP, gold or the clock. Some stack; boolean vision curses are one copy each. <b>Tally Lens</b> reveals correct/misplaced counts after the first vision curse.</p>
+        <p>Curses are permanent rules. Vision curses hide tiles or letters; others change damage, shops, healing, slots, HP, gold or the clock. Some stack; boolean vision curses are one copy each. <b>Counter-Intelligence</b> shows correct/misplaced counts after the first vision curse.</p>
+      </article>
+      <article class="rule-card">
+        <h3>Words you will see</h3>
+        <p><b>Autocast</b>: the item casts a spell immediately and for free. It never enters your spell list, but it still counts as a spell cast. <b>Autoguess</b>: a free guess from an item or Phone a Friend. It never deals damage and does not spend a free guess, but it does add to the round's guess count. <b>Player guess</b>: manual guess only. <b>Reveal</b>: a guaranteed yellow letter. <b>Learn</b>: a letter that may be present or absent. <b>Rule Out</b>: a letter guaranteed not to be in the word.</p>
       </article>
       <article class="rule-card">
         <h3>Items & spells</h3>
@@ -1709,7 +1947,7 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>Ascension</h3>
-        <p>Ascension only adds starting curses. A1 drafts one curse before level 1; A2 drafts two.</p>
+        <p>Ascension only adds starting curses. Each level drafts one more curse before level 1, up to A10.</p>
       </article>
       <article class="rule-card">
         <h3>Controls</h3>
@@ -1880,7 +2118,7 @@ function phaseLabel(view: RunView): string {
 }
 
 function damageOverlayHtml(): string {
-  if (!damageFx) return '';
+  if (!damageFx || !damageFx.showOverlay) return '';
   if (damageFx.hpLost > 0) {
     const absorbed = damageFx.armorSpent > 0
       ? `<span>${damageFx.armorSpent} armor absorbed</span>`
@@ -1905,9 +2143,26 @@ function guessDamageHtml(board: BoardView): string {
     || board.shielded
     || board.guessImmuneMsLeft > 0;
   const value = safe ? 0 : board.nextGuessDamage;
-  return `<div class="guess-damage ${safe ? 'safe' : ''}" title="Damage a wrong guess deals once your free guesses and shield are gone.">
-    <span>WRONG GUESS</span>
-    <b>${safe ? 'FREE' : `${value} damage`}</b>
+  const fmt = (amount: number): string => (
+    Number.isInteger(amount) ? String(amount) : amount.toFixed(1)
+  );
+  const labelTip = 'Your first guess each round is free. Every wrong guess after that is attacked by the monster. '
+    + 'Armor reduces that damage first; whatever is left over becomes a Hit to HP.';
+  const calcTip = safe
+    ? 'Your next guess is free, so there is no damage to calculate.'
+    : value <= 0 && board.noGuessDamage
+      ? 'This boss takes no damage from guesses.'
+      : [
+        ...board.damageBreakdown.map((line) => (
+          line.kind === 'mult'
+            ? `${line.label} ×${fmt(line.amount)}`
+            : `${line.label} ${line.amount >= 0 ? '+' : ''}${fmt(line.amount)}`
+        )),
+        `= ${value} damage`,
+      ].join('\n');
+  return `<div class="guess-damage ${safe ? 'safe' : ''}">
+    <span class="guess-damage-label tip-dots" tabindex="0" data-tip="${escapeHtml(labelTip)}" aria-label="${escapeHtml(labelTip)}">INCOMING DAMAGE</span>
+    <b class="guess-damage-value tip-dots" tabindex="0" data-tip="${escapeHtml(calcTip)}" aria-label="${escapeHtml(calcTip)}">${safe ? 'FREE' : `⚔️ ${value} ⚔️`}</b>
   </div>`;
 }
 
@@ -1936,22 +2191,175 @@ function renderTimer(view: RunView, board: BoardView): string {
     ? 100
     : Math.max(0, Math.min(100, (board.remainingMs / board.timerStartMs) * 100));
   const urgent = !countUp && board.remainingMs !== null && board.remainingMs <= 15_000;
-  return `<div class="timer ${urgent ? 'urgent' : ''} ${board.timerFrozen ? 'frozen' : ''}" title="${countUp ? 'No clock limit. Time is shown because an equipped item cares about it.' : 'When this reaches zero the run ends.'}">
+  const timerTip = countUp
+    ? 'No clock limit. Time is shown because an equipped item cares about it.'
+    : 'When this reaches zero the run ends, even if you still have armor.';
+  return `<div class="timer ${urgent ? 'urgent' : ''} ${board.timerFrozen ? 'frozen' : ''}" tabindex="0" data-tip="${escapeHtml(timerTip)}" aria-label="${escapeHtml(timerTip)}">
     <span class="timer-label">${label}</span>
     <b>${time}</b>
     <div class="timer-bar"><i style="width:${pct}%"></i></div>
   </div>`;
 }
 
+const RAIL_NODE_LABELS: Record<NodeKind, string> = {
+  round: 'Fight',
+  shop: 'Shop',
+  curse: 'Curse',
+  happening: 'Event',
+  boss: 'Boss',
+};
+
+const RAIL_NODE_GLYPHS: Record<NodeKind, string> = {
+  round: '◆',
+  shop: '¤',
+  curse: '✕',
+  happening: '?',
+  boss: '☠',
+};
+
+interface RailFloor {
+  level: number;
+  kind: NodeKind | 'start';
+  bossId?: BossId;
+  /** A floor can hold both a fight and an event. */
+  hasEvent: boolean;
+}
+
+/** Collapse the nodes on one floor into a single ladder entry. */
+function railFloorAt(view: RunView, level: number): RailFloor | null {
+  if (level === 0) return { level, kind: 'start', hasEvent: false };
+  if (level < 0) return null;
+  const nodes = view.nodes.filter((node) => node.level === level);
+  if (nodes.length === 0) return null;
+  const primary = nodes.find((node) => node.kind === 'boss')
+    ?? nodes.find((node) => node.kind === 'round')
+    ?? nodes.find((node) => node.kind === 'curse')
+    ?? nodes.find((node) => node.kind === 'shop')
+    ?? nodes.find((node) => node.kind === 'happening');
+  if (!primary) return null;
+  return {
+    level,
+    kind: primary.kind,
+    bossId: primary.boss,
+    hasEvent: primary.kind !== 'happening' && nodes.some((node) => node.kind === 'happening'),
+  };
+}
+
+function railFloorName(floor: RailFloor): string {
+  if (floor.kind === 'start') return 'Run start';
+  if (floor.kind === 'boss') {
+    return (floor.bossId ? BOSS_BY_ID.get(floor.bossId)?.name : undefined) ?? 'Boss';
+  }
+  return RAIL_NODE_LABELS[floor.kind];
+}
+
+function railFloorGlyph(floor: RailFloor): string {
+  if (floor.kind === 'start') return '·';
+  if (floor.kind === 'boss') return bossSigil(floor.bossId);
+  return RAIL_NODE_GLYPHS[floor.kind];
+}
+
+function railFloorTip(floor: RailFloor): string {
+  const name = railFloorName(floor);
+  return floor.hasEvent ? `${name} + event` : name;
+}
+
+/** Zig-zag anchors, top to bottom: +3, +2, +1, current, one behind. */
+const RAIL_NODE_POINTS = [
+  { x: 222, y: 17 },
+  { x: 36, y: 37 },
+  { x: 198, y: 70 },
+  { x: 52, y: 92 },
+  { x: 204, y: 112 },
+];
+
 function renderLevelBadge(view: RunView): string {
   const maxLevel = view.nodes.reduce((max, node) => Math.max(max, node.level ?? 0), view.level);
-  const pct = Math.max(0, Math.min(100, (view.level / Math.max(1, maxLevel)) * 100));
+  const slots = [3, 2, 1, 0, -1].map((offset) => {
+    const level = view.level + offset;
+    if (level < 0 || level > maxLevel || (level === 0 && view.level !== 0)) return null;
+    return railFloorAt(view, level);
+  });
+  const visible = slots.flatMap((floor, slot) => (
+    floor ? [{ floor, slot, point: RAIL_NODE_POINTS[slot] }] : []
+  ));
+
+  const segments = visible.slice(1).map((entry, index) => {
+    const previous = visible[index - 1]?.point ?? visible[index].point;
+    const from = visible[index].point;
+    const to = entry.point;
+    const next = visible[index + 2]?.point ?? to;
+    // Catmull-Rom control points keep the curve flowing through each node.
+    const cp1x = from.x + (to.x - previous.x) / 3.5;
+    const cp1y = from.y + (to.y - previous.y) / 3.5;
+    const cp2x = to.x - (next.x - from.x) / 3.5;
+    const cp2y = to.y - (next.y - from.y) / 3.5;
+    const state = entry.slot === 4 ? 'past' : 'future';
+    return `<path class="rail-path ${state}" d="M${from.x} ${from.y}C${cp1x} ${cp1y} ${cp2x} ${cp2y} ${to.x} ${to.y}" />`;
+  }).join('');
+
+  const nodes = slots.map((floor, index) => {
+    if (!floor) return '<g class="rail-node is-empty" aria-hidden="true"></g>';
+    const point = RAIL_NODE_POINTS[index];
+    const current = index === 3;
+    const state = current ? 'current' : index > 3 ? 'past' : 'future';
+    const radius = current ? 15 : floor.kind === 'boss' ? 13 : 11;
+    const glyph = railFloorGlyph(floor);
+    const tip = railFloorTip(floor);
+    return `<g class="rail-node ${state} kind-${floor.kind}${floor.hasEvent ? ' has-event' : ''}"
+      data-level="${floor.level}"
+      data-tip="${escapeHtml(tip)}"
+      tabindex="0"
+      role="img"
+      aria-label="${escapeHtml(tip)}"${current ? ' aria-current="step"' : ''}>
+      ${current ? `<circle class="rail-node-halo" cx="${point.x}" cy="${point.y}" r="${radius + 7}" />
+      <circle class="rail-node-core" cx="${point.x}" cy="${point.y}" r="${radius - 5}" />` : ''}
+      <circle class="rail-node-dot" cx="${point.x}" cy="${point.y}" r="${radius}" />
+      <text class="rail-node-glyph" x="${point.x}" y="${point.y}" dy="0.35em" text-anchor="middle">${glyph}</text>
+      ${floor.hasEvent ? `<circle class="rail-node-event" cx="${point.x + radius * 0.68}" cy="${point.y - radius * 0.68}" r="3.4" />` : ''}
+    </g>`;
+  }).join('');
+
+  const summary = slots.flatMap((floor) => {
+    if (!floor) return [];
+    const state = floor.level === view.level
+      ? ', current'
+      : floor.level < view.level ? ', cleared' : '';
+    return [`${railFloorTip(floor)}${state}`];
+  }).join(', ');
+
   return `<div class="rail-level" aria-label="Current level ${view.level} of ${maxLevel}">
     <div class="rail-level-top">
-      <span class="rail-level-kicker">LEVEL</span>
+      <span class="rail-level-kicker">FLOOR</span>
       <span class="rail-level-value">${view.level}<i>/${maxLevel}</i></span>
     </div>
-    <div class="rail-level-bar"><i style="width:${pct}%"></i></div>
+    <svg class="rail-map" viewBox="0 0 252 128" role="group" aria-label="${escapeHtml(`Nearby floors: ${summary}`)}">
+      ${segments}
+      ${nodes}
+    </svg>
+  </div>`;
+}
+
+function renderPlayerVitals(view: RunView): string {
+  const pct = Math.max(0, Math.min(100, (view.hp / Math.max(1, view.maxHp)) * 100));
+  const armorPct = Math.max(0, Math.min(100, (view.armor / Math.max(1, view.maxArmor)) * 100));
+  const playerDef = CHARACTER_BY_ID.get(view.character);
+  const playerLabel = playerDef?.name ?? 'The Soldier';
+  return `<div class="mini-player">
+    <div class="fighter-head">
+      <span class="fighter-name">${escapeHtml(playerLabel.toUpperCase())}</span>
+      <b class="hp-numbers">${view.hp}<em>/${view.maxHp}</em></b>
+    </div>
+    <div class="big-hp" role="progressbar" aria-label="HP" aria-valuemin="0" aria-valuemax="${view.maxHp}" aria-valuenow="${view.hp}">
+      <i style="width:${pct}%"></i>
+      <span class="hp-gloss"></span>
+    </div>
+    <div class="armor-line" tabindex="0" data-tip="${escapeHtml(ARMOR_TIP)}" aria-label="${escapeHtml(ARMOR_TIP)}">
+      <span class="armor-bar" role="progressbar" aria-label="Armor" aria-valuemin="0" aria-valuemax="${view.maxArmor}" aria-valuenow="${view.armor}">
+        <i style="width:${armorPct}%"></i>
+      </span>
+      <span class="armor-text">ARMOR ${view.armor}/${view.maxArmor}</span>
+    </div>
   </div>`;
 }
 
@@ -1960,10 +2368,10 @@ function renderBattleRail(view: RunView, bossId?: string): string {
   const enemy = arenaEnemy(view, bossId);
   const board = phase.kind === 'round' ? phase.board : null;
   const stateEntries = board ? Object.entries(board.bossState) : [];
-  const pct = Math.max(0, Math.min(100, (view.hp / Math.max(1, view.maxHp)) * 100));
-  const armorPct = Math.max(0, Math.min(100, (view.armor / Math.max(1, view.maxArmor)) * 100));
   const low = view.hp <= view.maxHp * 0.3;
-  const hit = Boolean(damageFx && damageFx.hpLost > 0 && performance.now() - damageFx.at < 600);
+  const hit = Boolean(
+    damageFx?.showOverlay && damageFx.hpLost > 0 && performance.now() - damageFx.at < 600,
+  );
   const enemyIsOrc = view.act === 0 && !bossId;
   const now = performance.now();
   const walkDelay = -((now - spritesStartedAt) % WALK_MS);
@@ -1979,8 +2387,8 @@ function renderBattleRail(view: RunView, bossId?: string): string {
   const playerLabel = playerDef?.name ?? 'The Soldier';
   const facts = board
     ? [
-        `<span class="fact">FREE ${board.freeGuessesLeft}</span>`,
-        board.shielded ? `<span class="fact shield">SHIELD ${formatTime(board.shieldMsLeft)}</span>` : '',
+        board.freeGuessesLeft > 0 ? `<span class="fact">FREE ${board.freeGuessesLeft}</span>` : '',
+        board.shielded ? `<span class="fact shield">IMMUNE ${formatTime(board.shieldMsLeft)}</span>` : '',
         board.gauntletTotal > 1 ? `<span class="fact gauntlet">PUZZLE ${board.gauntletIndex + 1}/${board.gauntletTotal}</span>` : '',
         view.items.some((item) => item.id === 'loose-tongue' && item.equipped) ? `<span class="fact free-speech">ANY WORD</span>` : '',
       ].filter(Boolean).join('')
@@ -2028,24 +2436,31 @@ function renderBattleRail(view: RunView, bossId?: string): string {
           <span class="mini-label">${enemy.boss ? 'BOSS' : 'FOE'}</span>
         </div>
       </div>
-      <div class="mini-player">
-        <div class="fighter-head">
-          <span class="fighter-name">${escapeHtml(playerLabel.toUpperCase())}</span>
-          <b class="hp-numbers">${view.hp}<em>/${view.maxHp}</em></b>
-        </div>
-        <div class="big-hp" role="progressbar" aria-label="HP" aria-valuemin="0" aria-valuemax="${view.maxHp}" aria-valuenow="${view.hp}">
-          <i style="width:${pct}%"></i>
-          <span class="hp-gloss"></span>
-        </div>
-        <div class="armor-line" title="Armor soaks damage point-for-point before HP. It refills each round. Running out of time ends the run.">
-          <span class="armor-bar" role="progressbar" aria-label="Armor" aria-valuemin="0" aria-valuemax="${view.maxArmor}" aria-valuenow="${view.armor}">
-            <i style="width:${armorPct}%"></i>
-          </span>
-          <span class="armor-text">ARMOR ${view.armor}/${view.maxArmor}</span>
-        </div>
-      </div>
+      ${renderPlayerVitals(view)}
     </section>
     ${facts ? `<div class="mini-facts">${facts}</div>` : ''}
+  </aside>`;
+}
+
+function renderShopRail(view: RunView): string {
+  return `<aside class="panel shop-rail" aria-label="Shop">
+    ${renderLevelBadge(view)}
+    <div class="shop-rail-head">
+      <span class="panel-kicker">SHOP</span>
+      <b class="shop-rail-gold">🪙 ${view.gold}</b>
+    </div>
+    ${renderPlayerVitals(view)}
+  </aside>`;
+}
+
+function renderCurseRail(view: RunView): string {
+  return `<aside class="panel curse-rail" aria-label="Curse floor">
+    ${renderLevelBadge(view)}
+    <div class="shop-rail-head">
+      <span class="panel-kicker">CURSE</span>
+      <b class="shop-rail-floor">FLOOR ${view.level}</b>
+    </div>
+    ${renderPlayerVitals(view)}
   </aside>`;
 }
 
@@ -2115,7 +2530,7 @@ function renderSidePanel(view: RunView): string {
         <span class="panel-kicker">${view.phase.kind === 'round' || view.phase.kind === 'summary' ? 'REVEALED THIS PUZZLE' : 'REVEALED'}</span>
         <div>${view.revealed.map(({ letter, status }) => `<span class="reveal-chip ${status}"><b>${escapeHtml(letter.toUpperCase())}</b><em>${status === 'present' ? 'IN WORD' : 'RULED OUT'}</em></span>`).join('')}</div>
       </div>` : ''}
-      ${view.purged.length ? `<div class="purged"><span class="panel-kicker">PURGED</span><div>${view.purged.map((letter) => `<span class="letter-chip">${escapeHtml(letter.toUpperCase())}</span>`).join('')}</div></div>` : ''}
+      ${view.purged.length ? `<div class="purged" tabindex="0" data-tip="${escapeHtml(PURGED_TIP)}" aria-label="${escapeHtml(PURGED_TIP)}"><span class="panel-kicker">PURGED</span><div>${view.purged.map((letter) => `<span class="letter-chip" tabindex="0" data-tip="${escapeHtml(PURGED_TIP)}">${escapeHtml(letter.toUpperCase())}</span>`).join('')}</div></div>` : ''}
     </section>` : ''}
   </aside>`;
 }
@@ -2143,10 +2558,18 @@ function renderItem(view: RunView, item: ItemView): string {
   const name = def?.name ?? item.id;
   const description = def?.dynamicDescription?.(item.data) ?? def?.description ?? '';
   const data = Object.entries(item.data)
-    .filter(([key, value]) => value !== 0 && !key.startsWith('_') && key !== 'used')
-    .map(([key, value]) => `<span class="data-chip">${escapeHtml(key)} ${value}</span>`)
+    .filter(([key, value]) => (
+      (value !== 0 || key === 'fed')
+      && !key.startsWith('_')
+      && key !== 'used'
+      && key !== 'paid'
+    ))
+    .map(([key, value]) => (
+      `<span class="data-chip">${escapeHtml(key === 'fed' ? 'FED' : key)} ${value}</span>`
+    ))
     .join('');
   const spent = def?.initial?.used !== undefined && (item.data.used ?? 0) > 0;
+  const usedThisRound = Boolean(def?.onUse) && (item.data._uses ?? 0) > 0;
   const usable = Boolean(def?.onUse);
   const rarity = !item.equipped && item.slots > 0
     ? 'BAG'
@@ -2166,12 +2589,13 @@ function renderItem(view: RunView, item: ItemView): string {
       <span class="item-emoji" aria-hidden="true">${itemIcon(item.id)}</span>
       <b>${escapeHtml(name)}</b>
       ${spent ? `<span class="item-state">SPENT</span>` : ''}
+      ${usedThisRound ? `<span class="item-state">USED</span>` : ''}
       <span class="tag">${rarity}</span>
     </div>
     <p>${glossaryText(description)}</p>
     ${data ? `<div class="data-row">${data}</div>` : ''}
     ${!item.equipped && item.slots > 0 ? `<p class="bag-note">In the bag. Equip it in a shop.</p>` : ''}
-    ${usable ? `<button class="btn tiny" data-action="use" data-id="${escapeHtml(item.instance)}">USE</button>` : ''}
+    ${usable ? `<button class="btn tiny" data-action="use" data-id="${escapeHtml(item.instance)}" ${usedThisRound ? 'disabled' : ''}>${usedThisRound ? 'USED' : 'USE'}</button>` : ''}
   </article>`;
 }
 
@@ -2214,7 +2638,24 @@ function renderBoard(board: BoardView): string {
   const rows: string[] = [];
   const guesses = board.guesses;
   const totalRows = Math.max(6, guesses.length + 1);
+
+  // The engine starts multiplying damage at this row. Short Fuse moves the
+  // boundary earlier; the divider is purely visual and never changes behavior.
+  const firstMultiplied = Math.max(0, 5 - board.damageRampEarly);
+  const dividerTip = 'Damage is multiplied after this guess, and any remaining free guesses are lost. '
+    + 'Wrong guesses below take ×2 damage, then ×3, ×4 and so on.'
+    + (board.damageRampEarly > 0 ? ' Short Fuse moved this line earlier.' : '');
+
   for (let index = 0; index < totalRows; index++) {
+    if (index === firstMultiplied) {
+      rows.push(`<div class="board-divider" tabindex="0" data-tip="${escapeHtml(dividerTip)}" aria-label="${escapeHtml(dividerTip)}">
+        <span class="board-divider-mark" aria-hidden="true">!</span>
+        <span class="board-divider-rule" aria-hidden="true"></span>
+        <span class="board-divider-icon" aria-hidden="true">⚔️</span>
+        <span class="board-divider-rule" aria-hidden="true"></span>
+        <span class="board-divider-mark" aria-hidden="true">!</span>
+      </div>`);
+    }
     if (index < guesses.length) {
       const guess = guesses[index];
       const counts = guess.counts
@@ -2240,13 +2681,15 @@ function renderKeyboard(board: BoardView): string {
       const status = board.keyboard[letter] ?? '';
       const hint = board.hints[letter];
       const hinted = hint ? 'hinted' : '';
-      const title = status === 'hidden'
-        ? `${letter.toUpperCase()} · hidden by a vision curse`
-        : hint === 'present'
-          ? `${letter.toUpperCase()} · revealed in the answer`
-          : hint === 'absent'
-            ? `${letter.toUpperCase()} · revealed not in the answer`
-            : letter.toUpperCase();
+      const title = status === 'purged'
+        ? `${letter.toUpperCase()} · purged, can't be manually guessed`
+        : status === 'hidden'
+          ? `${letter.toUpperCase()} · hidden by a vision curse`
+          : hint === 'present'
+            ? `${letter.toUpperCase()} · revealed in the answer`
+            : hint === 'absent'
+              ? `${letter.toUpperCase()} · revealed not in the answer`
+              : letter.toUpperCase();
       return `<button class="key ${status} ${hinted}" data-action="key" data-letter="${letter}" title="${title}" ${status === 'purged' ? 'disabled' : ''}>${letter}</button>`;
     }).join('');
     const tail = rowIndex === 2
@@ -2515,13 +2958,6 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
 
   return `
   <div class="phase-card shop">
-    <div class="shop-head">
-      <div>
-        <p class="panel-kicker">SHOP</p>
-        <h2>Spend it or lose it</h2>
-      </div>
-      <div class="chip-stat gold">🪙 <b>${view.gold}</b></div>
-    </div>
     ${coupon > 0 ? `<p class="hint coupon-hint">Coupon Book: the first item or food purchase costs ${coupon} less.</p>` : ''}
     <div class="offer-grid">${offers}</div>
     <div class="shop-actions">
@@ -2606,12 +3042,6 @@ function renderHappening(phase: Extract<PhaseView, { kind: 'happening' }>): stri
               : option.requiresAnySpell
                 ? `<span class="warn">${option.locked ? 'NEEDS A SPELL' : 'TRADES A RANDOM SPELL'}</span>`
                 : ''}
-            ${phase.happening === 'the-spammer' && option.id === 'battle' && option.locked
-              ? '<span class="warn">NEEDS A FREE SLOT AND NO HEAD START</span>'
-              : ''}
-            ${phase.happening === 'the-spammer' && option.id === 'fan' && option.locked
-              ? '<span class="warn">NEEDS HEAD START</span>'
-              : ''}
             ${option.costGold ? `<span class="warn">Costs ${option.costGold} gold${option.fallbackPct ? ` · or ${Math.round(option.fallbackPct * 100)}% of your gold` : ''}</span>` : ''}
           </div>
           <div class="odds">
@@ -2693,6 +3123,24 @@ function renderOver(phase: Extract<PhaseView, { kind: 'over' }>): string {
   </div>`;
 }
 
+function renderDamageTutorial(): string {
+  return `
+  <div class="modal damage-tutorial">
+    <div class="modal-card">
+      <p class="panel-kicker">DAMAGE</p>
+      <h2>The monster hits back</h2>
+      <p class="muted">Your first guess each round is free. After that, every wrong guess is a <b>Hit (HP damage)</b>: the monster attacks you.</p>
+      <p class="muted">From the <b>6th guess</b> in a round onward, each wrong guess deals an increasing amount of damage. A correct guess never hurts you, and autoguesses are always free.</p>
+      <p class="muted">Armor soaks damage first. Only what gets through reaches HP.</p>
+      <button class="tutorial-check ${damageTutorialMute ? 'checked' : ''}" data-action="toggle-damage-tutorial-mute" role="checkbox" aria-checked="${damageTutorialMute}">
+        <span class="tutorial-box" aria-hidden="true">${damageTutorialMute ? '✓' : ''}</span>
+        Don't remind me
+      </button>
+      <button class="btn primary big" data-action="dismiss-damage-tutorial">GOT IT</button>
+    </div>
+  </div>`;
+}
+
 function renderPurgeModal(view: RunView): string {
   if (view.pendingPurge <= 0) return '';
   const letters = 'abcdefghijklmnopqrstuvwxyz'.split('');
@@ -2703,7 +3151,7 @@ function renderPurgeModal(view: RunView): string {
     <div class="modal-card">
       <p class="panel-kicker">${setup ? 'BEFORE THE FIRST FLOOR' : 'LETTER PURGE'}</p>
       <h2>${setup ? `Erase ${view.pendingPurge} letter${view.pendingPurge === 1 ? '' : 's'}` : 'Erase a letter'}</h2>
-      <p class="muted">${setup ? 'No word has been drawn yet, so every letter is fair game. ' : ''}The letter will never appear in a future answer, and you can never guess it again. Choose carefully. If a purge would leave no legal words, a random purged letter is restored.</p>
+      <p class="muted">${setup ? 'No word has been drawn yet, so every letter is fair game. ' : ''}The letter will never appear in a future answer, and you can never manually guess it again. Autoguesses can still use it. Choose carefully. If a purge would leave no legal words, a random purged letter is restored.</p>
       <div class="purge-grid">
         ${letters.map((letter) => `<button class="purge-key ${view.purged.includes(letter) ? 'used' : ''}" data-action="purge" data-letter="${letter}" ${view.purged.includes(letter) ? 'disabled' : ''}>${letter.toUpperCase()}</button>`).join('')}
       </div>
@@ -2812,10 +3260,6 @@ function renderRun(view: RunView): string {
     phase.board.remainingMs !== null &&
     phase.board.remainingMs > 0 &&
     phase.board.remainingMs <= 15_000;
-  const now = performance.now();
-  const count = phase.kind === 'round' && !paused && now < countdownUntil
-    ? Math.max(1, Math.ceil((countdownUntil - now) / 800))
-    : 0;
 
   return `
   <div class="shell ${shake ? 'shake' : ''} ${tense ? 'tense' : ''}">
@@ -2825,36 +3269,34 @@ function renderRun(view: RunView): string {
       ? `<main class="over-layout">${phasePanel(view)}</main>`
       : `<main class="layout">
           <div class="rail-column">
-            ${renderBattleRail(view, bossId)}
-            ${renderItemsPanel(view)}
+            ${phase.kind === 'shop'
+              ? `${renderShopRail(view)}${renderItemsPanel(view)}`
+              : phase.kind === 'curse'
+                ? `${renderCurseRail(view)}${renderItemsPanel(view)}`
+                : `${renderBattleRail(view, bossId)}${renderItemsPanel(view)}`}
           </div>
           <section class="center-column">${phasePanel(view)}</section>
           ${renderSidePanel(view)}
         </main>`}
+    ${damageTutorialOpen && !over ? renderDamageTutorial() : ''}
     ${renderPurgeModal(view)}
     ${renderCurseRemovalModal(view)}
-    ${count > 0 ? `<div class="countdown-overlay" aria-live="assertive">
-        <div class="countdown-card">
-          <span class="countdown-kicker">LEVEL ${view.level}</span>
-          <b class="countdown-number" data-count="${count}">${count}</b>
-          <span class="countdown-label">READ THE LIST</span>
-        </div>
-      </div>` : ''}
     ${paused && !over ? renderPauseOverlay(view) : ''}
   </div>`;
 }
 
-function syncFoodUnlocks(): void {
+function syncMetaUnlocks(): void {
   const meta = readMeta();
   const unlocked = [
     (meta.foodCounts['double-cheeseburger'] ?? 0) >= 3 ? 'gourmand' : null,
-    (meta.foodCounts.inkcap ?? 0) >= 2 ? 'purgamist' : null,
+    meta.purgedCount >= 6 ? 'purgamist' : null,
+    (meta.purchases.necronomicon ?? 0) >= 1 ? 'necromancer' : null,
   ].filter((id): id is string => Boolean(id));
   for (const id of unlocked) {
     if (unlockCharacter(id)) queueCharacterUnlock(id);
   }
 }
 
-syncFoodUnlocks();
+syncMetaUnlocks();
 render();
 trackGameLoaded(hasSave(), readMeta().runs);
