@@ -2373,6 +2373,7 @@ function renderBattleRail(view: RunView, bossId?: string): string {
 
 function renderShopRail(view: RunView): string {
   return `<aside class="panel shop-rail" aria-label="Shop">
+    ${renderLevelBadge(view)}
     <div class="shop-rail-head">
       <span class="panel-kicker">SHOP</span>
       <b class="shop-rail-gold">🪙 ${view.gold}</b>
@@ -2383,6 +2384,7 @@ function renderShopRail(view: RunView): string {
 
 function renderCurseRail(view: RunView): string {
   return `<aside class="panel curse-rail" aria-label="Curse floor">
+    ${renderLevelBadge(view)}
     <div class="shop-rail-head">
       <span class="panel-kicker">CURSE</span>
       <b class="shop-rail-floor">FLOOR ${view.level}</b>

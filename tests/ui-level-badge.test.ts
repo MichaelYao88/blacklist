@@ -83,9 +83,10 @@ describe('persistent level display', () => {
 
     root.querySelector<HTMLElement>('[data-action="choose"][data-id="shop"]')!.click();
     expect(root.querySelector('.shop')).not.toBeNull();
-    expect(levelBadge()).toBeNull();
+    expect(levelBadge()?.querySelector('.rail-level-value')?.textContent).toBe('2/51');
     expect(root.querySelector('.battle-rail')).toBeNull();
     expect(root.querySelector('.shop-rail')).not.toBeNull();
+    expect(root.querySelector('.shop-rail .rail-level')).not.toBeNull();
     expect(root.querySelector('.shop-rail .panel-kicker')?.textContent).toBe('SHOP');
     expect(root.querySelector('.shop-rail-gold')).not.toBeNull();
     expect(root.querySelector('.shop-rail .mini-player')).not.toBeNull();
