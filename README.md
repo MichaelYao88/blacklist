@@ -49,7 +49,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - Rarity uses cumulative floors: 40% pulls from rare, uncommon or common, 45% pulls from uncommon or common, and 15% pulls from common only. If a tier is empty, it falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on bosses)
-- 98 items (87 shop items + 11 rare relics), 6 spells, 83 foods and 32 happenings
+- 100 items (89 shop items + 11 rare relics), 6 spells, 83 foods and 32 happenings
 - New foods include **U-nagi**, **Donut Holes**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with an Omen spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
@@ -118,6 +118,8 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Fortune Cookie** is a 2g food with a hidden 5× appearance weight: it queues one autoguess for the next round
 - **The Waffle** is a 6g rare food: +24s per round
 - **Tally** counts every guess, including ally and autoguesses
+- **Momentum** is a 10g uncommon item: every 8 player guesses grants +1 max armor
+- **Ballast** is a 10g uncommon item: every autoguess grants +3 max HP
 - **Harvest Charm**, **Empty Mouth**, **Empty Orb**, **Empty Phone**, **Detour**, **Dark Echo**, **Black Eye**, **Palindrome**, **Oasis 15**, **Shellshock**, **Echo Chamber**, **Panic Button**, and **Wild Magic** are the new autoguess/autocast items
 - **Detour** is a 10g item that autoguesses once per round after a guess sharing no letters with the previous guess
 - **Black Eye** is an 8g item: a hit that deals HP damage has an 80% chance to autoguess a random word; **Thorn Crown** is a 14g item with an 80% chance to autocast a free random spell instead

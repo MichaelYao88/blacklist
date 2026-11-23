@@ -12,6 +12,8 @@ const ITEM_ICONS: Record<string, string> = {
   scattershot: '🎯',
   'grey-market': '💵',
   'compound-interest': '📈',
+  momentum: '🏃',
+  ballast: '🪨',
   'midas-touch': '🪙',
   'gold-standard': '💰',
   photosynthesis: '🌿',

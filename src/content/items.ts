@@ -519,6 +519,37 @@ export const ITEMS: ItemDef[] = [
     },
   }),
   defineItem({
+    id: 'momentum',
+    name: 'Momentum',
+    description: 'Every 8 player guesses: +1 max armor.',
+    price: 10,
+    kind: 'gear',
+    rarity: 'uncommon',
+    initial: { guesses: 0 },
+    on: {
+      onGuessScored: (ctx, p) => {
+        if (p.guess.by !== 'player') return [];
+        const next = ctx.self.data.guesses + 1;
+        return [
+          { type: 'grow', stat: 'guesses', by: 1 },
+          ...(next % 8 === 0 ? [{ type: 'maxArmor' as const, delta: 1 }] : []),
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'ballast',
+    name: 'Ballast',
+    description: 'Whenever you autoguess: +3 max HP.',
+    price: 10,
+    kind: 'gear',
+    rarity: 'uncommon',
+    on: {
+      onGuessScored: (_ctx, p) =>
+        p.guess.by === 'friend' ? [{ type: 'maxHp', delta: 3 }] : [],
+    },
+  }),
+  defineItem({
     id: 'black-market-ledger',
     name: 'Black Market Ledger',
     description: 'Shop purchase or event: 50% chance of a random spell.',

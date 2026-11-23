@@ -3224,6 +3224,30 @@ describe('latest balance pass', () => {
     expect((third.state.maxHp - hpBefore) + (third.state.maxArmor - armorBefore)).toBe(1);
   });
 
+  it('Momentum grants max armor every 8 player guesses', () => {
+    const { state } = start('momentum');
+    state.items.push({ instance: 'i-momentum', id: 'momentum', data: { guesses: 0 }, equipped: true });
+    setAnswer(state, 'jumbo');
+    state.round!.freeLeft = 20;
+    const armorBefore = state.maxArmor;
+    let current = state;
+    for (const word of ['slate', 'crane', 'adieu', 'pious', 'tiger', 'mango', 'lemon', 'berry']) {
+      current = act(current, { type: 'guess', word }).state;
+    }
+    expect(current.maxArmor).toBe(armorBefore + 1);
+    expect(current.items.find((item) => item.id === 'momentum')?.data.guesses).toBe(8);
+  });
+
+  it('Ballast gains 3 max HP whenever an autoguess happens', () => {
+    const { state } = start('ballast');
+    state.items.push({ instance: 'i-ballast', id: 'ballast', data: {}, equipped: true });
+    state.items.push({ instance: 'i-charm', id: 'harvest-charm', data: {}, equipped: true });
+    const maxHpBefore = state.maxHp;
+    const next = nextRound(state);
+    expect(next.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
+    expect(next.state.maxHp).toBe(maxHpBefore + 3);
+  });
+
   it('Empty Armor grants Restore when the round starts with no spells', () => {
     const { state } = start('empty-armor');
     state.items.push({ instance: 'i-empty', id: 'empty-armor', data: {}, equipped: true });
@@ -3267,6 +3291,8 @@ describe('latest balance pass', () => {
       counterweight: 10,
       'loose-tongue': 12,
       'mending-plate': 26,
+      momentum: 10,
+      ballast: 10,
       'oracle-skull': 12,
       'phoenix-egg': 18,
       potluck: 26,
