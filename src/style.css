@@ -3128,10 +3128,10 @@ button {
   letter-spacing: 0.02em;
 }
 
-.rail-fighters-stage {
-  padding: 6px 0 2px;
-  border-radius: 8px;
-  background: linear-gradient(180deg, #15101f 0%, #0d0a13 78%);
+.shop-rail .mini-player,
+.curse-rail .mini-player {
+  margin-top: 2px;
+  padding-top: 8px;
 }
 
 .mini-sky {

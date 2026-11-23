@@ -37,7 +37,10 @@ describe('curse floor rail', () => {
     expect(root.querySelector('.battle-rail')).toBeNull();
     expect(root.querySelector('.curse-rail')).not.toBeNull();
     expect(root.querySelector('.curse-rail .panel-kicker')?.textContent).toBe('CURSE');
-    expect(root.querySelector('.rail-fighters-stage')).not.toBeNull();
+    expect(root.querySelector('.curse-rail .mini-player')).not.toBeNull();
+    expect(root.querySelector('.curse-rail .big-hp')).not.toBeNull();
+    expect(root.querySelector('.curse-rail .armor-line')).not.toBeNull();
+    expect(root.querySelector('.curse-rail .mini-vs')).toBeNull();
     expect(root.querySelector('.rail-column .items-panel')).not.toBeNull();
   });
 });

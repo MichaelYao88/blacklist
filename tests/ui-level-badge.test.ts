@@ -88,6 +88,9 @@ describe('persistent level display', () => {
     expect(root.querySelector('.shop-rail')).not.toBeNull();
     expect(root.querySelector('.shop-rail .panel-kicker')?.textContent).toBe('SHOP');
     expect(root.querySelector('.shop-rail-gold')).not.toBeNull();
-    expect(root.querySelector('.rail-fighters-stage')).not.toBeNull();
+    expect(root.querySelector('.shop-rail .mini-player')).not.toBeNull();
+    expect(root.querySelector('.shop-rail .big-hp')).not.toBeNull();
+    expect(root.querySelector('.shop-rail .armor-line')).not.toBeNull();
+    expect(root.querySelector('.shop-rail .mini-vs')).toBeNull();
   });
 });

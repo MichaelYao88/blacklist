@@ -2269,13 +2269,34 @@ function renderLevelBadge(view: RunView): string {
   </div>`;
 }
 
+function renderPlayerVitals(view: RunView): string {
+  const pct = Math.max(0, Math.min(100, (view.hp / Math.max(1, view.maxHp)) * 100));
+  const armorPct = Math.max(0, Math.min(100, (view.armor / Math.max(1, view.maxArmor)) * 100));
+  const playerDef = CHARACTER_BY_ID.get(view.character);
+  const playerLabel = playerDef?.name ?? 'The Soldier';
+  return `<div class="mini-player">
+    <div class="fighter-head">
+      <span class="fighter-name">${escapeHtml(playerLabel.toUpperCase())}</span>
+      <b class="hp-numbers">${view.hp}<em>/${view.maxHp}</em></b>
+    </div>
+    <div class="big-hp" role="progressbar" aria-label="HP" aria-valuemin="0" aria-valuemax="${view.maxHp}" aria-valuenow="${view.hp}">
+      <i style="width:${pct}%"></i>
+      <span class="hp-gloss"></span>
+    </div>
+    <div class="armor-line" tabindex="0" data-tip="${escapeHtml(ARMOR_TIP)}" aria-label="${escapeHtml(ARMOR_TIP)}">
+      <span class="armor-bar" role="progressbar" aria-label="Armor" aria-valuemin="0" aria-valuemax="${view.maxArmor}" aria-valuenow="${view.armor}">
+        <i style="width:${armorPct}%"></i>
+      </span>
+      <span class="armor-text">ARMOR ${view.armor}/${view.maxArmor}</span>
+    </div>
+  </div>`;
+}
+
 function renderBattleRail(view: RunView, bossId?: string): string {
   const phase = view.phase;
   const enemy = arenaEnemy(view, bossId);
   const board = phase.kind === 'round' ? phase.board : null;
   const stateEntries = board ? Object.entries(board.bossState) : [];
-  const pct = Math.max(0, Math.min(100, (view.hp / Math.max(1, view.maxHp)) * 100));
-  const armorPct = Math.max(0, Math.min(100, (view.armor / Math.max(1, view.maxArmor)) * 100));
   const low = view.hp <= view.maxHp * 0.3;
   const hit = Boolean(
     damageFx?.showOverlay && damageFx.hpLost > 0 && performance.now() - damageFx.at < 600,
@@ -2344,82 +2365,29 @@ function renderBattleRail(view: RunView, bossId?: string): string {
           <span class="mini-label">${enemy.boss ? 'BOSS' : 'FOE'}</span>
         </div>
       </div>
-      <div class="mini-player">
-        <div class="fighter-head">
-          <span class="fighter-name">${escapeHtml(playerLabel.toUpperCase())}</span>
-          <b class="hp-numbers">${view.hp}<em>/${view.maxHp}</em></b>
-        </div>
-        <div class="big-hp" role="progressbar" aria-label="HP" aria-valuemin="0" aria-valuemax="${view.maxHp}" aria-valuenow="${view.hp}">
-          <i style="width:${pct}%"></i>
-          <span class="hp-gloss"></span>
-        </div>
-        <div class="armor-line" tabindex="0" data-tip="${escapeHtml(ARMOR_TIP)}" aria-label="${escapeHtml(ARMOR_TIP)}">
-          <span class="armor-bar" role="progressbar" aria-label="Armor" aria-valuemin="0" aria-valuemax="${view.maxArmor}" aria-valuenow="${view.armor}">
-            <i style="width:${armorPct}%"></i>
-          </span>
-          <span class="armor-text">ARMOR ${view.armor}/${view.maxArmor}</span>
-        </div>
-      </div>
+      ${renderPlayerVitals(view)}
     </section>
     ${facts ? `<div class="mini-facts">${facts}</div>` : ''}
   </aside>`;
 }
 
-function renderRailFighters(view: RunView, bossId?: string): string {
-  const enemyIsOrc = view.act === 0 && !bossId;
-  const now = performance.now();
-  const walkDelay = -((now - spritesStartedAt) % WALK_MS);
-  const playerSprite = characterSprite(view.character);
-  const playerDef = CHARACTER_BY_ID.get(view.character);
-  const playerLabel = playerDef?.name ?? 'The Soldier';
-  return `<div class="mini-stage rail-fighters-stage">
-    <div class="mini-side player-side">
-      <div class="sprite player-sprite">
-        <i
-          class="character-sprite ${characterPortraitClass(view.character)}"
-          role="img"
-          aria-label="${escapeHtml(playerLabel)}"
-          style="${spriteStyle(playerSprite)};--walk-delay:${walkDelay}ms"
-        ></i>
-      </div>
-    </div>
-    <div class="mini-center">
-      <div class="mini-vs"><span>VS</span></div>
-    </div>
-    <div class="mini-side enemy-side">
-      <div class="sprite enemy-sprite">
-        ${enemyIsOrc
-          ? `<i
-              class="character-sprite orc"
-              role="img"
-              aria-label="The Orc"
-              style="--walk:url('${orcWalk}');--attack:url('${orcAttack}');--death:url('${orcDeath}');--walk-delay:${walkDelay}ms"
-            ></i>`
-          : enemySprite(bossId)}
-      </div>
-    </div>
-  </div>`;
-}
-
-function renderShopRail(view: RunView, bossId?: string): string {
-  const enemy = arenaEnemy(view, bossId);
-  return `<aside class="panel shop-rail" style="--enemy:${enemy.color}" aria-label="Shop">
+function renderShopRail(view: RunView): string {
+  return `<aside class="panel shop-rail" aria-label="Shop">
     <div class="shop-rail-head">
       <span class="panel-kicker">SHOP</span>
       <b class="shop-rail-gold">🪙 ${view.gold}</b>
     </div>
-    ${renderRailFighters(view, bossId)}
+    ${renderPlayerVitals(view)}
   </aside>`;
 }
 
-function renderCurseRail(view: RunView, bossId?: string): string {
-  const enemy = arenaEnemy(view, bossId);
-  return `<aside class="panel curse-rail" style="--enemy:${enemy.color}" aria-label="Curse floor">
+function renderCurseRail(view: RunView): string {
+  return `<aside class="panel curse-rail" aria-label="Curse floor">
     <div class="shop-rail-head">
       <span class="panel-kicker">CURSE</span>
       <b class="shop-rail-floor">FLOOR ${view.level}</b>
     </div>
-    ${renderRailFighters(view, bossId)}
+    ${renderPlayerVitals(view)}
   </aside>`;
 }
 
@@ -3218,9 +3186,7 @@ function renderRun(view: RunView): string {
   const phase = view.phase;
   const bossId = phase.kind === 'round' || phase.kind === 'summary' || phase.kind === 'bossIntro'
     ? phase.boss
-    : phase.kind === 'curse'
-      ? view.nodes[view.nodeIndex]?.boss
-      : undefined;
+    : undefined;
   const over = phase.kind === 'over';
   const tense =
     phase.kind === 'round' &&
@@ -3237,9 +3203,9 @@ function renderRun(view: RunView): string {
       : `<main class="layout">
           <div class="rail-column">
             ${phase.kind === 'shop'
-              ? `${renderShopRail(view, bossId)}${renderItemsPanel(view)}`
+              ? `${renderShopRail(view)}${renderItemsPanel(view)}`
               : phase.kind === 'curse'
-                ? `${renderCurseRail(view, bossId)}${renderItemsPanel(view)}`
+                ? `${renderCurseRail(view)}${renderItemsPanel(view)}`
                 : `${renderBattleRail(view, bossId)}${renderItemsPanel(view)}`}
           </div>
           <section class="center-column">${phasePanel(view)}</section>
