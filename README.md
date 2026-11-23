@@ -151,7 +151,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - The pause menu includes a color-coded **CHRONICLE** of gameplay actions: guesses, rounds, damage, spells, item triggers, gold, food, shop purchases and curses
 - Purge is an event (The Redaction) and foods (Poppy Seeds, rare Inkcap, Purge the D, Pay Respects to F); its rest option triggers an eat and a 10% random curse removal
 - One exact-state autosave slot. Defeat clears it. Victory clears it and updates meta stats.
-- A **STATS** page tracks run history (last 50 runs), win rate, best level, average solve time, favorite items and curses, play time, gold and damage totals
+- A **STATS** page tracks run history (last 50 runs), win rate, best level, average solve time, most-bought gear and favorite curses, play time, gold and damage totals
 - The top bar shows gold and area; a persistent slanted floor trail at the top of the battle rail shows the current floor, one cleared floor below it, and the next three floors above, in every phase. Hover or focus a node to see its type
 - Clock-gated items such as **Meal Timer** never appear in shops or rewards until **The Clock** curse exists
 - Compact battle rail on the left: a persistent slanted floor trail, round timer with a hover tooltip for the time limit, an incoming-damage chip with separate hovers for the rule and the named damage modifiers (base, curses, curses such as The Sleeper, gold spent, extra slots, multiplier), a hoverable armor bar explaining how armor soaks hits, a side-view mini arena with your character facing the act's monster (or boss), player HP and armor

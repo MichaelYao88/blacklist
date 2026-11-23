@@ -1980,7 +1980,11 @@ function renderStats(): string {
   const meta = readMeta();
   const winRate = meta.runs > 0 ? Math.round((meta.wins / meta.runs) * 100) : 0;
   const avgSolve = meta.totalSolves > 0 ? meta.totalSolveMs / meta.totalSolves : 0;
-  const favorites = topEntries(meta.itemCounts);
+  const gearCounts = Object.fromEntries(
+    Object.entries(meta.purchases)
+      .filter(([id]) => ITEM_BY_ID.get(id)?.kind === 'gear'),
+  );
+  const favorites = topEntries(gearCounts);
   const curses = topEntries(meta.curseCounts);
   const history = meta.history.slice(0, 20);
 
@@ -2016,10 +2020,10 @@ function renderStats(): string {
       </section>
 
       <section class="stats-panel">
-        <p class="panel-kicker">MOST EQUIPPED</p>
+        <p class="panel-kicker">MOST BOUGHT GEAR</p>
         ${favorites.length
           ? `<ol class="favorite-list">${favorites.map(([id, count]) => `<li><span>${escapeHtml(ITEM_BY_ID.get(id)?.name ?? id)}</span><b>${count}</b></li>`).join('')}</ol>`
-          : `<p class="empty-note">No completed runs yet.</p>`}
+          : `<p class="empty-note">No gear bought yet.</p>`}
       </section>
 
       <section class="stats-panel">
