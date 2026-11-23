@@ -2327,7 +2327,9 @@ function renderBattleRail(view: RunView, bossId?: string): string {
           <span class="mini-label">YOU</span>
         </div>
         <div class="mini-center">
-          <span class="mini-phase">${phaseLabel(view)}</span>
+          ${phase.kind === 'shop'
+            ? `<span class="mini-shop-gold"><span>SHOP</span><b>🪙 ${view.gold}</b></span>`
+            : `<span class="mini-phase">${phaseLabel(view)}</span>`}
           <div class="mini-vs"><span>VS</span></div>
         </div>
         <div class="mini-side enemy-side ${(hit || (enemyAttacking && !enemyIsOrc)) ? 'attacking' : ''}">
@@ -2859,9 +2861,6 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
 
   return `
   <div class="phase-card shop">
-    <div class="shop-head">
-      <div class="chip-stat gold">🪙 <b>${view.gold}</b></div>
-    </div>
     ${coupon > 0 ? `<p class="hint coupon-hint">Coupon Book: the first item or food purchase costs ${coupon} less.</p>` : ''}
     <div class="offer-grid">${offers}</div>
     <div class="shop-actions">

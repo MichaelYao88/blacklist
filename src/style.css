@@ -1622,19 +1622,11 @@ button {
 
 /* ── shop ────────────────────────────────────────────────────────────────── */
 
-.shop-head {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  text-align: left;
-  gap: 12px;
-}
-
 .offer-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
-  margin-top: 18px;
+  margin-top: 0;
   text-align: left;
 }
 
@@ -3315,6 +3307,31 @@ button {
   font-weight: 800;
   letter-spacing: 0.12em;
   white-space: nowrap;
+}
+
+.mini-shop-gold {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 3px 8px;
+  border: 1px solid rgba(231, 184, 90, 0.35);
+  border-radius: 6px;
+  background: rgba(231, 184, 90, 0.08);
+  color: var(--gold);
+  font-size: 0.44rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.mini-shop-gold b {
+  color: var(--gold-soft);
+  font-family: var(--sans);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
 }
 
 .mini-vs {
