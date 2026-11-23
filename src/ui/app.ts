@@ -2327,7 +2327,9 @@ function renderBattleRail(view: RunView, bossId?: string): string {
           <span class="mini-label">YOU</span>
         </div>
         <div class="mini-center">
-          <span class="mini-phase">${phaseLabel(view)}</span>
+          ${phase.kind === 'shop'
+            ? `<span class="mini-shop-gold"><span>SHOP</span><b>🪙 ${view.gold}</b></span>`
+            : `<span class="mini-phase">${phaseLabel(view)}</span>`}
           <div class="mini-vs"><span>VS</span></div>
         </div>
         <div class="mini-side enemy-side ${(hit || (enemyAttacking && !enemyIsOrc)) ? 'attacking' : ''}">
@@ -2363,47 +2365,6 @@ function renderBattleRail(view: RunView, bossId?: string): string {
     </section>
     ${facts ? `<div class="mini-facts">${facts}</div>` : ''}
   </aside>`;
-}
-
-/** A compact fighters-only strip for shop and curse floors. */
-function renderArenaStrip(view: RunView, bossId?: string): string {
-  const enemy = arenaEnemy(view, bossId);
-  const enemyIsOrc = view.act === 0 && !bossId;
-  const now = performance.now();
-  const walkDelay = -((now - spritesStartedAt) % WALK_MS);
-  const playerSprite = characterSprite(view.character);
-  const playerDef = CHARACTER_BY_ID.get(view.character);
-  const playerLabel = playerDef?.name ?? 'The Soldier';
-  return `<section class="mini-arena phase-arena" style="--enemy:${enemy.color}" aria-label="Characters">
-    <div class="mini-sky" aria-hidden="true"></div>
-    <div class="mini-stage">
-      <div class="mini-side player-side">
-        <div class="sprite player-sprite">
-          <i
-            class="character-sprite ${characterPortraitClass(view.character)}"
-            role="img"
-            aria-label="${escapeHtml(playerLabel)}"
-            style="${spriteStyle(playerSprite)};--walk-delay:${walkDelay}ms"
-          ></i>
-        </div>
-      </div>
-      <div class="mini-center">
-        <div class="mini-vs"><span>VS</span></div>
-      </div>
-      <div class="mini-side enemy-side">
-        <div class="sprite enemy-sprite">
-          ${enemyIsOrc
-            ? `<i
-                class="character-sprite orc"
-                role="img"
-                aria-label="The Orc"
-                style="--walk:url('${orcWalk}');--attack:url('${orcAttack}');--death:url('${orcDeath}');--walk-delay:${walkDelay}ms"
-              ></i>`
-            : enemySprite(bossId)}
-        </div>
-      </div>
-    </div>
-  </section>`;
 }
 
 function renderChronicle(): string {
@@ -2900,9 +2861,6 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
 
   return `
   <div class="phase-card shop">
-    <div class="shop-head">
-      <span class="shop-gold"><span>SHOP</span><b>🪙 ${view.gold}</b></span>
-    </div>
     ${coupon > 0 ? `<p class="hint coupon-hint">Coupon Book: the first item or food purchase costs ${coupon} less.</p>` : ''}
     <div class="offer-grid">${offers}</div>
     <div class="shop-actions">
@@ -3202,17 +3160,10 @@ function renderPauseOverlay(view: RunView): string {
 
 function renderRun(view: RunView): string {
   const phase = view.phase;
-  const bossId = phase.kind === 'round'
-    || phase.kind === 'summary'
-    || phase.kind === 'bossIntro'
+  const bossId = phase.kind === 'round' || phase.kind === 'summary' || phase.kind === 'bossIntro'
     ? phase.boss
-    : phase.kind === 'curse'
-      ? view.nodes[view.nodeIndex]?.boss
-      : undefined;
+    : undefined;
   const over = phase.kind === 'over';
-  const phaseLayout = phase.kind === 'shop'
-    || phase.kind === 'shopChoice'
-    || phase.kind === 'curse';
   const tense =
     phase.kind === 'round' &&
     phase.board.remainingMs !== null &&
@@ -3225,23 +3176,14 @@ function renderRun(view: RunView): string {
     ${renderTopbar(view)}
     ${over
       ? `<main class="over-layout">${phasePanel(view)}</main>`
-      : phaseLayout
-        ? `<main class="layout phase-layout">
-            <section class="phase-column">
-              ${renderArenaStrip(view, bossId)}
-              ${phasePanel(view)}
-              ${phase.kind === 'curse' ? `<div class="phase-items">${renderItemsPanel(view)}</div>` : ''}
-            </section>
-            ${renderSidePanel(view)}
-          </main>`
-        : `<main class="layout">
-            <div class="rail-column">
-              ${renderBattleRail(view, bossId)}
-              ${renderItemsPanel(view)}
-            </div>
-            <section class="center-column">${phasePanel(view)}</section>
-            ${renderSidePanel(view)}
-          </main>`}
+      : `<main class="layout">
+          <div class="rail-column">
+            ${renderBattleRail(view, bossId)}
+            ${renderItemsPanel(view)}
+          </div>
+          <section class="center-column">${phasePanel(view)}</section>
+          ${renderSidePanel(view)}
+        </main>`}
     ${damageTutorialOpen && !over ? renderDamageTutorial() : ''}
     ${renderPurgeModal(view)}
     ${renderCurseRemovalModal(view)}

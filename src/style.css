@@ -478,32 +478,6 @@ button {
   min-width: 0;
 }
 
-/* Shop, shop-choice and curse floors replace the rail with the phase card. */
-.layout.phase-layout {
-  grid-template-columns: minmax(0, 1fr) 320px;
-  grid-template-rows: auto;
-}
-
-.phase-column {
-  grid-column: 1;
-  grid-row: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  min-width: 0;
-}
-
-.phase-layout .side-panel {
-  grid-column: 2;
-  grid-row: 1;
-}
-
-.phase-items {
-  width: 100%;
-  max-width: 420px;
-  margin: 0 auto;
-}
-
 .chronicle {
   display: flex;
   flex-direction: column;
@@ -1647,33 +1621,6 @@ button {
 }
 
 /* ── shop ────────────────────────────────────────────────────────────────── */
-
-.shop-head {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  margin-bottom: 10px;
-}
-
-.shop-gold {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 9px;
-  border: 1px solid rgba(231, 184, 90, 0.35);
-  border-radius: 6px;
-  background: rgba(231, 184, 90, 0.08);
-  color: var(--gold);
-  font-size: 0.5rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-}
-
-.shop-gold b {
-  color: var(--gold-soft);
-  font-size: 0.7rem;
-  letter-spacing: 0.02em;
-}
 
 .offer-grid {
   display: grid;
@@ -3148,18 +3095,6 @@ button {
     linear-gradient(180deg, #15101f 0%, #0d0a13 78%);
 }
 
-.phase-arena {
-  width: 100%;
-  max-width: 420px;
-  margin: 0 auto;
-  padding: 6px 9px 8px;
-}
-
-.phase-arena .mini-stage {
-  max-width: 300px;
-  margin: 0 auto;
-}
-
 .mini-sky {
   position: absolute;
   inset: 0;
@@ -3372,6 +3307,31 @@ button {
   font-weight: 800;
   letter-spacing: 0.12em;
   white-space: nowrap;
+}
+
+.mini-shop-gold {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 3px 8px;
+  border: 1px solid rgba(231, 184, 90, 0.35);
+  border-radius: 6px;
+  background: rgba(231, 184, 90, 0.08);
+  color: var(--gold);
+  font-size: 0.44rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.mini-shop-gold b {
+  color: var(--gold-soft);
+  font-family: var(--sans);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
 }
 
 .mini-vs {
@@ -4737,24 +4697,6 @@ button {
     grid-template-rows: auto auto auto;
   }
 
-  .layout.phase-layout {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto;
-  }
-
-  .phase-layout .phase-column {
-    grid-column: 1;
-    grid-row: 1;
-  }
-
-  .phase-layout .side-panel {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
-  }
-
   .battle-rail {
     grid-column: 1;
     grid-row: 1;
@@ -4810,24 +4752,6 @@ button {
   .layout {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: none;
-  }
-
-  .layout.phase-layout {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: none;
-  }
-
-  .phase-layout .phase-column {
-    grid-column: 1;
-    grid-row: auto;
-    order: 0;
-  }
-
-  .phase-layout .side-panel {
-    grid-column: 1;
-    grid-row: auto;
-    order: 2;
-    grid-template-columns: 1fr;
   }
 
   .rail-column {

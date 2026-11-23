@@ -54,7 +54,7 @@ describe('persistent level display', () => {
     expect(badge?.textContent).not.toContain('Floor');
   });
 
-  it('keeps the level through summary and reward, then swaps the rail for shop floors', () => {
+  it('keeps the level visible through summary, reward, and shop phases', () => {
     for (const letter of 'crane') {
       window.dispatchEvent(new KeyboardEvent('keydown', {
         key: letter,
@@ -79,15 +79,21 @@ describe('persistent level display', () => {
     }
 
     expect(root.querySelector('.shop-choice')).not.toBeNull();
-    expect(levelBadge()).toBeNull();
-    expect(root.querySelector('.battle-rail')).toBeNull();
-    expect(root.querySelector('.phase-arena')).not.toBeNull();
+    expect(levelBadge()?.querySelector('.rail-level-value')?.textContent).toBe('2/51');
 
     root.querySelector<HTMLElement>('[data-action="choose"][data-id="shop"]')!.click();
     expect(root.querySelector('.shop')).not.toBeNull();
-    expect(levelBadge()).toBeNull();
-    expect(root.querySelector('.battle-rail')).toBeNull();
-    expect(root.querySelector('.phase-arena')).not.toBeNull();
-    expect(root.querySelector('.shop-gold')?.textContent).toContain('SHOP');
+    expect(levelBadge()?.querySelector('.rail-level-value')?.textContent).toBe('2/51');
+
+    const badge = levelBadge();
+    const current = badge?.querySelector<HTMLElement>('.rail-node.current');
+    expect(current?.dataset.level).toBe('2');
+    expect(
+      [...badge!.querySelectorAll<HTMLElement>('.rail-node.past')].map((node) => node.dataset.level),
+    ).toEqual(['1']);
+    expect(
+      [...badge!.querySelectorAll<HTMLElement>('.rail-node.future')].map((node) => node.dataset.level),
+    ).toEqual(['5', '4', '3']);
+    expect(badge?.querySelectorAll('.rail-node:not(.is-empty)').length).toBe(5);
   });
 });
