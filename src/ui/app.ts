@@ -2969,12 +2969,6 @@ function renderHappening(phase: Extract<PhaseView, { kind: 'happening' }>): stri
               : option.requiresAnySpell
                 ? `<span class="warn">${option.locked ? 'NEEDS A SPELL' : 'TRADES A RANDOM SPELL'}</span>`
                 : ''}
-            ${phase.happening === 'the-spammer' && option.id === 'battle' && option.locked
-              ? '<span class="warn">NEEDS A FREE SLOT AND NO HEAD START</span>'
-              : ''}
-            ${phase.happening === 'the-spammer' && option.id === 'fan' && option.locked
-              ? '<span class="warn">NEEDS HEAD START</span>'
-              : ''}
             ${option.costGold ? `<span class="warn">Costs ${option.costGold} gold${option.fallbackPct ? ` · or ${Math.round(option.fallbackPct * 100)}% of your gold` : ''}</span>` : ''}
           </div>
           <div class="odds">

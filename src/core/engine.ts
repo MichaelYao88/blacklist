@@ -3204,21 +3204,6 @@ export function createCore(content: Content): Core {
       const leave = baseOptions.find((option) => option.id === 'leave');
       options = [...trades, ...(leave ? [leave] : [])];
     }
-    if (def.id === 'the-spammer') {
-      const ownsHeadStart = state.items.some((item) => item.id === 'head-start');
-      const headStartDef = itemById.get('head-start');
-      const headStartSlots = headStartDef ? itemSlots(headStartDef) : 1;
-      const hasFreeSlot = usedSlots(state) + headStartSlots <= state.slots;
-      options = options.map((option) => {
-        if (option.id === 'battle') {
-          return { ...option, locked: ownsHeadStart || !hasFreeSlot };
-        }
-        if (option.id === 'fan') {
-          return { ...option, locked: !ownsHeadStart };
-        }
-        return option;
-      });
-    }
     state.happening = {
       id: def.id,
       options,
