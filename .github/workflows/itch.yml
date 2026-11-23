@@ -1,0 +1,130 @@
+# Publishes the HTML5 build to itch.io with butler on every push to main.
+# ITCH_USER and ITCH_GAME are repository variables. BUTLER_API_KEY is a secret.
+# The job stays green and skips until those are set. Pages deploys from pages.yml.
+# The uploaded zip has index.html at its root (channel html5).
+
+name: itch
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: itch-html5
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check itch.io credentials
+        id: creds
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+          ITCH_USER: ${{ vars.ITCH_USER }}
+          ITCH_GAME: ${{ vars.ITCH_GAME }}
+        run: |
+          missing=0
+          if [ -z "$BUTLER_API_KEY" ]; then
+            echo "BUTLER_API_KEY secret is not set."
+            missing=1
+          else
+            echo "BUTLER_API_KEY secret is set."
+          fi
+          if [ -z "$ITCH_USER" ]; then
+            echo "ITCH_USER repository variable is not set."
+            missing=1
+          else
+            echo "ITCH_USER repository variable is set."
+          fi
+          if [ -z "$ITCH_GAME" ]; then
+            echo "ITCH_GAME repository variable is not set."
+            missing=1
+          else
+            echo "ITCH_GAME repository variable is set."
+          fi
+          if [ "$missing" -eq 0 ]; then
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice title=itch.io deploy skipped::Set the BUTLER_API_KEY secret and the ITCH_USER / ITCH_GAME repository variables to publish the html5 channel."
+            {
+              echo "### itch.io deploy skipped"
+              echo "The job stays green until these repository Actions settings exist:"
+              echo ""
+              echo "- Secret \`BUTLER_API_KEY\`"
+              echo "- Variable \`ITCH_USER\`"
+              echo "- Variable \`ITCH_GAME\`"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.creds.outputs.skip != 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.creds.outputs.skip != 'true'
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+        if: steps.creds.outputs.skip != 'true'
+
+      - run: npm test
+        if: steps.creds.outputs.skip != 'true'
+
+      - run: npm run build
+        if: steps.creds.outputs.skip != 'true'
+
+      - name: Install butler
+        if: steps.creds.outputs.skip != 'true'
+        run: |
+          curl -fsSL -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip -q butler.zip -d "$RUNNER_TEMP/butler"
+          chmod +x "$RUNNER_TEMP/butler/butler"
+          echo "$RUNNER_TEMP/butler" >> "$GITHUB_PATH"
+          butler version
+
+      - name: Publish to itch.io
+        if: steps.creds.outputs.skip != 'true'
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+          ITCH_USER: ${{ vars.ITCH_USER }}
+          ITCH_GAME: ${{ vars.ITCH_GAME }}
+        run: |
+          test -f dist/index.html
+          # Archive from inside dist so index.html is the zip root. A zip of the
+          # dist folder itself would nest the game under dist/ and the iframe
+          # would not find index.html.
+          ( cd dist && zip -r -X ../itch-html5.zip . )
+          python3 - <<'PY'
+          import zipfile
+          import sys
+
+          def normalize(name: str) -> str:
+              name = name.replace("\\", "/")
+              while name.startswith("./"):
+                  name = name[2:]
+              return name
+
+          names = [normalize(name) for name in zipfile.ZipFile("itch-html5.zip").namelist()]
+          if "index.html" not in names:
+              sys.exit("itch-html5.zip has no root index.html. First entries: " + ", ".join(names[:40]))
+          nested = [name for name in names if name.startswith("dist/")]
+          if nested:
+              sys.exit("itch-html5.zip nests files under dist/: " + ", ".join(nested[:20]))
+          print("itch-html5.zip root contains index.html")
+          PY
+          target="${ITCH_USER}/${ITCH_GAME}:html5"
+          echo "Publishing itch-html5.zip to ${target}"
+          butler push itch-html5.zip "$target" --userversion "${GITHUB_SHA}"
+          {
+            echo "### Published to itch.io"
+            echo "Channel: \`${target}\`"
+            echo "Archive root contains \`index.html\`."
+          } >> "$GITHUB_STEP_SUMMARY"
