@@ -5102,7 +5102,7 @@ describe('balance pass', () => {
     expect(FOOD_BY_ID.get('taco-pizza-party')?.price).toBe(6);
     expect(FOOD_BY_ID.get('plov')?.price).toBe(3);
     expect(FOOD_BY_ID.get('fortune-cookie')?.price).toBe(2);
-    expect(ITEM_BY_ID.get('head-start')?.price).toBe(8);
+    expect(ITEM_BY_ID.get('head-start')?.price).toBe(14);
     expect(ITEM_BY_ID.get('head-start')?.rarity).toBe('rare');
     expect(ITEM_BY_ID.get('quickdraw')).toBeUndefined();
   });

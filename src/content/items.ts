@@ -272,7 +272,7 @@ export const ITEMS: ItemDef[] = [
     id: 'head-start',
     name: 'Head Start',
     description: 'The first 7s of each round: Immune to damage. Your free guess is still spent by the first guess.',
-    price: 8,
+    price: 14,
     kind: 'gear',
     rarity: 'rare',
     on: {
