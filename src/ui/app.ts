@@ -2400,7 +2400,6 @@ function renderBattleRail(view: RunView, bossId?: string): string {
 
   return `
   <aside class="panel battle-rail ${low ? 'critical' : ''} ${hit ? 'hit' : ''}" style="--enemy:${enemy.color}" aria-label="Battle status">
-    ${renderLevelBadge(view)}
     ${board ? renderTimer(view, board) : ''}
     ${board ? guessDamageHtml(board) : ''}
     <section class="mini-arena ${phase.kind === 'summary' ? 'settled' : ''}">
@@ -2448,7 +2447,6 @@ function renderBattleRail(view: RunView, bossId?: string): string {
 
 function renderShopRail(view: RunView): string {
   return `<aside class="panel shop-rail" aria-label="Shop">
-    ${renderLevelBadge(view)}
     <div class="shop-rail-head">
       <span class="panel-kicker">SHOP</span>
       <b class="shop-rail-gold">🪙 ${view.gold}</b>
@@ -2459,7 +2457,6 @@ function renderShopRail(view: RunView): string {
 
 function renderCurseRail(view: RunView): string {
   return `<aside class="panel curse-rail" aria-label="Curse floor">
-    ${renderLevelBadge(view)}
     <div class="shop-rail-head">
       <span class="panel-kicker">CURSE</span>
       <b class="shop-rail-floor">FLOOR ${view.level}</b>
@@ -2512,6 +2509,9 @@ function renderSidePanel(view: RunView): string {
     <section>
       <div class="panel-head"><span class="panel-kicker">SPELLS</span><span class="count">${view.spells.length}</span></div>
       <div class="spell-list">${spells}</div>
+    </section>
+    <section class="floorplan-panel">
+      ${renderLevelBadge(view)}
     </section>
     <section>
       <div class="panel-head"><span class="panel-kicker">CURSES</span><span class="count">${view.curses.length}</span></div>

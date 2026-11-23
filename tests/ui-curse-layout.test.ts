@@ -36,7 +36,7 @@ describe('curse floor rail', () => {
     expect(root.querySelector('.curse-draft')).not.toBeNull();
     expect(root.querySelector('.battle-rail')).toBeNull();
     expect(root.querySelector('.curse-rail')).not.toBeNull();
-    expect(root.querySelector('.curse-rail .rail-level-value')?.textContent).toBe('4/51');
+    expect(root.querySelector('.side-panel .rail-level-value')?.textContent).toBe('4/51');
     expect(root.querySelector('.curse-rail .panel-kicker')?.textContent).toBe('CURSE');
     expect(root.querySelector('.curse-rail .mini-player')).not.toBeNull();
     expect(root.querySelector('.curse-rail .big-hp')).not.toBeNull();
