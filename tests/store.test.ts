@@ -122,6 +122,36 @@ describe('run history store', () => {
     expect(meta.history[1].equippedItems).toEqual(['piggy-bank', 'tally-lens']);
   });
 
+  it('unlocks Ascension 20 from a win at 19 and caps there', () => {
+    recordStart();
+    recordRun({
+      result: 'victory',
+      level: 50,
+      act: 4,
+      ascension: 19,
+      character: 'runner',
+      curses: [],
+      items: [],
+      equippedItems: [],
+      stats: stats(),
+    });
+    expect(readMeta().ascension).toBe(20);
+
+    recordStart();
+    recordRun({
+      result: 'victory',
+      level: 50,
+      act: 4,
+      ascension: 20,
+      character: 'runner',
+      curses: [],
+      items: [],
+      equippedItems: [],
+      stats: stats(),
+    });
+    expect(readMeta().ascension).toBe(20);
+  });
+
   it('tracks distinct characters that have won runs', () => {
     for (const character of ['runner', 'farmer', 'runner']) {
       recordRun({
