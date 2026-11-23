@@ -3220,6 +3220,7 @@ button {
 }
 
 .character-sprite.farmer {
+  width: 90%;
   background-size: 600% 100%;
   animation: sprite-walk 1000ms steps(5) infinite;
 }

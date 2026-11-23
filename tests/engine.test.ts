@@ -123,9 +123,9 @@ describe('cursed run setup', () => {
     const { state, events } = start();
     expect(state.phase).toBe('round');
     expect(state.level).toBe(1);
-    expect(state.hp).toBe(15);
-    expect(state.maxHp).toBe(15);
-    expect(state.armor).toBe(6);
+    expect(state.hp).toBe(10);
+    expect(state.maxHp).toBe(10);
+    expect(state.armor).toBe(8);
     expect(state.gold).toBe(12);
     expect(state.slots).toBe(4);
     expect(state.blacklist).toEqual([]);
@@ -140,8 +140,8 @@ describe('cursed run setup', () => {
   it('applies preset character starts', () => {
     const soldier = game.newRun({ seed: 'preset-soldier' }).state;
     expect(soldier.character).toBe('runner');
-    expect(soldier.maxHp).toBe(15);
-    expect(soldier.maxArmor).toBe(6);
+    expect(soldier.maxHp).toBe(10);
+    expect(soldier.maxArmor).toBe(8);
     expect(soldier.gold).toBe(12);
 
     const pathfinder = game.newRun({ seed: 'preset-pathfinder', character: 'pathfinder' }).state;
@@ -165,7 +165,7 @@ describe('cursed run setup', () => {
     const purgamist = game.newRun({ seed: 'preset-purgamist', character: 'purgamist' }).state;
     expect(purgamist.character).toBe('purgamist');
     expect(purgamist.maxHp).toBe(12);
-    expect(purgamist.maxArmor).toBe(4);
+    expect(purgamist.maxArmor).toBe(5);
     expect(purgamist.gold).toBe(17);
     expect(purgamist.pendingPurge).toBe(4);
     expect(purgamist.phase).toBe('purge');
@@ -176,16 +176,16 @@ describe('cursed run setup', () => {
     const gourmand = game.newRun({ seed: 'preset-gourmand', character: 'gourmand' }).state;
     expect(gourmand.character).toBe('gourmand');
     expect(gourmand.maxHp).toBe(25);
-    expect(gourmand.maxArmor).toBe(2);
+    expect(gourmand.maxArmor).toBe(4);
     expect(gourmand.gold).toBe(6);
     expect(gourmand.items.some((item) => item.id === 'potluck' && item.equipped)).toBe(true);
     expect(gourmand.curses.some((curse) => curse.id === 'porcupine')).toBe(true);
 
     const farmer = game.newRun({ seed: 'preset-farmer', character: 'farmer' }).state;
     expect(farmer.character).toBe('farmer');
-    expect(farmer.maxHp).toBe(20);
-    expect(farmer.maxArmor).toBe(1);
-    expect(farmer.armor).toBe(1);
+    expect(farmer.maxHp).toBe(30);
+    expect(farmer.maxArmor).toBe(3);
+    expect(farmer.armor).toBe(3);
     expect(farmer.gold).toBe(6);
     expect(farmer.items.some((item) => item.id === 'harvest-charm' && item.equipped)).toBe(true);
     expect(farmer.curses).toEqual([]);
@@ -193,8 +193,8 @@ describe('cursed run setup', () => {
     const emptyArmor = game.newRun({ seed: 'preset-empty-armor', character: 'empty-armor' }).state;
     expect(emptyArmor.character).toBe('empty-armor');
     expect(emptyArmor.maxHp).toBe(1);
-    expect(emptyArmor.maxArmor).toBe(11);
-    expect(emptyArmor.armor).toBe(11);
+    expect(emptyArmor.maxArmor).toBe(13);
+    expect(emptyArmor.armor).toBe(13);
     expect(emptyArmor.slots).toBe(5);
     expect(emptyArmor.gold).toBe(6);
     expect(emptyArmor.items.some((item) => item.id === 'bulwark' && item.equipped)).toBe(true);
@@ -530,10 +530,10 @@ describe('damage and curses', () => {
 
     state.armor = 1;
     const soaked = act(state, { type: 'guess', word: 'slate' });
-    expect(soaked.state.hp).toBe(13); // 1 armor, then 2 HP damage, not halved
+    expect(soaked.state.hp).toBe(8); // 1 armor, then 2 HP damage, not halved
 
     const unarmored = act(soaked.state, { type: 'guess', word: 'brick' });
-    expect(unarmored.state.hp).toBe(12); // 3 unarmored damage, halved to 1
+    expect(unarmored.state.hp).toBe(7); // 3 unarmored damage, halved to 1
   });
 
   it('Pain au Chocolat halves only the first hit armor does not soak', () => {
@@ -550,15 +550,15 @@ describe('damage and curses', () => {
     setAnswer(eaten, 'crane');
     eaten.armor = 1;
     const soaked = act(eaten, { type: 'guess', word: 'slate' });
-    expect(soaked.state.hp).toBe(13); // armor soaked this one, so the charge remains
+    expect(soaked.state.hp).toBe(8); // armor soaked this one, so the charge remains
     expect(soaked.state.unarmoredHalfCharges).toBe(1);
 
     const soft = act(soaked.state, { type: 'guess', word: 'brick' });
-    expect(soft.state.hp).toBe(12); // first unarmored hit is halved
+    expect(soft.state.hp).toBe(7); // first unarmored hit is halved
     expect(soft.state.unarmoredHalfCharges).toBe(0);
 
     const normal = act(soft.state, { type: 'guess', word: 'vamps' });
-    expect(normal.state.hp).toBe(9); // later unarmored hits are normal
+    expect(normal.state.hp).toBe(4); // later unarmored hits are normal
   });
 
   it('offsets base damage by 1.3 per starting curse stack', () => {
@@ -586,6 +586,8 @@ describe('damage and curses', () => {
     setAnswer(next.state, 'crane');
     next.state.round!.freeLeft = 0;
     next.state.armor = 0;
+    next.state.maxHp = 15;
+    next.state.hp = 15;
     const first = act(next.state, { type: 'guess', word: 'slate' });
     expect(first.state.hp).toBe(11);
     const second = act(first.state, { type: 'guess', word: 'pious' });
@@ -713,6 +715,7 @@ describe('timer curses', () => {
   it('Photosynthesis grants +2 max HP and heals 20% on solve', () => {
     const { state } = start('photosynthesis');
     state.items.push({ instance: 'i-photo', id: 'photosynthesis', data: {}, equipped: true });
+    state.maxHp = 15;
     state.hp = 10;
     setAnswer(state, 'crane');
     const solved = act(state, { type: 'guess', word: 'crane' });
@@ -726,6 +729,7 @@ describe('timer curses', () => {
   it('Adrenaline raises max HP and armor when HP crosses below 50%', () => {
     const { state } = start('adrenaline');
     state.items.push({ instance: 'i-adr', id: 'adrenaline', data: { armed: 1 }, equipped: true });
+    state.maxHp = 15;
     state.hp = 9;
     state.armor = 0;
     state.maxArmor = 0;
@@ -790,7 +794,7 @@ describe('timer curses', () => {
     expect(cast.state.round?.nextFreeUnobscured).toBe(true);
 
     const guess = act(cast.state, { type: 'guess', word: 'tiger' });
-    expect(guess.state.hp).toBe(15);
+    expect(guess.state.hp).toBe(10);
     expect(guess.state.round?.guesses.at(-1)?.free).toBe(true);
     expect(guess.state.round?.nextFreeUnobscured).toBe(false);
     const view = game.view(guess.state).phase;
@@ -899,7 +903,7 @@ describe('timer curses', () => {
     current = act(current, { type: 'castSpell', instance: 's-tf2' }).state;
     current = act(current, { type: 'guess', word: 'brick' }).state;
     const solved = act(current, { type: 'guess', word: 'crane' });
-    expect(solved.state.maxHp).toBe(18);
+    expect(solved.state.maxHp).toBe(13);
   });
 
   it('locks Immunity and Time Freeze until the player guesses', () => {
@@ -1063,7 +1067,7 @@ describe('shop curses', () => {
 
     const bought = act(state, { type: 'choose', optionId: 'relic' });
     expect(bought.state.gold).toBe(5);
-    expect(bought.state.maxArmor).toBe(6);
+    expect(bought.state.maxArmor).toBe(8);
     expect(bought.state.items.some((item) => ITEM_BY_ID.get(item.id)?.rarity === 'rare')).toBe(false);
     expect(eventTypes(bought.events)).toContain('message');
   });
@@ -1102,8 +1106,8 @@ describe('shop curses', () => {
     armorState.state.happening = { id: 'babification', options: [] };
     const armorChosen = act(armorState.state, { type: 'choose', optionId: 'armor' });
     expect(armorChosen.state.curses).toHaveLength(1);
-    expect(armorChosen.state.maxArmor).toBe(6);
-    expect(armorChosen.state.armor).toBe(6);
+    expect(armorChosen.state.maxArmor).toBe(8);
+    expect(armorChosen.state.armor).toBe(8);
   });
 
   it('The Redaction costs 5/10 and its rest option triggers an eat', () => {
@@ -1120,7 +1124,7 @@ describe('shop curses', () => {
     state.phase = 'happening';
     state.happening = { id: 'redaction', options: [] };
     const rested = act(state, { type: 'choose', optionId: 'rest' });
-    expect(rested.state.maxHp).toBe(16);
+    expect(rested.state.maxHp).toBe(11);
   });
 
   it('The Confessional sells 45/75/100% curse removal at 5/10/15 gold', () => {
@@ -1470,6 +1474,8 @@ describe('event balance pass', () => {
 
       arrived.state.armor = 0;
       arrived.state.maxArmor = 0;
+      arrived.state.maxHp = 50;
+      arrived.state.hp = 50;
       const hpBefore = arrived.state.hp;
       const chosen = act(arrived.state, { type: 'choose', optionId: 'pull' });
       if (chosen.state.hp !== hpBefore - 12) continue;
@@ -1513,9 +1519,9 @@ describe('curse-triggered items', () => {
     state.curse = { options: ['censor'], starting: false };
     state.phase = 'curse';
     const chosen = act(state, { type: 'chooseCurse', curseId: 'censor' });
-    expect(chosen.state.maxHp).toBe(21);
-    expect(chosen.state.hp).toBe(21);
-    expect(chosen.state.maxArmor).toBe(8);
+    expect(chosen.state.maxHp).toBe(16);
+    expect(chosen.state.hp).toBe(16);
+    expect(chosen.state.maxArmor).toBe(10);
     expect(chosen.state.slots).toBe(5);
     expect(chosen.state.spells).toHaveLength(1);
   });
@@ -1588,7 +1594,7 @@ describe('item and food batch', () => {
     const guess = next.state.round?.guesses.find((entry) => entry.word === 'eieio');
     expect(guess).toBeDefined();
     expect(guess?.free).toBe(true);
-    expect(next.state.hp).toBe(15);
+    expect(next.state.hp).toBe(10);
     expect(next.state.nextRoundWord).toBeUndefined();
     const second = nextRound(next.state);
     expect(second.state.round?.guesses.some((entry) => entry.word === 'eieio')).toBe(false);
@@ -1676,22 +1682,23 @@ describe('new item and event batch', () => {
     brace.state.items.push({ instance: 'i-brace', id: 'brace', data: {}, equipped: true });
     setAnswer(brace.state, 'crane');
     const braced = act(brace.state, { type: 'guess', word: 'crane' });
-    expect(braced.state.maxArmor).toBe(7);
+    expect(braced.state.maxArmor).toBe(9);
     expect(ITEM_BY_ID.get('brace')?.price).toBe(6);
 
     const bloom = start('bloom');
     bloom.state.items.push({ instance: 'i-bloom', id: 'bloom', data: { hp: 5 }, equipped: true });
     setAnswer(bloom.state, 'crane');
     const grown = act(bloom.state, { type: 'guess', word: 'crane' });
-    expect(grown.state.maxHp).toBe(20);
+    expect(grown.state.maxHp).toBe(15);
     expect(grown.state.items.find((item) => item.id === 'bloom')?.data.hp).toBe(6);
     const bloomNext = nextRound(grown.state);
     setAnswer(bloomNext.state, 'crane');
     const grownAgain = act(bloomNext.state, { type: 'guess', word: 'crane' });
-    expect(grownAgain.state.maxHp).toBe(26);
+    expect(grownAgain.state.maxHp).toBe(21);
 
     const patch = start('patch-kit');
     patch.state.items.push({ instance: 'i-patch', id: 'patch-kit', data: {}, equipped: true });
+    patch.state.maxHp = 15;
     patch.state.hp = 10;
     setAnswer(patch.state, 'crane');
     const patched = act(patch.state, { type: 'guess', word: 'crane' });
@@ -1844,7 +1851,7 @@ describe('new item and event batch', () => {
     state.phase = 'happening';
     state.happening = { id: 'endless-table', options: [] };
     const eaten = act(state, { type: 'choose', optionId: 'eat' });
-    expect(eaten.state.maxHp).toBe(22);
+    expect(eaten.state.maxHp).toBe(17);
   });
 
   it('Pen Club pays a random 1-5 gold', () => {
@@ -1863,13 +1870,13 @@ describe('new item and event batch', () => {
     eater.state.gold = 50;
     eater.state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'snack', price: 3 }]);
     const eaten = act(eater.state, { type: 'buy', offerId: 'o0' });
-    expect(eaten.state.maxHp).toBe(16);
+    expect(eaten.state.maxHp).toBe(11);
 
     const caster = start('gourmand-cast');
     caster.state.items.push({ instance: 'i-gour', id: 'gourmand', data: {}, equipped: true });
     caster.state.spells.push({ instance: 's-omen', id: 'omen' });
     const cast = act(caster.state, { type: 'castSpell', instance: 's-omen' });
-    expect(cast.state.maxHp).toBe(16);
+    expect(cast.state.maxHp).toBe(11);
   });
 
   it('Muffin Tin is a 3g food that grants permanent armor for food eaten this shop', () => {
@@ -2078,16 +2085,16 @@ describe('new item and event batch', () => {
     expect(cast.state.round?.immuneGuesses).toBe(1);
 
     const first = act(cast.state, { type: 'guess', word: 'slate' });
-    expect(first.state.hp).toBe(15);
+    expect(first.state.hp).toBe(10);
     expect(first.state.round?.immuneGuesses).toBe(0);
     expect(first.state.round?.guessImmuneUntilMs).toBe(4_000);
 
     const second = act(first.state, { type: 'guess', word: 'brick' });
-    expect(second.state.hp).toBe(15);
+    expect(second.state.hp).toBe(10);
 
     second.state.round!.elapsedMs = 5_000;
     const third = act(second.state, { type: 'guess', word: 'vamps' });
-    expect(third.state.hp).toBe(12);
+    expect(third.state.hp).toBe(7);
   });
 
   it('applies the tuned content text and values', () => {
@@ -2305,6 +2312,7 @@ describe('latest balance pass', () => {
 
   it('Heal raises max HP by 1 and restores half of the new max HP', () => {
     const heal = start('heal-half');
+    heal.state.maxHp = 15;
     heal.state.hp = 4;
     heal.state.spells.push({ instance: 's-heal', id: 'heal' });
     const cast = act(heal.state, { type: 'castSpell', instance: 's-heal' });
@@ -2321,7 +2329,7 @@ describe('latest balance pass', () => {
     state.round!.freeLeft = 0;
     const guess = act(state, { type: 'guess', word: 'slate' });
     expect(guess.state.armor).toBe(3);
-    expect(guess.state.hp).toBe(13);
+    expect(guess.state.hp).toBe(8);
   });
 
   it('uses the normal curse pool for the first draft', () => {
@@ -2408,7 +2416,7 @@ describe('latest balance pass', () => {
     state.gold = 20;
     state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'leftovers', price: 2 }]);
     const eaten = act(state, { type: 'buy', offerId: 'o0' });
-    expect(eaten.state.hp).toBe(11);
+    expect(eaten.state.hp).toBe(8);
   });
 
   it('removes Shortcut', () => {
@@ -2426,7 +2434,7 @@ describe('latest balance pass', () => {
     const cast = act(next.state, { type: 'castSpell', instance: 's-phone' });
     expect(cast.state.round?.guesses.filter((guess) => guess.by === 'friend')).toHaveLength(2);
     const solved = act(cast.state, { type: 'guess', word: 'crane' });
-    expect(solved.state.maxHp).toBe(18); // one player guess, despite two friend guesses
+    expect(solved.state.maxHp).toBe(13); // one player guess, despite two friend guesses
   });
 
   it('Bookend pays 2 gold for matching first and last letters', () => {
@@ -2678,7 +2686,7 @@ describe('latest balance pass', () => {
     state.gold = 10;
     state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'die-coke', price: 1 }]);
     const eaten = act(state, { type: 'buy', offerId: 'o0' });
-    expect(eaten.state.hp).toBe(15);
+    expect(eaten.state.hp).toBe(10);
     expect(eaten.state.gold).toBeGreaterThanOrEqual(10);
     expect(eaten.state.gold).toBeLessThanOrEqual(15);
   });
@@ -2691,8 +2699,8 @@ describe('latest balance pass', () => {
       { id: 'o0', kind: 'eat', def: 'overhealers-delight', price: 6 },
     ]);
     const eaten = act(delight.state, { type: 'buy', offerId: 'o0' });
-    expect(eaten.state.maxHp).toBe(23);
-    expect(eaten.state.hp).toBe(23);
+    expect(eaten.state.maxHp).toBe(18);
+    expect(eaten.state.hp).toBe(18);
 
     const delicacy = start('overhealers-delicacy');
     delicacy.state.phase = 'shop';
@@ -2701,8 +2709,8 @@ describe('latest balance pass', () => {
       { id: 'o0', kind: 'eat', def: 'overhealers-delicacy', price: 12 },
     ]);
     const feasted = act(delicacy.state, { type: 'buy', offerId: 'o0' });
-    expect(feasted.state.maxHp).toBe(27);
-    expect(feasted.state.hp).toBe(27);
+    expect(feasted.state.maxHp).toBe(22);
+    expect(feasted.state.hp).toBe(22);
   });
 
   it('sells the newest meal batch', () => {
@@ -2771,7 +2779,7 @@ describe('latest balance pass', () => {
     burger.state.armor = 4;
     burger.state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'cheeseburger', price: 3 }]);
     const eaten = act(burger.state, { type: 'buy', offerId: 'o0' });
-    expect(eaten.state.maxHp).toBe(18);
+    expect(eaten.state.maxHp).toBe(13);
     expect(eaten.state.hp).toBe(9);
     expect(eaten.state.armor).toBe(4);
   });
@@ -2839,8 +2847,8 @@ describe('latest balance pass', () => {
     expect(bought.state.nextSpellDouble).toBe(true);
 
     const cast = act(bought.state, { type: 'castSpell', instance: 's-heal' });
-    expect(cast.state.maxHp).toBe(17); // two Heals raise max HP by 1 each
-    expect(cast.state.hp).toBe(17); // heal 8 then 9, capped at 17
+    expect(cast.state.maxHp).toBe(12); // two Heals raise max HP by 1 each
+    expect(cast.state.hp).toBe(12); // heal 8 then 9, capped at 12
     expect(cast.state.nextSpellDouble).toBe(false);
   });
 
@@ -2945,7 +2953,7 @@ describe('latest balance pass', () => {
     const armorBefore = state.maxArmor;
     state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'taco-pizza-party', price: 6 }]);
     const eaten = act(state, { type: 'buy', offerId: 'o0' });
-    expect(eaten.state.hp).toBe(15);
+    expect(eaten.state.hp).toBe(10);
     expect(eaten.state.maxArmor).toBe(armorBefore + 1);
     expect(eaten.state.gold).toBe(14);
   });
@@ -2985,7 +2993,7 @@ describe('latest balance pass', () => {
     dog.state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'jumbo-hot-dog', price: 3 }]);
     const eaten = act(dog.state, { type: 'buy', offerId: 'o0' });
     expect(eaten.state.slots).toBe(6);
-    expect(eaten.state.maxHp).toBe(5); // 15 - 10
+    expect(eaten.state.maxHp).toBe(1); // 10 - 10, floored at 1
   });
 
   it('Masala Dosa rerolls the shop offers', () => {
@@ -3005,8 +3013,8 @@ describe('latest balance pass', () => {
     banh.state.hp = 5;
     banh.state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'banh-mi', price: 3 }]);
     const eaten = act(banh.state, { type: 'buy', offerId: 'o0' });
-    expect(eaten.state.maxHp).toBe(15);
-    expect(eaten.state.hp).toBe(10); // 30% of 15 max HP, rounded up
+    expect(eaten.state.maxHp).toBe(10);
+    expect(eaten.state.hp).toBe(8); // 30% of 10 max HP, rounded up
     expect(eaten.state.gold).toBe(17);
 
     const besh = start('beshbarmak');
@@ -3015,8 +3023,8 @@ describe('latest balance pass', () => {
     besh.state.hp = 5;
     besh.state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'beshbarmak', price: 5 }]);
     const feasted = act(besh.state, { type: 'buy', offerId: 'o0' });
-    expect(feasted.state.maxHp).toBe(16); // +5% max HP (16 → 17)
-    expect(feasted.state.hp).toBe(6); // heal 5% of 17, rounded up
+    expect(feasted.state.maxHp).toBe(11); // +5% max HP (10 → 11)
+    expect(feasted.state.hp).toBe(6); // heal 5% of 11, rounded up
     expect(feasted.state.gold).toBe(15);
   });
 
@@ -3029,14 +3037,14 @@ describe('latest balance pass', () => {
     grow.state.phase = 'happening';
     grow.state.happening = { id: 'the-scales', options: [] };
     const grown = act(grow.state, { type: 'choose', optionId: 'grow' });
-    expect(grown.state.maxHp).toBe(30);
-    expect(grown.state.hp).toBe(8);
+    expect(grown.state.maxHp).toBe(20);
+    expect(grown.state.hp).toBe(5);
 
     const plate = start('scales-plate');
     plate.state.phase = 'happening';
     plate.state.happening = { id: 'the-scales', options: [] };
     const plated = act(plate.state, { type: 'choose', optionId: 'plate' });
-    expect(plated.state.maxArmor).toBe(7);
+    expect(plated.state.maxArmor).toBe(9);
   });
 
   it('Growth Chart grants a Time Freeze every 3 max HP gained', () => {
@@ -3110,7 +3118,7 @@ describe('latest balance pass', () => {
     first.state.round!.elapsedMs = 5_000;
     const shielded = act(first.state, { type: 'guess', word: 'slate' });
     expect(shielded.state.round?.guesses[0].free).toBe(true);
-    expect(shielded.state.hp).toBe(15);
+    expect(shielded.state.hp).toBe(10);
 
     const late = start('head-start-late');
     late.state.items.push({ instance: 'i-hs', id: 'head-start', data: {}, equipped: true });
@@ -3121,7 +3129,7 @@ describe('latest balance pass', () => {
     second.state.armor = 0;
     const unshielded = act(second.state, { type: 'guess', word: 'slate' });
     expect(unshielded.state.round?.guesses[0].free).toBe(false);
-    expect(unshielded.state.hp).toBe(12);
+    expect(unshielded.state.hp).toBe(7);
   });
 
   it('Head Start keeps its opening guess safe but still spends the free guess', () => {
@@ -3143,7 +3151,7 @@ describe('latest balance pass', () => {
     state.items.push({ instance: 'i-ward', id: 'ward-engine', data: { used: 0 }, equipped: true });
     state.spells = [{ instance: 's-imm', id: 'immunity' }];
     const cast = act(state, { type: 'castSpell', instance: 's-imm' });
-    expect(cast.state.maxArmor).toBe(8);
+    expect(cast.state.maxArmor).toBe(10);
   });
 
   it('Clean Slate gives +1 max HP or +1 max armor once per round', () => {
@@ -3225,11 +3233,12 @@ describe('latest balance pass', () => {
       equipped: true,
     });
     expect(ITEM_BY_ID.get('mending-plate')?.description).toContain('per 8 HP');
-    expect(state.maxArmor).toBe(6);
+    expect(state.maxArmor).toBe(8);
+    state.maxHp = 15;
     state.hp = 5;
     state.spells = [{ instance: 's-heal', id: 'heal' }];
     const cast = act(state, { type: 'castSpell', instance: 's-heal' });
-    expect(cast.state.maxArmor).toBe(7);
+    expect(cast.state.maxArmor).toBe(9);
   });
 
   it('Mending Plate waits for 8 total HP before paying armor', () => {
@@ -3242,15 +3251,16 @@ describe('latest balance pass', () => {
     });
     state.phase = 'shop';
     state.gold = 10;
+    state.maxHp = 15;
     state.hp = 5;
     state.shop = shopState([
       { id: 'g0', kind: 'eat', def: 'gumdrop', price: 2 },
       { id: 'g1', kind: 'eat', def: 'gumdrop', price: 2 },
     ]);
     const first = act(state, { type: 'buy', offerId: 'g0' });
-    expect(first.state.maxArmor).toBe(6);
+    expect(first.state.maxArmor).toBe(8);
     const second = act(first.state, { type: 'buy', offerId: 'g1' });
-    expect(second.state.maxArmor).toBe(7);
+    expect(second.state.maxArmor).toBe(9);
   });
 
   it('Acquired Taste gives 4 max HP per new food', () => {
@@ -3270,7 +3280,7 @@ describe('latest balance pass', () => {
     let current = state;
     current = act(current, { type: 'buy', offerId: 'f0' }).state;
     current = act(current, { type: 'buy', offerId: 'f1' }).state;
-    expect(current.maxHp).toBe(23);
+    expect(current.maxHp).toBe(18);
   });
 
   it('applies the latest tweaks and text', () => {
@@ -4636,18 +4646,18 @@ describe('spellbroker and ledger additions', () => {
 
     const heal = trade('heal', 'heal');
     expect(heal.state.spells.some((spell) => spell.id === 'heal')).toBe(false);
-    expect(heal.state.maxHp).toBe(25);
-    expect(heal.state.hp).toBe(25);
+    expect(heal.state.maxHp).toBe(20);
+    expect(heal.state.hp).toBe(20);
 
     const immunity = trade('immunity', 'immunity');
     expect(immunity.state.spells.some((spell) => spell.id === 'immunity')).toBe(false);
-    expect(immunity.state.maxArmor).toBe(11);
-    expect(immunity.state.armor).toBe(11);
+    expect(immunity.state.maxArmor).toBe(13);
+    expect(immunity.state.armor).toBe(13);
 
     const restore = trade('restore', 'restore');
     expect(restore.state.spells.some((spell) => spell.id === 'restore')).toBe(false);
-    expect(restore.state.maxArmor).toBe(11);
-    expect(restore.state.armor).toBe(11);
+    expect(restore.state.maxArmor).toBe(13);
+    expect(restore.state.armor).toBe(13);
   });
 
   it('will not take a trade without the required spell', () => {
@@ -5534,7 +5544,7 @@ describe('damage doubling and slots', () => {
     expect(phase.board.damageBreakdown).toContainEqual({ label: 'Extra slots', amount: 1, kind: 'add' });
 
     const guessed = act(state, { type: 'guess', word: 'slate' });
-    expect(guessed.state.hp).toBe(11);
+    expect(guessed.state.hp).toBe(6);
   });
 
   it('exposes the Short Fuse ramp for the guess outline', () => {
@@ -5563,7 +5573,7 @@ describe('damage doubling and slots', () => {
     state.maxArmor = 0;
 
     const guessed = act(state, { type: 'guess', word: 'slate' });
-    expect(guessed.state.hp).toBe(12);
+    expect(guessed.state.hp).toBe(7);
   });
 
 });
