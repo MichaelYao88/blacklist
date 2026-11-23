@@ -1013,7 +1013,7 @@ describe('shop curses', () => {
         .map((item) => item.id),
     );
     expect(gatedItems.size).toBeGreaterThan(0);
-    expect(gatedItems.has('deadline')).toBe(true);
+    expect(gatedItems.has('meal-timer')).toBe(true);
 
     let sawGatedItem = false;
     let sawGatedFood = false;
@@ -2571,8 +2571,8 @@ describe('latest balance pass', () => {
     expect(twinOmens?.filter(
       (effect) => effect.type === 'castSpell' && effect.spell === 'omen',
     )).toHaveLength(2);
-    const bounty = optionWith(tier0, 'Bounty');
-    expect(bounty?.some((effect) => effect.type === 'gold' && effect.amount === 5)).toBe(true);
+    const goldbutter = optionWith(tier0, 'Goldbutter');
+    expect(goldbutter?.some((effect) => effect.type === 'gold' && effect.amount === 5)).toBe(true);
     const mend = optionWith(tier0, 'Mend');
     expect(mend?.some(
       (effect) => effect.type === 'healMissingPercent' && effect.percent === 100,
@@ -3432,25 +3432,6 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('green1')?.rarity).toBe('uncommon');
   });
 
-  it('Deadline grants one free guess when the clock drops below 30s', () => {
-    const { state } = start('deadline-timer');
-    state.curses.push({ id: 'clock', stacks: 1 });
-    const next = nextRound(state);
-    next.state.items.push({
-      instance: 'i-deadline',
-      id: 'deadline',
-      data: { used: 0 },
-      equipped: true,
-    });
-    next.state.round!.remainingMs = 30_500;
-    const before = next.state.round!.freeLeft;
-    const ticked = act(next.state, { type: 'tick', dtMs: 1_000 });
-    expect(ticked.state.round?.freeLeft).toBe(before + 1);
-    expect(ticked.state.items.find((item) => item.id === 'deadline')?.data.used).toBe(1);
-    const again = act(ticked.state, { type: 'tick', dtMs: 1_000 });
-    expect(again.state.round?.freeLeft).toBe(before + 1);
-  });
-
   it('Grey Market stays silent when a hidden letter keeps a guess off all-grey', () => {
     const { state } = start('grey-market-hidden');
     state.items.push({ instance: 'i-grey', id: 'grey-market', data: {}, equipped: true });
@@ -3499,7 +3480,7 @@ describe('latest balance pass', () => {
     shop.state.phase = 'shop';
     shop.state.gold = 20;
     shop.state.shop = shopState([
-      { id: 'o0', kind: 'item', def: 'deadline', price: 8 },
+      { id: 'o0', kind: 'item', def: 'meal-timer', price: 8 },
       { id: 'o1', kind: 'eat', def: 'coffee', price: 6 },
     ]);
     const item = act(shop.state, { type: 'buy', offerId: 'o0' });
@@ -3517,9 +3498,9 @@ describe('latest balance pass', () => {
       options: [{
         id: 'i0',
         kind: 'item',
-        def: 'deadline',
-        label: 'Deadline',
-        description: 'As soon as the clock drops below 30s each round: +1 free guess.',
+        def: 'meal-timer',
+        label: 'Meal Timer',
+        description: 'Eating food adds 2s to the clock. Only appears with a clock.',
       }],
     };
     const chosen = act(reward.state, { type: 'chooseReward', optionId: 'i0' });
@@ -3655,6 +3636,7 @@ describe('latest balance pass', () => {
     expect(FOOD_BY_ID.get('plating')?.effects).toContainEqual({ type: 'maxArmor', delta: 1 });
     expect(ITEM_BY_ID.get('compound-interest')?.price).toBe(4);
     expect(FOOD_BY_ID.get('yin-yang')?.price).toBe(18);
+    expect(FOOD_BY_ID.get('bounty')?.name).toBe('Goldbutter');
     expect(FOOD_BY_ID.get('bounty')?.price).toBe(9);
     expect(FOOD_BY_ID.get('bounty')?.rarity).toBe('rare');
     expect(FOOD_BY_ID.get('bounty')?.effects).toContainEqual({ type: 'solveGold', amount: 1 });

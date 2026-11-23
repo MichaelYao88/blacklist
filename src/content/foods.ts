@@ -519,7 +519,7 @@ export const FOODS: FoodDef[] = [
   }),
   defineFood({
     id: 'bounty',
-    name: 'Bounty',
+    name: 'Goldbutter',
     description: '+1 gold per solve. No slot.',
     price: 9,
     rarity: 'rare',

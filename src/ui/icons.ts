@@ -74,7 +74,6 @@ const ITEM_ICONS: Record<string, string> = {
   'frozen-durian': '🥥',
   'omen-loom': '🔮',
   'ward-engine': '🔰',
-  deadline: '⏰',
   'second-skin': '🦺',
   'double-blind': '🎯',
   green1: '🟩',

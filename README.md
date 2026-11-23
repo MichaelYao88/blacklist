@@ -49,7 +49,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - Rarity uses cumulative floors: 40% pulls from rare, uncommon or common, 45% pulls from uncommon or common, and 15% pulls from common only. If a tier is empty, it falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on bosses)
-- 98 items (88 shop items + 10 rare relics), 6 spells, 83 foods and 32 happenings
+- 97 items (87 shop items + 10 rare relics), 6 spells, 83 foods and 32 happenings
 - New foods include **U-nagi**, **Donut Holes**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with an Omen spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
@@ -68,7 +68,6 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Ricochet** is a 7g item: every 10 armor lost, autoguess a random word
 - **Scattershot** is a 10g uncommon item that autocasts a free random spell once per round after a guess sharing no letters with the previous guess
 - **Yellow1** is a 14g rare item that autoguesses once per round on your player guess with exactly one yellow and no green; **Green1** is a 14g uncommon item that does the same for exactly one green and no yellow. Neither counts ally or auto-guesses
-- **Deadline** grants +1 free guess as soon as the clock drops below 30s each round
 - **Second Hand** and **Counterclockwise** (formerly Engine) are 8g items that cross-cast spells on cast at 80%
 - **Last Cast** only reacts to spells you cast manually; autocast spells never trigger it
 - **Genie Summon** is an 8g uncommon item: after your 3rd player guess each round, autocast a free random spell
@@ -91,7 +90,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Guardian Angel** is an 8g item: after every 10 HP damage taken, autocast a free Immunity
 - **Immunity** blocks the next hurting guess and any guess for 4 seconds after it
 - **Mending Plate** is a rare item: +1 max armor per 8 HP healed
-- **Bounty** is a 9g rare food: +1 gold per solve
+- **Goldbutter** is a 9g rare food: +1 gold per solve
 - **Necronomicon** is a rare item: use it during a fight to lose 13% of your max HP for a random gift. It can only be used once per round, and it grows stronger as you feed it: fed thresholds unlock at 0, 13, 39, 79, 129, 189 and 259 max HP paid. Whisper and Twin Whispers autoguess Mythos words such as RYLEH, CTHUL and DAGON
 - **Growth Spurt** gives +3 max HP when you solve in 4 guesses or fewer
 - **Growth Chart** is an 8g item: every 3 max HP gained grants +1 Time Freeze
@@ -151,7 +150,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - One exact-state autosave slot. Defeat clears it. Victory clears it and updates meta stats.
 - A **STATS** page tracks run history (last 50 runs), win rate, best level, average solve time, favorite items and curses, play time, gold and damage totals
 - The top bar shows gold and area; a persistent slanted floor trail at the top of the battle rail shows the current floor, one cleared floor below it, and the next three floors above, in every phase. Hover or focus a node to see its type
-- Clock-gated items such as **Deadline** never appear in shops or rewards until **The Clock** curse exists
+- Clock-gated items such as **Meal Timer** never appear in shops or rewards until **The Clock** curse exists
 - Compact battle rail on the left: a persistent slanted floor trail, round timer with a hover tooltip for the time limit, an incoming-damage chip with separate hovers for the rule and the named damage modifiers (base, curses, curses such as The Sleeper, gold spent, extra slots, multiplier), a hoverable armor bar explaining how armor soaks hits, a side-view mini arena with your character facing the act's monster (or boss), player HP and armor
 - Shop floors replace the battle rail with a larger **SHOP** card showing the current gold and the character-vs-monster strip; curse floors use the same treatment with **CURSE** and the floor number. The offers or curse draft stay in the center
 - Damage numbers slam into the centre of the screen as `N damage`, with a block message when armor or immunity eats the hit; the first hit of a run opens a one-time damage tutorial with a persistent **Don't remind me** option

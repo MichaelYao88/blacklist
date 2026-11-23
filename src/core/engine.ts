@@ -2088,7 +2088,7 @@ export function createCore(content: Content): Core {
     }
 
     // Every finished encounter pays a prize. Solve gold drops with each guess:
-    // 8 for a one-guess solve, then 7, 6, 5 and 4. Bounty-style bonuses still
+    // 8 for a one-guess solve, then 7, 6, 5 and 4. Solve-gold bonuses still
     // add on top.
     let baseGold = 0;
     if (outcome === 'solved') {

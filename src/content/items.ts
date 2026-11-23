@@ -93,7 +93,7 @@ export function necronomiconPool(tier: number): Effect[][] {
       { type: 'castSpell', spell: 'omen' },
     ],
     [
-      necroProc(`Bounty — ${5 + 2 * scale} gold.`),
+      necroProc(`Goldbutter - ${5 + 2 * scale} gold.`),
       { type: 'gold', amount: 5 + 2 * scale },
     ],
     [
@@ -1032,26 +1032,6 @@ export const ITEMS: ItemDef[] = [
 
   // ── timer, shop and engine items ─────────────────────────────────────────
 
-  defineItem({
-    id: 'deadline',
-    name: 'Deadline',
-    description: 'As soon as the clock drops below 30s each round: +1 free guess.',
-    price: 8,
-    kind: 'gear',
-    requiresClock: true,
-    initial: { used: 0 },
-    on: {
-      onRoundStart: () => [{ type: 'setItemData', stat: 'used', value: 0 }],
-      onTimerTick: (ctx, p) => {
-        if (ctx.self.data.used) return [];
-        if (p.remainingMs === null || p.remainingMs >= 30_000) return [];
-        return [
-          { type: 'freeGuesses', count: 1 },
-          { type: 'setItemData', stat: 'used', value: 1 },
-        ];
-      },
-    },
-  }),
   defineItem({
     id: 'second-skin',
     name: 'Second Skin',
