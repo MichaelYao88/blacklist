@@ -1876,7 +1876,7 @@ function renderHelp(): string {
       </article>
       <article class="rule-card">
         <h3>Ascension</h3>
-        <p>Ascension only adds starting curses. Each level drafts one more curse before level 1, up to A20.</p>
+        <p>Ascension only adds starting curses. Each level drafts one more curse before level 1, up to A10.</p>
       </article>
       <article class="rule-card">
         <h3>Controls</h3>

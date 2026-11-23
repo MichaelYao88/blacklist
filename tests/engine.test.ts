@@ -243,7 +243,7 @@ describe('cursed run setup', () => {
     }
   });
 
-  it('opens a starting curse draft for Ascension 1 through 20', () => {
+  it('opens a starting curse draft for Ascension 1 through 10', () => {
     const one = start('asc1', 1);
     expect(one.state.phase).toBe('curse');
     expect(one.state.pendingStartingCurses).toBe(1);
@@ -256,14 +256,14 @@ describe('cursed run setup', () => {
       expect(view.phase.options).toHaveLength(2);
     }
 
-    const twenty = start('asc20', 20);
-    expect(twenty.state.ascension).toBe(20);
-    expect(twenty.state.pendingStartingCurses).toBe(20);
-    expect(game.view(twenty.state).phase.kind).toBe('curse');
+    const ten = start('asc10', 10);
+    expect(ten.state.ascension).toBe(10);
+    expect(ten.state.pendingStartingCurses).toBe(10);
+    expect(game.view(ten.state).phase.kind).toBe('curse');
 
-    const clamped = start('asc21', 21);
-    expect(clamped.state.ascension).toBe(20);
-    expect(clamped.state.pendingStartingCurses).toBe(20);
+    const clamped = start('asc11', 11);
+    expect(clamped.state.ascension).toBe(10);
+    expect(clamped.state.pendingStartingCurses).toBe(10);
   });
 });
 

@@ -32,7 +32,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Time Freeze** gives a free, unobscured guess that does not count towards solve-count items (Hat Trick, Bloom, Growth Spurt, etc.); the clock stays frozen until your next own guess, and autoguesses or friend guesses do not end it; Time Freeze and Immunity lock until your next guess
 - Within-X solve items count **player guesses only**; solve gold is a random 4-8, independent of guess count and auto-guesses
 - Curse Collector, Curse Bulwark and Reliquary trigger on gaining a curse ("Whenever you gain a curse: Gain …"). Curse Collector grants +6 max HP and heals 6
-- Ascension A1–A20 draft 1–20 starting curses
+- Ascension A1–A10 draft 1–10 starting curses
 - Shops with rerolls that start at 1g and double in price: three items, two foods and one wildcard; the wildcard is always food or a spell, never an item, and one random offer is always 50% off. When your item slots are full, one gear offer is replaced by food. **Shop Upgrade** permanently adds two more wildcards: one item/food/spell and one item/food
 - Every spell offered in a shop has a 4g base price; the half-price sale can land on it
 - Four item slots by default. Only equipped gear is active, and each shop has a drag-and-drop loadout
@@ -164,7 +164,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - Non-English keyboard layouts fall back to physical QWERTY key positions and show a one-time notice
 - Soundtrack opens every run on Dark Synthwave and rerolls to a random regular track every 7 levels (repeats allowed). Click the **MUSIC** control to cycle manually. More Power is reserved for bosses and is not in the carousel. Music sits below the SFX mix.
 
-Not in this version: daily seeds, Ascension above A20, dordle grids, Antiwordle, liar clues, Green Warden. The state and seed plumbing is already there for those.
+Not in this version: daily seeds, Ascension above A10, dordle grids, Antiwordle, liar clues, Green Warden. The state and seed plumbing is already there for those.
 
 ---
 
@@ -258,9 +258,9 @@ Ascension is only starting curses.
 |---|---|
 | A1 | Draft 1 extra curse before level 1 |
 | A2 | Draft 2 extra curses before level 1 |
-| A3–A20 | Draft 3–20 extra curses before level 1 |
+| A3–A10 | Draft 3–10 extra curses before level 1 |
 
-Beating a run unlocks the next Ascension, up to A20.
+Beating a run unlocks the next Ascension, up to A10.
 
 The answer pool excludes the blacklist, already-used answers and purged letters. If purging would leave no legal answer, the game restores a random purged letter and explains why.
 
