@@ -1096,6 +1096,22 @@ describe('shop curses', () => {
     expect(bought.state.pendingCurseRemoval).toBe(0);
   });
 
+  it('the Curse Broker only sells one thing per visit', () => {
+    const { state } = start();
+    state.curses.push({ id: 'censor', stacks: 1 });
+    state.phase = 'happening';
+    state.happening = { id: 'curse-broker', options: [] };
+    state.gold = 50;
+
+    const first = act(state, { type: 'choose', optionId: 'relic' });
+    expect(first.state.gold).toBe(38);
+    expect(first.state.happening?.resolved).toBeDefined();
+
+    const second = act(first.state, { type: 'choose', optionId: 'remove' });
+    expect(second.state.gold).toBe(38);
+    expect(second.state.curses).toHaveLength(1);
+  });
+
   it('Babification removes a curse and forces a starting-value penalty', () => {
     const event = HAPPENING_BY_ID.get('babification');
     expect(event?.options.map((option) => option.id)).toEqual(['slots', 'armor']);
