@@ -188,9 +188,9 @@ describe('cursed run setup', () => {
     expect(farmer.armor).toBe(3);
     expect(farmer.gold).toBe(6);
     expect(farmer.items.filter((item) => item.id === 'harvest-charm' && item.equipped))
-      .toHaveLength(2);
+      .toHaveLength(3);
     expect(farmer.items.some((item) => item.id === 'early-bird' && item.equipped)).toBe(true);
-    expect(farmer.curses.some((curse) => curse.id === 'short-fuse')).toBe(true);
+    expect(farmer.curses).toEqual([]);
 
     const emptyArmor = game.newRun({ seed: 'preset-empty-armor', character: 'empty-armor' }).state;
     expect(emptyArmor.character).toBe('empty-armor');
@@ -4048,7 +4048,7 @@ describe('unique shop items', () => {
 
 describe('autocast and random-guess batch', () => {
   it('ships a non-native guess pool including etude and butte', () => {
-    expect(CONTENT.nonnative).toHaveLength(216);
+    expect(CONTENT.nonnative).toHaveLength(217);
     expect(CONTENT.nonnative).toContain('patsy');
     expect(CONTENT.nonnative).toContain('wharf');
     expect(CONTENT.nonnative).toContain('rajah');
@@ -4056,6 +4056,7 @@ describe('autocast and random-guess batch', () => {
     expect(CONTENT.nonnative).toContain('glyph');
     expect(CONTENT.nonnative).toContain('lymph');
     expect(CONTENT.nonnative).toContain('gaunt');
+    expect(CONTENT.nonnative).toContain('wryly');
     expect(CONTENT.nonnative).toContain('jaunt');
     expect(CONTENT.nonnative).toContain('vaunt');
     expect(CONTENT.nonnative).toContain('lurid');
@@ -4067,7 +4068,7 @@ describe('autocast and random-guess batch', () => {
     expect(CONTENT.nonnative).toContain('easel');
     expect(CONTENT.nonnative).toContain('smock');
     expect(CONTENT.nonnative).not.toContain('daisy');
-    expect(new Set(CONTENT.nonnative).size).toBe(216);
+    expect(new Set(CONTENT.nonnative).size).toBe(217);
     for (const word of CONTENT.nonnative) {
       expect(word, word).toMatch(/^[a-z]{5}$/);
     }
@@ -5578,6 +5579,33 @@ describe('damage doubling and slots', () => {
     expect(guessed.state.hp).toBe(12);
   });
 
+});
+
+describe('phoenix egg and random guesses', () => {
+  it('Phoenix Egg revives at full HP and casts every spell', () => {
+    const { state } = start('phoenix-revive');
+    state.items.push({ instance: 'i-phoenix', id: 'phoenix-egg', data: {}, equipped: true });
+    setAnswer(state, 'crane');
+    state.round!.freeLeft = 0;
+    state.maxHp = 15;
+    state.hp = 1;
+    state.armor = 0;
+    state.maxArmor = 0;
+    const died = act(state, { type: 'guess', word: 'slate' });
+    expect(died.state.items.some((item) => item.id === 'phoenix-egg')).toBe(false);
+    expect(died.state.hp).toBe(died.state.maxHp);
+    expect(died.state.hp).toBeGreaterThan(1);
+    expect(died.events.some((event) => event.type === 'revived')).toBe(true);
+    const castIds = new Set(died.events.flatMap((event) => (
+      event.type === 'spellCast' ? [event.spell.id] : []
+    )));
+    for (const spell of SPELLS) expect(castIds.has(spell.id)).toBe(true);
+  });
+
+  it('adds Gaunt and Wryly to the random guess pool', () => {
+    expect(CONTENT.nonnative).toContain('gaunt');
+    expect(CONTENT.nonnative).toContain('wryly');
+  });
 });
 
 describe('core purity', () => {

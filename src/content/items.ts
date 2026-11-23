@@ -1,6 +1,7 @@
 import { defineItem, type Effect, type ItemDef } from '../core/types';
 import { isAllAbsent, sharedLetters, truthCounts } from '../core/score';
 import { FOODS } from './foods';
+import { SPELLS } from './spells';
 
 const SPELL_BITS: Record<string, number> = {
   'time-freeze': 1,
@@ -1574,14 +1575,14 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'phoenix-egg',
     name: 'Phoenix Egg',
-    description: 'First death: revive at 50% HP, autocast a free Restore. Consumed.',
+    description: 'First death: revive and autocast every spell. Consumed.',
     price: 18,
     kind: 'gear',
     rarity: 'rare',
     on: {
       onDeath: (ctx) => [
-        { type: 'revive', hp: Math.ceil(ctx.state.maxHp * 0.5) },
-        { type: 'castSpell', spell: 'restore' },
+        { type: 'revive', hp: ctx.state.maxHp },
+        ...SPELLS.map((spell) => ({ type: 'castSpell' as const, spell: spell.id })),
         { type: 'consumeSelf' },
       ],
     },
