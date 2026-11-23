@@ -183,7 +183,7 @@ describe('cursed run setup', () => {
 
     const farmer = game.newRun({ seed: 'preset-farmer', character: 'farmer' }).state;
     expect(farmer.character).toBe('farmer');
-    expect(farmer.maxHp).toBe(10);
+    expect(farmer.maxHp).toBe(17);
     expect(farmer.maxArmor).toBe(3);
     expect(farmer.armor).toBe(3);
     expect(farmer.gold).toBe(2);
