@@ -6,8 +6,8 @@
   --panel-2: #1d1729;
   --panel-3: #241d31;
   --ink: #eee8f7;
-  --muted: #9b91ad;
-  --faint: #6e657f;
+  --muted: #b3a8c4;
+  --faint: #8b809c;
   --line: #2d253b;
   --line-2: #3b3150;
   --gold: #e7b85a;
@@ -87,9 +87,9 @@ button {
 
 .kicker,
 .panel-kicker {
-  font-size: 0.64rem;
+  font-size: 0.66rem;
   font-weight: 800;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--faint);
   margin: 0;
@@ -123,16 +123,16 @@ button {
 .kw-tooltip {
   position: fixed;
   z-index: 120;
-  max-width: 264px;
-  padding: 9px 11px;
+  max-width: 324px;
+  padding: 10px 13px;
   border: 1px solid var(--line-2);
   border-radius: 8px;
   background: rgba(18, 14, 26, 0.98);
   color: var(--ink);
   font-family: var(--sans);
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 500;
-  line-height: 1.5;
+  line-height: 1.55;
   letter-spacing: 0;
   text-align: left;
   text-transform: none;
@@ -147,6 +147,11 @@ button {
 .kw-tooltip.visible {
   opacity: 1;
   transform: translateY(0);
+}
+
+[data-tip]:focus-visible {
+  outline: 2px solid rgba(231, 184, 90, 0.6);
+  outline-offset: 2px;
 }
 
 .warn {
@@ -165,14 +170,14 @@ button {
 .tag {
   display: inline-flex;
   align-items: center;
-  height: 18px;
+  height: 20px;
   padding: 0 6px;
   border: 1px solid var(--line-2);
   border-radius: 4px;
   color: var(--muted);
-  font-size: 0.55rem;
+  font-size: 0.6rem;
   font-weight: 800;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
 }
 
 .count {
@@ -193,7 +198,7 @@ button {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.01));
   color: var(--ink);
   padding: 10px 16px;
-  font-size: 0.74rem;
+  font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -243,8 +248,8 @@ button {
 
 .btn.tiny {
   padding: 6px 9px;
-  font-size: 0.6rem;
-  letter-spacing: 0.08em;
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
 }
 
 .btn.big {
@@ -364,15 +369,15 @@ button {
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.02);
   color: var(--muted);
-  font-size: 0.66rem;
+  font-size: 0.7rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   white-space: nowrap;
 }
 
 .chip-stat b {
   color: var(--ink);
-  font-size: 0.82rem;
+  font-size: 0.86rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -410,9 +415,9 @@ button {
 
 .music-kicker {
   color: var(--faint);
-  font-size: 0.5rem;
+  font-size: 0.56rem;
   font-weight: 800;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
 }
 
 .music-now {
@@ -440,9 +445,9 @@ button {
   border: 1px solid rgba(231, 184, 90, 0.4);
   border-radius: 4px;
   color: var(--gold);
-  font-size: 0.47rem;
+  font-size: 0.56rem;
   font-weight: 800;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
 }
 
 .music-mute {
@@ -497,13 +502,13 @@ button {
   border-left: 2px solid var(--line-2);
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.015);
-  font-size: 0.68rem;
-  line-height: 1.35;
+  font-size: 0.72rem;
+  line-height: 1.4;
 }
 
 .chronicle-level {
   color: var(--faint);
-  font-size: 0.55rem;
+  font-size: 0.6rem;
   font-weight: 700;
   letter-spacing: 0.08em;
 }
@@ -559,9 +564,9 @@ button {
   border: 1px solid rgba(223, 97, 90, 0.28);
   border-radius: 4px;
   color: #e79a95;
-  font-size: 0.58rem;
+  font-size: 0.62rem;
   font-weight: 800;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
 }
 
 .seedline {
@@ -624,17 +629,17 @@ button {
   border-radius: 4px;
   background: rgba(223, 97, 90, 0.12);
   color: #e48a84;
-  font-size: 0.52rem;
+  font-size: 0.58rem;
   font-weight: 800;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.06em;
 }
 
 .item-card p,
 .spell-card p {
   margin: 4px 0 6px;
   color: var(--muted);
-  font-size: 0.7rem;
-  line-height: 1.45;
+  font-size: 0.78rem;
+  line-height: 1.5;
 }
 
 .item-top {
@@ -660,7 +665,7 @@ button {
   border-radius: 3px;
   background: rgba(139, 107, 217, 0.12);
   color: #b9a3ee;
-  font-size: 0.56rem;
+  font-size: 0.6rem;
   font-weight: 700;
   letter-spacing: 0.05em;
 }
@@ -703,9 +708,9 @@ button {
 }
 
 .blacklist li span {
-  color: var(--faint);
-  font-size: 0.55rem;
-  letter-spacing: 0.06em;
+  color: var(--muted);
+  font-size: 0.6rem;
+  letter-spacing: 0.04em;
 }
 
 .blacklist li.empty {
@@ -743,10 +748,10 @@ button {
 }
 
 .reveal-chip em {
-  color: var(--faint);
+  color: var(--muted);
   font-style: normal;
-  font-size: 0.48rem;
-  letter-spacing: 0.08em;
+  font-size: 0.56rem;
+  letter-spacing: 0.05em;
 }
 
 .reveal-chip.present {
@@ -829,9 +834,9 @@ button {
 }
 
 .timer-label {
-  font-size: 0.56rem;
+  font-size: 0.6rem;
   font-weight: 800;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.14em;
   color: var(--faint);
 }
 
@@ -900,9 +905,9 @@ button {
   border: 1px solid var(--line);
   border-radius: 4px;
   color: var(--muted);
-  font-size: 0.56rem;
+  font-size: 0.6rem;
   font-weight: 800;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
 }
 
 .fact.danger {
@@ -977,10 +982,10 @@ button {
 
 .counts {
   margin: 4px 0 2px;
-  color: var(--faint);
-  font-size: 0.6rem;
+  color: var(--muted);
+  font-size: 0.64rem;
   text-align: center;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
 }
 
 .tile {
@@ -1004,8 +1009,8 @@ button {
   position: absolute;
   right: 4px;
   bottom: 3px;
-  font-size: 0.55rem;
-  opacity: 0.7;
+  font-size: 0.6rem;
+  opacity: 0.8;
 }
 
 .tile.correct {
@@ -1109,8 +1114,8 @@ button {
 .key.wide {
   flex: 1.5;
   max-width: 66px;
-  font-size: 0.58rem;
-  letter-spacing: 0.06em;
+  font-size: 0.64rem;
+  letter-spacing: 0.04em;
 }
 
 .key.enter {
@@ -1293,9 +1298,9 @@ button {
 .curse-card ul {
   margin: 0;
   padding-left: 18px;
-  color: var(--faint);
-  font-size: 0.72rem;
-  line-height: 1.45;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
 }
 
 .curse-card li::marker {
@@ -1305,9 +1310,9 @@ button {
 .curse-take {
   margin-top: auto;
   color: var(--gold);
-  font-size: 0.62rem;
+  font-size: 0.68rem;
   font-weight: 800;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
 }
 
 .curse-list {
@@ -1349,9 +1354,9 @@ button {
 
 .curse-chip span {
   margin-left: auto;
-  color: var(--faint);
-  font-size: 0.47rem;
-  letter-spacing: 0.1em;
+  color: var(--muted);
+  font-size: 0.56rem;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
@@ -1452,9 +1457,9 @@ button {
   margin: 0;
   color: var(--gold);
   font-family: var(--sans);
-  font-size: 0.64rem;
+  font-size: 0.68rem;
   font-weight: 800;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.12em;
 }
 
 .boss-rulebox ul {
@@ -1510,9 +1515,9 @@ button {
 .summary-facts span,
 .stats-grid span {
   display: block;
-  color: var(--faint);
-  font-size: 0.58rem;
-  letter-spacing: 0.1em;
+  color: var(--muted);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
@@ -1644,7 +1649,7 @@ button {
 .offer-card h3 {
   margin: 0;
   font-family: var(--serif);
-  font-size: 1.1rem;
+  font-size: 1.16rem;
   font-weight: 500;
 }
 
@@ -1652,8 +1657,8 @@ button {
   margin: 0;
   flex: 1;
   color: var(--muted);
-  font-size: 0.74rem;
-  line-height: 1.45;
+  font-size: 0.82rem;
+  line-height: 1.5;
 }
 
 .offer-card .btn {
@@ -1703,8 +1708,8 @@ button {
 
 .offer-card .btn s {
   margin-right: 4px;
-  color: var(--faint);
-  font-size: 0.65rem;
+  color: var(--muted);
+  font-size: 0.7rem;
   font-weight: 600;
 }
 
@@ -1846,8 +1851,8 @@ button {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  color: var(--faint);
-  font-size: 0.65rem;
+  color: var(--muted);
+  font-size: 0.7rem;
 }
 
 .resolution {
@@ -1963,9 +1968,9 @@ button {
 
 .unlock-kit {
   margin: 0 0 18px;
-  color: var(--faint);
-  font-size: 0.66rem;
-  letter-spacing: 0.04em;
+  color: var(--muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.03em;
 }
 
 @keyframes unlock-pop {
@@ -2028,9 +2033,9 @@ button {
 
 .over-answer-label {
   color: #e79a95;
-  font-size: 0.58rem;
+  font-size: 0.62rem;
   font-weight: 800;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.14em;
 }
 
 .over-answer b {
@@ -2218,9 +2223,9 @@ button {
 
 .character-current {
   color: var(--gold);
-  font-size: 0.62rem;
+  font-size: 0.66rem;
   font-weight: 800;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
@@ -2277,9 +2282,9 @@ button {
 .character-tagline {
   color: var(--gold-soft);
   font-family: var(--serif);
-  font-size: 0.64rem;
+  font-size: 0.72rem;
   font-style: italic;
-  line-height: 1.25;
+  line-height: 1.3;
 }
 
 .character-card.active .character-name {
@@ -2289,16 +2294,15 @@ button {
 .character-stats,
 .character-kit,
 .character-lock {
-  font-size: 0.52rem;
+  font-size: 0.62rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  line-height: 1.35;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
 }
 
 .character-kit {
-  color: var(--faint);
+  color: var(--muted);
   font-weight: 500;
-  letter-spacing: 0.04em;
 }
 
 .character-card.locked {
@@ -2326,9 +2330,9 @@ button {
 
 .ascension-current {
   color: var(--gold, #e7b85a);
-  font-size: 0.62rem;
+  font-size: 0.66rem;
   font-weight: 800;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.1em;
 }
 
 .ascension-levels {
@@ -2366,8 +2370,8 @@ button {
 
 .ascension-note {
   margin: 9px 0 0;
-  color: var(--faint);
-  font-size: 0.68rem;
+  color: var(--muted);
+  font-size: 0.72rem;
   line-height: 1.5;
 }
 
@@ -2394,9 +2398,9 @@ button {
 }
 
 .title-facts span {
-  color: var(--faint);
-  font-size: 0.6rem;
-  letter-spacing: 0.13em;
+  color: var(--muted);
+  font-size: 0.64rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -2482,9 +2486,9 @@ button {
 }
 
 .stats-hero span {
-  color: var(--faint);
-  font-size: 0.55rem;
-  letter-spacing: 0.13em;
+  color: var(--muted);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -2597,9 +2601,9 @@ button {
 
 .history-result {
   color: var(--red);
-  font-size: 0.58rem;
+  font-size: 0.62rem;
   font-weight: 800;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
 }
 
 .history-row.victory .history-result {
@@ -2621,8 +2625,8 @@ button {
 }
 
 .history-row time {
-  color: var(--faint);
-  font-size: 0.6rem;
+  color: var(--muted);
+  font-size: 0.64rem;
   white-space: nowrap;
 }
 
@@ -2835,9 +2839,9 @@ button {
 }
 
 .spell-popup-tag {
-  font-size: 0.58rem;
+  font-size: 0.62rem;
   font-weight: 700;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.12em;
   color: var(--gold-soft);
   border-left: 1px solid rgba(231, 184, 90, 0.4);
   padding-left: 10px;
@@ -2913,9 +2917,9 @@ button {
 
 .rail-level-value i {
   margin-left: 2px;
-  color: var(--faint);
+  color: var(--muted);
   font-family: var(--sans);
-  font-size: 0.56rem;
+  font-size: 0.6rem;
   font-style: normal;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -3039,8 +3043,8 @@ button {
 }
 
 .battle-rail .timer-label {
-  font-size: 0.5rem;
-  letter-spacing: 0.15em;
+  font-size: 0.56rem;
+  letter-spacing: 0.12em;
 }
 
 .guess-damage {
@@ -3056,10 +3060,10 @@ button {
 }
 
 .guess-damage-label {
-  color: var(--faint);
-  font-size: 0.66rem;
+  color: var(--muted);
+  font-size: 0.7rem;
   font-weight: 800;
-  letter-spacing: 0.09em;
+  letter-spacing: 0.07em;
   line-height: 1.1;
 }
 
@@ -3326,10 +3330,10 @@ button {
 }
 
 .mini-label {
-  color: var(--faint);
-  font-size: 0.44rem;
+  color: var(--muted);
+  font-size: 0.56rem;
   font-weight: 800;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.1em;
 }
 
 .mini-center {
@@ -3342,9 +3346,9 @@ button {
 
 .mini-phase {
   color: var(--gold);
-  font-size: 0.45rem;
+  font-size: 0.58rem;
   font-weight: 800;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   white-space: nowrap;
 }
 
@@ -3429,8 +3433,8 @@ button {
 }
 
 .mini-player .armor-text {
-  font-size: 0.6rem;
-  letter-spacing: 0.06em;
+  font-size: 0.64rem;
+  letter-spacing: 0.05em;
 }
 
 .mini-arena .boss-state {
@@ -3442,18 +3446,18 @@ button {
 
 .mini-arena .boss-state span {
   padding: 2px 5px;
-  font-size: 0.46rem;
-  letter-spacing: 0.08em;
+  font-size: 0.56rem;
+  letter-spacing: 0.06em;
 }
 
 .threat-tag {
-  padding: 1px 6px;
+  padding: 2px 6px;
   border: 1px solid var(--line-2);
   border-radius: 999px;
   color: var(--muted);
-  font-size: 0.44rem;
+  font-size: 0.54rem;
   font-weight: 800;
-  letter-spacing: 0.13em;
+  letter-spacing: 0.08em;
   white-space: nowrap;
 }
 
@@ -3465,8 +3469,8 @@ button {
 
 .mini-facts .fact {
   padding: 3px 6px;
-  font-size: 0.5rem;
-  letter-spacing: 0.07em;
+  font-size: 0.56rem;
+  letter-spacing: 0.05em;
 }
 
 /* phone a friend phrase spam */
@@ -3851,9 +3855,9 @@ button {
   border: 1px solid rgba(231, 184, 90, 0.3);
   border-radius: 999px;
   color: var(--gold);
-  font-size: 0.47rem;
+  font-size: 0.56rem;
   font-weight: 800;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   white-space: nowrap;
 }
 
@@ -3993,10 +3997,10 @@ button {
 }
 
 .armor-text {
-  color: var(--faint);
-  font-size: 0.64rem;
+  color: var(--muted);
+  font-size: 0.68rem;
   font-weight: 800;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   white-space: nowrap;
   border-bottom: 1px dotted rgba(231, 184, 90, 0.45);
 }
@@ -4263,9 +4267,9 @@ button {
 
 .countdown-label {
   color: var(--muted);
-  font-size: 0.6rem;
+  font-size: 0.66rem;
   font-weight: 800;
-  letter-spacing: 0.28em;
+  letter-spacing: 0.2em;
 }
 
 @keyframes countdown-pop {
@@ -4311,8 +4315,8 @@ button {
   min-height: 44px;
   border: 1px dashed var(--line);
   border-radius: 7px;
-  color: var(--faint);
-  font-size: 0.5rem;
+  color: var(--muted);
+  font-size: 0.56rem;
   font-weight: 800;
   letter-spacing: 0.16em;
 }
@@ -4372,7 +4376,7 @@ button {
 
 .bag-zone .empty-note {
   margin: 6px 0 0;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
 }
 
 .stack-badge {
@@ -4380,7 +4384,7 @@ button {
   border: 1px solid rgba(139, 107, 217, 0.45);
   border-radius: 999px;
   color: #c8b6f2;
-  font-size: 0.6rem;
+  font-size: 0.64rem;
   font-weight: 800;
 }
 
@@ -4391,9 +4395,9 @@ button {
 
 .bag-note {
   margin: 0;
-  color: var(--faint);
-  font-size: 0.6rem;
-  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-size: 0.64rem;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
@@ -4832,6 +4836,10 @@ button {
 }
 
 @media (max-width: 620px) {
+  :root {
+    font-size: 17px;
+  }
+
   #immunity-root {
     top: 118px;
   }
@@ -4891,7 +4899,7 @@ button {
   }
 
   .key.wide {
-    font-size: 0.5rem;
+    font-size: 0.56rem;
   }
 
   .offer-grid {
