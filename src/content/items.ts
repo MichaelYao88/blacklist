@@ -577,7 +577,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'untouchable',
     name: 'Untouchable',
-    description: 'Solve without damage: Restore.',
+    description: 'Solve without taking a hit: Restore.',
     price: 9,
     kind: 'gear',
     on: {
