@@ -183,12 +183,14 @@ describe('cursed run setup', () => {
 
     const farmer = game.newRun({ seed: 'preset-farmer', character: 'farmer' }).state;
     expect(farmer.character).toBe('farmer');
-    expect(farmer.maxHp).toBe(30);
+    expect(farmer.maxHp).toBe(10);
     expect(farmer.maxArmor).toBe(3);
     expect(farmer.armor).toBe(3);
     expect(farmer.gold).toBe(6);
-    expect(farmer.items.some((item) => item.id === 'harvest-charm' && item.equipped)).toBe(true);
-    expect(farmer.curses).toEqual([]);
+    expect(farmer.items.filter((item) => item.id === 'harvest-charm' && item.equipped))
+      .toHaveLength(2);
+    expect(farmer.items.some((item) => item.id === 'early-bird' && item.equipped)).toBe(true);
+    expect(farmer.curses.some((curse) => curse.id === 'short-fuse')).toBe(true);
 
     const emptyArmor = game.newRun({ seed: 'preset-empty-armor', character: 'empty-armor' }).state;
     expect(emptyArmor.character).toBe('empty-armor');
