@@ -2506,12 +2506,12 @@ function renderSidePanel(view: RunView): string {
 
   return `
   <aside class="panel side-panel">
+    <section class="floorplan-panel">
+      ${renderLevelBadge(view)}
+    </section>
     <section>
       <div class="panel-head"><span class="panel-kicker">SPELLS</span><span class="count">${view.spells.length}</span></div>
       <div class="spell-list">${spells}</div>
-    </section>
-    <section class="floorplan-panel">
-      ${renderLevelBadge(view)}
     </section>
     <section>
       <div class="panel-head"><span class="panel-kicker">CURSES</span><span class="count">${view.curses.length}</span></div>

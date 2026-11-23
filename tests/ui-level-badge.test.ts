@@ -88,8 +88,8 @@ describe('persistent level display', () => {
     expect(root.querySelector('.shop-rail')).not.toBeNull();
     expect(root.querySelector('.side-panel .floorplan-panel .rail-level')).not.toBeNull();
     const sideSections = [...root.querySelectorAll<HTMLElement>('.side-panel > section')];
-    expect(sideSections[0]?.textContent).toContain('SPELLS');
-    expect(sideSections[1]?.classList.contains('floorplan-panel')).toBe(true);
+    expect(sideSections[0]?.classList.contains('floorplan-panel')).toBe(true);
+    expect(sideSections[1]?.textContent).toContain('SPELLS');
     expect(sideSections[2]?.textContent).toContain('CURSES');
     expect(root.querySelector('.shop-rail .panel-kicker')?.textContent).toBe('SHOP');
     expect(root.querySelector('.shop-rail-gold')).not.toBeNull();
