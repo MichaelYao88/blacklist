@@ -1793,9 +1793,10 @@ export const ITEMS: ItemDef[] = [
       if (ctx.state.gold < 1) {
         return [{ type: 'message', text: 'You need 1 gold for a cracker.' }];
       }
+      // 49% asks for a cracker, 49% gives a normal clue, 2% gives the stupid-cracker line.
       const roll = rngInt(ctx.state, 100);
-      const gave = roll <= 60;
-      const stupid = roll === 0;
+      const gave = roll <= 50;
+      const stupid = roll <= 1;
       return [
         { type: 'gold', amount: -1 },
         ...parrotSchedule(ctx, gave ? 1 : 0),

@@ -180,7 +180,7 @@ describe('Evil Parrot', () => {
     expect(suggestions + refusals).toBe(120);
   });
 
-  it('gives the 1% stupid-cracker suggestion', () => {
+  it('gives the 2% stupid-cracker suggestion', () => {
     const used = bribeWithRng(35);
     expect(used.state.gold).toBe(4);
     const event = suggestionEventOf(used.events);
@@ -193,7 +193,23 @@ describe('Evil Parrot', () => {
     expect(gap).toBeLessThanOrEqual(61_000);
   });
 
-  it('gives a normal suggestion on the 60% band', () => {
+  it('rolls the exact 49/49/2 bands', () => {
+    const stupid = bribeWithRng(7); // roll 1
+    expect(suggestionEventOf(stupid.events)?.flavor).toBe('stupid-cracker');
+
+    const firstNormal = bribeWithRng(183); // roll 2
+    expect(suggestionEventOf(firstNormal.events)?.flavor).toBeUndefined();
+
+    const lastNormal = bribeWithRng(10); // roll 50
+    expect(suggestionEventOf(lastNormal.events)?.flavor).toBeUndefined();
+
+    const refusal = bribeWithRng(11); // roll 51
+    expect(suggestionEventOf(refusal.events)).toBeUndefined();
+    expect(sayingOf(refusal.events))
+      .toBe('buy me another cracker, then maybe I\'ll tell you');
+  });
+
+  it('gives a normal suggestion on the 49% band', () => {
     const used = bribeWithRng(200);
     expect(used.state.gold).toBe(4);
     const event = suggestionEventOf(used.events);
@@ -202,7 +218,7 @@ describe('Evil Parrot', () => {
     expect(parrot(used.state)?.data._suggestions).toBe(1);
   });
 
-  it('asks for another cracker on the 39% band', () => {
+  it('asks for another cracker on the 49% band', () => {
     const used = bribeWithRng(315);
     expect(used.state.gold).toBe(4);
     expect(suggestionEventOf(used.events)).toBeUndefined();
