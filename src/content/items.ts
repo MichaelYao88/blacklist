@@ -1745,7 +1745,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'evil-parrot',
     name: 'Evil Parrot',
-    description: 'Randomly suggests possible words.',
+    description: 'Randomly suggests possible words. Relying on it too much might come at a cost...',
     price: 16,
     kind: 'gear',
     slots: 1,

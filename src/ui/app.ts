@@ -33,7 +33,7 @@ import {
   trackRunResumed,
   trackRunStarted,
 } from './analytics';
-import { escapeHtml, formatTime, reasonText, roman } from './format';
+import { escapeHtml, formatTime, parrotLine, reasonText, roman } from './format';
 import { ARMOR_TIP, PURGED_TIP, glossaryText } from './glossary';
 import { groupProcChanges, type ProcFlyGroup } from './procRewards';
 import {
@@ -206,10 +206,11 @@ document.body.appendChild(parrotRoot);
 let parrotTimer: number | undefined;
 
 function showParrotPopup(word: string): void {
+  const line = escapeHtml(parrotLine(word));
   parrotRoot.innerHTML = `<div class="parrot-pop">
     <span class="parrot-emoji" aria-hidden="true">🦜</span>
     <span class="parrot-kicker">EVIL PARROT</span>
-    <b class="parrot-word">${escapeHtml(word.toUpperCase())}</b>
+    <span class="parrot-line">${line}</span>
   </div>`;
   if (parrotTimer) window.clearTimeout(parrotTimer);
   parrotTimer = window.setTimeout(() => {
@@ -281,7 +282,7 @@ const spellPopupTimers = new Map<number, number>();
 let spellReleaseTimer: number | undefined;
 let spellPopupSeq = 0;
 const POPUP_GAP_MS = 2_000;
-const POPUP_EXTRA_MS = 3_000;
+const POPUP_EXTRA_MS = 2_000;
 const SPELL_POPUP_TTL = POPUP_GAP_MS + POPUP_EXTRA_MS;
 
 function showSpellPopup(spellId: string, auto: boolean): void {
@@ -529,7 +530,7 @@ let procPending: ProcEntry[] = [];
 const procTimers = new Map<number, number>();
 let procReleaseTimer: number | undefined;
 let procSeq = 0;
-const PROC_TTL = 7_800 + POPUP_EXTRA_MS;
+const PROC_TTL = SPELL_POPUP_TTL;
 const PROC_MAX = 4;
 
 function renderProcFeed(): void {
@@ -537,7 +538,7 @@ function renderProcFeed(): void {
     const def = ITEM_BY_ID.get(entry.itemId);
     const name = escapeHtml(def?.name ?? entry.itemId);
     const count = entry.count > 1 ? ` ×${entry.count}` : '';
-    return `<div class="proc-pop" data-proc-id="${entry.id}">
+    return `<div class="proc-pop" data-proc-id="${entry.id}" style="--proc-ttl:${PROC_TTL}ms">
       <span class="proc-icon" aria-hidden="true">${itemIcon(entry.itemId)}</span>
       <span class="proc-text"><b>${name}</b><span>${escapeHtml(entry.text)}${count}</span></span>
     </div>`;
@@ -2696,6 +2697,7 @@ function renderItem(view: RunView, item: ItemView): string {
     .filter(([key, value]) => (
       (value !== 0 || key === 'fed')
       && !key.startsWith('_')
+      && key !== 'readyAt'
       && key !== 'used'
       && key !== 'paid'
     ))

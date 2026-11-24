@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { chooseParrotWord, possibleWords } from '../src/core/parrot';
 import { ITEM_BY_ID } from '../src/content';
 import { glossaryText } from '../src/ui/glossary';
+import { parrotLine } from '../src/ui/format';
 
 const empty = {
   presentHints: [],
@@ -75,6 +76,11 @@ describe('Evil Parrot word filter', () => {
     const html = glossaryText(ITEM_BY_ID.get('evil-parrot')?.description ?? '');
     expect(html).toContain('data-tip');
     expect(html).toContain('green and yellow');
+  });
+
+  it('alternates between try and squawk in the popup', () => {
+    expect(parrotLine('crane', 0.1)).toBe('try CRANE');
+    expect(parrotLine('crane', 0.9)).toBe('squawk CRANE squawk');
   });
 
   it('lies when there is a choice and tells the truth when there is only one', () => {

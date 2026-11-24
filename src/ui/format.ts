@@ -21,6 +21,11 @@ export function formatTime(ms: number | null): string {
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
+export function parrotLine(word: string, roll: number = Math.random()): string {
+  const upper = word.toUpperCase();
+  return roll < 0.5 ? `try ${upper}` : `squawk ${upper} squawk`;
+}
+
 export function roman(value: number): string {
   const numerals: Array<[number, string]> = [
     [10, 'X'],
