@@ -15,10 +15,11 @@ const SPELL_BITS: Record<string, number> = {
 
 const FOOD_BITS = new Map(FOODS.map((food, index) => [food.id, index]));
 
-/** Evil Parrot: schedule the next suggestion 30–60 seconds from now. */
-function parrotSchedule(ctx: ItemCtx): Effect[] {
+/** Evil Parrot: schedule the next suggestion 30–60 seconds out, plus 1s per past suggestion. */
+function parrotSchedule(ctx: ItemCtx, extraSuggestions = 0): Effect[] {
   const elapsed = ctx.state.round?.elapsedMs ?? 0;
-  const delay = 30_000 + rngInt(ctx.state, 30_001);
+  const count = (ctx.self.data.suggestions ?? 0) + extraSuggestions;
+  const delay = (30 + count) * 1_000 + rngInt(ctx.state, 30_001);
   return [{ type: 'setItemData', stat: 'readyAt', value: elapsed + delay }];
 }
 
@@ -1751,20 +1752,28 @@ export const ITEMS: ItemDef[] = [
     slots: 1,
     unique: true,
     noSpawn: true,
-    initial: { readyAt: 0 },
+    initial: { readyAt: 0, suggestions: 0 },
     onAcquire: parrotSchedule,
     on: {
-      onRoundStart: parrotSchedule,
+      onRoundStart: (ctx) => parrotSchedule(ctx),
       onGuessScored: (ctx, p) => (p.guess.by === 'player' ? parrotSchedule(ctx) : []),
       onTimerTick: (ctx, p) => {
         if (!ctx.state.round) return [];
         const readyAt = ctx.self.data.readyAt ?? 0;
         if (readyAt <= 0) return parrotSchedule(ctx);
         if (p.elapsedMs < readyAt) return [];
-        return [...parrotSchedule(ctx), { type: 'parrotSuggest' }];
+        return [
+          {
+            type: 'setItemData',
+            stat: 'suggestions',
+            value: (ctx.self.data.suggestions ?? 0) + 1,
+          },
+          ...parrotSchedule(ctx, 1),
+          { type: 'parrotSuggest' },
+        ];
       },
     },
-    sellValue: () => 8,
+    sellValue: (ctx) => Math.max(0, 8 - (ctx.self.data.suggestions ?? 0)),
   }),
   defineItem({
     id: 'piggy-bank',

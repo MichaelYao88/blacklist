@@ -2698,6 +2698,7 @@ function renderItem(view: RunView, item: ItemView): string {
       (value !== 0 || key === 'fed')
       && !key.startsWith('_')
       && key !== 'readyAt'
+      && key !== 'suggestions'
       && key !== 'used'
       && key !== 'paid'
     ))

@@ -74,6 +74,41 @@ describe('Evil Parrot', () => {
     expect(after?.data.readyAt).toBeGreaterThanOrEqual(30_000);
   });
 
+  it('counts suggestions, losing 1 gold of sale value each until the floor of 0', () => {
+    const { state } = game.newRun({ seed: 'parrot-count', character: 'runner' });
+    state.round!.remainingMs = null;
+    state.round!.elapsedMs = 0;
+    state.round!.answer = 'crane';
+    parrot(state)!.data.readyAt = 1;
+
+    const ticked = game.step(state, { type: 'tick', dtMs: 2 });
+    expect(suggestionOf(ticked.events)).not.toBeNull();
+    const item = parrot(ticked.state)!;
+    expect(item.data.suggestions).toBe(1);
+    expect(game.view(ticked.state).items
+      .find((entry) => entry.id === 'evil-parrot')?.sellValue).toBe(7);
+
+    const gap = item.data.readyAt - (ticked.state.round?.elapsedMs ?? 0);
+    expect(gap).toBeGreaterThanOrEqual(31_000);
+    expect(gap).toBeLessThanOrEqual(61_000);
+
+    item.data.suggestions = 20;
+    expect(game.view(ticked.state).items
+      .find((entry) => entry.id === 'evil-parrot')?.sellValue).toBe(0);
+  });
+
+  it('adds a second to the gap for every suggestion already given', () => {
+    const { state } = game.newRun({ seed: 'parrot-gap', character: 'runner' });
+    state.round!.answer = 'crane';
+    state.round!.elapsedMs = 0;
+    parrot(state)!.data.suggestions = 5;
+
+    const guessed = game.step(state, { type: 'guess', word: 'slate' });
+    const readyAt = parrot(guessed.state)?.data.readyAt ?? 0;
+    expect(readyAt).toBeGreaterThanOrEqual(35_000);
+    expect(readyAt).toBeLessThanOrEqual(65_000);
+  });
+
   it('does nothing while in the bag', () => {
     const { state } = game.newRun({ seed: 'parrot-bag', character: 'runner' });
     state.round!.remainingMs = null;

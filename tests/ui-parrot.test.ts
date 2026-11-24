@@ -10,6 +10,7 @@ describe('Evil Parrot item card', () => {
     const { state } = game.newRun({ seed: 'parrot-ui', character: 'runner' });
     const parrot = state.items.find((item) => item.id === 'evil-parrot');
     parrot!.data.readyAt = 45_000;
+    parrot!.data.suggestions = 3;
     localStorage.setItem('blacklist.run.v1', game.serialize(state));
 
     document.body.innerHTML = '<div id="app"></div>';
@@ -18,12 +19,13 @@ describe('Evil Parrot item card', () => {
     root.querySelector<HTMLElement>('[data-action="resume"]')!.click();
   });
 
-  it('hides the internal readyAt timer chip', () => {
+  it('hides the internal readyAt and suggestion counters', () => {
     const card = [...root.querySelectorAll<HTMLElement>('.item-card')]
       .find((entry) => entry.textContent?.includes('Evil Parrot')) ?? null;
     expect(card).not.toBeNull();
     expect(card?.textContent).not.toContain('readyAt');
     expect(card?.textContent).not.toContain('45000');
+    expect(card?.textContent).not.toContain('suggestions');
   });
 
   it('describes the cost of relying on it', () => {
