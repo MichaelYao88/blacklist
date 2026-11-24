@@ -60,8 +60,11 @@ export const CURSES: CurseDef[] = [
   defineCurse({
     id: 'vowel-fog',
     name: 'Vowel Fog',
-    description: 'A, E, I, O and U are ambiguous silver when present.',
-    rules: ['A, E, I, O and U never show green or yellow.'],
+    description: 'A, E, I, O and U appear silver when they are in the answer.',
+    rules: [
+      'A vowel is silver whenever it appears anywhere in the answer.',
+      'You know the letter is in the word, but not where it sits.',
+    ],
     art: 'vowel-fog',
     tags: ['vision'],
     rarity: 'rare',
@@ -115,8 +118,11 @@ export const CURSES: CurseDef[] = [
   defineCurse({
     id: 'rip-curse',
     name: 'RIP Curse',
-    description: 'R, I and P are ambiguous silver when present.',
-    rules: ['R, I and P never show green or yellow.'],
+    description: 'R, I and P appear silver when they are in the answer.',
+    rules: [
+      'R, I or P is silver whenever it appears anywhere in the answer.',
+      'You know the letter is in the word, but not where it sits.',
+    ],
     art: 'editor',
     tags: ['vision'],
     rarity: 'rare',
