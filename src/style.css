@@ -4431,112 +4431,80 @@ button {
 
 /* shop loadout */
 
-.loadout {
-  margin-top: 18px;
-  padding-top: 16px;
-  border-top: 1px solid var(--line);
-  text-align: left;
+.loadout-hint {
+  margin: 0 0 8px;
 }
 
-.loadout-head {
+.loadout-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.loadout-list.scrollable {
+  max-height: 18rem;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-2) transparent;
+  overscroll-behavior: contain;
+}
+
+.loadout-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.loadout-group-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 8px;
+  padding: 0 2px;
 }
 
-.loadout .hint {
-  margin: 4px 0 10px;
-}
-
-.slot-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
-  gap: 7px;
-  min-height: 58px;
-  padding: 7px;
-  border: 1px dashed var(--line-2);
-  border-radius: 9px;
-  background: rgba(255, 255, 255, 0.014);
-}
-
-.slot-socket {
-  display: grid;
-  place-items: center;
-  min-height: 44px;
-  border: 1px dashed var(--line);
-  border-radius: 7px;
-  color: var(--muted);
-  font-size: 0.56rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-}
-
-.loadout-chip {
+.loadout-row {
   display: flex;
   align-items: center;
-  gap: 7px;
-  min-height: 44px;
-  padding: 7px 9px;
-  border: 1px solid rgba(231, 184, 90, 0.35);
-  border-radius: 7px;
-  background: linear-gradient(180deg, rgba(231, 184, 90, 0.1), rgba(255, 255, 255, 0.015));
-  color: var(--ink);
+  gap: 6px;
+  padding: 4px 7px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
   cursor: grab;
   user-select: none;
-  transition: border-color 120ms ease, transform 120ms ease;
+  transition: border-color 120ms ease;
 }
 
-.loadout-chip:hover {
-  border-color: var(--gold);
-  transform: translateY(-1px);
+.loadout-row:hover {
+  border-color: rgba(231, 184, 90, 0.5);
 }
 
-.loadout-chip.bagged {
-  border-color: var(--line-2);
-  background: rgba(255, 255, 255, 0.02);
-  opacity: 0.85;
+.loadout-row.bagged {
+  border-style: dashed;
+  opacity: 0.72;
 }
 
-.loadout-chip.dragging {
+.loadout-row.dragging {
   opacity: 0.4;
 }
 
-.loadout-chip b {
+.loadout-row b {
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.loadout-chip .chip-sell {
+.loadout-row .item-sell {
   flex: 0 0 auto;
-  padding: 4px 7px;
-  font-size: 0.56rem;
-  letter-spacing: 0.04em;
-}
-
-.bag-zone {
-  margin-top: 9px;
-  padding: 8px;
-  border: 1px dashed var(--line-2);
-  border-radius: 9px;
-  background: rgba(0, 0, 0, 0.12);
-}
-
-.bag-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
-  gap: 7px;
-  margin-top: 7px;
-}
-
-.bag-zone .empty-note {
-  margin: 6px 0 0;
-  font-size: 0.72rem;
+  padding: 2px 5px;
+  font-size: 0.52rem;
+  letter-spacing: 0.03em;
 }
 
 .stack-badge {

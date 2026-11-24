@@ -2,12 +2,16 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { game } from '../src/game';
 
-function itemCard(root: HTMLElement, name: string): HTMLElement | null {
-  return [...root.querySelectorAll<HTMLElement>('.item-card')]
+function row(root: HTMLElement, name: string): HTMLElement | null {
+  return [...root.querySelectorAll<HTMLElement>('.loadout-row')]
     .find((entry) => entry.textContent?.includes(name)) ?? null;
 }
 
-describe('shop item selling', () => {
+function rows(root: HTMLElement): HTMLElement[] {
+  return [...root.querySelectorAll<HTMLElement>('.loadout-row')];
+}
+
+describe('compact shop loadout', () => {
   let root: HTMLElement;
 
   beforeAll(async () => {
@@ -19,6 +23,8 @@ describe('shop item selling', () => {
       { instance: 'i-piggy', id: 'piggy-bank', data: {}, equipped: true },
       { instance: 'i-brace', id: 'brace', data: {}, equipped: true },
       { instance: 'i-bloom', id: 'bloom', data: {}, equipped: true },
+      { instance: 'i-bird', id: 'early-bird', data: {}, equipped: false },
+      { instance: 'i-head', id: 'head-start', data: {}, equipped: false },
     );
     state.slots = 8;
     state.phase = 'shop';
@@ -39,23 +45,28 @@ describe('shop item selling', () => {
     root.querySelector<HTMLElement>('[data-action="resume"]')!.click();
   });
 
-  it('puts a sell button on each loadout item and drops the bottom list', () => {
+  it('renders a compact ranked list with sell buttons', () => {
     expect(root.querySelector('.sell-box')).toBeNull();
-    const chips = [...root.querySelectorAll<HTMLElement>('.loadout-chip')];
-    expect(chips).toHaveLength(6);
-    for (const chip of chips) {
-      const sell = chip.querySelector<HTMLElement>('[data-action="sell"]');
-      expect(sell).not.toBeNull();
-      expect(sell?.textContent).toContain('SELL');
+    expect(root.querySelector('.phase-card.shop .loadout')).toBeNull();
+
+    const list = rows(root);
+    expect(list).toHaveLength(8);
+    expect(list.slice(0, 6).every((entry) => entry.classList.contains('equipped')))
+      .toBe(true);
+    expect(list.slice(6).every((entry) => entry.classList.contains('bagged')))
+      .toBe(true);
+    for (const entry of list) {
+      expect(entry.querySelector('[data-action="sell"]')).not.toBeNull();
+      expect(entry.getAttribute('draggable')).toBe('true');
+      expect(entry.dataset.item).toBeTruthy();
     }
-    const turtle = chips.find((chip) => chip.textContent?.includes('Turtle Shell'));
-    expect(turtle?.querySelector<HTMLElement>('[data-action="sell"]')?.dataset.id)
+    expect(row(root, 'Turtle Shell')
+      ?.querySelector<HTMLElement>('[data-action="sell"]')?.dataset.id)
       .toBe('i-hour');
   });
 
-  it('keeps item tooltips on the sellable chips', () => {
-    const turtle = [...root.querySelectorAll<HTMLElement>('.loadout-chip')]
-      .find((entry) => entry.textContent?.includes('Turtle Shell')) ?? null;
+  it('keeps item tooltips on the compact rows', () => {
+    const turtle = row(root, 'Turtle Shell');
     expect(turtle?.dataset.tip).toContain('reduced by 50%');
 
     turtle!.dispatchEvent(new Event('pointermove', { bubbles: true }));
@@ -64,26 +75,29 @@ describe('shop item selling', () => {
     expect(tip?.textContent).toContain('reduced by 50%');
   });
 
-  it('scrolls the items panel when more than five are equipped', () => {
-    expect(root.querySelector('.item-list')?.classList.contains('scrollable'))
+  it('scrolls the loadout list when it holds more than five items', () => {
+    expect(root.querySelector('.loadout-list')?.classList.contains('scrollable'))
       .toBe(true);
   });
 
-  it('disables fight-only abilities outside a round', () => {
-    for (const name of ['Evil Parrot', 'Necronomicon']) {
-      const button = itemCard(root, name)
-        ?.querySelector<HTMLElement>('[data-action="use"]');
-      expect(button, name).not.toBeNull();
-      expect(button?.hasAttribute('disabled'), name).toBe(true);
-    }
+  it('equips a bagged row by clicking it and keeps ranks ordered', () => {
+    const bird = row(root, 'Early Bird');
+    expect(bird?.dataset.action).toBe('equip');
+    bird!.click();
+
+    const refreshed = row(root, 'Early Bird');
+    expect(refreshed?.dataset.action).toBe('unequip');
+    expect(refreshed?.classList.contains('equipped')).toBe(true);
+    const list = rows(root);
+    const firstBag = list.findIndex((entry) => entry.classList.contains('bagged'));
+    expect(firstBag).toBeGreaterThan(0);
+    expect(list.slice(firstBag).every((entry) => entry.classList.contains('bagged')))
+      .toBe(true);
   });
 
-  it('sells from the item chip', () => {
-    const chip = [...root.querySelectorAll<HTMLElement>('.loadout-chip')]
-      .find((entry) => entry.textContent?.includes('Turtle Shell')) ?? null;
-    chip?.querySelector<HTMLElement>('[data-action="sell"]')!.click();
-    const remaining = [...root.querySelectorAll<HTMLElement>('.loadout-chip')]
-      .some((entry) => entry.textContent?.includes('Turtle Shell'));
-    expect(remaining).toBe(false);
+  it('sells from a loadout row', () => {
+    row(root, 'Turtle Shell')
+      ?.querySelector<HTMLElement>('[data-action="sell"]')!.click();
+    expect(row(root, 'Turtle Shell')).toBeNull();
   });
 });
