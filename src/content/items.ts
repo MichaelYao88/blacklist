@@ -1,5 +1,5 @@
 import { defineItem, type Effect, type ItemCtx, type ItemDef } from '../core/types';
-import { rngChance, rngInt } from '../core/rng';
+import { rngInt } from '../core/rng';
 import { isAllAbsent, sharedLetters, truthCounts } from '../core/score';
 import { FOODS } from './foods';
 import { SPELLS } from './spells';
@@ -1784,7 +1784,9 @@ export const ITEMS: ItemDef[] = [
       if (ctx.state.gold < 1) {
         return [{ type: 'message', text: 'You need 1 gold for a cracker.' }];
       }
-      const gave = rngChance(ctx.state, 60);
+      const roll = rngInt(ctx.state, 100);
+      const gave = roll <= 60;
+      const stupid = roll === 0;
       return [
         { type: 'gold', amount: -1 },
         ...parrotSchedule(ctx, gave ? 1 : 0),
@@ -1795,7 +1797,10 @@ export const ITEMS: ItemDef[] = [
                 stat: '_suggestions',
                 value: (ctx.self.data._suggestions ?? 0) + 1,
               },
-              { type: 'parrotSuggest' as const },
+              {
+                type: 'parrotSuggest' as const,
+                ...(stupid ? { flavor: 'stupid-cracker' as const } : {}),
+              },
             ]
           : [
               {

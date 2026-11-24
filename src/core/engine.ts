@@ -1242,7 +1242,13 @@ export function createCore(content: Content): Core {
           state.round.answer,
           (items) => rngPick(state, [...items]),
         );
-        if (word) emit(rt, { type: 'parrotSuggestion', word });
+        if (word) {
+          emit(rt, {
+            type: 'parrotSuggestion',
+            word,
+            ...(effect.flavor ? { flavor: effect.flavor } : {}),
+          });
+        }
         break;
       }
       case 'parrotSay':

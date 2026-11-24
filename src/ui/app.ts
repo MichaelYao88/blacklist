@@ -33,7 +33,7 @@ import {
   trackRunResumed,
   trackRunStarted,
 } from './analytics';
-import { escapeHtml, formatTime, parrotLine, reasonText, roman } from './format';
+import { escapeHtml, formatTime, parrotLine, parrotStupidLine, reasonText, roman } from './format';
 import { ARMOR_TIP, PURGED_TIP, glossaryText } from './glossary';
 import { groupProcChanges, type ProcFlyGroup } from './procRewards';
 import {
@@ -820,7 +820,9 @@ function logGameEvent(event: GameEvent): void {
       logChronicle('food', `Ate ${event.name}`);
       break;
     case 'parrotSuggestion':
-      logChronicle('info', `Evil Parrot suggests ${event.word.toUpperCase()}`);
+      logChronicle('info', event.flavor === 'stupid-cracker'
+        ? `Evil Parrot: ${parrotStupidLine(event.word)}`
+        : `Evil Parrot suggests ${event.word.toUpperCase()}`);
       break;
     case 'parrotSays':
       logChronicle('info', `Evil Parrot says: ${event.text}`);
@@ -932,7 +934,11 @@ function processEvents(events: GameEvent[]): void {
       logChronicle('bad', `Damage ×${event.multiplier}`);
     }
     if (event.type === 'message') notify(event.text, 'info');
-    if (event.type === 'parrotSuggestion') showParrotPopup(parrotLine(event.word));
+    if (event.type === 'parrotSuggestion') {
+      showParrotPopup(event.flavor === 'stupid-cracker'
+        ? parrotStupidLine(event.word)
+        : parrotLine(event.word));
+    }
     if (event.type === 'parrotSays') showParrotPopup(event.text);
     if (event.type === 'spellCast') showSpellPopup(event.spell.id, Boolean(event.auto));
     if (event.type === 'itemProc') showProc(event.item, event.text, event.changes);

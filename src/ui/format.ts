@@ -26,6 +26,10 @@ export function parrotLine(word: string, roll: number = Math.random()): string {
   return roll < 0.5 ? `try ${upper}` : `squawk ${upper} squawk`;
 }
 
+export function parrotStupidLine(word: string): string {
+  return `try ${word.toUpperCase()} (stupid cracker)`;
+}
+
 export function roman(value: number): string {
   const numerals: Array<[number, string]> = [
     [10, 'X'],

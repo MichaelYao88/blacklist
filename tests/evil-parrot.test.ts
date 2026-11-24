@@ -16,6 +16,22 @@ function sayingOf(events: Array<{ type: string; text?: string }>): string | null
   return event?.text ?? null;
 }
 
+function suggestionEventOf(
+  events: Array<{ type: string; word?: string; flavor?: string }>,
+): { word?: string; flavor?: string } | undefined {
+  return events.find((entry) => entry.type === 'parrotSuggestion');
+}
+
+function bribeWithRng(rng: number) {
+  const { state } = game.newRun({ seed: 'parrot-bribe-roll', character: 'runner' });
+  state.gold = 5;
+  state.round!.elapsedMs = 0;
+  state.rng = rng;
+  const item = parrot(state)!;
+  item.data.readyAt = 1;
+  return game.step(state, { type: 'useItem', instance: item.instance });
+}
+
 describe('Evil Parrot', () => {
   it('is a no-spawn 16g item that uses one slot and sells for 8', () => {
     const def = ITEM_BY_ID.get('evil-parrot');
@@ -114,7 +130,7 @@ describe('Evil Parrot', () => {
     expect(readyAt).toBeLessThanOrEqual(65_000);
   });
 
-  it('charges 1 gold for a cracker and suggests 60% of the time', () => {
+  it('charges 1 gold for a cracker and usually suggests a word', () => {
     let suggestions = 0;
     let refusals = 0;
     for (let index = 0; index < 120; index++) {
@@ -146,6 +162,41 @@ describe('Evil Parrot', () => {
     expect(suggestions).toBeGreaterThan(50);
     expect(refusals).toBeGreaterThan(20);
     expect(suggestions + refusals).toBe(120);
+  });
+
+  it('gives the 1% stupid-cracker suggestion', () => {
+    const used = bribeWithRng(35);
+    expect(used.state.gold).toBe(4);
+    const event = suggestionEventOf(used.events);
+    expect(event?.word).toBeTruthy();
+    expect(event?.flavor).toBe('stupid-cracker');
+    expect(parrot(used.state)?.data._suggestions).toBe(1);
+    const gap = (parrot(used.state)?.data.readyAt ?? 0)
+      - (used.state.round?.elapsedMs ?? 0);
+    expect(gap).toBeGreaterThanOrEqual(31_000);
+    expect(gap).toBeLessThanOrEqual(61_000);
+  });
+
+  it('gives a normal suggestion on the 60% band', () => {
+    const used = bribeWithRng(200);
+    expect(used.state.gold).toBe(4);
+    const event = suggestionEventOf(used.events);
+    expect(event?.word).toBeTruthy();
+    expect(event?.flavor).toBeUndefined();
+    expect(parrot(used.state)?.data._suggestions).toBe(1);
+  });
+
+  it('asks for another cracker on the 39% band', () => {
+    const used = bribeWithRng(315);
+    expect(used.state.gold).toBe(4);
+    expect(suggestionEventOf(used.events)).toBeUndefined();
+    expect(sayingOf(used.events))
+      .toBe('buy me another cracker, then maybe I\'ll tell you');
+    expect(parrot(used.state)?.data._suggestions).toBe(0);
+    const gap = (parrot(used.state)?.data.readyAt ?? 0)
+      - (used.state.round?.elapsedMs ?? 0);
+    expect(gap).toBeGreaterThanOrEqual(30_000);
+    expect(gap).toBeLessThanOrEqual(60_000);
   });
 
   it('refuses to charge or reset the timer without gold', () => {

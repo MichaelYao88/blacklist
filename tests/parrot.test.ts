@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { chooseParrotWord, possibleWords } from '../src/core/parrot';
 import { ITEM_BY_ID } from '../src/content';
 import { glossaryText } from '../src/ui/glossary';
-import { parrotLine } from '../src/ui/format';
+import { parrotLine, parrotStupidLine } from '../src/ui/format';
 
 const empty = {
   presentHints: [],
@@ -81,6 +81,7 @@ describe('Evil Parrot word filter', () => {
   it('alternates between try and squawk in the popup', () => {
     expect(parrotLine('crane', 0.1)).toBe('try CRANE');
     expect(parrotLine('crane', 0.9)).toBe('squawk CRANE squawk');
+    expect(parrotStupidLine('crane')).toBe('try CRANE (stupid cracker)');
   });
 
   it('lies when there is a choice and tells the truth when there is only one', () => {

@@ -402,7 +402,7 @@ export type Effect =
   | { type: 'addRandomCurse' }
   | { type: 'openShop' }
   | { type: 'shopWildcardSlots'; count: number }
-  | { type: 'parrotSuggest' }
+  | { type: 'parrotSuggest'; flavor?: 'stupid-cracker' }
   | { type: 'parrotSay'; text: string }
   | { type: 'startBattle' }
   | { type: 'addPreviewItem' }
@@ -983,7 +983,7 @@ export type GameEvent =
   | { type: 'puzzleSolved'; index: number; total: number; answer: string; elapsedMs: number }
   | { type: 'gauntletAdvanced'; index: number; total: number; timerMs: number | null }
   | { type: 'foodEaten'; food: string; name: string }
-  | { type: 'parrotSuggestion'; word: string }
+  | { type: 'parrotSuggestion'; word: string; flavor?: 'stupid-cracker' }
   | { type: 'parrotSays'; text: string }
   | { type: 'attributeChanged'; stat: string; value: number }
   | { type: 'damageMultiplier'; multiplier: number }
