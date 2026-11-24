@@ -1,5 +1,5 @@
 import { defineItem, type Effect, type ItemCtx, type ItemDef } from '../core/types';
-import { rngInt } from '../core/rng';
+import { rngChance, rngInt } from '../core/rng';
 import { isAllAbsent, sharedLetters, truthCounts } from '../core/score';
 import { FOODS } from './foods';
 import { SPELLS } from './spells';
@@ -18,7 +18,7 @@ const FOOD_BITS = new Map(FOODS.map((food, index) => [food.id, index]));
 /** Evil Parrot: schedule the next suggestion 30–60 seconds out, plus 1s per past suggestion. */
 function parrotSchedule(ctx: ItemCtx, extraSuggestions = 0): Effect[] {
   const elapsed = ctx.state.round?.elapsedMs ?? 0;
-  const count = (ctx.self.data.suggestions ?? 0) + extraSuggestions;
+  const count = (ctx.self.data._suggestions ?? 0) + extraSuggestions;
   const delay = (30 + count) * 1_000 + rngInt(ctx.state, 30_001);
   return [{ type: 'setItemData', stat: 'readyAt', value: elapsed + delay }];
 }
@@ -1746,13 +1746,14 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'evil-parrot',
     name: 'Evil Parrot',
-    description: 'Randomly suggests possible words. Relying on it too much might come at a cost...',
+    description: 'Randomly suggests possible words. You can bribe it with a cracker for 1g.',
     price: 16,
     kind: 'gear',
     slots: 1,
     unique: true,
     noSpawn: true,
-    initial: { readyAt: 0, suggestions: 0 },
+    useLabel: '1g',
+    initial: { readyAt: 0, _suggestions: 0 },
     onAcquire: parrotSchedule,
     on: {
       onRoundStart: (ctx) => parrotSchedule(ctx),
@@ -1765,15 +1766,46 @@ export const ITEMS: ItemDef[] = [
         return [
           {
             type: 'setItemData',
-            stat: 'suggestions',
-            value: (ctx.self.data.suggestions ?? 0) + 1,
+            stat: '_suggestions',
+            value: (ctx.self.data._suggestions ?? 0) + 1,
           },
           ...parrotSchedule(ctx, 1),
           { type: 'parrotSuggest' },
         ];
       },
     },
-    sellValue: (ctx) => Math.max(0, 8 - (ctx.self.data.suggestions ?? 0)),
+    onUse: (ctx) => {
+      if (!ctx.self.equipped) {
+        return [{ type: 'message', text: 'Equip the parrot first.' }];
+      }
+      if (ctx.state.phase !== 'round' || !ctx.state.round) {
+        return [{ type: 'message', text: 'The parrot only listens during a fight.' }];
+      }
+      if (ctx.state.gold < 1) {
+        return [{ type: 'message', text: 'You need 1 gold for a cracker.' }];
+      }
+      const gave = rngChance(ctx.state, 60);
+      return [
+        { type: 'gold', amount: -1 },
+        ...parrotSchedule(ctx, gave ? 1 : 0),
+        ...(gave
+          ? [
+              {
+                type: 'setItemData' as const,
+                stat: '_suggestions',
+                value: (ctx.self.data._suggestions ?? 0) + 1,
+              },
+              { type: 'parrotSuggest' as const },
+            ]
+          : [
+              {
+                type: 'parrotSay' as const,
+                text: 'buy me another cracker, then maybe I\'ll tell you',
+              },
+            ]),
+      ];
+    },
+    sellValue: (ctx) => Math.max(0, 8 - (ctx.self.data._suggestions ?? 0)),
   }),
   defineItem({
     id: 'piggy-bank',

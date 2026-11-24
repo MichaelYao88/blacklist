@@ -205,12 +205,11 @@ parrotRoot.setAttribute('aria-live', 'polite');
 document.body.appendChild(parrotRoot);
 let parrotTimer: number | undefined;
 
-function showParrotPopup(word: string): void {
-  const line = escapeHtml(parrotLine(word));
+function showParrotPopup(line: string): void {
   parrotRoot.innerHTML = `<div class="parrot-pop">
     <span class="parrot-emoji" aria-hidden="true">🦜</span>
     <span class="parrot-kicker">EVIL PARROT</span>
-    <span class="parrot-line">${line}</span>
+    <span class="parrot-line">${escapeHtml(line)}</span>
   </div>`;
   if (parrotTimer) window.clearTimeout(parrotTimer);
   parrotTimer = window.setTimeout(() => {
@@ -823,6 +822,9 @@ function logGameEvent(event: GameEvent): void {
     case 'parrotSuggestion':
       logChronicle('info', `Evil Parrot suggests ${event.word.toUpperCase()}`);
       break;
+    case 'parrotSays':
+      logChronicle('info', `Evil Parrot says: ${event.text}`);
+      break;
     case 'message':
       logChronicle('info', event.text);
       break;
@@ -930,7 +932,8 @@ function processEvents(events: GameEvent[]): void {
       logChronicle('bad', `Damage ×${event.multiplier}`);
     }
     if (event.type === 'message') notify(event.text, 'info');
-    if (event.type === 'parrotSuggestion') showParrotPopup(event.word);
+    if (event.type === 'parrotSuggestion') showParrotPopup(parrotLine(event.word));
+    if (event.type === 'parrotSays') showParrotPopup(event.text);
     if (event.type === 'spellCast') showSpellPopup(event.spell.id, Boolean(event.auto));
     if (event.type === 'itemProc') showProc(event.item, event.text, event.changes);
     if (event.type === 'happeningResolved') {
@@ -2698,7 +2701,6 @@ function renderItem(view: RunView, item: ItemView): string {
       (value !== 0 || key === 'fed')
       && !key.startsWith('_')
       && key !== 'readyAt'
-      && key !== 'suggestions'
       && key !== 'used'
       && key !== 'paid'
     ))
@@ -2733,7 +2735,7 @@ function renderItem(view: RunView, item: ItemView): string {
     <p>${glossaryText(description)}</p>
     ${data ? `<div class="data-row">${data}</div>` : ''}
     ${!item.equipped && item.slots > 0 ? `<p class="bag-note">In the bag. Equip it in a shop.</p>` : ''}
-    ${usable ? `<button class="btn tiny" data-action="use" data-id="${escapeHtml(item.instance)}" ${usedThisRound ? 'disabled' : ''}>${usedThisRound ? 'USED' : 'USE'}</button>` : ''}
+    ${usable ? `<button class="btn tiny" data-action="use" data-id="${escapeHtml(item.instance)}" ${usedThisRound ? 'disabled' : ''}>${usedThisRound ? 'USED' : escapeHtml(def?.useLabel ?? 'USE')}</button>` : ''}
   </article>`;
 }
 

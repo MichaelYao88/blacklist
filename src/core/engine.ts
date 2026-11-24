@@ -1245,6 +1245,9 @@ export function createCore(content: Content): Core {
         if (word) emit(rt, { type: 'parrotSuggestion', word });
         break;
       }
+      case 'parrotSay':
+        emit(rt, { type: 'parrotSays', text: effect.text });
+        break;
       case 'startBattle':
         startEventBattle(rt);
         break;

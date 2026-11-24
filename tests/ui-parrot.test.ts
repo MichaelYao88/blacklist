@@ -10,7 +10,7 @@ describe('Evil Parrot item card', () => {
     const { state } = game.newRun({ seed: 'parrot-ui', character: 'runner' });
     const parrot = state.items.find((item) => item.id === 'evil-parrot');
     parrot!.data.readyAt = 45_000;
-    parrot!.data.suggestions = 3;
+    parrot!.data._suggestions = 3;
     localStorage.setItem('blacklist.run.v1', game.serialize(state));
 
     document.body.innerHTML = '<div id="app"></div>';
@@ -28,9 +28,11 @@ describe('Evil Parrot item card', () => {
     expect(card?.textContent).not.toContain('suggestions');
   });
 
-  it('describes the cost of relying on it', () => {
+  it('describes the 1g cracker bribe and shows a 1g button', () => {
     const card = [...root.querySelectorAll<HTMLElement>('.item-card')]
       .find((entry) => entry.textContent?.includes('Evil Parrot')) ?? null;
-    expect(card?.textContent).toContain('might come at a cost');
+    expect(card?.textContent).toContain('bribe it with a cracker for 1g');
+    const button = card?.querySelector<HTMLElement>('[data-action="use"]') ?? null;
+    expect(button?.textContent?.trim()).toBe('1g');
   });
 });

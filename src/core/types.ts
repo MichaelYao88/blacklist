@@ -403,6 +403,7 @@ export type Effect =
   | { type: 'openShop' }
   | { type: 'shopWildcardSlots'; count: number }
   | { type: 'parrotSuggest' }
+  | { type: 'parrotSay'; text: string }
   | { type: 'startBattle' }
   | { type: 'addPreviewItem' }
   | { type: 'addPreviewFood' }
@@ -511,6 +512,8 @@ export interface ItemDef {
   on?: Reactors<ItemCtx>;
   onAcquire?: (ctx: ItemCtx) => Effect[];
   onUse?: (ctx: ItemCtx) => Effect[];
+  /** Button label for usable items. Defaults to USE. */
+  useLabel?: string;
   modifyDamage?: (ctx: ItemCtx, amount: number) => number;
   /** Multiplies hits that armor does not soak at all (for example, 0.5). */
   unarmoredHitMultiplier?: number;
@@ -981,6 +984,7 @@ export type GameEvent =
   | { type: 'gauntletAdvanced'; index: number; total: number; timerMs: number | null }
   | { type: 'foodEaten'; food: string; name: string }
   | { type: 'parrotSuggestion'; word: string }
+  | { type: 'parrotSays'; text: string }
   | { type: 'attributeChanged'; stat: string; value: number }
   | { type: 'damageMultiplier'; multiplier: number }
   | { type: 'message'; text: string }
