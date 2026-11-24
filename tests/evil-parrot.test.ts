@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { game } from '../src/game';
 import { CHARACTERS, ITEM_BY_ID } from '../src/content';
+import { PARROT_REFUSALS } from '../src/content/items';
 
 function parrot(state: ReturnType<typeof game.newRun>['state']) {
   return state.items.find((item) => item.id === 'evil-parrot');
@@ -168,8 +169,8 @@ describe('Evil Parrot', () => {
         expect(gap).toBeLessThanOrEqual(61_000);
       } else {
         refusals++;
-        expect(sayingOf(used.events))
-          .toBe('buy me another cracker, then maybe I\'ll tell you');
+        expect(PARROT_REFUSALS.some((line) => line === sayingOf(used.events)))
+          .toBe(true);
         expect(after.data._suggestions).toBe(0);
         expect(gap).toBeGreaterThanOrEqual(30_000);
         expect(gap).toBeLessThanOrEqual(60_000);
@@ -205,8 +206,8 @@ describe('Evil Parrot', () => {
 
     const refusal = bribeWithRng(11); // roll 51
     expect(suggestionEventOf(refusal.events)).toBeUndefined();
-    expect(sayingOf(refusal.events))
-      .toBe('buy me another cracker, then maybe I\'ll tell you');
+    expect(PARROT_REFUSALS.some((line) => line === sayingOf(refusal.events)))
+      .toBe(true);
   });
 
   it('gives a normal suggestion on the 49% band', () => {
@@ -222,8 +223,8 @@ describe('Evil Parrot', () => {
     const used = bribeWithRng(315);
     expect(used.state.gold).toBe(4);
     expect(suggestionEventOf(used.events)).toBeUndefined();
-    expect(sayingOf(used.events))
-      .toBe('buy me another cracker, then maybe I\'ll tell you');
+    expect(PARROT_REFUSALS.some((line) => line === sayingOf(used.events)))
+      .toBe(true);
     expect(parrot(used.state)?.data._suggestions).toBe(0);
     const gap = (parrot(used.state)?.data.readyAt ?? 0)
       - (used.state.round?.elapsedMs ?? 0);
@@ -267,6 +268,11 @@ describe('Evil Parrot', () => {
     const gap = (parrot(next.state)?.data.readyAt ?? 0)
       - (next.state.round?.elapsedMs ?? 0);
     expect(gap).toBeGreaterThanOrEqual(30_000);
+  });
+
+  it('has several refusal lines for a rejected bribe', () => {
+    expect(PARROT_REFUSALS.length).toBeGreaterThan(1);
+    expect(PARROT_REFUSALS).toContain('Squawk! Another cracker!');
   });
 
   it('refuses to charge or reset the timer without gold', () => {

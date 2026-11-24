@@ -1,5 +1,5 @@
 import { defineItem, type Effect, type ItemCtx, type ItemDef } from '../core/types';
-import { rngInt } from '../core/rng';
+import { rngInt, rngPick } from '../core/rng';
 import { isAllAbsent, sharedLetters, truthCounts } from '../core/score';
 import { FOODS } from './foods';
 import { SPELLS } from './spells';
@@ -14,6 +14,15 @@ const SPELL_BITS: Record<string, number> = {
 };
 
 const FOOD_BITS = new Map(FOODS.map((food, index) => [food.id, index]));
+
+/** Things the parrot says instead of giving a clue. */
+export const PARROT_REFUSALS = [
+  'Squawk! Another cracker!',
+  'buy me another cracker, then maybe I\'ll tell you',
+  'Cracker first. Words later.',
+  'Squawk! No cracker, no clue.',
+  'Another cracker, or the word stays mine.',
+] as const;
 
 /** Evil Parrot: schedule the next suggestion 30–60 seconds out, plus 1s per past suggestion. */
 function parrotSchedule(ctx: ItemCtx, extraSuggestions = 0): Effect[] {
@@ -1817,7 +1826,7 @@ export const ITEMS: ItemDef[] = [
           : [
               {
                 type: 'parrotSay' as const,
-                text: 'buy me another cracker, then maybe I\'ll tell you',
+                text: rngPick(ctx.state, PARROT_REFUSALS),
               },
             ]),
       ];
