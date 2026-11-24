@@ -74,8 +74,11 @@ export const CURSES: CurseDef[] = [
   defineCurse({
     id: 'monochrome',
     name: 'Silver STD',
-    description: 'S, T and D are ambiguous silver when present.',
-    rules: ['S, T and D never show green or yellow.'],
+    description: 'S, T and D appear silver when they are in the answer.',
+    rules: [
+      'S, T or D is silver whenever it appears anywhere in the answer.',
+      'You know the letter is in the word, but not where it sits.',
+    ],
     art: 'monochrome',
     tags: ['vision'],
     rarity: 'rare',
