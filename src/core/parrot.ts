@@ -112,8 +112,31 @@ export function possibleWords(
 }
 
 /**
- * The parrot lies when there is a choice. When only one possible word remains,
- * that is the suggestion.
+ * How far a word is from the answer: shared letters first, then greens.
+ * Shared letters count duplicate copies only as often as the answer has them.
+ */
+function distanceFromAnswer(word: string, answer: string): { shared: number; greens: number } {
+  const remaining: Record<string, number> = {};
+  for (const letter of answer) {
+    remaining[letter] = (remaining[letter] ?? 0) + 1;
+  }
+  let shared = 0;
+  let greens = 0;
+  for (let index = 0; index < word.length; index++) {
+    const letter = word[index];
+    if (letter === answer[index]) greens++;
+    if ((remaining[letter] ?? 0) > 0) {
+      shared++;
+      remaining[letter]--;
+    }
+  }
+  return { shared, greens };
+}
+
+/**
+ * The parrot lies when there is a choice. Once the candidate list drops below
+ * 70, it picks the word farthest from the answer: fewest shared letters, then
+ * fewest greens. When only one possible word remains, that is the suggestion.
  */
 export function chooseParrotWord(
   candidates: readonly string[],
@@ -123,5 +146,21 @@ export function chooseParrotWord(
   if (candidates.length === 0) return null;
   if (candidates.length === 1) return candidates[0];
   const wrong = candidates.filter((word) => word !== answer);
-  return pick(wrong.length > 0 ? wrong : candidates);
+  const pool = wrong.length > 0 ? wrong : candidates;
+  if (candidates.length >= 70) return pick(pool);
+
+  let bestShared = Number.POSITIVE_INFINITY;
+  let bestGreens = Number.POSITIVE_INFINITY;
+  let best: string[] = [];
+  for (const word of pool) {
+    const { shared, greens } = distanceFromAnswer(word, answer);
+    if (shared < bestShared || (shared === bestShared && greens < bestGreens)) {
+      bestShared = shared;
+      bestGreens = greens;
+      best = [word];
+    } else if (shared === bestShared && greens === bestGreens) {
+      best.push(word);
+    }
+  }
+  return pick(best);
 }

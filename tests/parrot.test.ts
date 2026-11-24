@@ -84,11 +84,33 @@ describe('Evil Parrot word filter', () => {
     expect(parrotStupidLine('crane')).toBe('try CRANE (stupid cracker)');
   });
 
-  it('lies when there is a choice and tells the truth when there is only one', () => {
+  it('picks the farthest word below 70 candidates and tells the truth when one remains', () => {
     const first = (items: readonly string[]) => items[0];
-    expect(chooseParrotWord(['crane', 'crate', 'slate'], 'crane', first)).toBe('crate');
+    expect(chooseParrotWord(['crane', 'crate', 'slate'], 'crane', first)).toBe('slate');
+    expect(chooseParrotWord(['crane', 'crate', 'blimp'], 'crane', first)).toBe('blimp');
     expect(chooseParrotWord(['crane', 'crate'], 'crane', first)).toBe('crate');
     expect(chooseParrotWord(['crane'], 'crane', first)).toBe('crane');
     expect(chooseParrotWord([], 'crane', first)).toBeNull();
+  });
+
+  it('uses fewer greens to break a shared-letter tie', () => {
+    const first = (items: readonly string[]) => items[0];
+    expect(chooseParrotWord(['crane', 'crate', 'enact'], 'crane', first)).toBe('enact');
+  });
+
+  it('randomizes once 70 or more candidates remain', () => {
+    const answer = 'crane';
+    const candidates = [
+      answer,
+      ...Array.from({ length: 69 }, (_, index) => `w${String(index).padStart(4, '0')}`),
+    ];
+    let pool: readonly string[] = [];
+    const result = chooseParrotWord(candidates, answer, (items) => {
+      pool = items;
+      return items[items.length - 1];
+    });
+    expect(candidates).toHaveLength(70);
+    expect(pool).toHaveLength(69);
+    expect(result).toBe(pool[pool.length - 1]);
   });
 });
