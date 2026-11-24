@@ -2688,68 +2688,25 @@ function renderSidePanel(view: RunView): string {
 }
 
 function renderItemsPanel(view: RunView): string {
-  const shop = view.phase.kind === 'shop';
-  const gear = view.items.filter((item) => item.slots > 0);
-  const equippedGear = gear.filter((item) => item.equipped);
-  const bagged = gear.filter((item) => !item.equipped);
-  const shown = shop ? [...equippedGear, ...bagged] : view.items;
-  const items = shown.length
-    ? shown.map((item) => renderItem(view, item, shop)).join('')
+  const items = view.items.length
+    ? view.items.map((item) => renderItem(view, item)).join('')
     : `<p class="empty-note">No items yet. Shops and the Curse Broker fix that.</p>`;
-  const scrollable = (shop ? shown.length : equippedGear.length) > 5
-    ? ' scrollable'
-    : '';
-  const seedline = `<div class="seedline">SEED ${escapeHtml(host.current?.seed ?? '')}</div>`;
-
-  if (!shop) {
-    return `
+  const bagged = view.items.filter((item) => !item.equipped && item.slots > 0).length;
+  const equipped = view.items.filter((item) => item.equipped && item.slots > 0).length;
+  return `
   <aside class="panel items-panel">
     <section class="rail-items">
       <div class="panel-head">
         <span class="panel-kicker">ITEMS</span>
-        <span class="count">${view.slots.used}/${view.slots.total}${bagged.length ? ` · ${bagged.length} BAG` : ''}</span>
+        <span class="count">${view.slots.used}/${view.slots.total}${bagged ? ` · ${bagged} BAG` : ''}</span>
       </div>
-      <div class="item-list${scrollable}">${items}</div>
+      <div class="item-list${equipped > 5 ? ' scrollable' : ''}">${items}</div>
     </section>
-    ${seedline}
-  </aside>`;
-  }
-
-  const canSell = !view.curses.some((curse) => curse.id === 'chained');
-  const freeSlots = Math.max(0, view.slots.total - equippedGear.length);
-  const chips = equippedGear.map((item) => {
-    const def = ITEM_BY_ID.get(item.id);
-    const description = def?.dynamicDescription?.(item.data) ?? def?.description ?? '';
-    return `<div class="loadout-chip equipped" draggable="true"
-      data-item="${escapeHtml(item.instance)}"
-      data-action="unequip" data-id="${escapeHtml(item.instance)}"
-      data-tip="${escapeHtml(description)}"
-      title="Drag to the list or click to unequip">
-      <span class="item-emoji" aria-hidden="true">${itemIcon(item.id)}</span>
-      <b>${escapeHtml(def?.name ?? item.id)}</b>
-    </div>`;
-  }).join('');
-  const sockets = Array.from(
-    { length: freeSlots },
-    () => `<div class="slot-socket" data-drop="slot"><span>EMPTY</span></div>`,
-  ).join('');
-
-  return `
-  <aside class="panel items-panel loadout-panel">
-    <section class="rail-items">
-      <div class="panel-head">
-        <span class="panel-kicker">LOADOUT</span>
-        <span class="count">${view.slots.used}/${view.slots.total}${bagged.length ? ` · ${bagged.length} BAG` : ''}</span>
-      </div>
-      <div class="slot-grid" data-drop="slot">${chips}${sockets}</div>
-      <p class="hint loadout-hint">Drag gear between the slots and the list. Click to equip or unequip.${canSell ? '' : ' The Chained prevents selling.'}</p>
-      <div class="item-list ranked${scrollable}" data-drop="bag">${items}</div>
-    </section>
-    ${seedline}
+    <div class="seedline">SEED ${escapeHtml(host.current?.seed ?? '')}</div>
   </aside>`;
 }
 
-function renderItem(view: RunView, item: ItemView, shop = false): string {
+function renderItem(view: RunView, item: ItemView): string {
   const def = ITEM_BY_ID.get(item.id);
   const name = def?.name ?? item.id;
   const description = def?.dynamicDescription?.(item.data) ?? def?.description ?? '';
@@ -2773,7 +2730,6 @@ function renderItem(view: RunView, item: ItemView, shop = false): string {
   const useTitle = !canUseNow
     ? 'Only usable during a fight.'
     : usedThisRound ? 'Already used this round.' : '';
-  const canSell = shop && !view.curses.some((curse) => curse.id === 'chained');
   const rarity = !item.equipped && item.slots > 0
     ? 'BAG'
     : def?.rarity === 'rare'
@@ -2786,15 +2742,8 @@ function renderItem(view: RunView, item: ItemView, shop = false): string {
   const rarityClass = def?.rarity === 'rare'
     ? 'rare'
     : def?.rarity === 'uncommon' ? 'uncommon' : '';
-  const useButton = usable
-    ? `<button class="btn tiny" data-action="use" data-id="${escapeHtml(item.instance)}" ${useDisabled ? 'disabled' : ''}${useDisabled ? ` title="${escapeHtml(useTitle)}"` : ''}>${usedThisRound ? 'USED' : escapeHtml(def?.useLabel ?? 'USE')}</button>`
-    : '';
-  const sellButton = shop
-    ? `<button class="btn tiny item-sell" data-action="sell" data-id="${escapeHtml(item.instance)}" ${canSell ? '' : 'disabled'} title="Sell for ${item.sellValue} gold">SELL ${item.sellValue} G</button>`
-    : '';
-  const actions = useButton + sellButton;
   return `
-  <article class="item-card ${rarityClass} ${spent ? 'spent' : ''} ${!item.equipped && item.slots > 0 ? 'in-bag' : ''}${shop ? ' loadout-card' : ''}" data-tip="${escapeHtml(description)}"${shop ? ` draggable="true" data-item="${escapeHtml(item.instance)}" data-action="${item.equipped ? 'unequip' : 'equip'}" data-id="${escapeHtml(item.instance)}"` : ''}>
+  <article class="item-card ${rarityClass} ${spent ? 'spent' : ''} ${!item.equipped && item.slots > 0 ? 'in-bag' : ''}" data-tip="${escapeHtml(description)}">
     <div class="item-top">
       <span class="item-emoji" aria-hidden="true">${itemIcon(item.id)}</span>
       <b>${escapeHtml(name)}</b>
@@ -2805,7 +2754,7 @@ function renderItem(view: RunView, item: ItemView, shop = false): string {
     <p>${glossaryText(description)}</p>
     ${data ? `<div class="data-row">${data}</div>` : ''}
     ${!item.equipped && item.slots > 0 ? `<p class="bag-note">In the bag. Equip it in a shop.</p>` : ''}
-    ${actions ? `<div class="item-actions">${actions}</div>` : ''}
+    ${usable ? `<button class="btn tiny" data-action="use" data-id="${escapeHtml(item.instance)}" ${useDisabled ? 'disabled' : ''}${useDisabled ? ` title="${escapeHtml(useTitle)}"` : ''}>${usedThisRound ? 'USED' : escapeHtml(def?.useLabel ?? 'USE')}</button>` : ''}
   </article>`;
 }
 
@@ -3134,6 +3083,48 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
     }).join('')
     : `<p class="empty-note">The shelves are bare. Reroll or leave.</p>`;
 
+  const canSell = !view.curses.some((curse) => curse.id === 'chained');
+
+  const gear = view.items.filter((item) => item.slots > 0);
+  const equippedGear = gear.filter((item) => item.equipped);
+  const bagged = gear.filter((item) => !item.equipped);
+  const freeSlots = Math.max(0, view.slots.total - equippedGear.length);
+
+  const chips = (items: ItemView[], inSlot: boolean) => items.map((item) => {
+    const def = ITEM_BY_ID.get(item.id);
+    const description = def?.dynamicDescription?.(item.data) ?? def?.description ?? '';
+    return `<div class="loadout-chip ${inSlot ? 'equipped' : 'bagged'}" draggable="true"
+      data-item="${escapeHtml(item.instance)}"
+      data-action="${inSlot ? 'unequip' : 'equip'}" data-id="${escapeHtml(item.instance)}"
+      data-tip="${escapeHtml(description)}"
+      title="${inSlot ? 'Drag to the bag or click to unequip' : 'Drag to a slot or click to equip'}">
+      <span class="item-emoji" aria-hidden="true">${itemIcon(item.id)}</span>
+      <b>${escapeHtml(def?.name ?? item.id)}</b>
+      <button class="btn tiny chip-sell" data-action="sell" data-id="${escapeHtml(item.instance)}" ${canSell ? '' : 'disabled'} title="Sell for ${item.sellValue} gold">SELL ${item.sellValue} G</button>
+    </div>`;
+  }).join('');
+
+  const slots = [
+    ...chips(equippedGear, true),
+    ...Array.from({ length: freeSlots }, () => `<div class="slot-socket" data-drop="slot"><span>EMPTY</span></div>`),
+  ].join('');
+
+  const loadout = `
+    <div class="loadout">
+      <div class="loadout-head">
+        <span class="panel-kicker">LOADOUT</span>
+        <span class="count">${view.slots.used}/${view.slots.total} SLOTS</span>
+      </div>
+      <p class="hint">This shop is where you rearrange gear. Drag a piece between the slots and the bag, or click it.${canSell ? '' : ' The Chained prevents selling.'}</p>
+      <div class="slot-grid" data-drop="slot">${slots}</div>
+      <div class="bag-zone" data-drop="bag">
+        <span class="panel-kicker">BAG${bagged.length ? ` · ${bagged.length}` : ''}</span>
+        ${bagged.length
+          ? `<div class="bag-grid">${chips(bagged, false)}</div>`
+          : `<p class="empty-note">Nothing in the bag. Drag a piece here to switch it off.</p>`}
+      </div>
+    </div>`;
+
   return `
   <div class="phase-card shop">
     ${coupon > 0 ? `<p class="hint coupon-hint">Coupon Book: the first item or food purchase costs ${coupon} less.</p>` : ''}
@@ -3142,7 +3133,8 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
       <button class="btn" data-action="reroll">REROLL · ${phase.rerollCost} G</button>
       <button class="btn ghost" data-action="continue">LEAVE →</button>
     </div>
-    <p class="hint">Rearrange gear in the loadout on the left. Shops carry items, foods, and one wildcard slot. Curses can remove slots. Food is eaten on purchase. One item is always half price, and each reroll costs double the last. Relics are very rare items.</p>
+    ${loadout}
+    <p class="hint">Shops carry items, foods, and one wildcard slot. Curses can remove slots. Food is eaten on purchase. One item is always half price, and each reroll costs double the last. Relics are very rare items.</p>
   </div>`;
 }
 
