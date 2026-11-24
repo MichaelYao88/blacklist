@@ -894,6 +894,43 @@ export const HAPPENINGS: HappeningDef[] = [
       },
     ],
   }),
+  defineHappening({
+    id: 'peddlers-table',
+    name: "The Peddler's Table",
+    description: 'Three objects wait on a scrap of velvet. The peddler taps one, then another, and says nothing.',
+    options: [
+      {
+        id: 'red-amulet',
+        label: 'Take the Red Amulet',
+        description: 'A warm red stone that stirs when powerful things fall. It may matter later.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'You take the amulet. It is warmer than it should be.',
+          effects: [{ type: 'addItem', item: 'red-amulet' }],
+        }],
+      },
+      {
+        id: 'silver-key',
+        label: 'Take the Silver Key',
+        description: 'An ornate key with no lock in sight. It may matter later.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'You take the key. It is cold and perfectly balanced.',
+          effects: [{ type: 'addItem', item: 'silver-key' }],
+        }],
+      },
+      {
+        id: 'nonsensical-map',
+        label: 'Take the Nonsensical Map',
+        description: 'A map of impossible places. It may matter later.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'You take the map. A route folds itself toward you.',
+          effects: [{ type: 'addItem', item: 'nonsensical-map' }],
+        }],
+      },
+    ],
+  }),
 ];
 
 export const HAPPENING_BY_ID = new Map(HAPPENINGS.map((h) => [h.id, h]));

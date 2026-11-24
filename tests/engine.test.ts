@@ -4031,6 +4031,61 @@ describe('Miniboss', () => {
   });
 });
 
+describe('future objects', () => {
+  it('offers the Red Amulet, Silver Key, or Nonsensical Map and grants one', () => {
+    const event = HAPPENING_BY_ID.get('peddlers-table');
+    expect(event?.options.map((option) => option.id))
+      .toEqual(['red-amulet', 'silver-key', 'nonsensical-map']);
+    for (const id of ['red-amulet', 'silver-key', 'nonsensical-map']) {
+      const item = ITEM_BY_ID.get(id);
+      expect(item?.noSpawn, id).toBe(true);
+      expect(item?.slots, id).toBe(0);
+      expect(item?.description.toLowerCase(), id).toContain('later');
+    }
+
+    const run = findHappeningById('peddlers-table', 'peddlers-table');
+    const chosen = act(run.state, { type: 'choose', optionId: 'silver-key' });
+    expect(chosen.state.items.some((item) => item.id === 'silver-key')).toBe(true);
+  });
+
+  it('locks objects the player already carries', () => {
+    let found: StepResult | undefined;
+    for (let index = 0; index < 900 && !found; index++) {
+      const run = start(`peddlers-owned-${index}`);
+      run.state.items.push({ instance: 'i-amulet', id: 'red-amulet', data: {}, equipped: true });
+      run.state.items.push({ instance: 'i-key', id: 'silver-key', data: {}, equipped: true });
+      const next = nextHappening(run.state);
+      if (next.state.happening?.id === 'peddlers-table') found = next;
+    }
+    expect(found).toBeDefined();
+    const options = found!.state.happening!.options;
+    expect(options.find((option) => option.id === 'red-amulet')?.locked).toBe(true);
+    expect(options.find((option) => option.id === 'silver-key')?.locked).toBe(true);
+    expect(options.find((option) => option.id === 'nonsensical-map')?.locked).toBe(false);
+  });
+
+  it('makes the Red Amulet stir when the Miniboss falls, even while unequipped', () => {
+    const { state } = start('miniboss-amulet');
+    state.items.push({
+      instance: 'i-amulet',
+      id: 'red-amulet',
+      data: {},
+      equipped: false,
+    });
+    let result = enterMiniboss(state);
+    result.state.hp = result.state.maxHp;
+    result = act(result.state, { type: 'continue' });
+    result = act(result.state, { type: 'guess', word: result.state.round!.answer });
+    result = act(result.state, { type: 'guess', word: result.state.round!.answer });
+    expect(result.state.phase).toBe('summary');
+    expect(result.events.some(
+      (event) => event.type === 'itemProc'
+        && event.item === 'red-amulet'
+        && event.text === 'stirs',
+    )).toBe(true);
+  });
+});
+
 describe('Floor Boss', () => {
   it('puts the final three curse drafts on floors 47-49 and enters the boss from floor 49', () => {
     const { state } = start('boss-prep');

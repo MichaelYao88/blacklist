@@ -2209,6 +2209,16 @@ export function createCore(content: Content): Core {
         type: 'message',
         text: 'The Miniboss falls. +1 item slot. You are fully healed.',
       });
+      const amulet = state.items.find((item) => item.id === 'red-amulet');
+      if (amulet) {
+        emit(rt, {
+          type: 'itemProc',
+          item: amulet.id,
+          instance: amulet.instance,
+          hook: 'onRoundEnd',
+          text: 'stirs',
+        });
+      }
     }
 
     state.summary = {
@@ -3164,7 +3174,10 @@ export function createCore(content: Content): Core {
       (happening) => (happening.requiresCurseCount ?? 0) <= state.curses.length
         && (!happening.requiresClock || hasClock(state))
         && (happening.id !== 'forbidden-feast' || rareFoodsAvailable.length > 0)
-        && (happening.id !== 'flesh-market' || state.maxHp > 1 || state.maxArmor > 0),
+        && (happening.id !== 'flesh-market' || state.maxHp > 1 || state.maxArmor > 0)
+        && (happening.id !== 'peddlers-table'
+          || ['red-amulet', 'silver-key', 'nonsensical-map']
+            .some((id) => !state.items.some((item) => item.id === id))),
     );
     if (pool.length === 0) {
       advanceNode(rt);
@@ -3272,6 +3285,16 @@ export function createCore(content: Content): Core {
       options,
       letters,
     };
+    if (def.id === 'peddlers-table') {
+      state.happening.options = state.happening.options.map((option) => {
+        const owned = state.items.some((item) => item.id === option.id);
+        return {
+          ...option,
+          locked: owned,
+          description: owned ? 'You already carry this.' : option.description,
+        };
+      });
+    }
     if (def.id === 'the-bargain') {
       const items = content.items.filter(
         (item) => !item.noSpawn && item.rarity !== 'rare' && itemAvailable(state, item),
