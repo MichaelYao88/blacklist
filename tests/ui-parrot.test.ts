@@ -35,5 +35,6 @@ describe('Evil Parrot item card', () => {
     expect(card?.textContent).toContain('Bribe it for more with a cracker costing 🪙');
     const button = card?.querySelector<HTMLElement>('[data-action="use"]') ?? null;
     expect(button?.textContent?.trim()).toBe('🪙');
+    expect(button?.hasAttribute('disabled')).toBe(false);
   });
 });

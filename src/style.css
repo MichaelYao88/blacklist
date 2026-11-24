@@ -612,6 +612,15 @@ button {
   gap: 7px;
 }
 
+.item-list.scrollable {
+  max-height: 35rem;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-2) transparent;
+  overscroll-behavior: contain;
+}
+
 .item-card,
 .spell-card {
   padding: 8px 9px;
@@ -1761,42 +1770,6 @@ button {
   justify-content: center;
   gap: 8px;
   margin-top: 18px;
-}
-
-.sell-box {
-  margin-top: 18px;
-  padding-top: 12px;
-  border-top: 1px solid var(--line);
-  text-align: left;
-}
-
-.sell-box summary {
-  color: var(--faint);
-  font-size: 0.64rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  cursor: pointer;
-  text-transform: uppercase;
-}
-
-.sell-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 7px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-  font-size: 0.78rem;
-}
-
-.sell-name {
-  cursor: help;
-}
-
-.sell-name:hover,
-.sell-name:focus-visible {
-  color: var(--gold-soft);
-  outline: none;
 }
 
 /* ── happening ───────────────────────────────────────────────────────────── */
@@ -4530,11 +4503,20 @@ button {
 }
 
 .loadout-chip b {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   font-size: 0.7rem;
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.loadout-chip .chip-sell {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  font-size: 0.56rem;
+  letter-spacing: 0.04em;
 }
 
 .bag-zone {

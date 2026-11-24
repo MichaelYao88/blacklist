@@ -101,7 +101,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Old McDonald's** is a 4g unique food: EIEIO is guessed for free once, at the start of the next round
 - **Big Eggplant** and **Jumbo Hot Dog** are uncommon foods that trade max armor or max HP for an item slot
 - **Shop Upgrade** is a 14g rare unique food: future shops gain two wildcard offers, one item/food/spell and one item/food
-- Shops can show up to 2 copies of the same entry; sell rows are hoverable
+- Shops can show up to 2 copies of the same entry; every loadout item has its own sell button
 - Solve gold is a random 4-8 per solve, independent of guess count
 - **The Endless Table** fires every on-eat effect 7 times or pays 7 gold
 - **Counter-Intelligence** is a 12g common-rarity unique item with an uncommon shop banner and a 3x appearance weight while a vision curse is active; it is no longer guaranteed in a shop and shows correct/misplaced counts

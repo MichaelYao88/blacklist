@@ -2692,6 +2692,7 @@ function renderItemsPanel(view: RunView): string {
     ? view.items.map((item) => renderItem(view, item)).join('')
     : `<p class="empty-note">No items yet. Shops and the Curse Broker fix that.</p>`;
   const bagged = view.items.filter((item) => !item.equipped && item.slots > 0).length;
+  const equipped = view.items.filter((item) => item.equipped && item.slots > 0).length;
   return `
   <aside class="panel items-panel">
     <section class="rail-items">
@@ -2699,7 +2700,7 @@ function renderItemsPanel(view: RunView): string {
         <span class="panel-kicker">ITEMS</span>
         <span class="count">${view.slots.used}/${view.slots.total}${bagged ? ` · ${bagged} BAG` : ''}</span>
       </div>
-      <div class="item-list">${items}</div>
+      <div class="item-list${equipped > 5 ? ' scrollable' : ''}">${items}</div>
     </section>
     <div class="seedline">SEED ${escapeHtml(host.current?.seed ?? '')}</div>
   </aside>`;
@@ -2724,6 +2725,11 @@ function renderItem(view: RunView, item: ItemView): string {
   const spent = def?.initial?.used !== undefined && (item.data.used ?? 0) > 0;
   const usedThisRound = Boolean(def?.onUse) && (item.data._uses ?? 0) > 0;
   const usable = Boolean(def?.onUse);
+  const canUseNow = !def?.useOnlyInRound || view.phase.kind === 'round';
+  const useDisabled = usedThisRound || !canUseNow;
+  const useTitle = !canUseNow
+    ? 'Only usable during a fight.'
+    : usedThisRound ? 'Already used this round.' : '';
   const rarity = !item.equipped && item.slots > 0
     ? 'BAG'
     : def?.rarity === 'rare'
@@ -2748,7 +2754,7 @@ function renderItem(view: RunView, item: ItemView): string {
     <p>${glossaryText(description)}</p>
     ${data ? `<div class="data-row">${data}</div>` : ''}
     ${!item.equipped && item.slots > 0 ? `<p class="bag-note">In the bag. Equip it in a shop.</p>` : ''}
-    ${usable ? `<button class="btn tiny" data-action="use" data-id="${escapeHtml(item.instance)}" ${usedThisRound ? 'disabled' : ''}>${usedThisRound ? 'USED' : escapeHtml(def?.useLabel ?? 'USE')}</button>` : ''}
+    ${usable ? `<button class="btn tiny" data-action="use" data-id="${escapeHtml(item.instance)}" ${useDisabled ? 'disabled' : ''}${useDisabled ? ` title="${escapeHtml(useTitle)}"` : ''}>${usedThisRound ? 'USED' : escapeHtml(def?.useLabel ?? 'USE')}</button>` : ''}
   </article>`;
 }
 
@@ -3078,13 +3084,6 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
     : `<p class="empty-note">The shelves are bare. Reroll or leave.</p>`;
 
   const canSell = !view.curses.some((curse) => curse.id === 'chained');
-  const sellable = view.items.length
-    ? view.items.map((item) => {
-      const def = ITEM_BY_ID.get(item.id);
-      const description = def?.dynamicDescription?.(item.data) ?? def?.description ?? '';
-      return `<div class="sell-row"><span class="sell-name" tabindex="0" data-tip="${escapeHtml(description)}">${itemIcon(item.id)} ${escapeHtml(def?.name ?? item.id)}</span><button class="btn tiny" data-action="sell" data-id="${escapeHtml(item.instance)}" ${canSell ? '' : 'disabled'}>SELL ${item.sellValue} G</button></div>`;
-    }).join('')
-    : `<p class="empty-note">Nothing to sell.</p>`;
 
   const gear = view.items.filter((item) => item.slots > 0);
   const equippedGear = gear.filter((item) => item.equipped);
@@ -3093,13 +3092,15 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
 
   const chips = (items: ItemView[], inSlot: boolean) => items.map((item) => {
     const def = ITEM_BY_ID.get(item.id);
+    const description = def?.dynamicDescription?.(item.data) ?? def?.description ?? '';
     return `<div class="loadout-chip ${inSlot ? 'equipped' : 'bagged'}" draggable="true"
       data-item="${escapeHtml(item.instance)}"
       data-action="${inSlot ? 'unequip' : 'equip'}" data-id="${escapeHtml(item.instance)}"
-      data-tip="${escapeHtml(def?.description ?? '')}"
+      data-tip="${escapeHtml(description)}"
       title="${inSlot ? 'Drag to the bag or click to unequip' : 'Drag to a slot or click to equip'}">
       <span class="item-emoji" aria-hidden="true">${itemIcon(item.id)}</span>
       <b>${escapeHtml(def?.name ?? item.id)}</b>
+      <button class="btn tiny chip-sell" data-action="sell" data-id="${escapeHtml(item.instance)}" ${canSell ? '' : 'disabled'} title="Sell for ${item.sellValue} gold">SELL ${item.sellValue} G</button>
     </div>`;
   }).join('');
 
@@ -3114,7 +3115,7 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
         <span class="panel-kicker">LOADOUT</span>
         <span class="count">${view.slots.used}/${view.slots.total} SLOTS</span>
       </div>
-      <p class="hint">This shop is where you rearrange gear. Drag a piece between the slots and the bag, or click it.</p>
+      <p class="hint">This shop is where you rearrange gear. Drag a piece between the slots and the bag, or click it.${canSell ? '' : ' The Chained prevents selling.'}</p>
       <div class="slot-grid" data-drop="slot">${slots}</div>
       <div class="bag-zone" data-drop="bag">
         <span class="panel-kicker">BAG${bagged.length ? ` · ${bagged.length}` : ''}</span>
@@ -3133,10 +3134,6 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
       <button class="btn ghost" data-action="continue">LEAVE →</button>
     </div>
     ${loadout}
-    <div class="sell-box">
-      <p class="panel-kicker">SELL ITEMS${canSell ? '' : ' · CHAINED'}</p>
-      ${sellable}
-    </div>
     <p class="hint">Shops carry items, foods, and one wildcard slot. Curses can remove slots. Food is eaten on purchase. One item is always half price, and each reroll costs double the last. Relics are very rare items.</p>
   </div>`;
 }

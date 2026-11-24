@@ -514,6 +514,8 @@ export interface ItemDef {
   onUse?: (ctx: ItemCtx) => Effect[];
   /** Button label for usable items. Defaults to USE. */
   useLabel?: string;
+  /** Activated abilities only work during a fight. */
+  useOnlyInRound?: boolean;
   modifyDamage?: (ctx: ItemCtx, amount: number) => number;
   /** Multiplies hits that armor does not soak at all (for example, 0.5). */
   unarmoredHitMultiplier?: number;

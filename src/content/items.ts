@@ -479,6 +479,7 @@ export const ITEMS: ItemDef[] = [
     kind: 'gear',
     rarity: 'rare',
     initial: { fed: 0, _uses: 0 },
+    useOnlyInRound: true,
     onUse: (ctx) => {
       if (!ctx.self.equipped) {
         return [{ type: 'message', text: 'Equip the book first.' }];
@@ -1760,6 +1761,7 @@ export const ITEMS: ItemDef[] = [
     unique: true,
     noSpawn: true,
     useLabel: '🪙',
+    useOnlyInRound: true,
     initial: { readyAt: 0, _suggestions: 0, _freeUsed: 0 },
     onAcquire: parrotRoundReset,
     on: {
