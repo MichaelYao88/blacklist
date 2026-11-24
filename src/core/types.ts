@@ -869,6 +869,18 @@ export type Command =
   | { type: 'removeCurse'; curseId: CurseId }
   | { type: 'continue' };
 
+/**
+ * Resources gained by an item proc. The UI uses these for the reward fly-to-HUD
+ * effects instead of trying to parse the proc text.
+ */
+export type ProcChange =
+  | { kind: 'gold'; amount: number }
+  | { kind: 'hp'; amount: number }
+  | { kind: 'maxHp'; amount: number }
+  | { kind: 'armor'; amount: number }
+  | { kind: 'maxArmor'; amount: number }
+  | { kind: 'spell'; id: SpellId; count: number };
+
 export type GameEvent =
   | { type: 'runStarted'; seed: string; ascension: number; nodes: RunNode[] }
   | { type: 'nodeEntered'; index: number; kind: NodeKind; act: number; level: number }
@@ -934,7 +946,14 @@ export type GameEvent =
   | { type: 'goldChanged'; delta: number; total: number; source: Source }
   | { type: 'itemAcquired'; item: ItemView }
   | { type: 'itemRemoved'; instance: InstanceId; reason: 'sold' | 'consumed' | 'replaced' }
-  | { type: 'itemProc'; item: ItemId; instance: InstanceId; hook: HookName | 'onUse'; text: string }
+  | {
+      type: 'itemProc';
+      item: ItemId;
+      instance: InstanceId;
+      hook: HookName | 'onUse';
+      text: string;
+      changes?: ProcChange[];
+    }
   | { type: 'itemGrew'; instance: InstanceId; stat: string; value: number }
   | { type: 'itemEquipped'; instance: InstanceId; equipped: boolean }
   | { type: 'itemDataChanged'; instance: InstanceId; stat: string; value: number }

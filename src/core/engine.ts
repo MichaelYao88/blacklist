@@ -21,6 +21,7 @@ import type {
   Offer,
   PhaseView,
   PresentedGuess,
+  ProcChange,
   RewardOption,
   RoundState,
   RunNode,
@@ -1580,22 +1581,42 @@ export function createCore(content: Content): Core {
     };
   }
 
-  function procSummary(before: ProcSnapshot, rt: Runtime, hook: HookName): string {
+  function procDetails(
+    before: ProcSnapshot,
+    rt: Runtime,
+    hook: HookName,
+  ): { text: string; changes: ProcChange[] } {
     const state = rt.state;
     const round = state.round;
     const parts: string[] = [];
+    const changes: ProcChange[] = [];
     const signed = (value: number): string => `${value > 0 ? '+' : ''}${value}`;
 
     const gold = state.gold - before.gold;
-    if (gold !== 0) parts.push(`${signed(gold)} gold`);
+    if (gold !== 0) {
+      parts.push(`${signed(gold)} gold`);
+      if (gold > 0) changes.push({ kind: 'gold', amount: gold });
+    }
     const hp = state.hp - before.hp;
-    if (hp !== 0) parts.push(`${signed(hp)} HP`);
+    if (hp !== 0) {
+      parts.push(`${signed(hp)} HP`);
+      if (hp > 0) changes.push({ kind: 'hp', amount: hp });
+    }
     const maxHp = state.maxHp - before.maxHp;
-    if (maxHp !== 0) parts.push(`${signed(maxHp)} max HP`);
+    if (maxHp !== 0) {
+      parts.push(`${signed(maxHp)} max HP`);
+      if (maxHp > 0) changes.push({ kind: 'maxHp', amount: maxHp });
+    }
     const armor = state.armor - before.armor;
-    if (armor !== 0) parts.push(`${signed(armor)} armor`);
+    if (armor !== 0) {
+      parts.push(`${signed(armor)} armor`);
+      if (armor > 0) changes.push({ kind: 'armor', amount: armor });
+    }
     const maxArmor = state.maxArmor - before.maxArmor;
-    if (maxArmor !== 0) parts.push(`${signed(maxArmor)} max armor`);
+    if (maxArmor !== 0) {
+      parts.push(`${signed(maxArmor)} max armor`);
+      if (maxArmor > 0) changes.push({ kind: 'maxArmor', amount: maxArmor });
+    }
     const slots = state.slots - before.slots;
     if (slots !== 0) parts.push(`${signed(slots)} slot${Math.abs(slots) === 1 ? '' : 's'}`);
 
@@ -1603,6 +1624,7 @@ export function createCore(content: Content): Core {
       const gained = count - (before.spells.get(id) ?? 0);
       if (gained > 0) {
         parts.push(`+${gained > 1 ? `${gained} ` : ''}${spellById.get(id)?.name ?? id}`);
+        changes.push({ kind: 'spell', id, count: gained });
       }
     }
     for (const id of state.items.map((item) => item.id)) {
@@ -1687,7 +1709,7 @@ export function createCore(content: Content): Core {
       parts.push('next guess unobscured');
     }
 
-    return [...new Set(parts)].join(' · ');
+    return { text: [...new Set(parts)].join(' · '), changes };
   }
 
   function runHook<H extends HookName>(rt: Runtime, hook: H, payload: HookPayloads[H]): void {
@@ -1721,7 +1743,7 @@ export function createCore(content: Content): Core {
       if (effects.length === 0) continue;
       const before = snapshotProc(rt);
       applyEffects(rt, effects, { kind: 'item', instance: item.instance }, item.instance);
-      const text = procSummary(before, rt, hook);
+      const { text, changes } = procDetails(before, rt, hook);
       if (text) {
         emit(rt, {
           type: 'itemProc',
@@ -1729,6 +1751,7 @@ export function createCore(content: Content): Core {
           instance: item.instance,
           hook,
           text,
+          changes,
         });
       }
       if (isOver(state)) break;

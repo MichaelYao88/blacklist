@@ -8,6 +8,7 @@ import type {
   NodeKind,
   Offer,
   PhaseView,
+  ProcChange,
   RunView,
   Source,
   SpellView,
@@ -34,6 +35,7 @@ import {
 } from './analytics';
 import { escapeHtml, formatTime, reasonText, roman } from './format';
 import { ARMOR_TIP, PURGED_TIP, glossaryText } from './glossary';
+import { groupProcChanges, type ProcFlyGroup } from './procRewards';
 import {
   bossColor,
   bossSigil,
@@ -235,6 +237,12 @@ const procRoot = document.createElement('div');
 procRoot.id = 'proc-root';
 procRoot.setAttribute('aria-live', 'polite');
 document.body.appendChild(procRoot);
+
+const procFxRoot = document.createElement('div');
+procFxRoot.id = 'proc-fx-root';
+procFxRoot.setAttribute('aria-hidden', 'true');
+document.body.appendChild(procFxRoot);
+
 let phraseTimer: number | undefined;
 
 const spellRoot = document.createElement('div');
@@ -494,6 +502,7 @@ interface ProcEntry {
   itemId: string;
   text: string;
   count: number;
+  changes: ProcChange[];
 }
 let procEntries: ProcEntry[] = [];
 let procPending: ProcEntry[] = [];
@@ -508,11 +517,96 @@ function renderProcFeed(): void {
     const def = ITEM_BY_ID.get(entry.itemId);
     const name = escapeHtml(def?.name ?? entry.itemId);
     const count = entry.count > 1 ? ` ×${entry.count}` : '';
-    return `<div class="proc-pop">
+    return `<div class="proc-pop" data-proc-id="${entry.id}">
       <span class="proc-icon" aria-hidden="true">${itemIcon(entry.itemId)}</span>
       <span class="proc-text"><b>${name}</b><span>${escapeHtml(entry.text)}${count}</span></span>
     </div>`;
   }).join('');
+}
+
+function prefersReducedMotion(): boolean {
+  return typeof window.matchMedia === 'function'
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function flyProcRewards(entryId: number, changes: ProcChange[]): void {
+  if (changes.length === 0) return;
+  const groups = groupProcChanges(changes);
+  if (groups.length === 0) return;
+  const pop = procRoot.querySelector<HTMLElement>(`[data-proc-id="${entryId}"]`);
+  const popRect = pop?.getBoundingClientRect();
+  const origin = popRect && popRect.width > 0 && popRect.height > 0
+    ? { x: popRect.left + popRect.width / 2, y: popRect.top + popRect.height / 2 }
+    : { x: window.innerWidth / 2, y: window.innerHeight * 0.56 };
+  if (prefersReducedMotion()) {
+    if (pop) {
+      pop.classList.remove('proc-reward');
+      void pop.offsetWidth;
+      pop.classList.add('proc-reward');
+      window.setTimeout(() => pop.classList.remove('proc-reward'), 520);
+    }
+    return;
+  }
+  groups.forEach((group, index) => {
+    spawnProcFly(group, origin, index * 80);
+  });
+}
+
+function spawnProcFly(
+  group: ProcFlyGroup,
+  origin: { x: number; y: number },
+  delay: number,
+): void {
+  const node = document.createElement('span');
+  node.className = `proc-fly proc-fly-${group.kind}`;
+  node.setAttribute('aria-hidden', 'true');
+  node.textContent = group.icon;
+  if (group.amount > 1) {
+    const badge = document.createElement('b');
+    badge.textContent = group.kind === 'spell' ? `×${group.amount}` : `+${group.amount}`;
+    node.appendChild(badge);
+  }
+  node.style.left = `${origin.x}px`;
+  node.style.top = `${origin.y}px`;
+  procFxRoot.appendChild(node);
+
+  const target = group.kind === 'gold'
+    ? document.querySelector<HTMLElement>('[data-hud="gold"]')
+    : null;
+  const targetRect = target?.getBoundingClientRect();
+  const end = targetRect && targetRect.width > 0 && targetRect.height > 0
+    ? { x: targetRect.left + targetRect.width / 2, y: targetRect.top + targetRect.height / 2 }
+    : group.kind === 'gold'
+      ? { x: 28, y: 28 }
+      : { x: origin.x + 148, y: origin.y - 10 };
+  const dx = end.x - origin.x;
+  const dy = end.y - origin.y;
+  const remove = (): void => node.remove();
+  const duration = group.kind === 'gold' ? 760 : 700;
+
+  if (typeof node.animate === 'function') {
+    try {
+      const animation = node.animate([
+        { transform: 'translate(-50%, -50%) scale(0.5)', opacity: 0 },
+        { transform: 'translate(-50%, -50%) scale(1.15)', opacity: 1, offset: 0.16 },
+        {
+          transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.8)`,
+          opacity: 0,
+        },
+      ], {
+        duration,
+        delay,
+        easing: 'cubic-bezier(0.22, 0.9, 0.3, 1)',
+        fill: 'both',
+      });
+      animation.addEventListener('finish', remove);
+      animation.addEventListener('cancel', remove);
+    } catch {
+      // Older engines can expose animate() but reject the keyframes.
+    }
+  }
+  // Always clean up, including in reduced-capability test environments.
+  window.setTimeout(remove, duration + delay + 260);
 }
 
 function dropProc(id: number): void {
@@ -538,15 +632,17 @@ function releaseNextProc(): void {
     }
   }
   renderProcFeed();
+  if (entry.changes.length > 0) flyProcRewards(entry.id, entry.changes);
   procReleaseTimer = window.setTimeout(() => {
     procReleaseTimer = undefined;
     releaseNextProc();
   }, POPUP_GAP_MS);
 }
 
-function showProc(itemId: string, text: string): void {
+function showProc(itemId: string, text: string, changes: ProcChange[] = []): void {
   const existing = procEntries.find((entry) => entry.itemId === itemId)
     ?? procPending.find((entry) => entry.itemId === itemId);
+  let flyVisible: ProcChange[] | null = null;
   if (existing) {
     existing.count += 1;
     existing.text = text;
@@ -554,12 +650,16 @@ function showProc(itemId: string, text: string): void {
       const timer = procTimers.get(existing.id);
       if (timer) window.clearTimeout(timer);
       procTimers.set(existing.id, window.setTimeout(() => dropProc(existing.id), PROC_TTL));
+      if (changes.length > 0) flyVisible = changes;
+    } else {
+      existing.changes.push(...changes);
     }
   } else {
-    procPending.push({ id: ++procSeq, itemId, text, count: 1 });
+    procPending.push({ id: ++procSeq, itemId, text, count: 1, changes: [...changes] });
   }
   releaseNextProc();
   renderProcFeed();
+  if (existing && flyVisible) flyProcRewards(existing.id, flyVisible);
 }
 
 function clearProcFeed(): void {
@@ -569,6 +669,7 @@ function clearProcFeed(): void {
   procReleaseTimer = undefined;
   procEntries = [];
   procPending = [];
+  procFxRoot.innerHTML = '';
   renderProcFeed();
 }
 
@@ -806,7 +907,7 @@ function processEvents(events: GameEvent[]): void {
     }
     if (event.type === 'message') notify(event.text, 'info');
     if (event.type === 'spellCast') showSpellPopup(event.spell.id, Boolean(event.auto));
-    if (event.type === 'itemProc') showProc(event.item, event.text);
+    if (event.type === 'itemProc') showProc(event.item, event.text, event.changes);
     if (event.type === 'happeningResolved') {
       notify(event.text, event.success ? 'good' : 'bad');
       const happeningView = host.view();
@@ -2065,7 +2166,7 @@ function renderTopbar(view: RunView): string {
   <header class="topbar">
     <div class="brand">BLACKLIST</div>
     <div class="top-stats">
-      <div class="chip-stat gold" title="Gold">🪙 <b>${view.gold}</b></div>
+      <div class="chip-stat gold" data-hud="gold" title="Gold">🪙 <b>${view.gold}</b></div>
       ${view.ascension > 0 ? `<div class="chip-stat ascension" title="Ascension modifiers are active">A${view.ascension}</div>` : ''}
       <div class="chip-stat" title="Area">AREA ${roman(view.act + 1)}</div>
     </div>
