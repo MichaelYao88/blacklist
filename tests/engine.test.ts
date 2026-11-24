@@ -1500,6 +1500,7 @@ describe('shop curses', () => {
 
   it('The Chained blocks selling', () => {
     const { state } = start();
+    state.items = state.items.filter((item) => item.id !== 'evil-parrot');
     state.phase = 'shop';
     state.shop = shopState();
     state.curses.push({ id: 'chained', stacks: 1 });
@@ -1821,6 +1822,7 @@ describe('new item and event batch', () => {
 
   it('Tight Slots removes 2 slots and bags the overflow', () => {
     const { state } = start('tight-slots');
+    state.items = state.items.filter((item) => item.id !== 'evil-parrot');
     for (let index = 0; index < 5; index++) {
       state.items.push({
         instance: `i-hour-${index}`,
@@ -3599,6 +3601,7 @@ describe('latest balance pass', () => {
 
   it('refuses stale clock-gated shop and reward offers after the clock is gone', () => {
     const shop = start('stale-shop');
+    shop.state.items = shop.state.items.filter((item) => item.id !== 'evil-parrot');
     shop.state.phase = 'shop';
     shop.state.gold = 20;
     shop.state.shop = shopState([
@@ -3614,6 +3617,7 @@ describe('latest balance pass', () => {
     expect(eventTypes(food.events)).toContain('shopRejected');
 
     const reward = start('stale-reward');
+    reward.state.items = reward.state.items.filter((item) => item.id !== 'evil-parrot');
     reward.state.phase = 'reward';
     reward.state.reward = {
       boss: false,
@@ -3635,6 +3639,7 @@ describe('latest balance pass', () => {
     let curseOutcomes = 0;
     for (let index = 0; index < 120; index++) {
       const { state } = start(`bargain-${index}`);
+      state.items = state.items.filter((item) => item.id !== 'evil-parrot');
       state.phase = 'happening';
       state.happening = {
         id: 'the-bargain',
@@ -5530,6 +5535,7 @@ describe('damage doubling and slots', () => {
 
   it('adds one damage per equipped slot above five and previews the same number', () => {
     const { state } = start('slot-damage');
+    state.items = state.items.filter((item) => item.id !== 'evil-parrot');
     state.slots = 7;
     for (let index = 0; index < 6; index++) {
       state.items.push({

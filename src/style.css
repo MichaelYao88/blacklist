@@ -3546,6 +3546,67 @@ button {
   }
 }
 
+/* evil parrot suggestion */
+#parrot-root {
+  position: fixed;
+  inset: 0;
+  z-index: 124;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 27vh;
+  pointer-events: none;
+  text-align: center;
+}
+
+.parrot-pop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 22px 14px;
+  border: 1px solid rgba(79, 191, 135, 0.55);
+  border-radius: 12px;
+  background: rgba(18, 14, 26, 0.96);
+  box-shadow: 0 20px 60px -24px #000, 0 0 34px -18px rgba(79, 191, 135, 0.8);
+  animation: parrot-pop 4s cubic-bezier(0.2, 0.9, 0.25, 1) both;
+}
+
+.parrot-emoji {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.parrot-kicker {
+  color: var(--green);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.parrot-word {
+  color: var(--gold-soft);
+  font-family: var(--serif);
+  font-size: 2rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.05;
+}
+
+@keyframes parrot-pop {
+  0% { opacity: 0; transform: translateY(8px) scale(0.9); }
+  10% { opacity: 1; transform: translateY(0) scale(1.03); }
+  18% { transform: scale(1); }
+  85% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-6px) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .parrot-pop {
+    animation: none;
+  }
+}
+
 /* first-damage tutorial */
 .damage-tutorial .modal-card {
   max-width: 460px;

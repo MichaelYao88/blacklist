@@ -23,7 +23,9 @@ describe('once-per-round item state', () => {
   });
 
   it('shows SPENT on a once-per-round item that has fired', () => {
-    const card = root.querySelector<HTMLElement>('.item-card');
+    const card = [...root.querySelectorAll<HTMLElement>('.item-card')]
+      .find((entry) => entry.textContent?.includes('Scattershot')) ?? null;
+    expect(card).not.toBeNull();
     expect(card?.classList.contains('spent')).toBe(true);
     expect(card?.querySelector('.item-state')?.textContent).toBe('SPENT');
     expect(card?.textContent).not.toContain('used 1');

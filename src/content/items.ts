@@ -1,4 +1,5 @@
-import { defineItem, type Effect, type ItemDef } from '../core/types';
+import { defineItem, type Effect, type ItemCtx, type ItemDef } from '../core/types';
+import { rngInt } from '../core/rng';
 import { isAllAbsent, sharedLetters, truthCounts } from '../core/score';
 import { FOODS } from './foods';
 import { SPELLS } from './spells';
@@ -13,6 +14,13 @@ const SPELL_BITS: Record<string, number> = {
 };
 
 const FOOD_BITS = new Map(FOODS.map((food, index) => [food.id, index]));
+
+/** Evil Parrot: schedule the next suggestion 30–60 seconds from now. */
+function parrotSchedule(ctx: ItemCtx): Effect[] {
+  const elapsed = ctx.state.round?.elapsedMs ?? 0;
+  const delay = 30_000 + rngInt(ctx.state, 30_001);
+  return [{ type: 'setItemData', stat: 'readyAt', value: elapsed + delay }];
+}
 
 /** Frozen Durian: one Time Freeze for every three eats or solves. */
 function everyThreeFoodsOrSolves(self: { data: Record<string, number> }): Effect[] {
@@ -1733,6 +1741,30 @@ export const ITEMS: ItemDef[] = [
     kind: 'gear',
     rarity: 'rare',
     doubleFood: true,
+  }),
+  defineItem({
+    id: 'evil-parrot',
+    name: 'Evil Parrot',
+    description: 'Randomly suggests possible words.',
+    price: 16,
+    kind: 'gear',
+    slots: 1,
+    unique: true,
+    noSpawn: true,
+    initial: { readyAt: 0 },
+    onAcquire: parrotSchedule,
+    on: {
+      onRoundStart: parrotSchedule,
+      onGuessScored: (ctx, p) => (p.guess.by === 'player' ? parrotSchedule(ctx) : []),
+      onTimerTick: (ctx, p) => {
+        if (!ctx.state.round) return [];
+        const readyAt = ctx.self.data.readyAt ?? 0;
+        if (readyAt <= 0) return parrotSchedule(ctx);
+        if (p.elapsedMs < readyAt) return [];
+        return [...parrotSchedule(ctx), { type: 'parrotSuggest' }];
+      },
+    },
+    sellValue: () => 8,
   }),
   defineItem({
     id: 'piggy-bank',

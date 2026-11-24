@@ -198,6 +198,26 @@ function showFreeGuessPopup(source: string): void {
   }, 2_400);
 }
 
+// Evil Parrot suggestions. Display-only and outside the render tree.
+const parrotRoot = document.createElement('div');
+parrotRoot.id = 'parrot-root';
+parrotRoot.setAttribute('aria-live', 'polite');
+document.body.appendChild(parrotRoot);
+let parrotTimer: number | undefined;
+
+function showParrotPopup(word: string): void {
+  parrotRoot.innerHTML = `<div class="parrot-pop">
+    <span class="parrot-emoji" aria-hidden="true">🦜</span>
+    <span class="parrot-kicker">EVIL PARROT</span>
+    <b class="parrot-word">${escapeHtml(word.toUpperCase())}</b>
+  </div>`;
+  if (parrotTimer) window.clearTimeout(parrotTimer);
+  parrotTimer = window.setTimeout(() => {
+    parrotRoot.innerHTML = '';
+    parrotTimer = undefined;
+  }, 4_000);
+}
+
 // The countdown lives outside the render tree so the per-second update only
 // swaps the number instead of rebuilding (and restarting) the whole overlay.
 const countdownRoot = document.createElement('div');
@@ -799,6 +819,9 @@ function logGameEvent(event: GameEvent): void {
     case 'foodEaten':
       logChronicle('food', `Ate ${event.name}`);
       break;
+    case 'parrotSuggestion':
+      logChronicle('info', `Evil Parrot suggests ${event.word.toUpperCase()}`);
+      break;
     case 'message':
       logChronicle('info', event.text);
       break;
@@ -906,6 +929,7 @@ function processEvents(events: GameEvent[]): void {
       logChronicle('bad', `Damage ×${event.multiplier}`);
     }
     if (event.type === 'message') notify(event.text, 'info');
+    if (event.type === 'parrotSuggestion') showParrotPopup(event.word);
     if (event.type === 'spellCast') showSpellPopup(event.spell.id, Boolean(event.auto));
     if (event.type === 'itemProc') showProc(event.item, event.text, event.changes);
     if (event.type === 'happeningResolved') {
@@ -1140,6 +1164,9 @@ function startNewRun(preferredCharacter?: string): void {
   if (freeGuessTimer) window.clearTimeout(freeGuessTimer);
   freeGuessTimer = undefined;
   freeGuessRoot.innerHTML = '';
+  if (parrotTimer) window.clearTimeout(parrotTimer);
+  parrotTimer = undefined;
+  parrotRoot.innerHTML = '';
   countdownShown = 0;
   countdownRoot.innerHTML = '';
   damageTutorialOpen = false;
@@ -1196,6 +1223,9 @@ function resumeRun(): void {
   if (freeGuessTimer) window.clearTimeout(freeGuessTimer);
   freeGuessTimer = undefined;
   freeGuessRoot.innerHTML = '';
+  if (parrotTimer) window.clearTimeout(parrotTimer);
+  parrotTimer = undefined;
+  parrotRoot.innerHTML = '';
   countdownShown = 0;
   countdownRoot.innerHTML = '';
   damageTutorialOpen = false;

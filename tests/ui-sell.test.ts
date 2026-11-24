@@ -28,7 +28,8 @@ describe('sell menu item tooltips', () => {
   });
 
   it('makes each sell row hoverable', () => {
-    const name = root.querySelector<HTMLElement>('.sell-name');
+    const name = [...root.querySelectorAll<HTMLElement>('.sell-name')]
+      .find((entry) => entry.textContent?.includes('Turtle Shell')) ?? null;
     expect(name).not.toBeNull();
     expect(name?.getAttribute('tabindex')).toBe('0');
     expect(name?.dataset.tip).toContain('reduced by 50%');

@@ -39,6 +39,7 @@ import type {
 } from './types';
 import { hashSeed, rngChance, rngInt, rngPick, rngNext, rngShuffle } from './rng';
 import { scoreGuess, truthCounts } from './score';
+import { chooseParrotWord, possibleWords } from './parrot';
 import { ASCENSION_MAX, ascensionStartingCurses } from './ascension';
 
 const VERSION = 6;
@@ -1233,6 +1234,17 @@ export function createCore(content: Content): Core {
       case 'openShop':
         openShop(rt);
         break;
+      case 'parrotSuggest': {
+        if (state.phase !== 'round' || !state.round) break;
+        const candidates = parrotCandidates(state);
+        const word = chooseParrotWord(
+          candidates,
+          state.round.answer,
+          (items) => rngPick(state, [...items]),
+        );
+        if (word) emit(rt, { type: 'parrotSuggestion', word });
+        break;
+      }
       case 'startBattle':
         startEventBattle(rt);
         break;
@@ -1759,6 +1771,24 @@ export function createCore(content: Content): Core {
   }
 
   // ── presentation ─────────────────────────────────────────────────────────
+
+  /** Answers still consistent with every clue the player can see. */
+  function parrotCandidates(state: RunState): string[] {
+    const round = state.round;
+    if (!round) return [];
+    const hints = Object.entries(round.hints ?? {});
+    return possibleWords(content.answers, {
+      clues: round.guesses.map((guess) => presentGuess(state, guess)),
+      presentHints: hints
+        .filter(([, status]) => status === 'present')
+        .map(([letter]) => letter),
+      absentHints: hints
+        .filter(([, status]) => status === 'absent')
+        .map(([letter]) => letter),
+      purged: state.purged,
+      excluded: [...state.blacklist, ...round.guesses.map((guess) => guess.word)],
+    });
+  }
 
   function presentGuess(state: RunState, guess: ScoredGuess): PresentedGuess {
     const bossId = state.round?.boss;

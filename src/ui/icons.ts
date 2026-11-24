@@ -1,5 +1,6 @@
 const ITEM_ICONS: Record<string, string> = {
   'early-bird': '🐦',
+  'evil-parrot': '🦜',
   'hat-trick': '🎩',
   brace: '🦾',
   bloom: '🌱',
