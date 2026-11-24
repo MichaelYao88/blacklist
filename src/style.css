@@ -1750,9 +1750,8 @@ button {
 .offer-card.spell::after {
   content: '';
   position: absolute;
-  inset: -1px;
-  border-radius: 9px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cfilter id='squiggle' x='-20%25' y='-20%25' width='140%25' height='140%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.06 0.09' numOctaves='1' seed='9' result='noise'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='noise' scale='3.5' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3Crect x='4' y='4' width='92' height='92' rx='7' fill='none' stroke='%23b48cff' stroke-width='2.2' vector-effect='non-scaling-stroke' filter='url(%23squiggle)'/%3E%3C/svg%3E");
+  inset: -2px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 100' preserveAspectRatio='none'%3E%3Cpath d='M2,2L6.9,0.5L11.8,3.5L16.7,0.5L21.6,3.5L26.5,0.5L31.4,3.5L36.3,0.5L41.2,3.5L46.1,0.5L51,3.5L55.9,0.5L60.8,3.5L65.7,0.5L70.6,3.5L75.5,0.5L80.4,3.5L85.3,0.5L90.2,3.5L95.1,0.5L100,3.5L104.9,0.5L109.8,3.5L114.7,0.5L119.6,3.5L124.5,0.5L129.4,3.5L134.3,0.5L139.2,3.5L144.1,0.5L149,3.5L153.9,0.5L158.8,3.5L163.7,0.5L168.6,3.5L173.5,0.5L178.4,3.5L183.3,0.5L188.2,3.5L193.1,0.5L198,2L199.5,6.8L196.5,11.6L199.5,16.4L196.5,21.2L199.5,26L196.5,30.8L199.5,35.6L196.5,40.4L199.5,45.2L196.5,50L199.5,54.8L196.5,59.6L199.5,64.4L196.5,69.2L199.5,74L196.5,78.8L199.5,83.6L196.5,88.4L199.5,93.2L198,98L193.1,99.5L188.2,96.5L183.3,99.5L178.4,96.5L173.5,99.5L168.6,96.5L163.7,99.5L158.8,96.5L153.9,99.5L149,96.5L144.1,99.5L139.2,96.5L134.3,99.5L129.4,96.5L124.5,99.5L119.6,96.5L114.7,99.5L109.8,96.5L104.9,99.5L100,96.5L95.1,99.5L90.2,96.5L85.3,99.5L80.4,96.5L75.5,99.5L70.6,96.5L65.7,99.5L60.8,96.5L55.9,99.5L51,96.5L46.1,99.5L41.2,96.5L36.3,99.5L31.4,96.5L26.5,99.5L21.6,96.5L16.7,99.5L11.8,96.5L6.9,99.5L2,98L0.5,93.2L3.5,88.4L0.5,83.6L3.5,78.8L0.5,74L3.5,69.2L0.5,64.4L3.5,59.6L0.5,54.8L3.5,50L0.5,45.2L3.5,40.4L0.5,35.6L3.5,30.8L0.5,26L3.5,21.2L0.5,16.4L3.5,11.6L0.5,6.8L2,2' fill='none' stroke='%23b48cff' stroke-width='2' stroke-linejoin='miter' stroke-linecap='round' vector-effect='non-scaling-stroke'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-size: 100% 100%;
   pointer-events: none;
