@@ -63,7 +63,7 @@ const ENTRIES: GlossaryEntry[] = [
   },
   {
     pattern: /\bpossible words?\b/gi,
-    tip: 'A dictionary answer that fits every green and yellow clue you can see, including known duplicate letters. The parrot lies unless only one possible word remains.',
+    tip: 'It will not be the answer word unless it\'s the only one left.',
   },
   {
     pattern: /\bmanual guesses?\b/gi,

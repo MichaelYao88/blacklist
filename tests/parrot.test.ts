@@ -75,7 +75,7 @@ describe('Evil Parrot word filter', () => {
   it('explains possible words in the item description', () => {
     const html = glossaryText(ITEM_BY_ID.get('evil-parrot')?.description ?? '');
     expect(html).toContain('data-tip');
-    expect(html).toContain('green and yellow');
+    expect(html).toContain('will not be the answer word');
   });
 
   it('alternates between try and squawk in the popup', () => {
