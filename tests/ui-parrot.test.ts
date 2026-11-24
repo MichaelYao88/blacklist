@@ -28,11 +28,11 @@ describe('Evil Parrot item card', () => {
     expect(card?.textContent).not.toContain('suggestions');
   });
 
-  it('describes the 1g cracker bribe and shows a 1g button', () => {
+  it('describes the cracker bribe and shows the emoji button', () => {
     const card = [...root.querySelectorAll<HTMLElement>('.item-card')]
       .find((entry) => entry.textContent?.includes('Evil Parrot')) ?? null;
-    expect(card?.textContent).toContain('bribe it with a cracker for 1g');
+    expect(card?.textContent).toContain('Bribe it with a cracker for 🪙');
     const button = card?.querySelector<HTMLElement>('[data-action="use"]') ?? null;
-    expect(button?.textContent?.trim()).toBe('1g');
+    expect(button?.textContent?.trim()).toBe('🪙 ➡️ 🍪');
   });
 });

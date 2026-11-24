@@ -214,7 +214,7 @@ Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title s
 - **The Purgamist** unlocks after purging **6 letters** across any runs. They start with the **Evil Parrot**, **Without the D** curse, 18 HP, 5 armor, 17 gold, and purge **4 letters** of your choice on level 0, before any word is drawn.
 - **The Necromancer** unlocks after buying the **Necronomicon** once from a shop. They start with the **Necronomicon**, **Evil Parrot**, **The Sleeper** curse, 31 HP, 4 armor and 16 gold.
 - **The Gourmand** unlocks after eating 3 **Double Cheeseburgers** across any runs. They start with **Potluck**, the **Evil Parrot**, **Porcupine's Dilemma** curse, **Shop Upgrade** already eaten, 25 HP, 4 armor and 6 gold.
-- **Evil Parrot** is a 16g item that cannot be bought and sells for 8. It randomly suggests **possible words**; the parrot lies unless only one possible word remains. You can bribe it with a cracker for 1g.
+- **Evil Parrot** is a 16g item that cannot be bought and sells for 8. It randomly suggests **possible words**; the parrot lies unless only one possible word remains. Bribe it with a cracker for 🪙.
 - **The Farmer** unlocks after winning any run. They start with three **Harvest Charms**, **Early Bird**, the **Short Fuse** curse, 17 HP, 3 armor and 2 gold.
 - **The Empty Armor** unlocks after winning a run on **Ascension 1**. It starts with **Bulwark**, the character-only **Slow Mending** curse, 1 HP, 13 armor, one extra item slot and 6 gold.
 - **The Werewolf** unlocks after winning runs with **2 different characters**. It starts with **Dark Echo**, **Thorn Crown**, the **Weak Plate** and **Tight Slots** curses, 69 HP, no armor and 6 gold.

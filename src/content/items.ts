@@ -1746,13 +1746,13 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'evil-parrot',
     name: 'Evil Parrot',
-    description: 'Randomly suggests possible words. You can bribe it with a cracker for 1g.',
+    description: 'Randomly suggests possible words. Bribe it with a cracker for 🪙.',
     price: 16,
     kind: 'gear',
     slots: 1,
     unique: true,
     noSpawn: true,
-    useLabel: '1g',
+    useLabel: '🪙 ➡️ 🍪',
     initial: { readyAt: 0, _suggestions: 0 },
     onAcquire: parrotSchedule,
     on: {
