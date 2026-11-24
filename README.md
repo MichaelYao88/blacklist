@@ -59,7 +59,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Four-Leaf Clover** has a 20% chance of a random spell when you eat or cast
 - **Nest Egg** pays 3 gold whenever a shop opens
 - **Frozen Durian** grants +1 Time Freeze every 3 foods eaten or solves
-- **Muffin Tin** is a 3g uncommon food: in that shop, each food eaten gives +1 max armor per Muffin Tin eaten, but a tin does not count itself; the armor is permanent and the counting stops when you leave
+- **Muffin Tin** is a 3g uncommon food: each food you eat after it, until you leave the shop, gives +1 max armor; the armor is permanent
 - **Chilaquiles** is a 2g food that doubles the next two sales
 - **Spell Pepper** is a 3g food that doubles your next spell
 - Every shop node offers a choice: visit the shop, or rest at the inn to gain +4 max HP, heal to full HP, and move on; 30% of the time the shop stays open afterward
