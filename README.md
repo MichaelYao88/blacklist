@@ -49,7 +49,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - Rarity uses cumulative floors: 40% pulls from rare, uncommon or common, 45% pulls from uncommon or common, and 15% pulls from common only. If a tier is empty, it falls back to the entire pool
 - Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
 - Defeat reveals the answer you missed (all of them, on bosses)
-- 100 items (89 shop items + 11 rare relics), 6 spells, 83 foods and 32 happenings
+- 102 items (91 shop items + 11 rare relics), 6 spells, 81 foods and 32 happenings
 - New foods include **U-nagi**, **Donut Holes**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with an Omen spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
@@ -86,12 +86,10 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Photosynthesis** is a 10g item: on solve, +2 max HP and heal 20% max HP
 - **Stopped Clock** is a 6g item: casting Time Freeze grants +5 max HP, once per round
 - **Adrenaline** is a 10g item: dropping below 50% HP grants +3 max HP and +1 max armor, re-arming after healing above 50%
-- **Gold Standard** is an 8g item: every gold gain gives +1 more gold
 - **Guardian Angel** is an 8g item: after every 10 HP damage taken, autocast a free Immunity
 - **Immunity** blocks the next hurting guess and any guess for 4 seconds after it
 - **Mending Plate** is a rare item: +1 max armor per 8 HP healed
 - **Heartstone** is a 15g rare relic: autocast a free Heal at the start of every round
-- **Goldbutter** is a 9g rare food: +1 gold per solve
 - **Necronomicon** is a rare item: use it during a fight to lose 13% of your max HP for a random gift. It can only be used once per round, and it grows stronger as you feed it: fed thresholds unlock at 0, 13, 39, 79, 129, 189 and 259 max HP paid. Whisper and Twin Whispers autoguess Mythos words such as RYLEH, CTHUL and DAGON
 - **Growth Spurt** gives +3 max HP when you solve in 4 guesses or fewer
 - **Growth Chart** is an 8g item: every 3 max HP gained grants +1 Time Freeze
@@ -106,7 +104,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - Shops can show up to 2 copies of the same entry; sell rows are hoverable
 - Solve gold is a random 4-8 per solve, independent of guess count
 - **The Endless Table** fires every on-eat effect 7 times or pays 7 gold
-- **Counter-Intelligence** is a 12g common-rarity unique item with an uncommon shop banner and a 3x appearance weight while a vision curse is active; it is no longer guaranteed in a shop and shows correct/misplaced counts. **Tally** is never offered while you already own one
+- **Counter-Intelligence** is a 12g common-rarity unique item with an uncommon shop banner and a 3x appearance weight while a vision curse is active; it is no longer guaranteed in a shop and shows correct/misplaced counts
 - **Encore** is unique and appears three times as often as an average common item; **Poppy Seeds** is a 6g common-rarity food that shows an uncommon shop banner
 - **Without U** is a 3g common-rarity unique food that permanently purges U and shows an uncommon shop banner; **Purge the D** is also common-rarity with an uncommon shop banner
 - **Reveal the D** is an 18g rare food; **Pay Respects to F** is an 8g common-rarity food with an uncommon banner that permanently purges F
@@ -117,9 +115,12 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **The Flesh Market** event sells half your max HP for 2 gold per point lost or all your max armor for 4 gold per point lost, and locks whichever body part you cannot spare
 - **Fortune Cookie** is a 2g food with a hidden 5× appearance weight: it queues one autoguess for the next round
 - **The Waffle** is a 6g rare food: +24s per round
-- **Tally** counts every guess, including ally and autoguesses
 - **Momentum** is a 10g uncommon item: every 8 player guesses grants +1 max armor
 - **Ballast** is a 10g uncommon item: every autoguess grants +3 max HP
+- **H&P** is an 11g uncommon item: any guess with H or P grants +1 max HP and heals 1
+- **Zed Plate** is a 9g uncommon item: a player guess with Z grants +1 max armor
+- **Gilded** is a 9g uncommon item: a player guess with G grants +1 gold
+- **X Marks** is an 8g uncommon item: a player guess with X grants +1 gold and +1 max armor
 - **Harvest Charm**, **Empty Mouth**, **Empty Orb**, **Empty Phone**, **Detour**, **Dark Echo**, **Black Eye**, **Palindrome**, **Oasis 15**, **Shellshock**, **Echo Chamber**, **Panic Button**, and **Wild Magic** are the new autoguess/autocast items
 - **Detour** is a 10g item that autoguesses once per round after a guess sharing no letters with the previous guess
 - **Black Eye** is an 8g item: a hit that deals HP damage has an 80% chance to autoguess a random word; **Thorn Crown** is a 14g item with an 80% chance to autocast a free random spell instead

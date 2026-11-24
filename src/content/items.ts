@@ -93,7 +93,7 @@ export function necronomiconPool(tier: number): Effect[][] {
       { type: 'castSpell', spell: 'omen' },
     ],
     [
-      necroProc(`Goldbutter - ${5 + 2 * scale} gold.`),
+      necroProc(`Coinpurse — ${5 + 2 * scale} gold.`),
       { type: 'gold', amount: 5 + 2 * scale },
     ],
     [
@@ -348,14 +348,6 @@ export const ITEMS: ItemDef[] = [
     goldDoubleChance: 30,
   }),
   defineItem({
-    id: 'gold-standard',
-    name: 'Gold Standard',
-    description: 'Every gold gain: +1 gold.',
-    price: 8,
-    kind: 'gear',
-    goldGainBonus: 1,
-  }),
-  defineItem({
     id: 'photosynthesis',
     name: 'Photosynthesis',
     description: 'On solve: +2 max HP and heal 20% max HP.',
@@ -501,24 +493,6 @@ export const ITEMS: ItemDef[] = [
     },
   }),
   defineItem({
-    id: 'tally',
-    name: 'Tally',
-    description: 'Every 4 guesses: +1 gold.',
-    price: 7,
-    kind: 'gear',
-    unique: true,
-    initial: { guesses: 0 },
-    on: {
-      onGuessScored: (ctx) => {
-        const next = ctx.self.data.guesses + 1;
-        return [
-          { type: 'grow', stat: 'guesses', by: 1 },
-          ...(next % 4 === 0 ? [{ type: 'gold' as const, amount: 1 }] : []),
-        ];
-      },
-    },
-  }),
-  defineItem({
     id: 'momentum',
     name: 'Momentum',
     description: 'Every 8 player guesses: +1 max armor.',
@@ -547,6 +521,69 @@ export const ITEMS: ItemDef[] = [
     on: {
       onGuessScored: (_ctx, p) =>
         p.guess.by === 'friend' ? [{ type: 'maxHp', delta: 3 }] : [],
+    },
+  }),
+  defineItem({
+    id: 'h-and-p',
+    name: 'H&P',
+    description: 'Any guess with H or P: +1 max HP and heal 1.',
+    price: 11,
+    kind: 'gear',
+    rarity: 'uncommon',
+    on: {
+      onGuessScored: (_ctx, p) => {
+        const word = p.guess.word;
+        if (!word.includes('h') && !word.includes('p')) return [];
+        return [
+          { type: 'maxHp', delta: 1 },
+          { type: 'heal', amount: 1 },
+        ];
+      },
+    },
+  }),
+  defineItem({
+    id: 'zed-plate',
+    name: 'Zed Plate',
+    description: 'A player guess with Z: +1 max armor.',
+    price: 9,
+    kind: 'gear',
+    rarity: 'uncommon',
+    on: {
+      onGuessScored: (_ctx, p) =>
+        p.guess.by === 'player' && p.guess.word.includes('z')
+          ? [{ type: 'maxArmor', delta: 1 }]
+          : [],
+    },
+  }),
+  defineItem({
+    id: 'gilded',
+    name: 'Gilded',
+    description: 'A player guess with G: +1 gold.',
+    price: 9,
+    kind: 'gear',
+    rarity: 'uncommon',
+    on: {
+      onGuessScored: (_ctx, p) =>
+        p.guess.by === 'player' && p.guess.word.includes('g')
+          ? [{ type: 'gold', amount: 1 }]
+          : [],
+    },
+  }),
+  defineItem({
+    id: 'x-marks',
+    name: 'X Marks',
+    description: 'A player guess with X: +1 gold and +1 max armor.',
+    price: 8,
+    kind: 'gear',
+    rarity: 'uncommon',
+    on: {
+      onGuessScored: (_ctx, p) =>
+        p.guess.by === 'player' && p.guess.word.includes('x')
+          ? [
+            { type: 'gold', amount: 1 },
+            { type: 'maxArmor', delta: 1 },
+          ]
+          : [],
     },
   }),
   defineItem({

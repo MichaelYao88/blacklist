@@ -517,15 +517,6 @@ export const FOODS: FoodDef[] = [
       { type: 'maxHp', delta: -10 },
     ],
   }),
-  defineFood({
-    id: 'bounty',
-    name: 'Goldbutter',
-    description: '+1 gold per solve. No slot.',
-    price: 9,
-    rarity: 'rare',
-    effects: [{ type: 'solveGold', amount: 1 }],
-  }),
-
   // Letter reveals are too narrow for a gear slot, so they are sold as
   // expensive meals. Once eaten, the reveal is permanent for the rest of the run.
   defineFood({
@@ -545,15 +536,6 @@ export const FOODS: FoodDef[] = [
     rarity: 'rare',
     unique: true,
     effects: [{ type: 'revealLetter', letter: 'b' }],
-  }),
-  defineFood({
-    id: 'x-ray',
-    name: 'X-Ray Cake',
-    description: 'Every round: Learn whether the answer has X. No slot.',
-    price: 8,
-    rarity: 'rare',
-    unique: true,
-    effects: [{ type: 'revealLetter', letter: 'x' }],
   }),
   defineFood({
     id: 'q-tip',

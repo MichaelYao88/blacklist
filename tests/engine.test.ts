@@ -778,26 +778,6 @@ describe('timer curses', () => {
     expect(ITEM_BY_ID.get('adrenaline')?.description).toContain('+3 max HP');
   });
 
-  it('Gold Standard adds 1 gold to every gain and costs 8', () => {
-    const { state } = start('gold-standard');
-    state.items.push({ instance: 'i-gold', id: 'gold-standard', data: {}, equipped: true });
-    setAnswer(state, 'crane');
-    const solved = act(state, { type: 'guess', word: 'crane' });
-    expect(solved.state.gold).toBeGreaterThanOrEqual(17); // 12 start + 4-8 solve + 1 bonus
-    expect(solved.state.gold).toBeLessThanOrEqual(21);
-
-    solved.state.phase = 'shop';
-    solved.state.shop = shopState();
-    solved.state.items.push({ instance: 'i-glass', id: 'turtle-shell', data: {}, equipped: true });
-    const before = solved.state.gold;
-    const base = Math.floor((ITEM_BY_ID.get('turtle-shell')?.price ?? 2) / 2);
-    const sold = act(solved.state, { type: 'sell', instance: 'i-glass' });
-    expect(sold.state.gold).toBe(before + base + 1); // sale gold + 1 bonus
-
-    expect(ITEM_BY_ID.get('gold-standard')?.price).toBe(8);
-    expect(ITEM_BY_ID.get('gold-standard')?.description).toContain('+1 gold');
-  });
-
   it('turns Time Freeze into an unobscured free guess when there is no clock', () => {
     const { state } = start('time-freeze-unobscured');
     setAnswer(state, 'crane');
@@ -1693,9 +1673,6 @@ describe('item and food batch', () => {
 
   it('removes the damage cap and prices letter foods by rarity', () => {
     expect(ITEM_BY_ID.get('hard-hat')).toBeUndefined();
-    expect(FOOD_BY_ID.get('x-ray')?.price).toBe(8);
-    expect(FOOD_BY_ID.get('x-ray')?.name).toBe('X-Ray Cake');
-    expect(FOOD_BY_ID.get('x-ray')?.rarity).toBe('rare');
     expect(FOOD_BY_ID.get('q-tip')?.price).toBe(6);
     expect(FOOD_BY_ID.get('i-spy')?.effects)
       .toContainEqual({ type: 'revealLetter', letter: 'i' });
@@ -2655,8 +2632,6 @@ describe('latest balance pass', () => {
     expect(twinOmens?.filter(
       (effect) => effect.type === 'castSpell' && effect.spell === 'omen',
     )).toHaveLength(2);
-    const goldbutter = optionWith(tier0, 'Goldbutter');
-    expect(goldbutter?.some((effect) => effect.type === 'gold' && effect.amount === 5)).toBe(true);
     const mend = optionWith(tier0, 'Mend');
     expect(mend?.some(
       (effect) => effect.type === 'healMissingPercent' && effect.percent === 100,
@@ -3278,6 +3253,39 @@ describe('latest balance pass', () => {
     expect(next.state.maxHp).toBe(maxHpBefore + 3);
   });
 
+  it('letter-payoff items trigger on guesses containing their letters', () => {
+    const hpRun = start('h-and-p');
+    hpRun.state.items.push({ instance: 'i-hp', id: 'h-and-p', data: {}, equipped: true });
+    setAnswer(hpRun.state, 'crane');
+    const hpBefore = hpRun.state.maxHp;
+    const healthy = act(hpRun.state, { type: 'guess', word: 'happy' });
+    expect(healthy.state.maxHp).toBe(hpBefore + 1);
+    expect(healthy.state.hp).toBe(healthy.state.maxHp);
+
+    const zed = start('zed-plate');
+    zed.state.items.push({ instance: 'i-zed', id: 'zed-plate', data: {}, equipped: true });
+    setAnswer(zed.state, 'crane');
+    const armorBefore = zed.state.maxArmor;
+    const fizzy = act(zed.state, { type: 'guess', word: 'fizzy' });
+    expect(fizzy.state.maxArmor).toBe(armorBefore + 1);
+
+    const gilded = start('gilded');
+    gilded.state.items.push({ instance: 'i-gilded', id: 'gilded', data: {}, equipped: true });
+    setAnswer(gilded.state, 'crane');
+    const goldBefore = gilded.state.gold;
+    const mango = act(gilded.state, { type: 'guess', word: 'mango' });
+    expect(mango.state.gold).toBe(goldBefore + 1);
+
+    const marks = start('x-marks');
+    marks.state.items.push({ instance: 'i-marks', id: 'x-marks', data: {}, equipped: true });
+    setAnswer(marks.state, 'crane');
+    const marksGold = marks.state.gold;
+    const marksArmor = marks.state.maxArmor;
+    const boxer = act(marks.state, { type: 'guess', word: 'boxer' });
+    expect(boxer.state.gold).toBe(marksGold + 1);
+    expect(boxer.state.maxArmor).toBe(marksArmor + 1);
+  });
+
   it('Empty Armor grants Restore when the round starts with no spells', () => {
     const { state } = start('empty-armor');
     state.items.push({ instance: 'i-empty', id: 'empty-armor', data: {}, equipped: true });
@@ -3323,6 +3331,10 @@ describe('latest balance pass', () => {
       'mending-plate': 26,
       momentum: 10,
       ballast: 10,
+      'h-and-p': 11,
+      'zed-plate': 9,
+      gilded: 9,
+      'x-marks': 8,
       'oracle-skull': 12,
       'phoenix-egg': 18,
       potluck: 26,
@@ -3746,10 +3758,6 @@ describe('latest balance pass', () => {
     expect(FOOD_BY_ID.get('plating')?.effects).toContainEqual({ type: 'maxArmor', delta: 1 });
     expect(ITEM_BY_ID.get('compound-interest')?.price).toBe(4);
     expect(FOOD_BY_ID.get('yin-yang')?.price).toBe(18);
-    expect(FOOD_BY_ID.get('bounty')?.name).toBe('Goldbutter');
-    expect(FOOD_BY_ID.get('bounty')?.price).toBe(9);
-    expect(FOOD_BY_ID.get('bounty')?.rarity).toBe('rare');
-    expect(FOOD_BY_ID.get('bounty')?.effects).toContainEqual({ type: 'solveGold', amount: 1 });
     expect(ITEM_BY_ID.get('counterweight')?.description).toContain('Completely blocked hit');
     expect(ITEM_BY_ID.get('encore')?.description).toContain('last solved answer');
     expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('13% max HP');
@@ -4109,35 +4117,6 @@ describe('serialization', () => {
   });
 });
 
-describe('unique shop items', () => {
-  it('does not offer Tally while the player owns one', () => {
-    for (let index = 0; index < 80; index++) {
-      const { state } = start(`tally-owned-${index}`);
-      state.items.push({ instance: 'i-tally', id: 'tally', data: { guesses: 0 }, equipped: true });
-      state.nodeIndex = 0;
-      state.nodes[1] = { kind: 'shop', level: 1 };
-      state.phase = 'shop';
-      const offers = enterShop(state).state.shop?.offers ?? [];
-      expect(offers.some((offer) => offer.kind === 'item' && offer.def === 'tally')).toBe(false);
-    }
-  });
-
-  it('still offers Tally when the player does not own one', () => {
-    let sawTally = false;
-    for (let index = 0; index < 300 && !sawTally; index++) {
-      const { state } = start(`tally-unowned-${index}`);
-      state.nodeIndex = 0;
-      state.nodes[1] = { kind: 'shop', level: 1 };
-      state.phase = 'shop';
-      const offers = enterShop(state).state.shop?.offers ?? [];
-      if (offers.some((offer) => offer.kind === 'item' && offer.def === 'tally')) {
-        sawTally = true;
-      }
-    }
-    expect(sawTally).toBe(true);
-  });
-});
-
 describe('autocast and random-guess batch', () => {
   it('ships a non-native guess pool including etude and butte', () => {
     expect(CONTENT.nonnative).toHaveLength(217);
@@ -4347,12 +4326,11 @@ describe('autocast and random-guess batch', () => {
     expect(FOOD_BY_ID.get('b-file')?.name).toBe('B-Fsteak');
     expect(FOOD_BY_ID.get('b-file')?.price).toBe(13);
     expect(FOOD_BY_ID.get('q-tip')?.price).toBe(6);
-    expect(FOOD_BY_ID.get('x-ray')?.price).toBe(8);
     expect(FOOD_BY_ID.get('o-toro')?.price).toBe(18);
     expect(FOOD_BY_ID.get('only-u')?.price).toBe(14);
 
     for (const id of [
-      'only-u', 'b-file', 'x-ray', 'q-tip', 'gg-gum', 'yin-yang',
+      'only-u', 'b-file', 'q-tip', 'gg-gum', 'yin-yang',
       'j-ello', 'c-urchin', 'f-unnel-cake', 'h-erring', 'w-asabi', 'knafeh',
       'e-fu-noodles', 'i-spy', 'o-toro', 't-bone', 'p-stachio', 'l-bacore-tuna',
       'a-steak', 'reveal-the-d',
@@ -4497,18 +4475,6 @@ describe('Genie Summon and Combustion Engine', () => {
 });
 
 describe('round-start autoguess foods', () => {
-  it('Tally counts non-player guesses', () => {
-    const { state } = start('tally-friend');
-    state.items.push(
-      { instance: 'i-tally', id: 'tally', data: { guesses: 0 }, equipped: true },
-    );
-    state.permanentRoundStartWord = 'eieio';
-    const next = nextRound(state);
-    expect(next.state.round?.guesses.some((guess) => guess.by === 'friend')).toBe(true);
-    expect(next.state.items.find((item) => item.id === 'tally')?.data.guesses)
-      .toBeGreaterThanOrEqual(1);
-  });
-
   it('Fortune Cookie queues one autoguess for the next round', () => {
     const { state } = start('fortune-cookie');
     state.phase = 'shop';
