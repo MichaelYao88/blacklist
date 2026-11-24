@@ -28,11 +28,12 @@ describe('Evil Parrot item card', () => {
     expect(card?.textContent).not.toContain('suggestions');
   });
 
-  it('describes the cracker bribe and shows the emoji button', () => {
+  it('describes the cracker bribe and shows the coin button', () => {
     const card = [...root.querySelectorAll<HTMLElement>('.item-card')]
       .find((entry) => entry.textContent?.includes('Evil Parrot')) ?? null;
-    expect(card?.textContent).toContain('Bribe it with a cracker for 🪙');
+    expect(card?.textContent).toContain('Suggests a possible word once per round');
+    expect(card?.textContent).toContain('Bribe it for more with a cracker costing 🪙');
     const button = card?.querySelector<HTMLElement>('[data-action="use"]') ?? null;
-    expect(button?.textContent?.trim()).toBe('🪙 ➡️ 🍪');
+    expect(button?.textContent?.trim()).toBe('🪙');
   });
 });

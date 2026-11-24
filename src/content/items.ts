@@ -23,6 +23,13 @@ function parrotSchedule(ctx: ItemCtx, extraSuggestions = 0): Effect[] {
   return [{ type: 'setItemData', stat: 'readyAt', value: elapsed + delay }];
 }
 
+function parrotRoundReset(ctx: ItemCtx): Effect[] {
+  return [
+    { type: 'setItemData', stat: '_freeUsed', value: 0 },
+    ...parrotSchedule(ctx),
+  ];
+}
+
 /** Frozen Durian: one Time Freeze for every three eats or solves. */
 function everyThreeFoodsOrSolves(self: { data: Record<string, number> }): Effect[] {
   const total = (self.data.eaten ?? 0) + 1;
@@ -1746,24 +1753,26 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'evil-parrot',
     name: 'Evil Parrot',
-    description: 'Randomly suggests possible words. Bribe it with a cracker for 🪙.',
+    description: 'Suggests a possible word once per round. Bribe it for more with a cracker costing 🪙.',
     price: 16,
     kind: 'gear',
     slots: 1,
     unique: true,
     noSpawn: true,
-    useLabel: '🪙 ➡️ 🍪',
-    initial: { readyAt: 0, _suggestions: 0 },
-    onAcquire: parrotSchedule,
+    useLabel: '🪙',
+    initial: { readyAt: 0, _suggestions: 0, _freeUsed: 0 },
+    onAcquire: parrotRoundReset,
     on: {
-      onRoundStart: (ctx) => parrotSchedule(ctx),
+      onRoundStart: parrotRoundReset,
       onGuessScored: (ctx, p) => (p.guess.by === 'player' ? parrotSchedule(ctx) : []),
       onTimerTick: (ctx, p) => {
         if (!ctx.state.round) return [];
+        if ((ctx.self.data._freeUsed ?? 0) > 0) return [];
         const readyAt = ctx.self.data.readyAt ?? 0;
         if (readyAt <= 0) return parrotSchedule(ctx);
         if (p.elapsedMs < readyAt) return [];
         return [
+          { type: 'setItemData', stat: '_freeUsed', value: 1 },
           {
             type: 'setItemData',
             stat: '_suggestions',

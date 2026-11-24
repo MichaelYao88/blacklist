@@ -32,6 +32,22 @@ function bribeWithRng(rng: number) {
   return game.step(state, { type: 'useItem', instance: item.instance });
 }
 
+function nextRound(state: ReturnType<typeof game.newRun>['state']) {
+  const index = state.nodeIndex;
+  state.nodes[index + 1] = { kind: 'round', level: state.level + 1 };
+  state.phase = 'shop';
+  state.shop = {
+    offers: [],
+    rerollCost: 2,
+    rerolls: 0,
+    purchases: 0,
+    visit: 0,
+    foodOffers: 0,
+    foodsBought: 0,
+  };
+  return game.step(state, { type: 'continue' });
+}
+
 describe('Evil Parrot', () => {
   it('is a no-spawn 16g item that uses one slot and sells for 8', () => {
     const def = ITEM_BY_ID.get('evil-parrot');
@@ -197,6 +213,44 @@ describe('Evil Parrot', () => {
       - (used.state.round?.elapsedMs ?? 0);
     expect(gap).toBeGreaterThanOrEqual(30_000);
     expect(gap).toBeLessThanOrEqual(60_000);
+  });
+
+  it('gives one free word per round and only more when bribed', () => {
+    const { state } = game.newRun({ seed: 'parrot-once', character: 'runner' });
+    state.round!.remainingMs = null;
+    state.round!.elapsedMs = 0;
+    state.round!.answer = 'crane';
+    const item = parrot(state)!;
+    item.data.readyAt = 1;
+
+    const first = game.step(state, { type: 'tick', dtMs: 2 });
+    expect(suggestionOf(first.events)).not.toBeNull();
+    expect(parrot(first.state)?.data._freeUsed).toBe(1);
+    expect(parrot(first.state)?.data._suggestions).toBe(1);
+
+    parrot(first.state)!.data.readyAt = 1;
+    const second = game.step(first.state, { type: 'tick', dtMs: 2 });
+    expect(suggestionOf(second.events)).toBeNull();
+
+    second.state.gold = 5;
+    second.state.rng = 200;
+    const bribed = game.step(second.state, {
+      type: 'useItem',
+      instance: parrot(second.state)!.instance,
+    });
+    expect(suggestionOf(bribed.events)).not.toBeNull();
+    expect(parrot(bribed.state)?.data._suggestions).toBe(2);
+  });
+
+  it('restores the free word at the start of the next round', () => {
+    const { state } = game.newRun({ seed: 'parrot-next-round', character: 'runner' });
+    parrot(state)!.data._freeUsed = 1;
+
+    const next = nextRound(state);
+    expect(parrot(next.state)?.data._freeUsed).toBe(0);
+    const gap = (parrot(next.state)?.data.readyAt ?? 0)
+      - (next.state.round?.elapsedMs ?? 0);
+    expect(gap).toBeGreaterThanOrEqual(30_000);
   });
 
   it('refuses to charge or reset the timer without gold', () => {
