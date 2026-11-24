@@ -3,12 +3,12 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { game } from '../src/game';
 
 function row(root: HTMLElement, name: string): HTMLElement | null {
-  return [...root.querySelectorAll<HTMLElement>('.loadout-row')]
+  return [...root.querySelectorAll<HTMLElement>('.loadout-row[data-item]')]
     .find((entry) => entry.textContent?.includes(name)) ?? null;
 }
 
 function rows(root: HTMLElement): HTMLElement[] {
-  return [...root.querySelectorAll<HTMLElement>('.loadout-row')];
+  return [...root.querySelectorAll<HTMLElement>('.loadout-row[data-item]')];
 }
 
 describe('compact shop loadout', () => {
@@ -59,7 +59,10 @@ describe('compact shop loadout', () => {
       expect(entry.querySelector('[data-action="sell"]')).not.toBeNull();
       expect(entry.getAttribute('draggable')).toBe('true');
       expect(entry.dataset.item).toBeTruthy();
+      expect(entry.querySelector('.item-emoji')?.textContent).toBeTruthy();
     }
+    expect(root.querySelectorAll('.loadout-row.empty')).toHaveLength(2);
+    expect(root.querySelector('.loadout-row.empty')?.textContent).toContain('EMPTY SLOT');
     expect(row(root, 'Turtle Shell')
       ?.querySelector<HTMLElement>('[data-action="sell"]')?.dataset.id)
       .toBe('i-hour');
@@ -71,6 +74,11 @@ describe('compact shop loadout', () => {
 
     turtle!.dispatchEvent(new Event('pointermove', { bubbles: true }));
     const tip = document.querySelector<HTMLElement>('.kw-tooltip');
+    expect(tip?.classList.contains('visible')).toBe(true);
+    expect(tip?.textContent).toContain('reduced by 50%');
+
+    turtle!.querySelector<HTMLElement>('[data-action="sell"]')!
+      .dispatchEvent(new Event('pointermove', { bubbles: true }));
     expect(tip?.classList.contains('visible')).toBe(true);
     expect(tip?.textContent).toContain('reduced by 50%');
   });

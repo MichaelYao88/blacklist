@@ -35,7 +35,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - Ascension A1–A10 draft 1–10 starting curses
 - Shops with rerolls that start at 1g and double in price: three items, two foods and one wildcard; the wildcard is always food or a spell, never an item, and one random offer is always 50% off. When your item slots are full, one gear offer is replaced by food. **Shop Upgrade** permanently adds two more wildcards: one item/food/spell and one item/food
 - Every spell offered in a shop has a 4g base price; the half-price sale can land on it
-- Four item slots by default. Only equipped gear is active, and each shop puts a compact ranked loadout in the left item panel
+- Four item slots by default. Only equipped gear is active, and each shop puts a compact ranked loadout of item emoji and names in the left item panel
 - **Loose Tongue**, a 12g uncommon item that lets you guess five-letter nonsense for free-form probes
 - Spells stack by type and come from food, item triggers and the shop wildcard slot
 - **Restore** clears the blacklist, refills armor, and ignores vision curses — including position curses — for the rest of the round; **Contrapuntal** turns into a random relic if you cast all six spell types
@@ -81,7 +81,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Acquired Taste** is a 7g uncommon item: each different food you eat this run gives +4 max HP
 - Item triggers show a compact proc pop-up with the actual result (for example **Yellow1** calling an autoguess or **Grey Market** paying gold); item procs queue 2 seconds apart and stay up 3 seconds longer; once-per-round items show **SPENT** after they fire
 - The revealed-letter panel persists between screens; in shops it is labelled **REVEALED**
-- On desktop the item list sits under the battle rail on the left; on mobile it stays at the bottom of the sidebar. In shops the left panel becomes a compact ranked loadout of item names
+- On desktop the item list sits under the battle rail on the left; on mobile it stays at the bottom of the sidebar. Shops use a compact ranked loadout with empty-slot rows, and combat switches to the same compact list once more than four items are equipped
 - **Grey Market** is a 7g item: every all-grey guess pays 2 gold, whether you made it or an ally did; an all-dark guess that pays nothing hides a letter
 - **Photosynthesis** is a 10g item: on solve, +2 max HP and heal 20% max HP
 - **Stopped Clock** is a 6g item: casting Time Freeze grants +5 max HP, once per round

@@ -2692,16 +2692,16 @@ function renderItemsPanel(view: RunView): string {
   const gear = view.items.filter((item) => item.slots > 0);
   const equippedGear = gear.filter((item) => item.equipped);
   const bagged = gear.filter((item) => !item.equipped);
-  const shown = shop ? gear : view.items;
-  const items = shown.length
-    ? shown.map((item) => renderItem(view, item)).join('')
-    : `<p class="empty-note">No items yet. Shops and the Curse Broker fix that.</p>`;
-  const scrollable = (shop ? gear.length : equippedGear.length) > 5
+  const compact = shop || equippedGear.length > 4;
+  const scrollable = (compact ? gear.length : equippedGear.length) > 5
     ? ' scrollable'
     : '';
   const seedline = `<div class="seedline">SEED ${escapeHtml(host.current?.seed ?? '')}</div>`;
 
-  if (!shop) {
+  if (!compact) {
+    const items = view.items.length
+      ? view.items.map((item) => renderItem(view, item)).join('')
+      : `<p class="empty-note">No items yet. Shops and the Curse Broker fix that.</p>`;
     return `
   <aside class="panel items-panel">
     <section class="rail-items">
@@ -2715,41 +2715,60 @@ function renderItemsPanel(view: RunView): string {
   </aside>`;
   }
 
-  const canSell = !view.curses.some((curse) => curse.id === 'chained');
+  const canSell = shop && !view.curses.some((curse) => curse.id === 'chained');
   const freeSlots = Math.max(0, view.slots.total - equippedGear.length);
   const row = (item: ItemView) => {
     const def = ITEM_BY_ID.get(item.id);
     const description = def?.dynamicDescription?.(item.data) ?? def?.description ?? '';
-    return `<div class="loadout-row ${item.equipped ? 'equipped' : 'bagged'}" draggable="true"
+    const name = escapeHtml(def?.name ?? item.id);
+    const emoji = `<span class="item-emoji" aria-hidden="true">${itemIcon(item.id)}</span>`;
+    if (!shop) {
+      const usedThisRound = Boolean(def?.onUse) && (item.data._uses ?? 0) > 0;
+      const canUseNow = !def?.useOnlyInRound || view.phase.kind === 'round';
+      const disabled = usedThisRound || !canUseNow;
+      const use = item.equipped && def?.onUse
+        ? `<button class="btn tiny item-use" data-action="use" data-id="${escapeHtml(item.instance)}" ${disabled ? 'disabled' : ''}${disabled ? ` title="${escapeHtml(!canUseNow ? 'Only usable during a fight.' : 'Already used this round.')}"` : ''}>${usedThisRound ? 'USED' : escapeHtml(def?.useLabel ?? 'USE')}</button>`
+        : '';
+      return `<div class="loadout-row ${item.equipped ? 'equipped' : 'bagged'}"
+        tabindex="0" data-tip="${escapeHtml(description)}">
+        ${emoji}<b>${name}</b>${use}
+      </div>`;
+    }
+    return `<div class="loadout-row ${item.equipped ? 'equipped' : 'bagged'}"
+      draggable="true" tabindex="0"
       data-item="${escapeHtml(item.instance)}"
       data-action="${item.equipped ? 'unequip' : 'equip'}" data-id="${escapeHtml(item.instance)}"
-      data-tip="${escapeHtml(description)}"
-      title="Click to ${item.equipped ? 'unequip' : 'equip'}. Drag to move.">
-      <b>${escapeHtml(def?.name ?? item.id)}</b>
-      <button class="btn tiny item-sell" data-action="sell" data-id="${escapeHtml(item.instance)}" ${canSell ? '' : 'disabled'} title="Sell for ${item.sellValue} gold">SELL ${item.sellValue} G</button>
+      data-tip="${escapeHtml(description)}">
+      ${emoji}<b>${name}</b>
+      <button class="btn tiny item-sell" data-action="sell" data-id="${escapeHtml(item.instance)}" ${canSell ? '' : 'disabled'} aria-label="Sell ${name} for ${item.sellValue} gold">SELL ${item.sellValue} G</button>
     </div>`;
   };
 
+  const empties = shop
+    ? Array.from(
+      { length: freeSlots },
+      () => `<div class="loadout-row empty"><span class="item-emoji" aria-hidden="true">◌</span><b>EMPTY SLOT</b></div>`,
+    ).join('')
+    : '';
+
   return `
-  <aside class="panel items-panel loadout-panel">
+  <aside class="panel items-panel${shop ? ' loadout-panel' : ''}">
     <section class="rail-items">
       <div class="panel-head">
-        <span class="panel-kicker">LOADOUT</span>
-        <span class="count">${view.slots.used}/${view.slots.total} · ${freeSlots} FREE${bagged.length ? ` · ${bagged.length} BAG` : ''}</span>
+        <span class="panel-kicker">${shop ? 'LOADOUT' : 'ITEMS'}</span>
+        <span class="count">${view.slots.used}/${view.slots.total}${shop ? ` · ${freeSlots} FREE` : ''}${bagged.length ? ` · ${bagged.length} BAG` : ''}</span>
       </div>
-      <p class="hint loadout-hint">Click or drag gear to move it.${canSell ? '' : ' The Chained prevents selling.'}</p>
+      ${shop ? `<p class="hint loadout-hint">Click or drag gear to move it.${canSell ? '' : ' The Chained prevents selling.'}</p>` : ''}
       <div class="loadout-list${scrollable}">
-        <div class="loadout-group" data-drop="slot">
-          <div class="loadout-group-head"><span class="panel-kicker">EQUIPPED</span><span class="count">${equippedGear.length}</span></div>
-          ${equippedGear.length
-            ? equippedGear.map(row).join('')
-            : `<p class="empty-note">Drop gear here to equip it.</p>`}
+        <div class="loadout-group"${shop ? ' data-drop="slot"' : ''}>
+          <div class="loadout-group-head"><span class="panel-kicker">EQUIPPED</span><span class="count">${equippedGear.length}${shop ? `/${view.slots.total}` : ''}</span></div>
+          ${equippedGear.map(row).join('')}${empties}
         </div>
-        <div class="loadout-group" data-drop="bag">
+        <div class="loadout-group"${shop ? ' data-drop="bag"' : ''}>
           <div class="loadout-group-head"><span class="panel-kicker">BAG</span><span class="count">${bagged.length}</span></div>
           ${bagged.length
             ? bagged.map(row).join('')
-            : `<p class="empty-note">Drag gear here to bag it.</p>`}
+            : `<p class="empty-note">${shop ? 'Drag gear here to bag it.' : 'Nothing in the bag.'}</p>`}
         </div>
       </div>
     </section>

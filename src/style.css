@@ -4500,11 +4500,26 @@ button {
   white-space: nowrap;
 }
 
-.loadout-row .item-sell {
+.loadout-row .item-emoji {
+  font-size: 0.9rem;
+}
+
+.loadout-row .item-sell,
+.loadout-row .item-use {
   flex: 0 0 auto;
   padding: 2px 5px;
   font-size: 0.52rem;
   letter-spacing: 0.03em;
+}
+
+.loadout-row.empty {
+  border-style: dashed;
+  opacity: 0.45;
+  cursor: default;
+}
+
+.loadout-row.empty b {
+  letter-spacing: 0.08em;
 }
 
 .stack-badge {
