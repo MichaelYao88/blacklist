@@ -318,7 +318,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'grey-market',
     name: 'Grey Market',
-    description: 'Every all-grey guess pays 2 gold. If one pays nothing, a letter was hidden.',
+    description: 'Every all-grey guess pays 2 gold — regardless of vision curses.',
     price: 7,
     kind: 'gear',
     on: {
