@@ -446,6 +446,13 @@ const KIND_LABELS: Record<Offer['kind'], string> = {
   eat: 'FOOD',
 };
 
+const FOOD_SPACE_TIP = "Food doesn't take inventory space.";
+
+/** Food text explains this on hover instead of repeating "No slot." on every card. */
+function foodDescription(description: string): string {
+  return description.replace(/\s*No slot\.?/gi, '').trim();
+}
+
 // ── state / event plumbing ─────────────────────────────────────────────────
 
 function notify(text: string, kind: Notice['kind'] = 'info'): void {
@@ -2907,12 +2914,15 @@ function renderReward(phase: Extract<PhaseView, { kind: 'reward' }>): string {
         const rarityClass = isRelic
           ? 'rare'
           : option.rarity === 'uncommon' ? 'uncommon' : '';
+        const description = option.kind === 'eat'
+          ? foodDescription(option.description)
+          : option.description;
         return `
         <button class="reward-card ${option.kind} ${rarityClass}" data-action="reward" data-id="${escapeHtml(option.id)}">
           <span class="reward-icon" aria-hidden="true">${icon}</span>
           <span class="tag">${tag}</span>
           <b>${escapeHtml(option.label)}</b>
-          <span>${glossaryText(option.description)}</span>
+          <span>${glossaryText(description)}</span>
         </button>`;
       }).join('')}
     </div>
@@ -3020,6 +3030,8 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
   const offers = phase.offers.length
     ? phase.offers.map((offer) => {
       const info = offerInfo(offer);
+      const isFood = offer.kind === 'eat';
+      const description = isFood ? foodDescription(info.description) : info.description;
       const applies = offer.kind === 'item' || offer.kind === 'eat';
       const finalPrice = Math.max(1, offer.price - (applies ? coupon : 0));
       const cannotAfford = view.gold < finalPrice;
@@ -3030,26 +3042,36 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
       const isRare = rarity === 'rare';
       const isRelic = offer.kind === 'item' && isRare;
       const isUncommon = !isRare && rarity === 'uncommon';
-      const tag = isRelic
-        ? offer.sale ? 'RELIC · 50% OFF' : 'RELIC'
+      const kindLabel = KIND_LABELS[offer.kind];
+      const rareLabel = offer.kind === 'item' ? 'RELIC' : `RARE ${kindLabel}`;
+      const baseTag = isRelic
+        ? 'RELIC'
         : isRare
-          ? offer.sale ? 'RARE · 50% OFF' : 'RARE'
-          : isUncommon
-            ? offer.sale ? 'UNCOMMON · 50% OFF' : 'UNCOMMON'
-            : offer.sale ? 'SALE · 50% OFF' : KIND_LABELS[offer.kind];
+          ? rareLabel
+          : isUncommon ? 'UNCOMMON' : kindLabel;
+      const tag = offer.sale
+        ? isRelic
+          ? 'RELIC · 50% OFF'
+          : isRare
+            ? `${rareLabel} · 50% OFF`
+            : isUncommon ? 'UNCOMMON · 50% OFF' : 'SALE · 50% OFF'
+        : baseTag;
+      const tagTip = isFood
+        ? ` data-tip="${FOOD_SPACE_TIP}" tabindex="0" aria-label="${FOOD_SPACE_TIP}"`
+        : '';
       const price = offer.sale && offer.originalPrice
         ? `<s>${offer.originalPrice} G</s> ${finalPrice} G`
         : applies && coupon > 0
           ? `<s>${offer.price} G</s> ${finalPrice} G`
           : `${offer.price} G`;
       return `
-      <article class="offer-card ${cannotAfford ? 'unavailable' : ''} ${offer.sale ? 'sale' : ''} ${isRare ? 'rare' : isUncommon ? 'uncommon' : ''}">
+      <article class="offer-card ${isFood ? 'food' : offer.kind} ${cannotAfford ? 'unavailable' : ''} ${offer.sale ? 'sale' : ''} ${isRare ? 'rare' : isUncommon ? 'uncommon' : ''}">
         <div class="offer-top">
           <span class="item-emoji" aria-hidden="true">${info.icon}</span>
-          <span class="tag">${tag}</span>
+          <span class="tag"${tagTip}>${tag}</span>
         </div>
         <h3>${escapeHtml(info.name)}</h3>
-        <p>${glossaryText(info.description)}</p>
+        <p>${glossaryText(description)}</p>
         <button class="btn primary" data-action="buy" data-id="${escapeHtml(offer.id)}" ${cannotAfford ? 'disabled' : ''}>${price}</button>
       </article>`;
     }).join('')
@@ -3115,7 +3137,7 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
       <p class="panel-kicker">SELL ITEMS${canSell ? '' : ' · CHAINED'}</p>
       ${sellable}
     </div>
-    <p class="hint">Shops carry items, foods, and one wildcard slot. Curses can remove slots. Food is eaten on purchase and takes no slot. One item is always half price, and each reroll costs double the last. Relics are very rare items.</p>
+    <p class="hint">Shops carry items, foods, and one wildcard slot. Curses can remove slots. Food is eaten on purchase. One item is always half price, and each reroll costs double the last. Relics are very rare items.</p>
   </div>`;
 }
 
@@ -3136,7 +3158,9 @@ function happeningPreviews(
   if (phase.happening === 'forbidden-feast' && optionId === 'eat') {
     const food = phase.previewFood ? FOOD_BY_ID.get(phase.previewFood) : undefined;
     const curse = phase.previewCurse ? CURSE_BY_ID.get(phase.previewCurse) : undefined;
-    const foodTip = food ? `${food.name}\n${food.description}` : 'One random rare food.';
+    const foodTip = food
+      ? `${food.name}\n${foodDescription(food.description)}`
+      : 'One random rare food.';
     const curseTip = curse ? `${curse.name}\n${curse.rules.join('\n')}` : 'One random eligible curse.';
     return `<div class="preview-row">
       <span class="preview-chip" tabindex="0" data-tip="${escapeHtml(foodTip)}">
