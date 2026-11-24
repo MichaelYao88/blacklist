@@ -4431,22 +4431,43 @@ button {
 
 /* shop loadout */
 
-.loadout {
-  margin-top: 18px;
-  padding-top: 16px;
-  border-top: 1px solid var(--line);
-  text-align: left;
+.loadout-hint {
+  margin: 8px 0 9px;
 }
 
-.loadout-head {
+.item-list.ranked {
+  margin-top: 2px;
+}
+
+.item-card.loadout-card {
+  cursor: grab;
+  transition: border-color 120ms ease, transform 120ms ease;
+}
+
+.item-card.loadout-card:hover {
+  border-color: rgba(231, 184, 90, 0.55);
+  transform: translateY(-1px);
+}
+
+.item-card.loadout-card:active {
+  cursor: grabbing;
+}
+
+.item-card.dragging {
+  opacity: 0.4;
+}
+
+.item-actions {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
 }
 
-.loadout .hint {
-  margin: 4px 0 10px;
+.item-sell {
+  padding: 4px 7px;
+  font-size: 0.56rem;
+  letter-spacing: 0.04em;
 }
 
 .slot-grid {
@@ -4492,12 +4513,6 @@ button {
   transform: translateY(-1px);
 }
 
-.loadout-chip.bagged {
-  border-color: var(--line-2);
-  background: rgba(255, 255, 255, 0.02);
-  opacity: 0.85;
-}
-
 .loadout-chip.dragging {
   opacity: 0.4;
 }
@@ -4510,33 +4525,6 @@ button {
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.loadout-chip .chip-sell {
-  flex: 0 0 auto;
-  padding: 4px 7px;
-  font-size: 0.56rem;
-  letter-spacing: 0.04em;
-}
-
-.bag-zone {
-  margin-top: 9px;
-  padding: 8px;
-  border: 1px dashed var(--line-2);
-  border-radius: 9px;
-  background: rgba(0, 0, 0, 0.12);
-}
-
-.bag-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
-  gap: 7px;
-  margin-top: 7px;
-}
-
-.bag-zone .empty-note {
-  margin: 6px 0 0;
-  font-size: 0.72rem;
 }
 
 .stack-badge {
