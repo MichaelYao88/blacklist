@@ -17,8 +17,8 @@ const POSTHOG_HOST = 'https://us.i.posthog.com';
 export const RUN_REF_KEY = 'blacklist.analytics.run';
 
 /**
- * Floors 1–50 are the gauntlet (`MAX_LEVEL` in src/core/engine.ts).
- * The floor boss is level 51, so a cleared run reports level 51.
+ * The run is 50 floors (`MAX_LEVEL` in src/core/engine.ts).
+ * Floor 50 is the boss, so a cleared run reports level 50.
  */
 export const GAUNTLET_FLOORS = 50;
 

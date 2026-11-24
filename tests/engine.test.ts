@@ -215,17 +215,22 @@ describe('cursed run setup', () => {
     expect(werewolf.curses.some((curse) => curse.id === 'tight-slots')).toBe(true);
   });
 
-  it('builds a 50-floor map and puts the Floor Boss on floor 51', () => {
+  it('builds a 50-floor map and puts the Floor Boss on floor 50', () => {
     const { state } = start();
     expect(nodeAt(state, (node) => node.kind === 'boss')).toBeGreaterThan(0);
     expect(state.nodes.filter((node) => node.kind === 'boss')).toHaveLength(2);
-    expect(state.nodes.filter((node) => node.kind === 'round')).toHaveLength(24);
-    expect(state.nodes.filter((node) => node.kind === 'shop')).toHaveLength(13);
-    expect(state.nodes.filter((node) => node.kind === 'curse')).toHaveLength(12);
+    expect(state.nodes.filter((node) => node.kind === 'round')).toHaveLength(22);
+    expect(state.nodes.filter((node) => node.kind === 'shop')).toHaveLength(12);
+    expect(state.nodes.filter((node) => node.kind === 'curse')).toHaveLength(14);
     expect(state.nodes.find((node) => node.kind === 'boss' && node.boss === 'miniboss')?.level)
       .toBe(27);
     expect(state.nodes.find((node) => node.kind === 'boss' && node.boss === 'floor-boss')?.level)
-      .toBe(51);
+      .toBe(50);
+    expect(state.nodes.find((node) => node.level === 46)?.kind).toBe('shop');
+    expect(state.nodes
+      .filter((node) => (node.level ?? 0) >= 47 && (node.level ?? 0) <= 49)
+      .map((node) => node.kind))
+      .toEqual(['curse', 'curse', 'curse']);
 
     const labeled = state.nodes
       .filter((node) => node.kind !== 'happening')
@@ -4014,25 +4019,25 @@ describe('Miniboss', () => {
 });
 
 describe('Floor Boss', () => {
-  it('drafts three curses before the fight', () => {
+  it('puts the final three curse drafts on floors 47-49 and enters the boss from floor 49', () => {
     const { state } = start('boss-prep');
     const bossIndex = nodeAt(
       state,
       (node) => node.kind === 'boss' && node.boss === 'floor-boss',
     );
-    state.nodeIndex = bossIndex - 1;
+    expect(state.nodes[bossIndex]?.level).toBe(50);
+    expect(state.nodes[bossIndex - 1]).toMatchObject({ kind: 'curse', level: 49 });
+
+    state.nodeIndex = bossIndex - 2;
     state.phase = 'shop';
     state.shop = shopState();
     let result = act(state, { type: 'continue' });
-    const picked: string[] = [];
-    while (result.state.phase === 'curse') {
-      expect(result.state.curse?.boss).toBe(true);
-      const option = result.state.curse?.options[0];
-      if (!option) break;
-      picked.push(option);
-      result = act(result.state, { type: 'chooseCurse', curseId: option });
-    }
-    expect(picked).toHaveLength(3);
+    expect(result.state.phase).toBe('curse');
+    expect(result.state.level).toBe(49);
+    expect(result.state.curse?.boss).toBeFalsy();
+    const option = result.state.curse?.options[0];
+    expect(option).toBeDefined();
+    result = act(result.state, { type: 'chooseCurse', curseId: option! });
     expect(result.state.phase).toBe('bossIntro');
     expect(result.state.bossIntro?.boss).toBe('floor-boss');
   });

@@ -1919,7 +1919,7 @@ function renderHelp(): string {
     <div class="rules-grid">
       <article class="rule-card">
         <h3>The run</h3>
-        <p>Fifty floors. The loop cycles <b>fight → shop → fight → curse</b>; fights, shops and curses each count as a floor, while events happen between floors and do not. Floor 27 is the <b>Miniboss</b>: draft <b>1 curse</b>, then beat two words for a slot, a full heal, and a rare choice. Floor 51 is the <b>Floor Boss</b>: draft <b>3 curses</b>, then beat three words.</p>
+        <p>Fifty floors. The loop cycles <b>fight → shop → fight → curse</b>; fights, shops and curses each count as a floor, while events happen between floors and do not. Floor 27 is the <b>Miniboss</b>: draft <b>1 curse</b>, then beat two words for a slot, a full heal, and a rare choice. Floors 47, 48 and 49 are the final curse drafts. Floor 50 is the <b>Floor Boss</b>: beat three words.</p>
       </article>
       <article class="rule-card">
         <h3>Damage</h3>

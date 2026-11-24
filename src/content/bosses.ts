@@ -27,11 +27,11 @@ export const BOSSES: BossDef[] = [
     acts: [0],
     timerMs: null,
     gauntlet: { puzzles: 3, timerMs: 0 },
-    prepCurses: 3,
+    prepCurses: 0,
     damageBonus: 10,
     timerFromCurse: true,
     rules: [
-      'Choose 3 curses before the fight.',
+      'Floors 47, 48 and 49 are the final curse drafts.',
       'Three standard rounds, back to back.',
       'Base damage is 10 higher than a normal encounter.',
       'No shop or curse between rounds.',

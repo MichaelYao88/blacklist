@@ -4284,6 +4284,15 @@ export function createCore(content: Content): Core {
     // fights but share the fight's floor number, so they do not advance it.
     const pattern: Array<'round' | 'shop' | 'curse'> = ['round', 'shop', 'round', 'curse'];
     for (let level = 1; level <= MAX_LEVEL; level++) {
+      // The last three floors before the boss are the final curse drafts.
+      if (level >= MAX_LEVEL - 3 && level < MAX_LEVEL) {
+        nodes.push({ kind: 'curse', level });
+        continue;
+      }
+      if (level === MAX_LEVEL) {
+        nodes.push({ kind: 'boss', level, boss: 'floor-boss' });
+        continue;
+      }
       const kind = pattern[(level - 1) % pattern.length];
       if (kind === 'round') {
         if (level === 27) {
@@ -4295,9 +4304,6 @@ export function createCore(content: Content): Core {
         nodes.push({ kind, level });
       }
     }
-
-    // Floor 51: three final curse drafts, then the Floor Boss fight.
-    nodes.push({ kind: 'boss', level: MAX_LEVEL + 1, boss: 'floor-boss' });
     state.nodes = nodes;
   }
 
