@@ -41,6 +41,7 @@ import { hashSeed, rngChance, rngInt, rngPick, rngNext, rngShuffle } from './rng
 import { scoreGuess, truthCounts } from './score';
 import { chooseParrotWord, possibleWords } from './parrot';
 import { ASCENSION_MAX, ascensionStartingCurses } from './ascension';
+import { itemHasTag, itemTags } from './itemTags';
 
 const VERSION = 6;
 const WORD_LENGTH = 5;
@@ -287,6 +288,7 @@ export function createCore(content: Content): Core {
       id: item.id,
       data: { ...item.data },
       kind: def?.kind ?? 'gear',
+      tags: itemTags(def),
       slots: def ? itemSlots(def) : 1,
       equipped: def ? isEquipped(item, def) : false,
       sellValue: def ? (def.sellValue ? def.sellValue({ state, self: item }) : Math.floor(def.price / 2)) : 0,
@@ -618,7 +620,7 @@ export function createCore(content: Content): Core {
     if (!equip) {
       emit(rt, {
         type: 'message',
-        text: `No free slot for ${def.name}. It is in your bag — equip it in a shop.`,
+        text: `No free item slot for ${def.name}. It is in your bag — equip it in a shop.`,
       });
     }
     if (def.onAcquire) {
@@ -638,7 +640,7 @@ export function createCore(content: Content): Core {
     if (!def) return;
     if (itemSlots(def) === 0 || item.equipped !== false) return;
     if (!canEquip(state, def)) {
-      emit(rt, { type: 'message', text: `No free slot for ${def.name}. Unequip something first.` });
+      emit(rt, { type: 'message', text: `No free item slot for ${def.name}. Unequip something first.` });
       return;
     }
     item.equipped = true;
@@ -1383,7 +1385,7 @@ export function createCore(content: Content): Core {
         );
         const pool = rare.filter((i) => !owned.has(i.id));
         if (pool.length > 0) addItem(rt, rngPick(state, pool).id);
-        else emit(rt, { type: 'message', text: 'You already own every relic.' });
+        else emit(rt, { type: 'message', text: 'You already own every rare item.' });
         break;
       }
       case 'addRandomCurse': {
@@ -1465,7 +1467,7 @@ export function createCore(content: Content): Core {
         state.shopWildcardBonus += effect.count;
         emit(rt, {
           type: 'message',
-          text: `Future shops gain ${effect.count} wildcard slot${effect.count === 1 ? '' : 's'}.`,
+          text: `Future shops gain ${effect.count} wildcard offer${effect.count === 1 ? '' : 's'}.`,
         });
         break;
       case 'pendingPurge':
@@ -1639,7 +1641,7 @@ export function createCore(content: Content): Core {
       if (maxArmor > 0) changes.push({ kind: 'maxArmor', amount: maxArmor });
     }
     const slots = state.slots - before.slots;
-    if (slots !== 0) parts.push(`${signed(slots)} slot${Math.abs(slots) === 1 ? '' : 's'}`);
+    if (slots !== 0) parts.push(`${signed(slots)} item slot${Math.abs(slots) === 1 ? '' : 's'}`);
 
     for (const [id, count] of countIds(state.spells.map((spell) => spell.id))) {
       const gained = count - (before.spells.get(id) ?? 0);
@@ -2315,7 +2317,7 @@ export function createCore(content: Content): Core {
       lines.push({ label: def?.name ?? 'Reveal curse', amount: revealDamage, kind: 'add' });
     }
     if (goldBonus > 0) lines.push({ label: 'Gold spent', amount: goldBonus, kind: 'add' });
-    if (slotBonus > 0) lines.push({ label: 'Extra slots', amount: slotBonus, kind: 'add' });
+    if (slotBonus > 0) lines.push({ label: 'Extra item slots', amount: slotBonus, kind: 'add' });
     if (multiplier > 1) {
       lines.push({ label: 'Guess multiplier', amount: multiplier, kind: 'mult' });
     }
@@ -2799,7 +2801,7 @@ export function createCore(content: Content): Core {
         kind: 'item',
         def: relic.id,
         rarity: 'rare',
-        label: `Rare relic: ${relic.name}`,
+        label: `Rare item: ${relic.name}`,
         description: relic.description,
       });
     }
@@ -3176,8 +3178,9 @@ export function createCore(content: Content): Core {
         && (happening.id !== 'forbidden-feast' || rareFoodsAvailable.length > 0)
         && (happening.id !== 'flesh-market' || state.maxHp > 1 || state.maxArmor > 0)
         && (happening.id !== 'peddlers-table'
-          || ['red-amulet', 'silver-key', 'nonsensical-map']
-            .some((id) => !state.items.some((item) => item.id === id))),
+          || content.items
+            .filter((item) => itemHasTag(item, 'lore'))
+            .some((item) => !state.items.some((owned) => owned.id === item.id))),
     );
     if (pool.length === 0) {
       advanceNode(rt);

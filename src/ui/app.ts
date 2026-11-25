@@ -34,7 +34,9 @@ import {
   trackRunStarted,
 } from './analytics';
 import { escapeHtml, formatTime, parrotLine, parrotStupidLine, reasonText, roman } from './format';
-import { ARMOR_TIP, PURGED_TIP, glossaryText } from './glossary';
+import { ARMOR_TIP, ITEM_TAG_TIPS, PURGED_TIP, glossaryText } from './glossary';
+import { itemHasTag, itemTags } from '../core/itemTags';
+import type { ItemTag } from '../core/types';
 import { groupProcChanges, type ProcFlyGroup } from './procRewards';
 import {
   bossColor,
@@ -2753,13 +2755,25 @@ function renderSidePanel(view: RunView): string {
   </aside>`;
 }
 
+function slotLabel(slots: number): string {
+  if (slots <= 0) return 'NO ITEM SLOT';
+  return `${slots} ITEM SLOT${slots === 1 ? '' : 'S'}`;
+}
+
+function tagChips(tags: ItemTag[], interactive = true): string {
+  const focus = interactive ? ' tabindex="0"' : '';
+  return tags
+    .map((tag) => `<span class="tag item-tag"${focus} data-tip="${escapeHtml(ITEM_TAG_TIPS[tag])}" aria-label="${escapeHtml(ITEM_TAG_TIPS[tag])}">${tag.toUpperCase()}</span>`)
+    .join('');
+}
+
 function renderItemsPanel(view: RunView): string {
   const shop = view.phase.kind === 'shop';
   const gear = view.items.filter((item) => item.slots > 0);
   const equippedGear = gear.filter((item) => item.equipped);
   const bagged = gear.filter((item) => !item.equipped);
   const compact = shop || equippedGear.length > 4;
-  const scrollable = (compact ? gear.length : equippedGear.length) > 5
+  const scrollable = (compact ? gear.length > 5 : view.items.length > 5)
     ? ' scrollable'
     : '';
   const seedline = `<div class="seedline">SEED ${escapeHtml(host.current?.seed ?? '')}</div>`;
@@ -2797,16 +2811,23 @@ function renderItemsPanel(view: RunView): string {
         : '';
       return `<div class="loadout-row ${item.equipped ? 'equipped' : 'bagged'}"
         tabindex="0" data-tip="${escapeHtml(description)}">
-        ${emoji}<b>${name}</b>${use}
+        ${emoji}<b>${name}</b><span class="slot-note">${slotLabel(item.slots)}</span>${use}
+        <div class="loadout-tags">${tagChips(item.tags)}</div>
       </div>`;
     }
+    const sellArmed = armedAction?.action === 'sell' && armedAction.id === item.instance;
+    const sellAction = sellArmed ? 'confirm-sell' : 'arm-sell';
+    const sellLabel = sellArmed
+      ? `CONFIRM SELL · ${item.sellValue} G`
+      : `SELL ${item.sellValue} G`;
     return `<div class="loadout-row ${item.equipped ? 'equipped' : 'bagged'}"
       draggable="true" tabindex="0"
       data-item="${escapeHtml(item.instance)}"
       data-action="${item.equipped ? 'unequip' : 'equip'}" data-id="${escapeHtml(item.instance)}"
       data-tip="${escapeHtml(description)}">
-      ${emoji}<b>${name}</b>
-      <button class="btn tiny item-sell" data-action="sell" data-id="${escapeHtml(item.instance)}" ${canSell ? '' : 'disabled'} aria-label="Sell ${name} for ${item.sellValue} gold">SELL ${item.sellValue} G</button>
+      ${emoji}<b>${name}</b><span class="slot-note">${slotLabel(item.slots)}</span>
+      <button class="btn tiny item-sell" data-action="${sellAction}" data-id="${escapeHtml(item.instance)}" ${canSell ? '' : 'disabled'} aria-label="${sellArmed ? 'Confirm selling' : 'Sell'} ${name} for ${item.sellValue} gold">${sellLabel}</button>
+      <div class="loadout-tags">${tagChips(item.tags)}</div>
     </div>`;
   };
 
@@ -2886,7 +2907,9 @@ function renderItem(view: RunView, item: ItemView): string {
       ${spent ? `<span class="item-state">SPENT</span>` : ''}
       ${usedThisRound ? `<span class="item-state">USED</span>` : ''}
       <span class="tag">${rarity}</span>
+      <span class="slot-note">${slotLabel(item.slots)}</span>
     </div>
+    <div class="tag-row">${tagChips(item.tags)}</div>
     <p>${glossaryText(description)}</p>
     ${data ? `<div class="data-row">${data}</div>` : ''}
     ${!item.equipped && item.slots > 0 ? `<p class="bag-note">In the bag. Equip it in a shop.</p>` : ''}
@@ -3031,17 +3054,19 @@ function renderSummary(view: RunView, phase: Extract<PhaseView, { kind: 'summary
 function renderReward(phase: Extract<PhaseView, { kind: 'reward' }>): string {
   const boss = phase.boss;
   const miniboss = phase.miniboss === true;
+  const selectedId = pendingChoice?.kind === 'reward' ? pendingChoice.id : undefined;
   return `
   <div class="phase-card reward ${boss || miniboss ? 'boss-reward' : ''}">
-    <p class="panel-kicker">${miniboss ? 'MINIBOSS REWARD' : boss ? 'BOSS RELIC' : 'REWARD'}</p>
-    <h2>${miniboss ? 'Choose your prize' : boss ? 'Claim a relic' : 'Take one'}</h2>
+    <p class="panel-kicker">${miniboss ? 'MINIBOSS REWARD' : boss ? 'BOSS REWARD' : 'REWARD'}</p>
+    <h2>${miniboss ? 'Choose one prize' : boss ? 'Choose one reward' : 'Choose one'}</h2>
     <p class="muted">${miniboss
-      ? 'Pick one: a rare meal or a rare relic. You already gained an item slot and a full heal.'
+      ? 'Choose one: a rare meal or a rare item. You already gained an item slot and a full heal.'
       : boss
-        ? 'Rare passives. Each relic uses an item slot and lasts for the rest of the run.'
-        : 'Coins plus a spell or a meal. Rarely, a find.'}</p>
+        ? 'Choose one. Rare items work while equipped, use one item slot each, and last for the rest of the run.'
+        : 'Choose one: coins, a spell, or a meal. Rarely, a rare item.'}</p>
     <div class="reward-grid">
       ${phase.options.map((option) => {
+        const def = option.kind === 'item' ? ITEM_BY_ID.get(option.def ?? '') : undefined;
         const icon = option.kind === 'item'
           ? itemIcon(option.def ?? '')
           : option.kind === 'spell'
@@ -3049,24 +3074,38 @@ function renderReward(phase: Extract<PhaseView, { kind: 'reward' }>): string {
             : option.kind === 'eat'
               ? foodIcon(option.def ?? '')
               : '🪙';
-        const isRelic = option.kind === 'item' && option.rarity === 'rare';
-        const tag = isRelic
-          ? 'RELIC'
-          : option.rarity === 'uncommon' ? 'UNCOMMON' : option.kind.toUpperCase();
-        const rarityClass = isRelic
+        const isRareItem = option.kind === 'item' && option.rarity === 'rare';
+        const isRareFood = option.kind === 'eat' && option.rarity === 'rare';
+        const tag = isRareItem
+          ? 'RARE ITEM'
+          : isRareFood
+            ? 'RARE FOOD'
+            : option.rarity === 'uncommon' ? 'UNCOMMON' : option.kind.toUpperCase();
+        const rarityClass = isRareItem || isRareFood
           ? 'rare'
           : option.rarity === 'uncommon' ? 'uncommon' : '';
         const description = option.kind === 'eat'
           ? foodDescription(option.description)
           : option.description;
+        const selected = selectedId === option.id;
+        const slots = option.kind === 'item'
+          ? def?.slots ?? (def?.kind === 'gear' ? 1 : 0)
+          : option.kind === 'spell' || option.kind === 'eat' ? 0 : null;
         return `
-        <button class="reward-card ${option.kind} ${rarityClass}" data-action="reward" data-id="${escapeHtml(option.id)}">
+        <button class="reward-card ${option.kind} ${rarityClass} ${selected ? 'selected' : ''}" data-action="select-reward" data-id="${escapeHtml(option.id)}" aria-pressed="${selected}" data-tip="${escapeHtml(description)}">
           <span class="reward-icon" aria-hidden="true">${icon}</span>
           <span class="tag">${tag}</span>
+          ${slots !== null ? `<span class="slot-note">${slotLabel(slots)}</span>` : ''}
           <b>${escapeHtml(option.label)}</b>
+          <div class="tag-row">${tagChips(itemTags(def), false)}</div>
           <span>${glossaryText(description)}</span>
+          <span class="card-select">${selected ? 'SELECTED' : 'SELECT'}</span>
         </button>`;
       }).join('')}
+    </div>
+    <div class="choice-confirm" role="status" aria-live="polite">
+      <button class="btn primary" data-action="confirm-reward" ${selectedId ? '' : 'disabled'}>${selectedId ? 'CONFIRM REWARD' : 'SELECT A REWARD'}</button>
+      <p class="hint">Tap a reward to inspect it. Nothing is claimed until you confirm.</p>
     </div>
   </div>`;
 }
@@ -3206,28 +3245,33 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
         : applies && coupon > 0
           ? `<s>${offer.price} G</s> ${finalPrice} G`
           : `${offer.price} G`;
+      const armed = armedAction?.action === 'buy' && armedAction.id === offer.id;
+      const buyAction = armed ? 'confirm-buy' : 'arm-buy';
       return `
-      <article class="offer-card ${isFood ? 'food' : offer.kind} ${cannotAfford ? 'unavailable' : ''} ${offer.sale ? 'sale' : ''} ${isRare ? 'rare' : isUncommon ? 'uncommon' : ''}">
+      <article class="offer-card ${isFood ? 'food' : offer.kind} ${cannotAfford ? 'unavailable' : ''} ${offer.sale ? 'sale' : ''} ${isRare ? 'rare' : isUncommon ? 'uncommon' : ''} ${armed ? 'armed' : ''}">
         <div class="offer-top">
           <span class="item-emoji" aria-hidden="true">${info.icon}</span>
           <span class="tag"${tagTip}>${tag}</span>
         </div>
         <h3>${escapeHtml(info.name)}</h3>
+        <span class="slot-note">${slotLabel(info.slots)}</span>
+        <div class="tag-row">${tagChips(itemTags(itemDef))}</div>
         <p>${glossaryText(description)}</p>
-        <button class="btn primary" data-action="buy" data-id="${escapeHtml(offer.id)}" ${cannotAfford ? 'disabled' : ''}>${price}</button>
+        <button class="btn primary" data-action="${buyAction}" data-id="${escapeHtml(offer.id)}" ${cannotAfford ? 'disabled' : ''}>${armed ? 'CONFIRM BUY' : 'BUY'} · ${price}</button>
       </article>`;
     }).join('')
     : `<p class="empty-note">The shelves are bare. Reroll or leave.</p>`;
 
+  const rerollArmed = armedAction?.action === 'reroll';
   return `
   <div class="phase-card shop">
     ${coupon > 0 ? `<p class="hint coupon-hint">Coupon Book: the first item or food purchase costs ${coupon} less.</p>` : ''}
     <div class="offer-grid">${offers}</div>
     <div class="shop-actions">
-      <button class="btn" data-action="reroll">REROLL · ${phase.rerollCost} G</button>
+      <button class="btn ${rerollArmed ? 'armed' : ''}" data-action="${rerollArmed ? 'confirm-reroll' : 'arm-reroll'}">${rerollArmed ? 'CONFIRM REROLL' : 'REROLL'} · ${phase.rerollCost} G</button>
       <button class="btn ghost" data-action="continue">LEAVE →</button>
     </div>
-    <p class="hint">Rearrange gear in the loadout on the left. Shops carry items, foods, and one wildcard slot. Curses can remove slots. Food is eaten on purchase. One item is always half price, and each reroll costs double the last. Relics are very rare items.</p>
+    <p class="hint">Rearrange items in the loadout on the left. Shops carry items, foods, and one wildcard offer. Curses can remove item slots. Food is eaten on purchase. One item is always half price, and each reroll costs double the last. Rare items are very rare finds; each uses one item slot.</p>
   </div>`;
 }
 

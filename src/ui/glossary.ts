@@ -1,3 +1,4 @@
+import type { ItemTag } from '../core/types';
 import { escapeHtml } from './format';
 
 interface GlossaryEntry {
@@ -8,6 +9,18 @@ interface GlossaryEntry {
 export const ARMOR_TIP =
   'Armor soaks damage before HP, point for point. It refills at the start of every round. '
   + 'Damage that gets past armor is a Hit (HP damage).';
+
+export const ITEM_TAG_TIPS: Record<ItemTag, string> = {
+  armor: 'Armor item: it adds to, refills, or protects your armor pool.',
+  spell: 'Spell item: it grants, casts, or reacts to spells.',
+  guess: 'Guess item: it reacts to player guesses, autoguesses, or solve speed.',
+  gold: 'Gold item: it earns, spends, or discounts gold.',
+  vision: 'Vision item: it reveals letters or helps against vision curses.',
+  food: 'Food item: it reacts to eating or supports food effects.',
+  curse: 'Curse item: it reacts to gaining or removing curses.',
+  time: 'Clock item: it adds time, freezes the clock, or reacts to time effects.',
+  lore: 'A mysterious object. It is not sold in shops and may matter later.',
+};
 
 export const PURGED_TIP =
   'A purged letter can\'t be manually guessed again, and no puzzle answer will ever contain it. Autoguesses can still use it.';
@@ -75,19 +88,19 @@ const ENTRIES: GlossaryEntry[] = [
   },
   {
     pattern: /\brelics?\b/gi,
-    tip: 'A rare boss prize. It uses an item slot like any other gear, is active only while equipped, and never appears in shops.',
+    tip: 'A rare item find. It uses one item slot like any other item, works only while equipped, and can appear in shops and rewards.',
   },
   {
     pattern: /\bslots?\b/gi,
-    tip: 'Equipped gear uses a slot. Gear in your bag uses none and stays switched off.',
+    tip: 'Equipped items use item slots. Items in your bag use none and stay switched off.',
   },
   {
     pattern: /\bbags?\b/gi,
-    tip: 'Gear stored here takes no slots and its passives are off. Rearrange it in a shop.',
+    tip: 'Items stored here take no item slots and their effects are off. Rearrange them in a shop.',
   },
   {
     pattern: /\bequipped\b/gi,
-    tip: 'Only equipped gear uses its passives and consumes slots.',
+    tip: 'Only equipped items use their effects and consume item slots.',
   },
   {
     pattern: /\bblacklist(?:ed)?\b/gi,
@@ -159,7 +172,7 @@ const ENTRIES: GlossaryEntry[] = [
   },
   {
     pattern: /\bconsumable\b/gi,
-    tip: 'A one-use item. It takes no slot.',
+    tip: 'A one-use item. It takes no item slot.',
   },
   {
     pattern: /\bboss(?:es)?\b/gi,
@@ -175,11 +188,11 @@ const ENTRIES: GlossaryEntry[] = [
   },
   {
     pattern: /\bmeals?\b/gi,
-    tip: 'Food is eaten immediately, heals or grants its effect, and takes no slot.',
+    tip: 'Food is eaten immediately, heals or grants its effect, and takes no item slot.',
   },
   {
     pattern: /\bfoods?\b/gi,
-    tip: 'Food is eaten immediately, heals or grants its effect, and takes no slot.',
+    tip: 'Food is eaten immediately, heals or grants its effect, and takes no item slot.',
   },
   {
     pattern: /\bshop purchases?\b/gi,
