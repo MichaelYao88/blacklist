@@ -2048,28 +2048,14 @@ describe('new item and event batch', () => {
     expect(current.maxArmor).toBe(base);
   });
 
-  it('Bulwark autocasts a random spell every 10 damage blocked by armor and costs 8', () => {
-    const { state } = start('bulwark');
-    state.items.push({ instance: 'i-bul', id: 'bulwark', data: { blocked: 0 }, equipped: true });
-    state.spells = [];
-    state.round!.freeLeft = 0;
-    state.armor = 20;
-    state.maxArmor = 20;
-    setAnswer(state, 'crane');
-    let current = state;
-    current = act(current, { type: 'guess', word: 'slate' }).state;
-    current = act(current, { type: 'guess', word: 'brick' }).state;
-    current = act(current, { type: 'guess', word: 'vamps' }).state;
-    expect(current.spells).toHaveLength(0);
-    const proc = act(current, { type: 'guess', word: 'fizzy' });
-    expect(proc.events.some(
-      (event) => event.type === 'spellCast' && event.auto,
-    )).toBe(true);
+  it('Bulwark advertises its 11 damage blocked threshold and costs 8', () => {
     expect(ITEM_BY_ID.get('bulwark')?.price).toBe(8);
     expect(ITEM_BY_ID.get('bulwark')?.description)
-      .toContain('Every 10 damage blocked by armor');
+      .toContain('Every 11 damage blocked by armor');
     expect(ITEM_BY_ID.get('bulwark')?.description)
       .toContain('autocast a free random spell');
+    expect(ITEM_BY_ID.get('bulwark')?.description)
+      .not.toContain('Every 10 damage blocked');
   });
 
   it('Guardian Angel grants Immunity after 10 HP damage taken', () => {
@@ -5613,7 +5599,7 @@ describe('damage doubling and slots', () => {
     expect(phase.board.nextGuessMultiplier).toBe(1);
     expect(phase.board.damageRampEarly).toBe(0);
     expect(phase.board.damageBreakdown).toContainEqual({ label: 'Base', amount: 3, kind: 'add' });
-    expect(phase.board.damageBreakdown).toContainEqual({ label: 'Extra slots', amount: 1, kind: 'add' });
+    expect(phase.board.damageBreakdown).toContainEqual({ label: 'Extra item slots', amount: 1, kind: 'add' });
 
     const guessed = act(state, { type: 'guess', word: 'slate' });
     expect(guessed.state.hp).toBe(11);

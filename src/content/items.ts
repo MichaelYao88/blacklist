@@ -999,7 +999,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'bulwark',
     name: 'Bulwark',
-    description: 'Every 10 damage blocked by armor: autocast a free random spell.',
+    description: 'Every 11 damage blocked by armor: autocast a free random spell.',
     price: 8,
     kind: 'gear',
     initial: { blocked: 0 },
@@ -1007,9 +1007,9 @@ export const ITEMS: ItemDef[] = [
       onDamageTaken: (ctx, p) => {
         if (p.armorUsed <= 0) return [];
         const total = ctx.self.data.blocked + p.armorUsed;
-        const spells = Math.floor(total / 10);
+        const spells = Math.floor(total / 11);
         return [
-          { type: 'setItemData', stat: 'blocked', value: total % 10 },
+          { type: 'setItemData', stat: 'blocked', value: total % 11 },
           ...Array.from({ length: spells }, () => ({ type: 'castSpell' as const, spell: 'random' as const })),
         ];
       },
