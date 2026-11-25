@@ -39,8 +39,8 @@ export type Source =
   | { kind: 'happening'; happening: HappeningId }
   | { kind: 'inn' };
 
-export type NodeKind = 'round' | 'boss' | 'shop' | 'happening' | 'curse';
-export type PhaseKind = 'purge' | 'round' | 'summary' | 'reward' | 'shop' | 'shopChoice' | 'happening' | 'bossIntro' | 'curse' | 'over';
+export type NodeKind = 'round' | 'boss' | 'shop' | 'happening' | 'curse' | 'mysteriousRoom';
+export type PhaseKind = 'purge' | 'round' | 'summary' | 'reward' | 'shop' | 'shopChoice' | 'happening' | 'bossIntro' | 'curse' | 'mysteriousRoom' | 'over';
 export type CurseTag = 'vision' | 'damage' | 'clock' | 'list' | 'shop' | 'body' | 'economy' | 'rule';
 export type ItemKind = 'gear' | 'consumable';
 /** Gameplay families an item can carry; an item may have several. */
@@ -725,6 +725,12 @@ export interface RunState {
   pendingStartingCurses: number;
   /** Curses still to draft before the Floor Boss fight. */
   bossCursesLeft: number;
+  /** Lore items selected at the Peddler's Table this run. */
+  loreBrought?: Partial<Record<ItemId, boolean>>;
+  /** Lore items counted when the Mysterious Room was entered this run. */
+  mysteriousBrought?: ItemId[];
+  /** True once this run has counted its Mysterious Room visit. */
+  mysteriousCounted?: boolean;
   pendingCurseRemoval: number;
   phase: PhaseKind;
   bossIntro?: { boss: BossId };
@@ -840,6 +846,7 @@ export type PhaseView =
       previewCurse?: CurseId;
       resolved?: { option: string; success: boolean; text: string };
     }
+  | { kind: 'mysteriousRoom'; brought: ItemId[] }
   | {
       kind: 'over';
       result: 'victory' | 'defeat';
@@ -891,6 +898,7 @@ export type Command =
   | { type: 'chooseReward'; optionId: string }
   | { type: 'chooseCurse'; curseId: CurseId }
   | { type: 'removeCurse'; curseId: CurseId }
+  | { type: 'claimVictory' }
   | { type: 'continue' };
 
 /**
@@ -1005,6 +1013,7 @@ export type GameEvent =
   | { type: 'foodEaten'; food: string; name: string }
   | { type: 'parrotSuggestion'; word: string; flavor?: 'stupid-cracker' }
   | { type: 'parrotSays'; text: string }
+  | { type: 'mysteriousRoomEntered'; brought: ItemId[] }
   | { type: 'attributeChanged'; stat: string; value: number }
   | { type: 'damageMultiplier'; multiplier: number }
   | { type: 'message'; text: string }

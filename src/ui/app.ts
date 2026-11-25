@@ -23,7 +23,7 @@ import {
   ITEM_BY_ID,
   SPELL_BY_ID,
 } from '../content';
-import { LocalStore, dismissCharacterTip, dismissDamageTutorial, hasSave, readMeta, recordFood, recordPurchase, recordPurge, recordRun, recordStart, unlockCharacter } from './store';
+import { LocalStore, MYSTERIOUS_ITEMS, dismissCharacterTip, dismissDamageTutorial, hasSave, readMeta, recordFood, recordMysteriousBrought, recordPurchase, recordPurge, recordRun, recordStart, unlockCharacter } from './store';
 import {
   trackBossReached,
   trackEventChoice,
@@ -851,6 +851,9 @@ function logGameEvent(event: GameEvent): void {
     case 'parrotSays':
       logChronicle('info', `Evil Parrot says: ${event.text}`);
       break;
+    case 'mysteriousRoomEntered':
+      logChronicle('good', 'The Mysterious Room remembers what you brought.');
+      break;
     case 'message':
       logChronicle('info', event.text);
       break;
@@ -926,6 +929,9 @@ function processEvents(events: GameEvent[]): void {
         queueCharacterUnlock('purgamist');
         sfx.play('win');
       }
+    }
+    if (event.type === 'mysteriousRoomEntered') {
+      for (const id of event.brought) recordMysteriousBrought(id);
     }
     if (event.type === 'runEnded' && event.result === 'victory') {
       const ascension = host.current?.ascension ?? 0;
@@ -1544,6 +1550,9 @@ app.addEventListener('click', (event) => {
       render();
       break;
     }
+    case 'claim-victory':
+      dispatchCommand({ type: 'claimVictory' });
+      break;
     case 'continue':
       dispatchCommand({ type: 'continue' });
       break;
@@ -2222,7 +2231,7 @@ function renderTitle(): string {
     ${characterPicker}
     ${ascensionPicker}
     <div class="title-facts">
-      <div><b>50</b><span>levels</span></div>
+      <div><b>40</b><span>levels</span></div>
       <div><b>2</b><span>curse choices</span></div>
       <div><b>3</b><span>base damage</span></div>
       <div><b>1</b><span>free guess</span></div>
@@ -2245,7 +2254,7 @@ function renderHelp(): string {
     <div class="rules-grid">
       <article class="rule-card">
         <h3>The run</h3>
-        <p>Fifty floors. The loop cycles <b>fight → shop → fight → curse</b>; fights, shops and curses each count as a floor, while events happen between floors and do not. Floor 27 is the <b>Miniboss</b>: draft <b>1 curse</b>, then beat two words to gain a slot and a full heal, then choose one reward. Floors 47, 48 and 49 are the final curse drafts. Floor 50 is the <b>Floor Boss</b>: beat three words.</p>
+        <p>Forty floors. The loop cycles <b>fight → shop → fight → curse</b>; fights, shops and curses each count as a floor, while events happen between floors and do not. Floor 23 is the <b>Miniboss</b>: draft <b>1 curse</b>, then beat two words to gain a slot and a full heal, then choose one reward. Floor 38 is the last shop, followed by the final three curse drafts. Floor 39 is the <b>Floor Boss</b>: beat three words. Floor 40 is the <b>Mysterious Room</b>: claim victory.</p>
       </article>
       <article class="rule-card">
         <h3>Damage</h3>
@@ -2440,11 +2449,13 @@ function phaseLabel(view: RunView): string {
               ? 'SHOP OR INN'
               : phase.kind === 'shop'
                 ? 'SHOP'
-                : phase.kind === 'happening'
-                  ? 'INTERRUPTION'
-                  : phase.kind === 'purge'
-                    ? 'SETUP'
-                    : 'THE LIST';
+                : phase.kind === 'mysteriousRoom'
+                  ? 'MYSTERIOUS ROOM'
+                  : phase.kind === 'happening'
+                    ? 'INTERRUPTION'
+                    : phase.kind === 'purge'
+                      ? 'SETUP'
+                      : 'THE LIST';
 }
 
 function damageOverlayHtml(): string {
@@ -2537,6 +2548,7 @@ const RAIL_NODE_LABELS: Record<NodeKind, string> = {
   curse: 'Curse',
   happening: 'Event',
   boss: 'Boss',
+  mysteriousRoom: 'Mysterious Room',
 };
 
 const RAIL_NODE_GLYPHS: Record<NodeKind, string> = {
@@ -2545,6 +2557,7 @@ const RAIL_NODE_GLYPHS: Record<NodeKind, string> = {
   curse: '✕',
   happening: '?',
   boss: '☠',
+  mysteriousRoom: '✦',
 };
 
 interface RailFloor {
@@ -2565,6 +2578,7 @@ function railFloorAt(view: RunView, level: number): RailFloor | null {
     ?? nodes.find((node) => node.kind === 'round')
     ?? nodes.find((node) => node.kind === 'curse')
     ?? nodes.find((node) => node.kind === 'shop')
+    ?? nodes.find((node) => node.kind === 'mysteriousRoom')
     ?? nodes.find((node) => node.kind === 'happening');
   if (!primary) return null;
   return {
@@ -2789,6 +2803,33 @@ function renderCurseRail(view: RunView): string {
     </div>
     ${renderPlayerVitals(view)}
   </aside>`;
+}
+
+function renderMysteriousRail(view: RunView): string {
+  return `<aside class="panel mysterious-rail" aria-label="Mysterious Room">
+    <div class="shop-rail-head">
+      <span class="panel-kicker">MYSTERIOUS ROOM</span>
+      <b class="shop-rail-floor">FLOOR ${view.level}</b>
+    </div>
+    ${renderPlayerVitals(view)}
+  </aside>`;
+}
+
+function renderMysteriousRoom(): string {
+  const counts = readMeta().mysteriousCounts;
+  const items = MYSTERIOUS_ITEMS.map((id) => {
+    const name = ITEM_BY_ID.get(id)?.name ?? id;
+    const count = counts[id] ?? 0;
+    return `<div class="mysterious-item" aria-label="${escapeHtml(`${name}: brought ${count} time${count === 1 ? '' : 's'}`)}">
+      <span class="mysterious-emoji" aria-hidden="true">${itemIcon(id)}</span>
+      <b class="mysterious-count">×${count}</b>
+    </div>`;
+  }).join('');
+  return `<div class="phase-card mysterious-room">
+    <p class="panel-kicker">MYSTERIOUS ROOM</p>
+    <div class="mysterious-items">${items}</div>
+    <button class="btn primary big" data-action="claim-victory">CLAIM VICTORY</button>
+  </div>`;
 }
 
 function renderChronicle(): string {
@@ -3152,7 +3193,7 @@ function renderSummary(view: RunView, phase: Extract<PhaseView, { kind: 'summary
       ? miniboss
         ? 'The Miniboss is down. You gain an item slot and a full heal. Choose one reward.'
         : boss
-          ? 'The Floor Boss is down. Continue to finish the run.'
+          ? 'The Floor Boss is down. Continue to the Mysterious Room to claim the run.'
           : 'The round is clear. Choose one reward and keep moving.'
       : phase.outcome === 'timeout'
         ? 'The clock took its cut, but the encounter still paid. No reward this time. The run continues if you do.'
@@ -3530,7 +3571,7 @@ function renderOver(phase: Extract<PhaseView, { kind: 'over' }>): string {
     <p class="kicker">RUN OVER</p>
     <h1>${victory ? 'THE LIST IS YOURS' : 'THE LIST CLOSES'}</h1>
     <p class="tagline">${victory
-      ? 'Fifty floors. Every curse. The words you gave up are the ones that carried you.'
+      ? 'Forty floors. Every curse. The words you gave up are the ones that carried you.'
       : 'The word that ended you is written below. It will not be so kind next time.'}</p>
     ${ascNote ? `<p class="ascension-result">${ascNote}</p>` : ''}
     ${reveal}
@@ -3645,6 +3686,8 @@ function phasePanel(view: RunView): string {
       return renderCurse(phase);
     case 'shop':
       return renderShop(view, phase);
+    case 'mysteriousRoom':
+      return renderMysteriousRoom();
     case 'shopChoice':
       return renderShopChoice();
     case 'happening':
@@ -3709,7 +3752,9 @@ function renderRun(view: RunView): string {
               ? `${renderShopRail(view)}${renderItemsPanel(view)}`
               : phase.kind === 'curse'
                 ? `${renderCurseRail(view)}${renderItemsPanel(view)}`
-                : `${renderBattleRail(view, bossId)}${renderItemsPanel(view)}`}
+                : phase.kind === 'mysteriousRoom'
+                  ? `${renderMysteriousRail(view)}${renderItemsPanel(view)}`
+                  : `${renderBattleRail(view, bossId)}${renderItemsPanel(view)}`}
           </div>
           <section class="center-column">${phasePanel(view)}</section>
           ${renderSidePanel(view)}

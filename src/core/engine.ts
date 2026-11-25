@@ -45,12 +45,18 @@ import { itemHasTag, itemTags } from './itemTags';
 
 const VERSION = 6;
 const WORD_LENGTH = 5;
-const MAX_LEVEL = 50;
+export const MAX_LEVEL = 40;
 export const HAPPENING_CHANCE = 42;
-const LEVELS_PER_AREA = 10;
+const MINIBOSS_LEVEL = 23;
+const FINAL_CURSE_LEVEL = 38;
+const FLOOR_BOSS_LEVEL = 39;
+const MYSTERIOUS_ROOM_LEVEL = 40;
+const LEVELS_PER_AREA = 8;
 const STARTING_ITEM_SLOTS = 4;
 const PARROT_STEAL_MS = 195_000;
 const PARROT_STEAL_GOLD = 4;
+const LORE_ITEM_IDS = ['red-amulet', 'silver-key', 'nonsensical-map'] as const;
+const LORE_ITEM_SET = new Set<string>(LORE_ITEM_IDS);
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyz'.split('');
 
 const RULES: Source = { kind: 'rules' };
@@ -3572,6 +3578,12 @@ export function createCore(content: Content): Core {
     const shown = happening.options.find((entry) => entry.id === option.id);
     const outcomeText = shown?.outcomes[chosen]?.text ?? outcome.text;
 
+    // The Mysterious Room remembers only the lore item actually chosen at the
+    // Peddler's Table, not merely owning one from another source.
+    if (def.id === 'peddlers-table' && success && LORE_ITEM_SET.has(option.id)) {
+      state.loreBrought = { ...(state.loreBrought ?? {}), [option.id]: true };
+    }
+
     applyEffects(rt, outcome.effects, { kind: 'happening', happening: def.id });
     // Some options start a battle and leave the happening phase entirely.
     if (state.phase !== 'happening') return;
@@ -3844,6 +3856,26 @@ export function createCore(content: Content): Core {
     emit(rt, { type: 'bossIntro', boss });
   }
 
+  function enterMysteriousRoom(rt: Runtime): void {
+    const state = rt.state;
+    state.round = undefined;
+    state.summary = undefined;
+    state.reward = undefined;
+    state.shop = undefined;
+    state.happening = undefined;
+    state.bossIntro = undefined;
+    state.curse = undefined;
+    state.phase = 'mysteriousRoom';
+    if (!state.mysteriousCounted) {
+      state.mysteriousCounted = true;
+      const brought = LORE_ITEM_IDS.filter((id) => state.loreBrought?.[id] === true);
+      state.mysteriousBrought = [...brought];
+      emit(rt, { type: 'mysteriousRoomEntered', brought: [...brought] });
+    } else if (!Array.isArray(state.mysteriousBrought)) {
+      state.mysteriousBrought = [];
+    }
+  }
+
   function enterNode(rt: Runtime): void {
     const state = rt.state;
     if (state.nodeIndex >= state.nodes.length) {
@@ -3861,6 +3893,10 @@ export function createCore(content: Content): Core {
       level: state.level,
     });
 
+    if (node.kind === 'mysteriousRoom') {
+      enterMysteriousRoom(rt);
+      return;
+    }
     if (node.kind === 'curse') {
       openCurseDraft(rt, false);
       return;
@@ -3903,6 +3939,10 @@ export function createCore(content: Content): Core {
     }
     if (state.phase === 'bossIntro') {
       startRound(rt);
+      return;
+    }
+    if (state.phase === 'mysteriousRoom') {
+      victory(rt);
       return;
     }
     if (state.phase === 'summary') {
@@ -4251,6 +4291,12 @@ export function createCore(content: Content): Core {
           purchases: state.shop?.purchases ?? 0,
         };
         break;
+      case 'mysteriousRoom':
+        phase = {
+          kind: 'mysteriousRoom',
+          brought: (state.mysteriousBrought ?? []).slice(),
+        };
+        break;
       case 'happening':
         phase = {
           kind: 'happening',
@@ -4415,6 +4461,9 @@ export function createCore(content: Content): Core {
       case 'removeCurse':
         removeCurse(rt, cmd.curseId);
         break;
+      case 'claimVictory':
+        if (rt.state.phase === 'mysteriousRoom') victory(rt);
+        break;
       case 'continue':
         continueRun(rt);
         break;
@@ -4436,18 +4485,27 @@ export function createCore(content: Content): Core {
     // fights but share the fight's floor number, so they do not advance it.
     const pattern: Array<'round' | 'shop' | 'curse'> = ['round', 'shop', 'round', 'curse'];
     for (let level = 1; level <= MAX_LEVEL; level++) {
-      // The last three floors before the boss are the final curse drafts.
-      if (level >= MAX_LEVEL - 3 && level < MAX_LEVEL) {
-        nodes.push({ kind: 'curse', level });
+      // Floor 38 is the last shop, immediately followed by three mandatory
+      // curse drafts that share its floor number. The Floor Boss waits on 39,
+      // and the Mysterious Room ends the run on 40.
+      if (level === FINAL_CURSE_LEVEL) {
+        nodes.push({ kind: 'shop', level });
+        for (let draft = 0; draft < 3; draft++) {
+          nodes.push({ kind: 'curse', level });
+        }
         continue;
       }
-      if (level === MAX_LEVEL) {
+      if (level === FLOOR_BOSS_LEVEL) {
         nodes.push({ kind: 'boss', level, boss: 'floor-boss' });
+        continue;
+      }
+      if (level === MYSTERIOUS_ROOM_LEVEL) {
+        nodes.push({ kind: 'mysteriousRoom', level });
         continue;
       }
       const kind = pattern[(level - 1) % pattern.length];
       if (kind === 'round') {
-        if (level === 27) {
+        if (level === MINIBOSS_LEVEL) {
           nodes.push({ kind: 'boss', level, boss: 'miniboss' });
         } else {
           addRound(level);
@@ -4659,6 +4717,9 @@ export function createCore(content: Content): Core {
       }
       if (typeof state.pendingStartingCurses !== 'number') state.pendingStartingCurses = 0;
       if (typeof state.bossCursesLeft !== 'number') state.bossCursesLeft = 0;
+      if (typeof state.mysteriousCounted !== 'boolean') state.mysteriousCounted = false;
+      if (!state.loreBrought || typeof state.loreBrought !== 'object') state.loreBrought = {};
+      if (!Array.isArray(state.mysteriousBrought)) state.mysteriousBrought = [];
       if (typeof state.pendingCurseRemoval !== 'number') state.pendingCurseRemoval = 0;
       if (typeof state.pendingAbsent !== 'number') state.pendingAbsent = 0;
       if (typeof state.unarmoredHalfCharges !== 'number') state.unarmoredHalfCharges = 0;
