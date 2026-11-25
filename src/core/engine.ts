@@ -2788,21 +2788,21 @@ export function createCore(content: Content): Core {
         description: food.description,
       });
     }
-    const rareRelics = content.items.filter(
+    const rareItems = content.items.filter(
       (item) => item.rarity === 'rare'
         && !item.noSpawn
         && itemAvailable(state, item)
         && !state.items.some((owned) => owned.id === item.id),
     );
-    const relic = rareRelics.length > 0 ? rngPick(state, rareRelics) : undefined;
-    if (relic) {
+    const rareItem = rareItems.length > 0 ? rngPick(state, rareItems) : undefined;
+    if (rareItem) {
       options.push({
-        id: `item:${relic.id}`,
+        id: `item:${rareItem.id}`,
         kind: 'item',
-        def: relic.id,
+        def: rareItem.id,
         rarity: 'rare',
-        label: `Rare item: ${relic.name}`,
-        description: relic.description,
+        label: `Rare item: ${rareItem.name}`,
+        description: rareItem.description,
       });
     }
     if (options.length === 0) {
@@ -4554,7 +4554,7 @@ export function createCore(content: Content): Core {
         ? Math.max(0, Math.min(ASCENSION_MAX, Math.floor(state.ascension)))
         : 0;
       // Version 5 gives every run one more slot than it had before, because
-      // relics now compete with gear for space.
+      // rare items now compete with gear for space.
       if (fromVersion < 5) {
         state.slots = (typeof state.slots === 'number' ? state.slots : 4) + 1;
       } else if (typeof state.slots !== 'number') {
@@ -4621,7 +4621,7 @@ export function createCore(content: Content): Core {
       for (const item of state.items) {
         if (typeof item.equipped !== 'boolean') item.equipped = true;
       }
-      // A save that predates relic slots can be over capacity. Unequip the
+      // A save that predates rare-item slots can be over capacity. Unequip the
       // overflow rather than leaving a loadout the UI cannot represent.
       let equippedCost = 0;
       for (const item of state.items) {

@@ -87,10 +87,6 @@ const ENTRIES: GlossaryEntry[] = [
     tip: 'A one-use ability. Duplicates stack into a single pile.',
   },
   {
-    pattern: /\brelics?\b/gi,
-    tip: 'A rare item find. It uses one item slot like any other item, works only while equipped, and can appear in shops and rewards.',
-  },
-  {
     pattern: /\bslots?\b/gi,
     tip: 'Equipped items use item slots. Items in your bag use none and stay switched off.',
   },
