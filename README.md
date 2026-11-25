@@ -2,7 +2,7 @@
 
 A word roguelike about the burdens you choose.
 
-A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle fight → shop → fight → curse; fights, shops and curses each count as a floor, while events happen between floors and do not. Floor 27 is the Miniboss: draft 1 curse, then beat two words to gain a slot and a full heal, then choose one reward. Floors 47, 48 and 49 are the final curse drafts. Floor 50 is the Floor Boss: beat three words. One active save, and defeat wipes it.
+A 40-floor curse run. The blacklist and the clock start disabled. Floors cycle fight → shop → fight → curse; fights, shops and curses each count as a floor, while events happen between floors and do not. Floor 23 is the Miniboss: draft 1 curse, then beat two words to gain a slot and a full heal, then choose one reward. Floor 38 is the last shop, followed by the final three curse drafts. Floor 39 is the Floor Boss: beat three words. Floor 40 is the Mysterious Room: claim victory. One active save, and defeat wipes it.
 
 **Play:** https://michaelayao88.github.io/blacklist/
 
@@ -13,14 +13,15 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 ## What is in the vertical slice
 
 - Wordle-style scoring with duplicate-letter handling
-- A 50-floor curse run: the Miniboss waits on floor 27 and the Floor Boss on floor 50; no starting clock, no starting blacklist
-- Round loop: `round → 55% event → shop`, then `round → 55% event → curse`
-- Floors cycle fight → shop → fight → curse; curses count as floors and events do not. The Miniboss demands 1 curse draft before its fight, and floors 47, 48 and 49 are the final three curse drafts
+- A 40-floor curse run: the Miniboss waits on floor 23, the Floor Boss on floor 39, and the Mysterious Room on floor 40; no starting clock, no starting blacklist
+- Round loop: `round → 42% event → shop`, then `round → 42% event → curse`
+- Floors cycle fight → shop → fight → curse; curses count as floors and events do not. The Miniboss demands 1 curse draft before its fight, and floor 38 is the final shop followed by the final three curse drafts
 - Curse drafts draw from the weighted pool; The List and The Clock get a 3x weight until they first appear in a draft, then normal
 - Curse drafts use the same rarity floors as shops (40% rare and below, 45% uncommon and below, 15% common only), but do not display rarity. A common curse becomes uncommon for the rest of the run after it is offered or selected
 - Hover or focus a curse in the HUD to read its rules
-- Floor 27 is the Miniboss: draft 1 curse, then beat two words. It deals **+5 base damage**, and beating it grants **+1 item slot**, a full heal, and a choice between a random rare food and a random rare item
-- Floors 47, 48 and 49 are the final curse drafts; floor 50 is the Floor Boss: beat three words. It deals **+10 base damage**. Bosses ignore the **Second Wind** curse
+- Floor 23 is the Miniboss: draft 1 curse, then beat two words. It deals **+5 base damage**, and beating it grants **+1 item slot**, a full heal, and a choice between a random rare food and a random rare item
+- Floor 38 is the final shop followed by the final three curse drafts; floor 39 is the Floor Boss: beat three words. It deals **+10 base damage**. Bosses ignore the **Second Wind** curse
+- **The Peddler's Table** is where you pick one of the Red Amulet, Silver Key or Nonsensical Map. The Mysterious Room on floor 40 remembers only those event picks: each chosen item adds one to its cross-run counter, and the room shows the three counters before you **Claim victory**
 - **Second Wind** is a rare curse: after you solve a word, a second word appears with one free guess
 - The Toll is only offered through level 40; The Tax and The Chained are only offered through level 20
 - Base encounter damage is **3 + 1.3 per curse stack, rounded down**, plus **+1 for every 60 gold spent this run**; characters that start with curses subtract **1.3 per starting curse stack**, and Heavy Hand multiplies the base by **1.5 per stack**. After the fifth guess in each puzzle, each later wrong guess increases the damage multiplier (**×2, ×3, ×4...**), counting autoguesses; the warning appears as soon as the safe guess limit is reached, the multiplier resets on Second Wind and each boss puzzle, and any remaining free guess is lost at that point. Every paid wrong guess adds **+1 per occupied item slot above 5**
@@ -82,6 +83,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - Item triggers show a compact proc pop-up with the actual result (for example **Yellow1** calling an autoguess or **Grey Market** paying gold); item procs queue 2 seconds apart and stay up 3 seconds longer; once-per-round items show **SPENT** after they fire
 - The revealed-letter panel persists between screens; in shops it is labelled **REVEALED**
 - On desktop the item list sits under the battle rail on the left; on mobile it stays at the bottom of the sidebar. Shops use a compact ranked loadout with empty-slot rows, and combat switches to the same compact list once more than four items are equipped
+- On mobile the round timer floats in a small fixed box once the original timer card scrolls out of view, and the spell list moves into a left-edge **SPELLS** tab that opens over the board
 - **Grey Market** is a 7g item: every all-grey guess pays 2 gold, whether you made it or an ally did; an all-dark guess that pays nothing hides a letter
 - **Photosynthesis** is a 10g item: on solve, +2 max HP and heal 20% max HP
 - **Stopped Clock** is a 6g item: casting Time Freeze grants +5 max HP, once per round
@@ -240,8 +242,8 @@ The Soldier and Orc sprites are from **Tiny RPG Character Asset Pack 01** by [Ze
 | Blacklist | disabled until The List curse; unlimited once active |
 | Normal timer | none until The Clock curse |
 | Clock curse | first stack 5:00, each later stack -40%, floor 0:30 |
-| Miniboss | floor 27, 2 words, 1 curse draft, +5 base damage |
-| Floor Boss | floor 50, 3 words; floors 47-49 are the curse drafts; shared clock if active |
+| Miniboss | floor 23, 2 words, 1 curse draft, +5 base damage |
+| Floor Boss | floor 39, 3 words; floor 38 is the shop followed by the three curse drafts; shared clock if active |
 | Base damage | `3 + floor(1.3 × total curse stacks) − (1.3 × starting curse stacks) + floor(gold spent / 60)`, then Heavy Hand and other modifiers apply |
 | Paid guess damage | curse-scaled base; after the fifth guess in each puzzle each later wrong guess increases the multiplier (`×2, ×3, ×4...`), counting autoguesses |
 | Boss damage | Miniboss +5 base, Floor Boss +10 base, plus curses |
@@ -316,13 +318,13 @@ Every event carries super properties `site` and `platform`:
 |---|---|---|
 | `game_loaded` | The shell has rendered | `has_save`, `prior_runs` |
 | `run_started` | A new run begins | `run_number`, `run_id`, `character`, `ascension` |
-| `run_ended` | The run is won or lost | `result` (`won` or `lost`), `ended_by` (`cleared`, `timeout`, or `hp`), `level`, `gauntlet_floors` (50), `duration_ms`, `run_number`, `run_id`, `character`, `ascension` |
+| `run_ended` | The run is won or lost | `result` (`won` or `lost`), `ended_by` (`cleared`, `timeout`, or `hp`), `level`, `gauntlet_floors` (40), `duration_ms`, `run_number`, `run_id`, `character`, `ascension` |
 | `run_resumed` | A saved run continues | `run_number`, `run_id`, `level`, `character`, `ascension` |
 | `run_abandoned` | Abandon, or replace an active run | `reason` (`abandon` or `replaced`), `level`, `run_number`, `run_id`, `character`, `ascension` |
 | `boss_reached` | The miniboss or floor boss starts | `boss`, `level`, `run_number`, `run_id`, `character`, `ascension` |
 | `event_choice` | A happening resolves | `happening`, `option`, `success`, `level`, `run_number`, `run_id` |
 
-`run_number` is how many runs this browser has started, the same counter as the stats page. A continued save sends `run_resumed` and keeps that number. `duration_ms` is the run's recorded play time. Floors 1–49 are the gauntlet and the floor boss is level 50, so a win reports `level` 50.
+`run_number` is how many runs this browser has started, the same counter as the stats page. A continued save sends `run_resumed` and keeps that number. `duration_ms` is the run's recorded play time. Floors 1–39 are the gauntlet and the Mysterious Room is level 40, so a win reports `level` 40.
 
 Finish rate is `run_ended` over `run_started`. A second run is `run_started` with `run_number` of 2 or more. Players who come back on a later day show up in a retention insight on `game_loaded`. Itch and GitHub Pages are separate origins, so break those charts down by `site`.
 
