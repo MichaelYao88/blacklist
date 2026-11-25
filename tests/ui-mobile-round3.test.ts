@@ -238,3 +238,27 @@ describe('desktop stays free of the mobile item shortcuts and float', () => {
 afterAll(() => {
   window.matchMedia = originalMatchMedia;
 });
+
+describe('mobile spells tab only renders when spells exist', () => {
+  it('hides the spells tab, drawer, and scrim with no spells and stacks item tabs from index 0', async () => {
+    const root = await boot(true, 'mobile-round4-no-spells', (state) => {
+      state.spells = [];
+      giveParrotAndNecro(state);
+    });
+    expect(root.querySelector('.mobile-spells-tab')).toBeNull();
+    expect(root.querySelector('.mobile-spells')).toBeNull();
+    expect(document.querySelector('.mobile-spells-scrim')).toBeNull();
+    const tabs = root.querySelectorAll<HTMLElement>('.mobile-item-tab');
+    expect(tabs).toHaveLength(2);
+    expect(tabs[0].style.getPropertyValue('--tab-index')).toBe('0');
+    expect(tabs[1].style.getPropertyValue('--tab-index')).toBe('1');
+  });
+
+  it('renders the spells tab when at least one spell exists', async () => {
+    const root = await boot(true, 'mobile-round4-with-spells', (state) => {
+      state.spells = [{ instance: 's-round4-omen', id: 'omen' }];
+    });
+    expect(root.querySelector('.mobile-spells-tab')).not.toBeNull();
+    expect(root.querySelector('.mobile-spells')).not.toBeNull();
+  });
+});

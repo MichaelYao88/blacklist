@@ -5350,7 +5350,7 @@ button {
   .mobile-spells-tab,
   .mobile-item-tab {
     position: fixed;
-    top: calc(46% + var(--tab-index, 0) * 62px);
+    top: calc(25% + var(--tab-index, 0) * 62px);
     left: 0;
     z-index: 61;
     display: flex;
@@ -5409,7 +5409,7 @@ button {
     bottom: 0;
     left: 0;
     z-index: 65;
-    width: min(86vw, 330px);
+    width: min(51.6vw, 198px);
     padding: 18px 14px calc(18px + env(safe-area-inset-bottom));
     overflow-y: auto;
     border-right: 1px solid var(--line-2);
@@ -5434,12 +5434,20 @@ button {
     padding: 12px;
   }
 
-  .mobile-item-body .item-top {
+  .mobile-spells-drawer .item-top,
+  .mobile-item-drawer .item-top {
     flex-wrap: wrap;
   }
 
-  .mobile-item-body .item-top b {
+  .mobile-spells-drawer .item-top b,
+  .mobile-item-drawer .item-top b {
     flex: 1 1 auto;
     min-width: auto;
+  }
+
+  .mobile-spells-drawer .item-card,
+  .mobile-spells-drawer .spell-card,
+  .mobile-item-drawer .item-card {
+    overflow-wrap: anywhere;
   }
 }

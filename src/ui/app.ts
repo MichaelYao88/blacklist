@@ -3025,15 +3025,19 @@ function renderMysteriousRoom(): string {
 
 function renderMobileSpells(view: RunView): string {
   if (!isMobileLayout()) return '';
+  if (view.spells.length === 0) {
+    spellsDrawerOpen = false;
+    return '';
+  }
   const stacks = new Map<string, { spell: SpellView; count: number }>();
   for (const spell of view.spells) {
     const entry = stacks.get(spell.id);
     if (entry) entry.count += 1;
     else stacks.set(spell.id, { spell, count: 1 });
   }
-  const spells = stacks.size
-    ? [...stacks.values()].map(({ spell, count }) => renderSpell(view, spell, count)).join('')
-    : `<p class="empty-note">No spells. Food and item triggers make them.</p>`;
+  const spells = [...stacks.values()]
+    .map(({ spell, count }) => renderSpell(view, spell, count))
+    .join('');
   return `<div class="mobile-spells ${spellsDrawerOpen ? 'open' : ''}">
     <button class="mobile-spells-tab" data-action="toggle-spells" aria-expanded="${spellsDrawerOpen}">
       <span>SPELLS</span><b>${view.spells.length}</b>
@@ -3051,11 +3055,12 @@ function renderMobileItemDrawers(view: RunView): string {
   const owned = MOBILE_ITEM_TABS.filter((tab) => (
     view.items.some((item) => item.id === tab.id)
   ));
+  const hasSpellsTab = view.spells.length > 0;
   return owned.map((tab, index) => {
     const item = view.items.find((entry) => entry.id === tab.id)!;
     const open = isItemDrawerOpen(tab.key);
-    // Index 0 is always the spells tab, so item tabs start below it.
-    const tabIndex = index + 1;
+    // The spells tab is index 0 when it exists; otherwise item tabs start there.
+    const tabIndex = index + (hasSpellsTab ? 1 : 0);
     return `<div class="mobile-item ${open ? 'open' : ''}" data-mobile-item="${tab.key}">
       <button class="mobile-item-tab" style="--tab-index:${tabIndex}" data-action="toggle-${tab.key}" aria-expanded="${open}">
         <span>${tab.label}</span><span class="mobile-item-tab-emoji" aria-hidden="true">${itemIcon(tab.id)}</span>
