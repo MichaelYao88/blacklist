@@ -363,6 +363,21 @@ let lastTick = performance.now();
 let paused = false;
 let pointerHeld = 0;
 let renderQueued = false;
+let renderedEpoch = '';
+type PendingChoice =
+  | { kind: 'curse'; id: string }
+  | { kind: 'reward'; id: string }
+  | { kind: 'purge'; letter: string }
+  | { kind: 'remove-curse'; id: string }
+  | { kind: 'happening'; id: string };
+let pendingChoice: PendingChoice | null = null;
+type ArmedAction = { action: 'buy' | 'reroll' | 'sell'; id?: string };
+let armedAction: ArmedAction | null = null;
+let armedTimer: number | undefined;
+let longPressTimer: number | undefined;
+let longPressTarget: HTMLElement | null = null;
+let longPressStart = { x: 0, y: 0 };
+let longPressClickGuardUntil = 0;
 let soundMuted = sfx.muted;
 let heartbeatSecond = -1;
 interface DamageFx {
@@ -1128,7 +1143,31 @@ function processEvents(events: GameEvent[]): void {
   }
 }
 
+function clearArmedAction(): void {
+  if (armedTimer) {
+    window.clearTimeout(armedTimer);
+    armedTimer = undefined;
+  }
+  armedAction = null;
+}
+
+function armAction(action: ArmedAction['action'], id?: string): void {
+  clearArmedAction();
+  armedAction = { action, id };
+  armedTimer = window.setTimeout(() => {
+    armedTimer = undefined;
+    armedAction = null;
+    render();
+  }, 4_000);
+}
+
+function resetChoiceState(): void {
+  pendingChoice = null;
+  clearArmedAction();
+}
+
 function dispatchCommand(command: Command): GameEvent[] {
+  resetChoiceState();
   const events = host.dispatch(command);
   if (events.some((event) => event.type === 'guessScored')) input = '';
   processEvents(events);
@@ -1670,6 +1709,28 @@ document.addEventListener('visibilitychange', () => {
 
 // ── rendering ──────────────────────────────────────────────────────────────
 
+const WINDOW_SCROLL_KEY = '@window';
+
+function captureScrollPositions(): Map<string, number> {
+  const saved = new Map<string, number>();
+  document.querySelectorAll<HTMLElement>('[data-scroll-key]').forEach((element) => {
+    const key = element.dataset.scrollKey;
+    if (key) saved.set(key, element.scrollTop);
+  });
+  saved.set(WINDOW_SCROLL_KEY, window.scrollY);
+  return saved;
+}
+
+function restoreScrollPositions(saved: Map<string, number>): void {
+  document.querySelectorAll<HTMLElement>('[data-scroll-key]').forEach((element) => {
+    const key = element.dataset.scrollKey;
+    const value = key ? saved.get(key) : undefined;
+    if (value !== undefined) element.scrollTop = value;
+  });
+  const windowY = saved.get(WINDOW_SCROLL_KEY);
+  if (windowY !== undefined) window.scrollTo(0, windowY);
+}
+
 function render(): void {
   // A full re-render replaces every button node. Doing that between a pointer
   // press and release swallows the click, so hold renders until the press ends.
@@ -1679,6 +1740,9 @@ function render(): void {
   }
   const view = host.view();
   if (screen === 'run' && !view) screen = 'title';
+  const epoch = `${screen}:${view?.phase.kind ?? ''}`;
+  const savedScroll = epoch === renderedEpoch ? captureScrollPositions() : null;
+  if (epoch !== renderedEpoch) resetChoiceState();
 
   const bossMusic = screen === 'run' && Boolean(
     view
@@ -1702,6 +1766,8 @@ function render(): void {
   }
   app!.insertAdjacentHTML('beforeend', noticeHtml());
   if (characterUnlock) app!.insertAdjacentHTML('beforeend', renderCharacterUnlock());
+  if (savedScroll) restoreScrollPositions(savedScroll);
+  renderedEpoch = epoch;
 
   const damageId = damageFx?.id ?? 0;
   const overRun = screen === 'run' && view?.phase.kind === 'over';
@@ -2615,14 +2681,14 @@ function renderCurseRail(view: RunView): string {
 
 function renderChronicle(): string {
   if (chronicleEntries.length === 0) {
-    return `<div class="chronicle"><p class="empty-note">No actions recorded yet.</p></div>`;
+    return `<div class="chronicle" data-scroll-key="chronicle"><p class="empty-note">No actions recorded yet.</p></div>`;
   }
   const rows = chronicleEntries.slice().reverse().map((entry) => `
     <div class="chronicle-entry ${entry.kind}">
       <span class="chronicle-level">L${entry.level}</span>
       <span class="chronicle-text">${escapeHtml(entry.text)}</span>
     </div>`).join('');
-  return `<div class="chronicle" aria-label="Run chronicle" aria-live="polite">${rows}</div>`;
+  return `<div class="chronicle" data-scroll-key="chronicle" aria-label="Run chronicle" aria-live="polite">${rows}</div>`;
 }
 
 function renderSidePanel(view: RunView): string {
@@ -2671,7 +2737,7 @@ function renderSidePanel(view: RunView): string {
     </section>
     ${hasList ? `<section class="blacklist-panel" tabindex="0" data-tip="${escapeHtml(blacklistTip)}" aria-label="${escapeHtml(blacklistTip)}">
       <div class="panel-head"><span class="panel-kicker">BLACKLIST</span><span class="count">${view.blacklist.length}</span></div>
-      <ol class="blacklist">${blacklist}</ol>
+      <ol class="blacklist" data-scroll-key="blacklist">${blacklist}</ol>
     </section>` : ''}
     ${(view.collectedReveals.length || view.revealed.length || view.purged.length) ? `<section>
       ${view.collectedReveals.length ? `<div class="revealed collected">
@@ -2709,7 +2775,7 @@ function renderItemsPanel(view: RunView): string {
         <span class="panel-kicker">ITEMS</span>
         <span class="count">${view.slots.used}/${view.slots.total}${bagged.length ? ` · ${bagged.length} BAG` : ''}</span>
       </div>
-      <div class="item-list${scrollable}">${items}</div>
+      <div class="item-list${scrollable}" data-scroll-key="items">${items}</div>
     </section>
     ${seedline}
   </aside>`;
@@ -2758,8 +2824,8 @@ function renderItemsPanel(view: RunView): string {
         <span class="panel-kicker">${shop ? 'LOADOUT' : 'ITEMS'}</span>
         <span class="count">${view.slots.used}/${view.slots.total}${shop ? ` · ${freeSlots} FREE` : ''}${bagged.length ? ` · ${bagged.length} BAG` : ''}</span>
       </div>
-      ${shop ? `<p class="hint loadout-hint">Click or drag gear to move it.${canSell ? '' : ' The Chained prevents selling.'}</p>` : ''}
-      <div class="loadout-list${scrollable}">
+      ${shop ? `<p class="hint loadout-hint">Click or drag items to move them.${canSell ? '' : ' The Chained prevents selling.'}</p>` : ''}
+      <div class="loadout-list${scrollable}" data-scroll-key="loadout">
         <div class="loadout-group"${shop ? ' data-drop="slot"' : ''}>
           <div class="loadout-group-head"><span class="panel-kicker">EQUIPPED</span><span class="count">${equippedGear.length}${shop ? `/${view.slots.total}` : ''}</span></div>
           ${equippedGear.map(row).join('')}${empties}
@@ -3423,7 +3489,7 @@ function renderPauseOverlay(view: RunView): string {
     : 'Take a breath. The list can wait.';
   return `
   <div class="pause-overlay">
-    <div class="pause-card">
+    <div class="pause-card" data-scroll-key="pause">
       <span class="pause-icon" aria-hidden="true">⏸</span>
       <p class="panel-kicker">PAUSED</p>
       <h2>${title}</h2>
