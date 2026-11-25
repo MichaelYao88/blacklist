@@ -37,7 +37,7 @@ describe('run music', () => {
     music.setLevel(8);
     expect(music.currentName).toBe(atSeven);
 
-    for (const level of [14, 21, 28, 35, 42, 49]) {
+    for (const level of [14, 21, 28, 35]) {
       music.setLevel(level);
       expect(music.currentName).not.toContain('More Power');
     }

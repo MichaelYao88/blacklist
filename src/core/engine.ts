@@ -41,12 +41,22 @@ import { hashSeed, rngChance, rngInt, rngPick, rngNext, rngShuffle } from './rng
 import { scoreGuess, truthCounts } from './score';
 import { chooseParrotWord, possibleWords } from './parrot';
 import { ASCENSION_MAX, ascensionStartingCurses } from './ascension';
+import { itemHasTag, itemTags } from './itemTags';
 
 const VERSION = 6;
 const WORD_LENGTH = 5;
-const MAX_LEVEL = 50;
-const LEVELS_PER_AREA = 10;
+export const MAX_LEVEL = 40;
+export const HAPPENING_CHANCE = 42;
+const MINIBOSS_LEVEL = 23;
+const FINAL_CURSE_LEVEL = 38;
+const FLOOR_BOSS_LEVEL = 39;
+const MYSTERIOUS_ROOM_LEVEL = 40;
+const LEVELS_PER_AREA = 8;
 const STARTING_ITEM_SLOTS = 4;
+const PARROT_STEAL_MS = 195_000;
+const PARROT_STEAL_GOLD = 4;
+const LORE_ITEM_IDS = ['red-amulet', 'silver-key', 'nonsensical-map'] as const;
+const LORE_ITEM_SET = new Set<string>(LORE_ITEM_IDS);
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyz'.split('');
 
 const RULES: Source = { kind: 'rules' };
@@ -287,6 +297,7 @@ export function createCore(content: Content): Core {
       id: item.id,
       data: { ...item.data },
       kind: def?.kind ?? 'gear',
+      tags: itemTags(def),
       slots: def ? itemSlots(def) : 1,
       equipped: def ? isEquipped(item, def) : false,
       sellValue: def ? (def.sellValue ? def.sellValue({ state, self: item }) : Math.floor(def.price / 2)) : 0,
@@ -618,7 +629,7 @@ export function createCore(content: Content): Core {
     if (!equip) {
       emit(rt, {
         type: 'message',
-        text: `No free slot for ${def.name}. It is in your bag — equip it in a shop.`,
+        text: `No free item slot for ${def.name}. It is in your bag — equip it in a shop.`,
       });
     }
     if (def.onAcquire) {
@@ -638,7 +649,7 @@ export function createCore(content: Content): Core {
     if (!def) return;
     if (itemSlots(def) === 0 || item.equipped !== false) return;
     if (!canEquip(state, def)) {
-      emit(rt, { type: 'message', text: `No free slot for ${def.name}. Unequip something first.` });
+      emit(rt, { type: 'message', text: `No free item slot for ${def.name}. Unequip something first.` });
       return;
     }
     item.equipped = true;
@@ -1383,7 +1394,7 @@ export function createCore(content: Content): Core {
         );
         const pool = rare.filter((i) => !owned.has(i.id));
         if (pool.length > 0) addItem(rt, rngPick(state, pool).id);
-        else emit(rt, { type: 'message', text: 'You already own every relic.' });
+        else emit(rt, { type: 'message', text: 'You already own every rare item.' });
         break;
       }
       case 'addRandomCurse': {
@@ -1465,7 +1476,7 @@ export function createCore(content: Content): Core {
         state.shopWildcardBonus += effect.count;
         emit(rt, {
           type: 'message',
-          text: `Future shops gain ${effect.count} wildcard slot${effect.count === 1 ? '' : 's'}.`,
+          text: `Future shops gain ${effect.count} wildcard offer${effect.count === 1 ? '' : 's'}.`,
         });
         break;
       case 'pendingPurge':
@@ -1639,7 +1650,7 @@ export function createCore(content: Content): Core {
       if (maxArmor > 0) changes.push({ kind: 'maxArmor', amount: maxArmor });
     }
     const slots = state.slots - before.slots;
-    if (slots !== 0) parts.push(`${signed(slots)} slot${Math.abs(slots) === 1 ? '' : 's'}`);
+    if (slots !== 0) parts.push(`${signed(slots)} item slot${Math.abs(slots) === 1 ? '' : 's'}`);
 
     for (const [id, count] of countIds(state.spells.map((spell) => spell.id))) {
       const gained = count - (before.spells.get(id) ?? 0);
@@ -1996,6 +2007,7 @@ export function createCore(content: Content): Core {
       unobscuredGuesses: 0,
       lockedSpells: [],
       hints: {},
+      parrotIdleMs: 0,
     };
 
     state.round = round;
@@ -2315,7 +2327,7 @@ export function createCore(content: Content): Core {
       lines.push({ label: def?.name ?? 'Reveal curse', amount: revealDamage, kind: 'add' });
     }
     if (goldBonus > 0) lines.push({ label: 'Gold spent', amount: goldBonus, kind: 'add' });
-    if (slotBonus > 0) lines.push({ label: 'Extra slots', amount: slotBonus, kind: 'add' });
+    if (slotBonus > 0) lines.push({ label: 'Extra item slots', amount: slotBonus, kind: 'add' });
     if (multiplier > 1) {
       lines.push({ label: 'Guess multiplier', amount: multiplier, kind: 'mult' });
     }
@@ -2546,7 +2558,10 @@ export function createCore(content: Content): Core {
 
     round.totalGuesses++;
     state.stats.guesses++;
-    if (by === 'player') round.playerGuesses++;
+    if (by === 'player') {
+      round.playerGuesses++;
+      round.parrotIdleMs = 0;
+    }
     if (unobscured) round.unobscuredGuesses++;
     if (by === 'player' && round.lockedSpells.length > 0) round.lockedSpells = [];
     round.guesses.push(guess);
@@ -2786,21 +2801,21 @@ export function createCore(content: Content): Core {
         description: food.description,
       });
     }
-    const rareRelics = content.items.filter(
+    const rareItems = content.items.filter(
       (item) => item.rarity === 'rare'
         && !item.noSpawn
         && itemAvailable(state, item)
         && !state.items.some((owned) => owned.id === item.id),
     );
-    const relic = rareRelics.length > 0 ? rngPick(state, rareRelics) : undefined;
-    if (relic) {
+    const rareItem = rareItems.length > 0 ? rngPick(state, rareItems) : undefined;
+    if (rareItem) {
       options.push({
-        id: `item:${relic.id}`,
+        id: `item:${rareItem.id}`,
         kind: 'item',
-        def: relic.id,
+        def: rareItem.id,
         rarity: 'rare',
-        label: `Rare relic: ${relic.name}`,
-        description: relic.description,
+        label: `Rare item: ${rareItem.name}`,
+        description: rareItem.description,
       });
     }
     if (options.length === 0) {
@@ -3176,8 +3191,9 @@ export function createCore(content: Content): Core {
         && (happening.id !== 'forbidden-feast' || rareFoodsAvailable.length > 0)
         && (happening.id !== 'flesh-market' || state.maxHp > 1 || state.maxArmor > 0)
         && (happening.id !== 'peddlers-table'
-          || ['red-amulet', 'silver-key', 'nonsensical-map']
-            .some((id) => !state.items.some((item) => item.id === id))),
+          || content.items
+            .filter((item) => itemHasTag(item, 'lore'))
+            .some((item) => !state.items.some((owned) => owned.id === item.id))),
     );
     if (pool.length === 0) {
       advanceNode(rt);
@@ -3292,6 +3308,19 @@ export function createCore(content: Content): Core {
           ...option,
           locked: owned,
           description: owned ? 'You already carry this.' : option.description,
+        };
+      });
+    }
+    if (def.id === 'toll-collector') {
+      state.happening.options = state.happening.options.map((option) => {
+        if (option.id !== 'pay') return option;
+        const affordable = state.gold >= 11;
+        return {
+          ...option,
+          locked: !affordable,
+          description: affordable
+            ? option.description
+            : 'You need 11 gold to pay. You cannot afford it.',
         };
       });
     }
@@ -3502,6 +3531,26 @@ export function createCore(content: Content): Core {
       return;
     }
 
+    if (def.id === 'toll-collector' && optionId === 'refuse') {
+      happening.resolved = {
+        option: 'refuse',
+        success: true,
+        text: 'The collector writes the debt into your curses. Choose one.',
+      };
+      emit(rt, {
+        type: 'happeningResolved',
+        happening: def.id,
+        option: 'refuse',
+        success: true,
+        text: happening.resolved.text,
+      });
+      openCurseDraft(rt, false);
+      if (state.curse) {
+        state.curse.returnToHappening = true;
+      }
+      return;
+    }
+
     if (option.costGold && option.costGold > 0) {
       if (state.gold >= option.costGold) {
         spendGold(rt, option.costGold, { kind: 'happening', happening: def.id });
@@ -3528,6 +3577,12 @@ export function createCore(content: Content): Core {
     const success = chosen === 0;
     const shown = happening.options.find((entry) => entry.id === option.id);
     const outcomeText = shown?.outcomes[chosen]?.text ?? outcome.text;
+
+    // The Mysterious Room remembers only the lore item actually chosen at the
+    // Peddler's Table, not merely owning one from another source.
+    if (def.id === 'peddlers-table' && success && LORE_ITEM_SET.has(option.id)) {
+      state.loreBrought = { ...(state.loreBrought ?? {}), [option.id]: true };
+    }
 
     applyEffects(rt, outcome.effects, { kind: 'happening', happening: def.id });
     // Some options start a battle and leave the happening phase entirely.
@@ -3729,6 +3784,11 @@ export function createCore(content: Content): Core {
     }
     applyCurse(rt, curseId);
     draft.chosen = curseId;
+    if (draft.returnToHappening) {
+      state.curse = undefined;
+      state.phase = 'happening';
+      return;
+    }
     if (draft.boss) {
       state.bossCursesLeft = Math.max(0, state.bossCursesLeft - 1);
       state.curse = undefined;
@@ -3796,6 +3856,26 @@ export function createCore(content: Content): Core {
     emit(rt, { type: 'bossIntro', boss });
   }
 
+  function enterMysteriousRoom(rt: Runtime): void {
+    const state = rt.state;
+    state.round = undefined;
+    state.summary = undefined;
+    state.reward = undefined;
+    state.shop = undefined;
+    state.happening = undefined;
+    state.bossIntro = undefined;
+    state.curse = undefined;
+    state.phase = 'mysteriousRoom';
+    if (!state.mysteriousCounted) {
+      state.mysteriousCounted = true;
+      const brought = LORE_ITEM_IDS.filter((id) => state.loreBrought?.[id] === true);
+      state.mysteriousBrought = [...brought];
+      emit(rt, { type: 'mysteriousRoomEntered', brought: [...brought] });
+    } else if (!Array.isArray(state.mysteriousBrought)) {
+      state.mysteriousBrought = [];
+    }
+  }
+
   function enterNode(rt: Runtime): void {
     const state = rt.state;
     if (state.nodeIndex >= state.nodes.length) {
@@ -3813,6 +3893,10 @@ export function createCore(content: Content): Core {
       level: state.level,
     });
 
+    if (node.kind === 'mysteriousRoom') {
+      enterMysteriousRoom(rt);
+      return;
+    }
     if (node.kind === 'curse') {
       openCurseDraft(rt, false);
       return;
@@ -3855,6 +3939,10 @@ export function createCore(content: Content): Core {
     }
     if (state.phase === 'bossIntro') {
       startRound(rt);
+      return;
+    }
+    if (state.phase === 'mysteriousRoom') {
+      victory(rt);
       return;
     }
     if (state.phase === 'summary') {
@@ -3975,6 +4063,23 @@ export function createCore(content: Content): Core {
 
   // ── tick ─────────────────────────────────────────────────────────────────
 
+  /** The Evil Parrot steals from anyone who stays silent too long. */
+  function advanceParrotIdle(rt: Runtime, dtMs: number): void {
+    const state = rt.state;
+    const round = state.round;
+    if (!round || dtMs <= 0) return;
+    round.parrotIdleMs = (round.parrotIdleMs ?? 0) + dtMs;
+    while (round.parrotIdleMs >= PARROT_STEAL_MS) {
+      round.parrotIdleMs -= PARROT_STEAL_MS;
+      if (state.gold > 0) {
+        const stolen = Math.min(PARROT_STEAL_GOLD, state.gold);
+        changeGold(rt, -stolen, RULES);
+        emit(rt, { type: 'message', text: `The Evil Parrot swipes ${stolen} gold.` });
+      }
+      if (isOver(state)) return;
+    }
+  }
+
   function tick(rt: Runtime, dtMs: number): void {
     const state = rt.state;
     const round = state.round;
@@ -4006,6 +4111,7 @@ export function createCore(content: Content): Core {
         elapsedMs: round.elapsedMs,
         dtMs: dt,
       });
+      advanceParrotIdle(rt, dt);
       return;
     }
 
@@ -4016,6 +4122,7 @@ export function createCore(content: Content): Core {
       elapsedMs: round.elapsedMs,
       dtMs: dt,
     });
+    advanceParrotIdle(rt, dt);
     if (isOver(state)) return;
     if (round.remainingMs <= 0) expireRound(rt);
   }
@@ -4184,6 +4291,12 @@ export function createCore(content: Content): Core {
           purchases: state.shop?.purchases ?? 0,
         };
         break;
+      case 'mysteriousRoom':
+        phase = {
+          kind: 'mysteriousRoom',
+          brought: (state.mysteriousBrought ?? []).slice(),
+        };
+        break;
       case 'happening':
         phase = {
           kind: 'happening',
@@ -4348,6 +4461,9 @@ export function createCore(content: Content): Core {
       case 'removeCurse':
         removeCurse(rt, cmd.curseId);
         break;
+      case 'claimVictory':
+        if (rt.state.phase === 'mysteriousRoom') victory(rt);
+        break;
       case 'continue':
         continueRun(rt);
         break;
@@ -4362,25 +4478,34 @@ export function createCore(content: Content): Core {
     const nodes: RunNode[] = [];
     const addRound = (level: number): void => {
       nodes.push({ kind: 'round', level });
-      if (rngChance(state, 55)) nodes.push({ kind: 'happening', level });
+      if (rngChance(state, HAPPENING_CHANCE)) nodes.push({ kind: 'happening', level });
     };
 
     // Every fight, shop and curse is its own floor. Events are inserted after
     // fights but share the fight's floor number, so they do not advance it.
     const pattern: Array<'round' | 'shop' | 'curse'> = ['round', 'shop', 'round', 'curse'];
     for (let level = 1; level <= MAX_LEVEL; level++) {
-      // The last three floors before the boss are the final curse drafts.
-      if (level >= MAX_LEVEL - 3 && level < MAX_LEVEL) {
-        nodes.push({ kind: 'curse', level });
+      // Floor 38 is the last shop, immediately followed by three mandatory
+      // curse drafts that share its floor number. The Floor Boss waits on 39,
+      // and the Mysterious Room ends the run on 40.
+      if (level === FINAL_CURSE_LEVEL) {
+        nodes.push({ kind: 'shop', level });
+        for (let draft = 0; draft < 3; draft++) {
+          nodes.push({ kind: 'curse', level });
+        }
         continue;
       }
-      if (level === MAX_LEVEL) {
+      if (level === FLOOR_BOSS_LEVEL) {
         nodes.push({ kind: 'boss', level, boss: 'floor-boss' });
+        continue;
+      }
+      if (level === MYSTERIOUS_ROOM_LEVEL) {
+        nodes.push({ kind: 'mysteriousRoom', level });
         continue;
       }
       const kind = pattern[(level - 1) % pattern.length];
       if (kind === 'round') {
-        if (level === 27) {
+        if (level === MINIBOSS_LEVEL) {
           nodes.push({ kind: 'boss', level, boss: 'miniboss' });
         } else {
           addRound(level);
@@ -4551,7 +4676,7 @@ export function createCore(content: Content): Core {
         ? Math.max(0, Math.min(ASCENSION_MAX, Math.floor(state.ascension)))
         : 0;
       // Version 5 gives every run one more slot than it had before, because
-      // relics now compete with gear for space.
+      // rare items now compete with gear for space.
       if (fromVersion < 5) {
         state.slots = (typeof state.slots === 'number' ? state.slots : 4) + 1;
       } else if (typeof state.slots !== 'number') {
@@ -4592,6 +4717,9 @@ export function createCore(content: Content): Core {
       }
       if (typeof state.pendingStartingCurses !== 'number') state.pendingStartingCurses = 0;
       if (typeof state.bossCursesLeft !== 'number') state.bossCursesLeft = 0;
+      if (typeof state.mysteriousCounted !== 'boolean') state.mysteriousCounted = false;
+      if (!state.loreBrought || typeof state.loreBrought !== 'object') state.loreBrought = {};
+      if (!Array.isArray(state.mysteriousBrought)) state.mysteriousBrought = [];
       if (typeof state.pendingCurseRemoval !== 'number') state.pendingCurseRemoval = 0;
       if (typeof state.pendingAbsent !== 'number') state.pendingAbsent = 0;
       if (typeof state.unarmoredHalfCharges !== 'number') state.unarmoredHalfCharges = 0;
@@ -4618,7 +4746,7 @@ export function createCore(content: Content): Core {
       for (const item of state.items) {
         if (typeof item.equipped !== 'boolean') item.equipped = true;
       }
-      // A save that predates relic slots can be over capacity. Unequip the
+      // A save that predates rare-item slots can be over capacity. Unequip the
       // overflow rather than leaving a loadout the UI cannot represent.
       let equippedCost = 0;
       for (const item of state.items) {
@@ -4657,6 +4785,9 @@ export function createCore(content: Content): Core {
         }
         if (typeof state.round.damageRamp !== 'number') {
           state.round.damageRamp = 0;
+        }
+        if (typeof state.round.parrotIdleMs !== 'number') {
+          state.round.parrotIdleMs = 0;
         }
       }
       if (typeof state.shopWildcardBonus !== 'number') state.shopWildcardBonus = 0;

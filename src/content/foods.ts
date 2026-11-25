@@ -720,7 +720,7 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'coveted-cake',
     name: 'Coveted Cake',
-    description: '-1 item slot. Gain a random rare relic. No slot.',
+    description: '-1 item slot, then gain a random rare item. The item uses 1 item slot.',
     price: 2,
     rarity: 'rare',
     effects: [

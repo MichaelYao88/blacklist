@@ -215,22 +215,26 @@ describe('cursed run setup', () => {
     expect(werewolf.curses.some((curse) => curse.id === 'tight-slots')).toBe(true);
   });
 
-  it('builds a 50-floor map and puts the Floor Boss on floor 50', () => {
+  it('builds a 40-floor map with the Miniboss on 23, the Floor Boss on 39, and the Mysterious Room on 40', () => {
     const { state } = start();
     expect(nodeAt(state, (node) => node.kind === 'boss')).toBeGreaterThan(0);
     expect(state.nodes.filter((node) => node.kind === 'boss')).toHaveLength(2);
-    expect(state.nodes.filter((node) => node.kind === 'round')).toHaveLength(22);
-    expect(state.nodes.filter((node) => node.kind === 'shop')).toHaveLength(12);
-    expect(state.nodes.filter((node) => node.kind === 'curse')).toHaveLength(14);
+    expect(state.nodes.filter((node) => node.kind === 'round')).toHaveLength(18);
+    expect(state.nodes.filter((node) => node.kind === 'shop')).toHaveLength(10);
+    expect(state.nodes.filter((node) => node.kind === 'curse')).toHaveLength(12);
+    expect(state.nodes.filter((node) => node.kind === 'mysteriousRoom')).toHaveLength(1);
     expect(state.nodes.find((node) => node.kind === 'boss' && node.boss === 'miniboss')?.level)
-      .toBe(27);
+      .toBe(23);
     expect(state.nodes.find((node) => node.kind === 'boss' && node.boss === 'floor-boss')?.level)
-      .toBe(50);
-    expect(state.nodes.find((node) => node.level === 46)?.kind).toBe('shop');
+      .toBe(39);
+    expect(state.nodes.find((node) => node.kind === 'mysteriousRoom')?.level)
+      .toBe(40);
+    expect(state.nodes.some((node) => node.kind === 'boss' && node.level === 27)).toBe(false);
     expect(state.nodes
-      .filter((node) => (node.level ?? 0) >= 47 && (node.level ?? 0) <= 49)
+      .filter((node) => node.level === 38)
       .map((node) => node.kind))
-      .toEqual(['curse', 'curse', 'curse']);
+      .toEqual(['shop', 'curse', 'curse', 'curse']);
+    expect(state.nodes.every((node) => (node.level ?? 0) <= 40)).toBe(true);
 
     const labeled = state.nodes
       .filter((node) => node.kind !== 'happening')
@@ -2048,28 +2052,14 @@ describe('new item and event batch', () => {
     expect(current.maxArmor).toBe(base);
   });
 
-  it('Bulwark autocasts a random spell every 10 damage blocked by armor and costs 8', () => {
-    const { state } = start('bulwark');
-    state.items.push({ instance: 'i-bul', id: 'bulwark', data: { blocked: 0 }, equipped: true });
-    state.spells = [];
-    state.round!.freeLeft = 0;
-    state.armor = 20;
-    state.maxArmor = 20;
-    setAnswer(state, 'crane');
-    let current = state;
-    current = act(current, { type: 'guess', word: 'slate' }).state;
-    current = act(current, { type: 'guess', word: 'brick' }).state;
-    current = act(current, { type: 'guess', word: 'vamps' }).state;
-    expect(current.spells).toHaveLength(0);
-    const proc = act(current, { type: 'guess', word: 'fizzy' });
-    expect(proc.events.some(
-      (event) => event.type === 'spellCast' && event.auto,
-    )).toBe(true);
+  it('Bulwark advertises its 11 damage blocked threshold and costs 8', () => {
     expect(ITEM_BY_ID.get('bulwark')?.price).toBe(8);
     expect(ITEM_BY_ID.get('bulwark')?.description)
-      .toContain('Every 10 damage blocked by armor');
+      .toContain('Every 11 damage blocked by armor');
     expect(ITEM_BY_ID.get('bulwark')?.description)
       .toContain('autocast a free random spell');
+    expect(ITEM_BY_ID.get('bulwark')?.description)
+      .not.toContain('Every 10 damage blocked');
   });
 
   it('Guardian Angel grants Immunity after 10 HP damage taken', () => {
@@ -3981,6 +3971,8 @@ describe('full cursed loop', () => {
         }
       } else if (state.phase === 'bossIntro') {
         result = act(state, { type: 'continue' });
+      } else if (state.phase === 'mysteriousRoom') {
+        result = act(state, { type: 'claimVictory' });
       } else {
         break;
       }
@@ -4087,21 +4079,25 @@ describe('future objects', () => {
 });
 
 describe('Floor Boss', () => {
-  it('puts the final three curse drafts on floors 47-49 and enters the boss from floor 49', () => {
+  it('puts the final shop and three curse drafts on floor 38, then enters the boss', () => {
     const { state } = start('boss-prep');
     const bossIndex = nodeAt(
       state,
       (node) => node.kind === 'boss' && node.boss === 'floor-boss',
     );
-    expect(state.nodes[bossIndex]?.level).toBe(50);
-    expect(state.nodes[bossIndex - 1]).toMatchObject({ kind: 'curse', level: 49 });
+    expect(state.nodes[bossIndex]?.level).toBe(39);
+    expect(state.nodes[bossIndex - 1]).toMatchObject({ kind: 'curse', level: 38 });
+    expect(state.nodes
+      .filter((node) => node.level === 38)
+      .map((node) => node.kind))
+      .toEqual(['shop', 'curse', 'curse', 'curse']);
 
     state.nodeIndex = bossIndex - 2;
     state.phase = 'shop';
     state.shop = shopState();
     let result = act(state, { type: 'continue' });
     expect(result.state.phase).toBe('curse');
-    expect(result.state.level).toBe(49);
+    expect(result.state.level).toBe(38);
     expect(result.state.curse?.boss).toBeFalsy();
     const option = result.state.curse?.options[0];
     expect(option).toBeDefined();
@@ -4110,7 +4106,7 @@ describe('Floor Boss', () => {
     expect(result.state.bossIntro?.boss).toBe('floor-boss');
   });
 
-  it('is a three-word boss and ends in victory', () => {
+  it('continues to the Mysterious Room after the boss and only Claim victory ends the run', () => {
     const { state } = start();
     const intro = enterFloorBoss(state);
     expect(intro.state.phase).toBe('bossIntro');
@@ -4125,9 +4121,16 @@ describe('Floor Boss', () => {
 
     expect(result.state.phase).toBe('summary');
     expect(result.state.summary?.rewardPending).toBe(false);
-    const won = act(result.state, { type: 'continue' });
+    const room = act(result.state, { type: 'continue' });
+    expect(room.state.phase).toBe('mysteriousRoom');
+    expect(room.state.over).toBeUndefined();
+    expect(room.state.level).toBe(40);
+    expect(room.events.some((event) => event.type === 'runEnded')).toBe(false);
+
+    const won = act(room.state, { type: 'claimVictory' });
     expect(won.state.phase).toBe('over');
     expect(won.state.over?.result).toBe('victory');
+    expect(won.events.filter((event) => event.type === 'runEnded')).toHaveLength(1);
   });
 
   it('has 10 more base damage than a normal encounter', () => {
@@ -4160,6 +4163,232 @@ describe('Floor Boss', () => {
     const hint = Object.keys(cast.state.round!.hints ?? {})[0];
     expect(['a', 'e']).not.toContain(hint);
     expect(['t', 'r', 'c']).toContain(hint);
+  });
+});
+
+describe('Mysterious Room', () => {
+  function enterRoom(state: RunState): StepResult {
+    const index = nodeAt(state, (node) => node.kind === 'mysteriousRoom');
+    state.nodeIndex = index - 1;
+    state.phase = 'shop';
+    state.shop = shopState();
+    return act(state, { type: 'continue' });
+  }
+
+  it('flags each lore item selected at the Peddler\'s Table', () => {
+    for (const id of ['red-amulet', 'silver-key', 'nonsensical-map']) {
+      const run = findHappeningById(`peddlers-flag-${id}`, 'peddlers-table');
+      const chosen = act(run.state, { type: 'choose', optionId: id });
+      expect(chosen.state.loreBrought?.[id]).toBe(true);
+      expect(chosen.state.items.some((item) => item.id === id)).toBe(true);
+    }
+  });
+
+  it('does not count merely owning a lore item without the event pick', () => {
+    const { state } = start('mysterious-owned');
+    state.items.push({ instance: 'i-amulet', id: 'red-amulet', data: {}, equipped: true });
+    const room = enterRoom(state);
+    expect(room.state.phase).toBe('mysteriousRoom');
+    expect(room.state.mysteriousBrought).toEqual([]);
+    expect(room.events.find((event) => event.type === 'mysteriousRoomEntered'))
+      .toMatchObject({ brought: [] });
+  });
+
+  it('counts each flagged item once and never double counts on resume', () => {
+    const { state } = start('mysterious-count');
+    state.loreBrought = { 'red-amulet': true, 'silver-key': true };
+    const room = enterRoom(state);
+    const entered = room.events.find((event) => event.type === 'mysteriousRoomEntered');
+    expect(entered).toEqual({ type: 'mysteriousRoomEntered', brought: ['red-amulet', 'silver-key'] });
+    expect(room.state.mysteriousCounted).toBe(true);
+
+    const resumed = game.deserialize(game.serialize(room.state))!;
+    const won = act(resumed, { type: 'claimVictory' });
+    expect(won.events.some((event) => event.type === 'mysteriousRoomEntered')).toBe(false);
+    expect(won.state.phase).toBe('over');
+    expect(won.state.over?.result).toBe('victory');
+  });
+
+  it('claim victory ends the run exactly once', () => {
+    const { state } = start('mysterious-claim');
+    const room = enterRoom(state);
+    const won = act(room.state, { type: 'claimVictory' });
+    expect(won.state.phase).toBe('over');
+    expect(won.state.over?.result).toBe('victory');
+    expect(won.events.filter((event) => event.type === 'runEnded')).toHaveLength(1);
+
+    const again = act(won.state, { type: 'claimVictory' });
+    expect(again.events.filter((event) => event.type === 'runEnded')).toHaveLength(0);
+  });
+});
+
+describe('Evil Parrot theft', () => {
+  function idleRun(seed: string) {
+    const { state } = start(seed);
+    state.items = state.items.filter((item) => item.id !== 'evil-parrot');
+    state.gold = 10;
+    state.round!.remainingMs = null;
+    state.round!.parrotIdleMs = 0;
+    return state;
+  }
+
+  function stepMs(state: RunState, ms: number): StepResult {
+    let current = state;
+    const events: GameEvent[] = [];
+    for (let elapsed = 0; elapsed < ms; elapsed += 1_000) {
+      const result = act(current, { type: 'tick', dtMs: 1_000 });
+      current = result.state;
+      events.push(...result.events);
+    }
+    return { state: current, events };
+  }
+
+  it('does not need a parrot in the inventory', () => {
+    const state = idleRun('parrot-steal-none');
+    expect(state.items.some((item) => item.id === 'evil-parrot')).toBe(false);
+    state.round!.parrotIdleMs = 194_000;
+    const ticked = act(state, { type: 'tick', dtMs: 1_000 });
+    expect(ticked.state.gold).toBe(6);
+    expect(ticked.events.some(
+      (event) => event.type === 'message' && event.text === 'The Evil Parrot swipes 4 gold.',
+    )).toBe(true);
+  });
+
+  it('waits 194 full seconds and steals at 195', () => {
+    const before = idleRun('parrot-steal-boundary');
+    before.round!.parrotIdleMs = 193_000;
+    const at194 = act(before, { type: 'tick', dtMs: 1_000 });
+    expect(at194.state.gold).toBe(10);
+    expect(at194.state.round?.parrotIdleMs).toBe(194_000);
+
+    const at195 = act(at194.state, { type: 'tick', dtMs: 1_000 });
+    expect(at195.state.gold).toBe(6);
+    expect(at195.state.round?.parrotIdleMs).toBe(0);
+  });
+
+  it('takes all remaining gold when under 4', () => {
+    const state = idleRun('parrot-steal-small');
+    state.gold = 3;
+    state.round!.parrotIdleMs = 194_000;
+    const ticked = act(state, { type: 'tick', dtMs: 1_000 });
+    expect(ticked.state.gold).toBe(0);
+    expect(ticked.events.some(
+      (event) => event.type === 'message' && event.text === 'The Evil Parrot swipes 3 gold.',
+    )).toBe(true);
+  });
+
+  it('takes nothing at 0 gold but still resets the timer', () => {
+    const state = idleRun('parrot-steal-broke');
+    state.gold = 0;
+    state.round!.parrotIdleMs = 194_000;
+    const ticked = act(state, { type: 'tick', dtMs: 1_000 });
+    expect(ticked.state.gold).toBe(0);
+    expect(ticked.state.round?.parrotIdleMs).toBe(0);
+    expect(ticked.events.some((event) => event.type === 'goldChanged')).toBe(false);
+    expect(ticked.events.some(
+      (event) => event.type === 'message' && event.text.includes('swipes'),
+    )).toBe(false);
+  });
+
+  it('repeats after another 195 seconds of inactivity', () => {
+    const state = idleRun('parrot-steal-repeat');
+    state.round!.parrotIdleMs = 194_000;
+    const first = act(state, { type: 'tick', dtMs: 1_000 });
+    expect(first.state.gold).toBe(6);
+
+    const second = stepMs(first.state, 195_000);
+    expect(second.state.gold).toBe(2);
+    const steals = second.events.filter(
+      (event) => event.type === 'message' && event.text.includes('swipes'),
+    );
+    expect(steals).toHaveLength(1);
+  });
+
+  it('resets the idle counter on a player guess but not on a friend guess', () => {
+    const state = idleRun('parrot-steal-reset');
+    state.round!.remainingMs = null;
+    state.round!.answer = 'crane';
+    state.round!.parrotIdleMs = 120_000;
+    const guessed = act(state, { type: 'guess', word: 'slate' });
+    expect(guessed.state.round?.parrotIdleMs).toBe(0);
+
+    guessed.state.round!.parrotIdleMs = 120_000;
+    guessed.state.spells = [{ instance: 's-phone', id: 'phone-friend' }];
+    const cast = act(guessed.state, { type: 'castSpell', instance: 's-phone' });
+    expect(cast.state.round?.parrotIdleMs).toBe(120_000);
+  });
+
+  it('does not count paused or non-round time', () => {
+    const state = idleRun('parrot-steal-pause');
+    state.round!.parrotIdleMs = 100_000;
+    state.round!.frozenUntilGuess = true;
+    const frozen = act(state, { type: 'tick', dtMs: 1_000 });
+    expect(frozen.state.round?.parrotIdleMs).toBe(100_000);
+
+    frozen.state.phase = 'shop';
+    frozen.state.shop = shopState();
+    const shopping = act(frozen.state, { type: 'tick', dtMs: 1_000 });
+    expect(shopping.state.round?.parrotIdleMs).toBe(100_000);
+  });
+
+  it('resets at the start of each round', () => {
+    const state = idleRun('parrot-steal-next-round');
+    state.round!.parrotIdleMs = 150_000;
+    const next = nextRound(state);
+    expect(next.state.round?.parrotIdleMs).toBe(0);
+  });
+});
+
+describe('The Toll Collector', () => {
+  it('pays 11 gold and resolves the event', () => {
+    const run = findHappeningById('toll-pay', 'toll-collector');
+    run.state.gold = 20;
+    const paid = act(run.state, { type: 'choose', optionId: 'pay' });
+    expect(paid.state.gold).toBe(9);
+    expect(paid.state.phase).toBe('happening');
+    expect(paid.state.happening?.resolved?.option).toBe('pay');
+  });
+
+  it('locks payment under 11 gold and forces the extra curse draft', () => {
+    let run: StepResult | undefined;
+    for (let index = 0; index < 900 && !run; index++) {
+      const started = start(`toll-broke-${index}`);
+      started.state.gold = 5;
+      const next = nextHappening(started.state);
+      if (next.state.happening?.id === 'toll-collector') run = next;
+    }
+    expect(run).toBeDefined();
+    expect(run!.state.happening?.options.find((option) => option.id === 'pay')?.locked)
+      .toBe(true);
+
+    const refused = act(run!.state, { type: 'choose', optionId: 'refuse' });
+    expect(refused.state.phase).toBe('curse');
+    expect(refused.state.happening?.resolved?.option).toBe('refuse');
+    expect(refused.state.curse?.returnToHappening).toBe(true);
+    expect(refused.state.curse?.options.length).toBeGreaterThan(0);
+
+    const before = refused.state.curses.reduce((sum, curse) => sum + curse.stacks, 0);
+    const drafted = act(refused.state, {
+      type: 'chooseCurse',
+      curseId: refused.state.curse!.options[0],
+    });
+    const after = drafted.state.curses.reduce((sum, curse) => sum + curse.stacks, 0);
+    expect(after).toBe(before + 1);
+    expect(drafted.state.gold).toBe(5);
+    expect(drafted.state.phase).toBe('happening');
+    expect(drafted.state.happening?.resolved?.option).toBe('refuse');
+  });
+
+  it('makes the draft mandatory rather than skippable', () => {
+    const run = findHappeningById('toll-mandatory', 'toll-collector');
+    run.state.gold = 20;
+    const refused = act(run.state, { type: 'choose', optionId: 'refuse' });
+    expect(refused.state.phase).toBe('curse');
+    const skipped = act(refused.state, { type: 'continue' });
+    expect(skipped.state.phase).toBe('curse');
+    expect(skipped.events.some(
+      (event) => event.type === 'message' && event.text === 'Choose a curse first.',
+    )).toBe(true);
   });
 });
 
@@ -5613,7 +5842,7 @@ describe('damage doubling and slots', () => {
     expect(phase.board.nextGuessMultiplier).toBe(1);
     expect(phase.board.damageRampEarly).toBe(0);
     expect(phase.board.damageBreakdown).toContainEqual({ label: 'Base', amount: 3, kind: 'add' });
-    expect(phase.board.damageBreakdown).toContainEqual({ label: 'Extra slots', amount: 1, kind: 'add' });
+    expect(phase.board.damageBreakdown).toContainEqual({ label: 'Extra item slots', amount: 1, kind: 'add' });
 
     const guessed = act(state, { type: 'guess', word: 'slate' });
     expect(guessed.state.hp).toBe(11);

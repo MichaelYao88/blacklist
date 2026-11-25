@@ -39,10 +39,21 @@ export type Source =
   | { kind: 'happening'; happening: HappeningId }
   | { kind: 'inn' };
 
-export type NodeKind = 'round' | 'boss' | 'shop' | 'happening' | 'curse';
-export type PhaseKind = 'purge' | 'round' | 'summary' | 'reward' | 'shop' | 'shopChoice' | 'happening' | 'bossIntro' | 'curse' | 'over';
+export type NodeKind = 'round' | 'boss' | 'shop' | 'happening' | 'curse' | 'mysteriousRoom';
+export type PhaseKind = 'purge' | 'round' | 'summary' | 'reward' | 'shop' | 'shopChoice' | 'happening' | 'bossIntro' | 'curse' | 'mysteriousRoom' | 'over';
 export type CurseTag = 'vision' | 'damage' | 'clock' | 'list' | 'shop' | 'body' | 'economy' | 'rule';
 export type ItemKind = 'gear' | 'consumable';
+/** Gameplay families an item can carry; an item may have several. */
+export type ItemTag =
+  | 'armor'
+  | 'spell'
+  | 'guess'
+  | 'gold'
+  | 'vision'
+  | 'food'
+  | 'curse'
+  | 'time'
+  | 'lore';
 export type OfferKind = 'item' | 'spell' | 'eat';
 export type HookName =
   | 'onRoundStart'
@@ -165,6 +176,8 @@ export interface RoundState {
   seenPresent?: string[];
   /** Restore: vision curses are ignored for the rest of this round. */
   visionDisabled?: boolean;
+  /** Milliseconds of active round time since the last player guess. */
+  parrotIdleMs?: number;
 }
 
 export interface SummaryState {
@@ -190,7 +203,7 @@ export interface RewardOption {
 export interface RewardState {
   options: RewardOption[];
   boss: boolean;
-  /** Miniboss rewards are a choice between one rare food and one rare relic. */
+  /** Miniboss rewards are a choice between one rare food and one rare item. */
   miniboss?: boolean;
   chosen?: string;
 }
@@ -281,6 +294,8 @@ export interface CurseState {
   starting: boolean;
   /** Boss-prep curse draft before the Floor Boss. */
   boss?: boolean;
+  /** Return to an unresolved event after this extra draft. */
+  returnToHappening?: boolean;
   chosen?: CurseId;
 }
 
@@ -491,7 +506,9 @@ export interface ItemDef {
   dynamicDescription?: (data: Record<string, number>) => string;
   price: number;
   kind: ItemKind;
-  /** Rare relics are very rare finds. They consume an item slot like any other gear. */
+  /** Gameplay families. Multiple tags are allowed and all are player-facing. */
+  tags?: ItemTag[];
+  /** Rare items are very rare finds. They consume an item slot like any other item. */
   rarity?: 'common' | 'uncommon' | 'rare';
   /** Shop banner override; rarity still controls drop rolls. */
   shopRarity?: 'common' | 'uncommon' | 'rare';
@@ -708,6 +725,12 @@ export interface RunState {
   pendingStartingCurses: number;
   /** Curses still to draft before the Floor Boss fight. */
   bossCursesLeft: number;
+  /** Lore items selected at the Peddler's Table this run. */
+  loreBrought?: Partial<Record<ItemId, boolean>>;
+  /** Lore items counted when the Mysterious Room was entered this run. */
+  mysteriousBrought?: ItemId[];
+  /** True once this run has counted its Mysterious Room visit. */
+  mysteriousCounted?: boolean;
   pendingCurseRemoval: number;
   phase: PhaseKind;
   bossIntro?: { boss: BossId };
@@ -734,6 +757,7 @@ export interface ItemView {
   id: ItemId;
   data: Record<string, number>;
   kind: ItemKind;
+  tags: ItemTag[];
   slots: number;
   equipped: boolean;
   sellValue: number;
@@ -822,6 +846,7 @@ export type PhaseView =
       previewCurse?: CurseId;
       resolved?: { option: string; success: boolean; text: string };
     }
+  | { kind: 'mysteriousRoom'; brought: ItemId[] }
   | {
       kind: 'over';
       result: 'victory' | 'defeat';
@@ -873,6 +898,7 @@ export type Command =
   | { type: 'chooseReward'; optionId: string }
   | { type: 'chooseCurse'; curseId: CurseId }
   | { type: 'removeCurse'; curseId: CurseId }
+  | { type: 'claimVictory' }
   | { type: 'continue' };
 
 /**
@@ -987,6 +1013,7 @@ export type GameEvent =
   | { type: 'foodEaten'; food: string; name: string }
   | { type: 'parrotSuggestion'; word: string; flavor?: 'stupid-cracker' }
   | { type: 'parrotSays'; text: string }
+  | { type: 'mysteriousRoomEntered'; brought: ItemId[] }
   | { type: 'attributeChanged'; stat: string; value: number }
   | { type: 'damageMultiplier'; multiplier: number }
   | { type: 'message'; text: string }

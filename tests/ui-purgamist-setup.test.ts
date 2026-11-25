@@ -20,7 +20,7 @@ describe('Purgamist setup', () => {
     expect(root.querySelector('.modal')).not.toBeNull();
     expect(document.querySelector('.countdown-overlay')).toBeNull();
     expect(root.textContent).toContain('4 purges pending');
-    expect(root.querySelector('.rail-level-value')?.textContent).toBe('0/50');
+    expect(root.querySelector('.rail-level-value')?.textContent).toBe('0/40');
   });
 
   it('starts the countdown after all four letters are purged', () => {
@@ -28,9 +28,12 @@ describe('Purgamist setup', () => {
     for (const letter of letters) {
       if (!root.querySelector('.modal')) break;
       const key = root.querySelector<HTMLButtonElement>(
-        `[data-action="purge"][data-letter="${letter}"]`,
+        `[data-action="select-purge"][data-letter="${letter}"]`,
       );
-      if (key && !key.disabled) key.click();
+      if (key && !key.disabled) {
+        key.click();
+        root.querySelector<HTMLButtonElement>('[data-action="confirm-purge"]')!.click();
+      }
     }
     expect(root.querySelector('.modal')).toBeNull();
     expect(document.querySelector('.countdown-overlay')).not.toBeNull();

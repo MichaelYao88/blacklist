@@ -27,6 +27,8 @@ describe('browser UI', () => {
     expect(root.querySelector('.blacklist')).toBeNull();
     expect(root.querySelectorAll('.spell-card')).toHaveLength(1);
     expect(localStorage.getItem('blacklist.run.v1')).toBeTruthy();
+    expect(root.querySelector('.mobile-spells')).toBeNull();
+    expect(document.querySelector('#mobile-timer-root .mobile-timer')).toBeNull();
 
     for (const letter of 'slate') {
       const key = root.querySelector<HTMLElement>(`[data-action="key"][data-letter="${letter}"]`);

@@ -6,6 +6,9 @@ const RUN_KEY = 'blacklist.run.v1';
 const META_KEY = 'blacklist.meta.v1';
 const HISTORY_LIMIT = 50;
 
+/** The three objects remembered by the Mysterious Room. */
+export const MYSTERIOUS_ITEMS = ['red-amulet', 'silver-key', 'nonsensical-map'] as const;
+
 export interface RunRecord {
   at: number;
   result: 'victory' | 'defeat';
@@ -47,6 +50,8 @@ export interface Meta {
   history: RunRecord[];
   itemCounts: Record<string, number>;
   curseCounts: Record<string, number>;
+  /** Lore items brought to the Mysterious Room, across all runs. */
+  mysteriousCounts: Record<string, number>;
   totalPlayMs: number;
   totalSolveMs: number;
   totalSolves: number;
@@ -72,6 +77,7 @@ const DEFAULT_META: Meta = {
   history: [],
   itemCounts: {},
   curseCounts: {},
+  mysteriousCounts: { 'red-amulet': 0, 'silver-key': 0, 'nonsensical-map': 0 },
   totalPlayMs: 0,
   totalSolveMs: 0,
   totalSolves: 0,
@@ -118,7 +124,7 @@ export function hasSave(): boolean {
 export function readMeta(): Meta {
   try {
     const raw = localStorage.getItem(META_KEY);
-    if (!raw) return { ...DEFAULT_META, history: [], itemCounts: {}, curseCounts: {}, foodCounts: {} };
+    if (!raw) return { ...DEFAULT_META, history: [], itemCounts: {}, curseCounts: {}, foodCounts: {}, mysteriousCounts: { ...DEFAULT_META.mysteriousCounts } };
     const parsed = JSON.parse(raw) as Partial<Meta>;
     return {
       runs: Number(parsed.runs) || 0,
@@ -187,6 +193,12 @@ export function readMeta(): Meta {
       curseCounts: parsed.curseCounts && typeof parsed.curseCounts === 'object'
         ? { ...parsed.curseCounts }
         : {},
+      mysteriousCounts: Object.fromEntries(
+        MYSTERIOUS_ITEMS.map((id) => [
+          id,
+          Number((parsed.mysteriousCounts as Record<string, unknown> | undefined)?.[id]) || 0,
+        ]),
+      ),
       totalPlayMs: Number(parsed.totalPlayMs) || 0,
       totalSolveMs: Number(parsed.totalSolveMs) || 0,
       totalSolves: Number(parsed.totalSolves) || 0,
@@ -196,7 +208,7 @@ export function readMeta(): Meta {
       totalDamage: Number(parsed.totalDamage) || 0,
     };
   } catch {
-    return { ...DEFAULT_META, history: [], itemCounts: {}, curseCounts: {}, foodCounts: {} };
+    return { ...DEFAULT_META, history: [], itemCounts: {}, curseCounts: {}, foodCounts: {}, mysteriousCounts: { ...DEFAULT_META.mysteriousCounts } };
   }
 }
 
@@ -313,6 +325,15 @@ export function recordPurge(count = 1): number {
   meta.purgedCount += count;
   writeMeta(meta);
   return meta.purgedCount;
+}
+
+/** Records one lore item brought to the Mysterious Room. */
+export function recordMysteriousBrought(id: string): number {
+  const meta = readMeta();
+  const next = (meta.mysteriousCounts[id] ?? 0) + 1;
+  meta.mysteriousCounts[id] = next;
+  writeMeta(meta);
+  return next;
 }
 
 /** Remember that a character tip should not show again. */

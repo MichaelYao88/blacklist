@@ -42,12 +42,13 @@ describe('shop relic labelling', () => {
     root.querySelector<HTMLElement>('[data-action="resume"]')!.click();
   });
 
-  it('marks rare item offers as RELIC and styles the card', () => {
+  it('marks rare item offers as RARE ITEM and styles the card', () => {
     const relic = [...root.querySelectorAll<HTMLElement>('.offer-card')]
       .find((card) => card.textContent?.includes('Mending Plate'));
     expect(relic).not.toBeNull();
     expect(relic?.classList.contains('rare')).toBe(true);
-    expect(relic?.querySelector('.tag')?.textContent?.trim()).toBe('RELIC');
+    expect(relic?.querySelector('.tag')?.textContent?.trim()).toBe('RARE ITEM');
+    expect(relic?.querySelector('.slot-note')?.textContent?.trim()).toBe('1 ITEM SLOT');
 
     const uncommon = [...root.querySelectorAll<HTMLElement>('.offer-card')]
       .find((card) => card.textContent?.includes('Scattershot'));
@@ -87,6 +88,7 @@ describe('shop relic labelling', () => {
       const tag = card.querySelector<HTMLElement>('.tag');
       expect(tag?.dataset.tip).toBe("Food doesn't take inventory space.");
       expect(tag?.getAttribute('tabindex')).toBe('0');
+      expect(card.querySelector('.slot-note')?.textContent?.trim()).toBe('NO ITEM SLOT');
     }
   });
 
@@ -96,6 +98,7 @@ describe('shop relic labelling', () => {
     expect(spell?.classList.contains('spell')).toBe(true);
     expect(spell?.classList.contains('food')).toBe(false);
     expect(spell?.querySelector('.tag')?.textContent?.trim()).toBe('SPELL');
+    expect(spell?.querySelector('.slot-note')?.textContent?.trim()).toBe('NO ITEM SLOT');
   });
 
   it('keeps the inventory in the rail column directly under the shop rail', () => {

@@ -131,7 +131,7 @@ export const HAPPENINGS: HappeningDef[] = [
   defineHappening({
     id: 'scrap-cart',
     name: 'The Scrap Cart',
-    description: 'A cart of dented gear and half-eaten meals. The owner does not look up.',
+    description: 'A cart of dented items and half-eaten meals. The owner does not look up.',
     options: [
       {
         id: 'gear',
@@ -226,7 +226,7 @@ export const HAPPENINGS: HappeningDef[] = [
       },
       {
         id: 'rest',
-        label: 'Rest and let your gear work',
+        label: 'Rest and let your items work',
         description: 'Trigger one eat. 10% chance to remove a random curse.',
         outcomes: [{
           chancePct: 100,
@@ -386,12 +386,12 @@ export const HAPPENINGS: HappeningDef[] = [
     options: [
       {
         id: 'relic',
-        label: 'Buy a rare relic',
-        description: '12 gold.',
+        label: 'Buy a rare item',
+        description: '12 gold. The item uses 1 item slot.',
         costGold: 12,
         outcomes: [{
           chancePct: 100,
-          text: 'He slides a relic across the counter.',
+          text: 'He slides a rare item across the counter.',
           effects: [{ type: 'addRandomRelic' }],
         }],
       },
@@ -426,7 +426,7 @@ export const HAPPENINGS: HappeningDef[] = [
         description: 'Remove a random curse. Item slots drop to their starting value.',
         outcomes: [{
           chancePct: 100,
-          text: 'Your gear spills out as the pack shrinks to a child-size satchel.',
+          text: 'Your items spill out as the pack shrinks to a child-size satchel.',
           effects: [
             { type: 'removeRandomCurse' },
             { type: 'resetSlotsToStart' },
@@ -666,7 +666,7 @@ export const HAPPENINGS: HappeningDef[] = [
         description: 'Trigger every on-eat effect 7 times.',
         outcomes: [{
           chancePct: 100,
-          text: 'Seven courses later, your gear is still working.',
+          text: 'Seven courses later, your items are still working.',
           effects: [{ type: 'eatBurst', count: 7 }],
         }],
       },
@@ -891,6 +891,34 @@ export const HAPPENINGS: HappeningDef[] = [
         label: 'Leave',
         description: 'Nothing happens.',
         outcomes: [{ chancePct: 100, text: 'You keep your body to yourself.', effects: [] }],
+      },
+    ],
+  }),
+  defineHappening({
+    id: 'toll-collector',
+    name: 'The Toll Collector',
+    description: 'A thin man waits beside the road with a ledger and an empty hand. Every road has a debt.',
+    options: [
+      {
+        id: 'pay',
+        label: 'Pay 11 gold',
+        description: 'Settle the debt and walk on.',
+        costGold: 11,
+        outcomes: [{
+          chancePct: 100,
+          text: 'He counts the coins twice, closes the ledger, and steps aside.',
+          effects: [],
+        }],
+      },
+      {
+        id: 'refuse',
+        label: 'Refuse: draft an extra curse',
+        description: 'Keep your gold. The debt is written as a permanent curse.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'He writes the debt into your curses. Choose one.',
+          effects: [],
+        }],
       },
     ],
   }),

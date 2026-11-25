@@ -33,8 +33,11 @@ describe('food unlocks from eating', () => {
 
   it('counts a reward food and unlocks The Gourmand', () => {
     root.querySelector<HTMLElement>(
-      '[data-action="reward"][data-id="eat:double-cheeseburger"]',
+      '[data-action="select-reward"][data-id="eat:double-cheeseburger"]',
     )!.click();
+    expect(root.querySelector<HTMLElement>('[data-action="confirm-reward"]'))
+      .not.toBeNull();
+    root.querySelector<HTMLElement>('[data-action="confirm-reward"]')!.click();
     expect(readMeta().foodCounts['double-cheeseburger']).toBe(3);
     expect(readMeta().characters).toContain('gourmand');
     expect(root.querySelector<HTMLElement>('.unlock-overlay')?.textContent)

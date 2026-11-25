@@ -2,7 +2,7 @@
 
 A word roguelike about the burdens you choose.
 
-A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle fight → shop → fight → curse; fights, shops and curses each count as a floor, while events happen between floors and do not. Floor 27 is the Miniboss: draft 1 curse, then beat two words for a slot, a full heal, and a rare choice. Floors 47, 48 and 49 are the final curse drafts. Floor 50 is the Floor Boss: beat three words. One active save, and defeat wipes it.
+A 40-floor curse run. The blacklist and the clock start disabled. Floors cycle fight → shop → fight → curse; fights, shops and curses each count as a floor, while events happen between floors and do not. Floor 23 is the Miniboss: draft 1 curse, then beat two words to gain a slot and a full heal, then choose one reward. Floor 38 is the last shop, followed by the final three curse drafts. Floor 39 is the Floor Boss: beat three words. Floor 40 is the Mysterious Room: claim victory. One active save, and defeat wipes it.
 
 **Play:** https://michaelayao88.github.io/blacklist/
 
@@ -13,14 +13,15 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 ## What is in the vertical slice
 
 - Wordle-style scoring with duplicate-letter handling
-- A 50-floor curse run: the Miniboss waits on floor 27 and the Floor Boss on floor 50; no starting clock, no starting blacklist
-- Round loop: `round → 55% event → shop`, then `round → 55% event → curse`
-- Floors cycle fight → shop → fight → curse; curses count as floors and events do not. The Miniboss demands 1 curse draft before its fight, and floors 47, 48 and 49 are the final three curse drafts
+- A 40-floor curse run: the Miniboss waits on floor 23, the Floor Boss on floor 39, and the Mysterious Room on floor 40; no starting clock, no starting blacklist
+- Round loop: `round → 42% event → shop`, then `round → 42% event → curse`
+- Floors cycle fight → shop → fight → curse; curses count as floors and events do not. The Miniboss demands 1 curse draft before its fight, and floor 38 is the final shop followed by the final three curse drafts
 - Curse drafts draw from the weighted pool; The List and The Clock get a 3x weight until they first appear in a draft, then normal
 - Curse drafts use the same rarity floors as shops (40% rare and below, 45% uncommon and below, 15% common only), but do not display rarity. A common curse becomes uncommon for the rest of the run after it is offered or selected
 - Hover or focus a curse in the HUD to read its rules
-- Floor 27 is the Miniboss: draft 1 curse, then beat two words. It deals **+5 base damage**, and beating it grants **+1 item slot**, a full heal, and a choice between a random rare food and a random rare relic
-- Floors 47, 48 and 49 are the final curse drafts; floor 50 is the Floor Boss: beat three words. It deals **+10 base damage**. Bosses ignore the **Second Wind** curse
+- Floor 23 is the Miniboss: draft 1 curse, then beat two words. It deals **+5 base damage**, and beating it grants **+1 item slot**, a full heal, and a choice between a random rare food and a random rare item
+- Floor 38 is the final shop followed by the final three curse drafts; floor 39 is the Floor Boss: beat three words. It deals **+10 base damage**. Bosses ignore the **Second Wind** curse
+- **The Peddler's Table** is where you pick one of the Red Amulet, Silver Key or Nonsensical Map. The Mysterious Room on floor 40 remembers only those event picks: each chosen item adds one to its cross-run counter, and the room shows the three counters before you **Claim victory**
 - **Second Wind** is a rare curse: after you solve a word, a second word appears with one free guess
 - The Toll is only offered through level 40; The Tax and The Chained are only offered through level 20
 - Base encounter damage is **3 + 1.3 per curse stack, rounded down**, plus **+1 for every 60 gold spent this run**; characters that start with curses subtract **1.3 per starting curse stack**, and Heavy Hand multiplies the base by **1.5 per stack**. After the fifth guess in each puzzle, each later wrong guess increases the damage multiplier (**×2, ×3, ×4...**), counting autoguesses; the warning appears as soon as the safe guess limit is reached, the multiplier resets on Second Wind and each boss puzzle, and any remaining free guess is lost at that point. Every paid wrong guess adds **+1 per occupied item slot above 5**
@@ -33,23 +34,23 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - Within-X solve items count **player guesses only**; solve gold is a random 4-8, independent of guess count and auto-guesses
 - Curse Collector, Curse Bulwark and Reliquary trigger on gaining a curse ("Whenever you gain a curse: Gain …"). Curse Collector grants +6 max HP and heals 6
 - Ascension A1–A10 draft 1–10 starting curses
-- Shops with rerolls that start at 1g and double in price: three items, two foods and one wildcard; the wildcard is always food or a spell, never an item, and one random offer is always 50% off. When your item slots are full, one gear offer is replaced by food. **Shop Upgrade** permanently adds two more wildcards: one item/food/spell and one item/food
+- Shops with rerolls that start at 1g and double in price: three items, two foods and one wildcard; the wildcard is always food or a spell, never an item, and one random offer is always 50% off. When your item slots are full, one item offer is replaced by food. **Shop Upgrade** permanently adds two more wildcards: one item/food/spell and one item/food
 - Every spell offered in a shop has a 4g base price; the half-price sale can land on it
-- Four item slots by default. Only equipped gear is active, and each shop puts a compact ranked loadout of item emoji and names in the left item panel
+- Four item slots by default. Only equipped items are active, and each shop puts a compact ranked loadout of item emoji and names in the left item panel
 - **Loose Tongue**, a 12g uncommon item that lets you guess five-letter nonsense for free-form probes
 - Spells stack by type and come from food, item triggers and the shop wildcard slot
-- **Restore** clears the blacklist, refills armor, and ignores vision curses — including position curses — for the rest of the round; **Contrapuntal** turns into a random relic if you cast all six spell types
+- **Restore** clears the blacklist, refills armor, and ignores vision curses — including position curses — for the rest of the round; **Contrapuntal** turns into a random rare item if you cast all six spell types
 - Happenings with visible odds and persistent consequences
 - **Purge the Letter** offers two random letters: the first has a 100% chance to purge and the second has an 80% chance; you may also leave
-- Short item, spell and offer text with hover tooltips for keywords like autocast, autoguess, player guess, free guess, reveal, learn, rule out, purged, incoming damage, hit, armor, blacklist, relic and timeout
+- Short item, spell and offer text with hover tooltips for keywords like autocast, autoguess, player guess, free guess, reveal, learn, rule out, purged, incoming damage, hit, armor, blacklist, rare item and timeout
 - Revealed letters stay marked on the keyboard and in a Revealed panel for the puzzle; permanent food/item reveals are listed separately as collected letters; random reveals lean toward letters that are not in the answer; letter-reveal foods are permanent for the run
 - Vision-hidden letters show the hatched hidden key only when the letter has no other visible status; visible results, reveals and rule-outs take priority over that layer
-- Every finished encounter pays gold; solves offer coins, usually a spell, and only rarely gear or a meal
+- Every finished encounter pays gold; solves offer coins, usually a spell, and only rarely an item or a meal
 - Opening shields such as **Head Start** (7s, rare) make guesses in their window **Immune to damage** and show a floating timer banner with the remaining seconds; the first guess still spends the round's free guess
 - Rarity uses cumulative floors: 40% pulls from rare, uncommon or common, 45% pulls from uncommon or common, and 15% pulls from common only. If a tier is empty, it falls back to the entire pool
-- Relics you currently own will not appear again in shops or rewards. They are rare ordinary items, no longer boss rewards
+- Rare items you currently own will not appear again in shops or rewards. They are ordinary item finds, no longer boss-only rewards
 - Defeat reveals the answer you missed (all of them, on bosses)
-- 102 items (91 shop items + 11 rare relics), 6 spells, 81 foods and 33 happenings
+- 102 items (91 shop items + 11 rare items), 6 spells, 81 foods and 33 happenings
 - New foods include **U-nagi**, **Donut Holes**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with an Omen spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
@@ -64,7 +65,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Spell Pepper** is a 3g food that doubles your next spell
 - Every shop node offers a choice: visit the shop, or rest at the inn to gain +4 max HP, heal to full HP, and move on; 30% of the time the shop stays open afterward
 - **Hearty Stew** is a 4g food that grants 1-2 casts of Heal; **Hagelslag** gives +3 max HP and heals 20% of missing HP
-- **Bulwark** is an 8g item: every 10 damage blocked by armor, autocast a free random spell
+- **Bulwark** is an 8g item: every 11 damage blocked by armor, autocast a free random spell
 - **Ricochet** is a 7g item: every 10 armor lost, autoguess a random word
 - **Scattershot** is a 10g uncommon item that autocasts a free random spell once per round after a guess sharing no letters with the previous guess
 - **Yellow1** is a 14g rare item that autoguesses once per round on your player guess with exactly one yellow and no green; **Green1** is a 14g uncommon item that does the same for exactly one green and no yellow. Neither counts ally or auto-guesses
@@ -82,6 +83,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - Item triggers show a compact proc pop-up with the actual result (for example **Yellow1** calling an autoguess or **Grey Market** paying gold); item procs queue 2 seconds apart and stay up 3 seconds longer; once-per-round items show **SPENT** after they fire
 - The revealed-letter panel persists between screens; in shops it is labelled **REVEALED**
 - On desktop the item list sits under the battle rail on the left; on mobile it stays at the bottom of the sidebar. Shops use a compact ranked loadout with empty-slot rows, and combat switches to the same compact list once more than four items are equipped
+- On mobile the round timer floats in a small fixed box once the original timer card scrolls out of view, and the spell list moves into a left-edge **SPELLS** tab that opens over the board
 - **Grey Market** is a 7g item: every all-grey guess pays 2 gold, whether you made it or an ally did; an all-dark guess that pays nothing hides a letter
 - **Photosynthesis** is a 10g item: on solve, +2 max HP and heal 20% max HP
 - **Stopped Clock** is a 6g item: casting Time Freeze grants +5 max HP, once per round
@@ -89,7 +91,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Guardian Angel** is an 8g item: after every 10 HP damage taken, autocast a free Immunity
 - **Immunity** blocks the next hurting guess and any guess for 4 seconds after it
 - **Mending Plate** is a rare item: +1 max armor per 8 HP healed
-- **Heartstone** is a 15g rare relic: autocast a free Heal at the start of every round
+- **Heartstone** is a 15g rare item: autocast a free Heal at the start of every round
 - **Necronomicon** is a rare item: use it during a fight to lose 13% of your max HP for a random gift. It can only be used once per round, and it grows stronger as you feed it: fed thresholds unlock at 0, 13, 39, 79, 129, 189 and 259 max HP paid. Whisper and Twin Whispers autoguess Mythos words such as RYLEH, CTHUL and DAGON
 - **Growth Spurt** gives +3 max HP when you solve in 4 guesses or fewer
 - **Growth Chart** is an 8g item: every 3 max HP gained grants +1 Time Freeze
@@ -144,7 +146,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Short Fuse** is a common curse that stacks up to 4 times: each stack starts the damage multiplier 1 guess earlier
 - **Triggerless** is a common level-20+ curse: item and food autoguesses and round-start guesses fail 50% of the time
 - **Regurgitation** is an uncommon level-20+ curse: food reveals fail 50% of the time
-- **The Tax** reduces encounter gold by 40% and is unique; **The Sleeper** adds +2 damage per revealed letter in your first player guess, per stack; **The Curse Broker** charges 12g for a relic or 15g to remove a random curse; **The Confessional** sells 45/75/100% random curse removal for 5/10/15g
+- **The Tax** reduces encounter gold by 40% and is unique; **The Sleeper** adds +2 damage per revealed letter in your first player guess, per stack; **The Curse Broker** charges 12g for a rare item or 15g to remove a random curse; **The Confessional** sells 45/75/100% random curse removal for 5/10/15g
 - **The Detour** offers a slot, or a trip to the Time Bakery for +8 max HP and a Time Freeze; **The Crossroads** offers a shop or a Heal plus Time Freeze; **The Trade** trades gold for a slot, a slot for gold, or two Heal spells
 - **The Hollow Pocket** offers -1 item slot, or a 50% chance at a specific random curse
 - **The Forbidden Feast** offers a specific random rare food, with a 50% chance of also gaining a specific random curse; you can walk away instead
@@ -153,7 +155,7 @@ A 50-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - The pause menu includes a color-coded **CHRONICLE** of gameplay actions: guesses, rounds, damage, spells, item triggers, gold, food, shop purchases and curses
 - Purge is an event (The Redaction) and foods (Poppy Seeds, rare Inkcap, Purge the D, Pay Respects to F); its rest option triggers an eat and a 10% random curse removal
 - One exact-state autosave slot. Defeat clears it. Victory clears it and updates meta stats.
-- A **STATS** page tracks run history (last 50 runs), win rate, best level, average solve time, most-bought gear and favorite curses, play time, gold and damage totals
+- A **STATS** page tracks run history (last 50 runs), win rate, best level, average solve time, most-bought items and favorite curses, play time, gold and damage totals
 - The top bar shows gold and area; a persistent slanted floor trail at the top of the battle rail shows the current floor, one cleared floor below it, and the next three floors above, in every phase. Hover or focus a node to see its type
 - Clock-gated items such as **Meal Timer** never appear in shops or rewards until **The Clock** curse exists
 - Compact battle rail on the left: a persistent slanted floor trail, round timer with a hover tooltip for the time limit, an incoming-damage chip with separate hovers for the rule and the named damage modifiers (base, curses, curses such as The Sleeper, gold spent, extra slots, multiplier), a hoverable armor bar explaining how armor soaks hits, a side-view mini arena with your character facing the act's monster (or boss), player HP and armor
@@ -233,15 +235,15 @@ The Soldier and Orc sprites are from **Tiny RPG Character Asset Pack 01** by [Ze
 |---|---|
 | Starting HP | 15 for The Soldier; preset characters override this |
 | Starting armor | 7 points for The Soldier; preset characters override this |
-| Starting item slots | 4 (only equipped gear counts; relics use one slot each) |
+| Starting item slots | 4 (only equipped items count; rare items use one item slot each) |
 | Free guesses per round | 1; timed immunity blocks damage in its window, but the first guess still spends the free guess |
 | Starting gold | 12 |
 | Starting spells | Omen |
 | Blacklist | disabled until The List curse; unlimited once active |
 | Normal timer | none until The Clock curse |
 | Clock curse | first stack 5:00, each later stack -40%, floor 0:30 |
-| Miniboss | floor 27, 2 words, 1 curse draft, +5 base damage |
-| Floor Boss | floor 50, 3 words; floors 47-49 are the curse drafts; shared clock if active |
+| Miniboss | floor 23, 2 words, 1 curse draft, +5 base damage |
+| Floor Boss | floor 39, 3 words; floor 38 is the shop followed by the three curse drafts; shared clock if active |
 | Base damage | `3 + floor(1.3 × total curse stacks) − (1.3 × starting curse stacks) + floor(gold spent / 60)`, then Heavy Hand and other modifiers apply |
 | Paid guess damage | curse-scaled base; after the fifth guess in each puzzle each later wrong guess increases the multiplier (`×2, ×3, ×4...`), counting autoguesses |
 | Boss damage | Miniboss +5 base, Floor Boss +10 base, plus curses |
@@ -249,8 +251,8 @@ The Soldier and Orc sprites are from **Tiny RPG Character Asset Pack 01** by [Ze
 | Armor | a pool that soaks damage point-for-point before HP; refills each round |
 | Solve gold | random `4-8`, plus `solveGoldBonus` (Midas Touch can double any gain) |
 | Timeout gold | none; running out of time ends the run |
-| Solve reward | a flat 5 gold plus a spell (65%) or food (35%); gear is an 8% find |
-| Relic source | rare-tier shop/reward finds and the Curse Broker; owned relics never appear again |
+| Solve reward | a flat 5 gold plus a spell (65%) or food (35%); an item is an 8% find |
+| Rare item source | rare-tier shop/reward finds and the Curse Broker; owned rare items never appear again |
 | Shop reroll | starts at 1 gold, doubles after each use |
 
 ### Ascension
@@ -316,13 +318,13 @@ Every event carries super properties `site` and `platform`:
 |---|---|---|
 | `game_loaded` | The shell has rendered | `has_save`, `prior_runs` |
 | `run_started` | A new run begins | `run_number`, `run_id`, `character`, `ascension` |
-| `run_ended` | The run is won or lost | `result` (`won` or `lost`), `ended_by` (`cleared`, `timeout`, or `hp`), `level`, `gauntlet_floors` (50), `duration_ms`, `run_number`, `run_id`, `character`, `ascension` |
+| `run_ended` | The run is won or lost | `result` (`won` or `lost`), `ended_by` (`cleared`, `timeout`, or `hp`), `level`, `gauntlet_floors` (40), `duration_ms`, `run_number`, `run_id`, `character`, `ascension` |
 | `run_resumed` | A saved run continues | `run_number`, `run_id`, `level`, `character`, `ascension` |
 | `run_abandoned` | Abandon, or replace an active run | `reason` (`abandon` or `replaced`), `level`, `run_number`, `run_id`, `character`, `ascension` |
 | `boss_reached` | The miniboss or floor boss starts | `boss`, `level`, `run_number`, `run_id`, `character`, `ascension` |
 | `event_choice` | A happening resolves | `happening`, `option`, `success`, `level`, `run_number`, `run_id` |
 
-`run_number` is how many runs this browser has started, the same counter as the stats page. A continued save sends `run_resumed` and keeps that number. `duration_ms` is the run's recorded play time. Floors 1–49 are the gauntlet and the floor boss is level 50, so a win reports `level` 50.
+`run_number` is how many runs this browser has started, the same counter as the stats page. A continued save sends `run_resumed` and keeps that number. `duration_ms` is the run's recorded play time. Floors 1–39 are the gauntlet and the Mysterious Room is level 40, so a win reports `level` 40.
 
 Finish rate is `run_ended` over `run_started`. A second run is `run_started` with `run_number` of 2 or more. Players who come back on a later day show up in a retention insight on `game_loaded`. Itch and GitHub Pages are separate origins, so break those charts down by `site`.
 

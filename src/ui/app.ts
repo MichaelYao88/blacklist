@@ -23,7 +23,7 @@ import {
   ITEM_BY_ID,
   SPELL_BY_ID,
 } from '../content';
-import { LocalStore, dismissCharacterTip, dismissDamageTutorial, hasSave, readMeta, recordFood, recordPurchase, recordPurge, recordRun, recordStart, unlockCharacter } from './store';
+import { LocalStore, MYSTERIOUS_ITEMS, dismissCharacterTip, dismissDamageTutorial, hasSave, readMeta, recordFood, recordMysteriousBrought, recordPurchase, recordPurge, recordRun, recordStart, unlockCharacter } from './store';
 import {
   trackBossReached,
   trackEventChoice,
@@ -34,7 +34,9 @@ import {
   trackRunStarted,
 } from './analytics';
 import { escapeHtml, formatTime, parrotLine, parrotStupidLine, reasonText, roman } from './format';
-import { ARMOR_TIP, PURGED_TIP, glossaryText } from './glossary';
+import { ARMOR_TIP, ITEM_TAG_TIPS, PURGED_TIP, glossaryText } from './glossary';
+import { itemHasTag, itemTags } from '../core/itemTags';
+import type { ItemTag } from '../core/types';
 import { groupProcChanges, type ProcFlyGroup } from './procRewards';
 import {
   bossColor,
@@ -226,6 +228,53 @@ countdownRoot.setAttribute('aria-live', 'assertive');
 document.body.appendChild(countdownRoot);
 let countdownShown = 0;
 
+const MOBILE_LAYOUT_QUERY = '(max-width: 860px)';
+function isMobileLayout(): boolean {
+  return typeof window.matchMedia === 'function'
+    && window.matchMedia(MOBILE_LAYOUT_QUERY).matches;
+}
+
+// The floating timer lives outside the render tree so its position and value
+// survive the once-per-second UI refresh. It never accepts touches.
+const mobileTimerRoot = document.createElement('div');
+mobileTimerRoot.id = 'mobile-timer-root';
+mobileTimerRoot.setAttribute('aria-live', 'polite');
+mobileTimerRoot.setAttribute('aria-hidden', 'true');
+document.body.appendChild(mobileTimerRoot);
+let mobileTimerTarget: HTMLElement | null = null;
+let spellsDrawerOpen = false;
+let parrotDrawerOpen = false;
+let necroDrawerOpen = false;
+
+// Mobile item shortcuts. The drawers share the spells drawer's behaviour: one
+// open at a time, and the open flag survives the once-per-second re-render.
+const MOBILE_ITEM_TABS = [
+  { id: 'evil-parrot', key: 'parrot', label: 'PARROT', title: 'EVIL PARROT' },
+  { id: 'necronomicon', key: 'necro', label: 'NECRO', title: 'NECRONOMICON' },
+] as const;
+
+type MobileItemKey = (typeof MOBILE_ITEM_TABS)[number]['key'];
+
+function isItemDrawerOpen(key: MobileItemKey): boolean {
+  return key === 'parrot' ? parrotDrawerOpen : necroDrawerOpen;
+}
+
+function closeMobileDrawers(): void {
+  spellsDrawerOpen = false;
+  parrotDrawerOpen = false;
+  necroDrawerOpen = false;
+}
+
+// The floating incoming-damage panel mirrors the timer: it lives outside the
+// render tree so scroll restore and per-second renders cannot remove it.
+const mobileDamageRoot = document.createElement('div');
+mobileDamageRoot.id = 'mobile-damage-root';
+mobileDamageRoot.setAttribute('aria-live', 'polite');
+mobileDamageRoot.setAttribute('aria-hidden', 'true');
+document.body.appendChild(mobileDamageRoot);
+let mobileDamageTarget: HTMLElement | null = null;
+let mobileDamageHtmlShown = '';
+
 function renderCountdown(level: number, count: number): void {
   if (count <= 0) {
     if (countdownRoot.innerHTML) countdownRoot.innerHTML = '';
@@ -363,6 +412,21 @@ let lastTick = performance.now();
 let paused = false;
 let pointerHeld = 0;
 let renderQueued = false;
+let renderedEpoch = '';
+type PendingChoice =
+  | { kind: 'curse'; id: string }
+  | { kind: 'reward'; id: string }
+  | { kind: 'purge'; letter: string }
+  | { kind: 'remove-curse'; id: string }
+  | { kind: 'happening'; id: string };
+let pendingChoice: PendingChoice | null = null;
+type ArmedAction = { action: 'buy' | 'reroll' | 'sell'; id?: string };
+let armedAction: ArmedAction | null = null;
+let armedTimer: number | undefined;
+let longPressTimer: number | undefined;
+let longPressTarget: HTMLElement | null = null;
+let longPressStart = { x: 0, y: 0 };
+let longPressClickGuardUntil = 0;
 let soundMuted = sfx.muted;
 let heartbeatSecond = -1;
 interface DamageFx {
@@ -834,6 +898,9 @@ function logGameEvent(event: GameEvent): void {
     case 'parrotSays':
       logChronicle('info', `Evil Parrot says: ${event.text}`);
       break;
+    case 'mysteriousRoomEntered':
+      logChronicle('good', 'The Mysterious Room remembers what you brought.');
+      break;
     case 'message':
       logChronicle('info', event.text);
       break;
@@ -909,6 +976,9 @@ function processEvents(events: GameEvent[]): void {
         queueCharacterUnlock('purgamist');
         sfx.play('win');
       }
+    }
+    if (event.type === 'mysteriousRoomEntered') {
+      for (const id of event.brought) recordMysteriousBrought(id);
     }
     if (event.type === 'runEnded' && event.result === 'victory') {
       const ascension = host.current?.ascension ?? 0;
@@ -1128,7 +1198,31 @@ function processEvents(events: GameEvent[]): void {
   }
 }
 
+function clearArmedAction(): void {
+  if (armedTimer) {
+    window.clearTimeout(armedTimer);
+    armedTimer = undefined;
+  }
+  armedAction = null;
+}
+
+function armAction(action: ArmedAction['action'], id?: string): void {
+  clearArmedAction();
+  armedAction = { action, id };
+  armedTimer = window.setTimeout(() => {
+    armedTimer = undefined;
+    armedAction = null;
+    render();
+  }, 4_000);
+}
+
+function resetChoiceState(): void {
+  pendingChoice = null;
+  clearArmedAction();
+}
+
 function dispatchCommand(command: Command): GameEvent[] {
+  resetChoiceState();
   const events = host.dispatch(command);
   if (events.some((event) => event.type === 'guessScored')) input = '';
   processEvents(events);
@@ -1165,6 +1259,8 @@ function startNewRun(preferredCharacter?: string): void {
     ascension: selectedAscension,
   });
   screen = 'run';
+  resetChoiceState();
+  closeMobileDrawers();
   input = '';
   notice = null;
   paused = false;
@@ -1225,6 +1321,8 @@ function resumeRun(): void {
     sfx.play('win');
   }
   screen = 'run';
+  resetChoiceState();
+  closeMobileDrawers();
   input = '';
   notice = null;
   paused = false;
@@ -1317,11 +1415,33 @@ function noteKeyboardFallback(event: KeyboardEvent, letter: string | null): void
   render();
 }
 
-document.addEventListener('pointerdown', () => {
+function cancelLongPress(): void {
+  if (longPressTimer) {
+    window.clearTimeout(longPressTimer);
+    longPressTimer = undefined;
+  }
+  longPressTarget = null;
+}
+
+document.addEventListener('pointerdown', (event) => {
   pointerHeld += 1;
+  if (event.pointerType !== 'touch') return;
+  const target = (event.target as Element | null)?.closest<HTMLElement>('[data-tip]');
+  if (!target) return;
+  cancelLongPress();
+  longPressTarget = target;
+  longPressStart = { x: event.clientX, y: event.clientY };
+  longPressTimer = window.setTimeout(() => {
+    longPressTimer = undefined;
+    if (!longPressTarget) return;
+    showTip(longPressTarget);
+    longPressClickGuardUntil = performance.now() + 700;
+    longPressTarget = null;
+  }, 450);
 }, true);
 
 function releasePointer(): void {
+  cancelLongPress();
   if (pointerHeld > 0) pointerHeld -= 1;
   if (pointerHeld === 0 && renderQueued) {
     renderQueued = false;
@@ -1340,12 +1460,27 @@ window.addEventListener('blur', () => {
 });
 
 app.addEventListener('click', (event) => {
+  if (performance.now() < longPressClickGuardUntil) {
+    longPressClickGuardUntil = 0;
+    event.preventDefault();
+    event.stopPropagation();
+    return;
+  }
   sfx.unlock();
   music.unlock();
   const target = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-action]');
-  if (!target) return;
+  if (!target) {
+    if (armedAction) {
+      clearArmedAction();
+      render();
+    }
+    return;
+  }
   event.preventDefault();
   const action = target.dataset.action;
+  if (armedAction && !action?.startsWith('confirm-')) {
+    clearArmedAction();
+  }
   switch (action) {
     case 'pause':
       paused = true;
@@ -1464,6 +1599,42 @@ app.addEventListener('click', (event) => {
       render();
       break;
     }
+    case 'toggle-spells': {
+      const next = !spellsDrawerOpen;
+      closeMobileDrawers();
+      spellsDrawerOpen = next;
+      render();
+      break;
+    }
+    case 'close-spells':
+      closeMobileDrawers();
+      render();
+      break;
+    case 'toggle-parrot': {
+      const next = !parrotDrawerOpen;
+      closeMobileDrawers();
+      parrotDrawerOpen = next;
+      render();
+      break;
+    }
+    case 'close-parrot':
+      closeMobileDrawers();
+      render();
+      break;
+    case 'toggle-necro': {
+      const next = !necroDrawerOpen;
+      closeMobileDrawers();
+      necroDrawerOpen = next;
+      render();
+      break;
+    }
+    case 'close-necro':
+      closeMobileDrawers();
+      render();
+      break;
+    case 'claim-victory':
+      dispatchCommand({ type: 'claimVictory' });
+      break;
     case 'continue':
       dispatchCommand({ type: 'continue' });
       break;
@@ -1483,15 +1654,35 @@ app.addEventListener('click', (event) => {
     case 'use':
       dispatchCommand({ type: 'useItem', instance: target.dataset.id ?? '' });
       break;
-    case 'buy':
-      dispatchCommand({ type: 'buy', offerId: target.dataset.id ?? '' });
+    case 'arm-buy':
+      armAction('buy', target.dataset.id ?? '');
+      render();
       break;
-    case 'reroll':
-      dispatchCommand({ type: 'reroll' });
+    case 'confirm-buy': {
+      const id = target.dataset.id ?? '';
+      if (armedAction?.action === 'buy' && armedAction.id === id) {
+        dispatchCommand({ type: 'buy', offerId: id });
+      }
       break;
-    case 'sell':
-      dispatchCommand({ type: 'sell', instance: target.dataset.id ?? '' });
+    }
+    case 'arm-reroll':
+      armAction('reroll');
+      render();
       break;
+    case 'confirm-reroll':
+      if (armedAction?.action === 'reroll') dispatchCommand({ type: 'reroll' });
+      break;
+    case 'arm-sell':
+      armAction('sell', target.dataset.id ?? '');
+      render();
+      break;
+    case 'confirm-sell': {
+      const id = target.dataset.id ?? '';
+      if (armedAction?.action === 'sell' && armedAction.id === id) {
+        dispatchCommand({ type: 'sell', instance: id });
+      }
+      break;
+    }
     case 'equip':
       dispatchCommand({ type: 'equipItem', instance: target.dataset.id ?? '' });
       break;
@@ -1501,17 +1692,59 @@ app.addEventListener('click', (event) => {
     case 'choose':
       dispatchCommand({ type: 'choose', optionId: target.dataset.id ?? '' });
       break;
+    case 'select-curse':
     case 'curse':
-      dispatchCommand({ type: 'chooseCurse', curseId: target.dataset.id ?? '' });
+      pendingChoice = { kind: 'curse', id: target.dataset.id ?? '' };
+      clearArmedAction();
+      render();
       break;
+    case 'confirm-curse':
+      if (pendingChoice?.kind === 'curse') {
+        dispatchCommand({ type: 'chooseCurse', curseId: pendingChoice.id });
+      }
+      break;
+    case 'select-remove-curse':
     case 'remove-curse':
-      dispatchCommand({ type: 'removeCurse', curseId: target.dataset.id ?? '' });
+      pendingChoice = { kind: 'remove-curse', id: target.dataset.id ?? '' };
+      clearArmedAction();
+      render();
       break;
+    case 'confirm-remove-curse':
+      if (pendingChoice?.kind === 'remove-curse') {
+        dispatchCommand({ type: 'removeCurse', curseId: pendingChoice.id });
+      }
+      break;
+    case 'select-reward':
     case 'reward':
-      dispatchCommand({ type: 'chooseReward', optionId: target.dataset.id ?? '' });
+      pendingChoice = { kind: 'reward', id: target.dataset.id ?? '' };
+      clearArmedAction();
+      render();
       break;
+    case 'confirm-reward':
+      if (pendingChoice?.kind === 'reward') {
+        dispatchCommand({ type: 'chooseReward', optionId: pendingChoice.id });
+      }
+      break;
+    case 'select-purge':
     case 'purge':
-      dispatchCommand({ type: 'purgeLetter', letter: target.dataset.letter ?? '' });
+      pendingChoice = { kind: 'purge', letter: target.dataset.letter ?? '' };
+      clearArmedAction();
+      render();
+      break;
+    case 'confirm-purge':
+      if (pendingChoice?.kind === 'purge') {
+        dispatchCommand({ type: 'purgeLetter', letter: pendingChoice.letter });
+      }
+      break;
+    case 'select-happening':
+      pendingChoice = { kind: 'happening', id: target.dataset.id ?? '' };
+      clearArmedAction();
+      render();
+      break;
+    case 'confirm-happening':
+      if (pendingChoice?.kind === 'happening') {
+        dispatchCommand({ type: 'choose', optionId: pendingChoice.id });
+      }
       break;
     default:
       break;
@@ -1653,6 +1886,8 @@ window.setInterval(() => {
     }
   }
   render();
+  syncMobileTimer(host.view());
+  syncMobileDamage(host.view());
 }, 1_000);
 
 document.addEventListener('visibilitychange', () => {
@@ -1670,6 +1905,38 @@ document.addEventListener('visibilitychange', () => {
 
 // ── rendering ──────────────────────────────────────────────────────────────
 
+const WINDOW_SCROLL_KEY = '@window';
+
+function captureScrollPositions(): Map<string, number> {
+  const saved = new Map<string, number>();
+  document.querySelectorAll<HTMLElement>('[data-scroll-key]').forEach((element) => {
+    const key = element.dataset.scrollKey;
+    if (key) saved.set(key, element.scrollTop);
+  });
+  saved.set(WINDOW_SCROLL_KEY, window.scrollY);
+  return saved;
+}
+
+function restoreScrollPositions(saved: Map<string, number>): void {
+  document.querySelectorAll<HTMLElement>('[data-scroll-key]').forEach((element) => {
+    const key = element.dataset.scrollKey;
+    const value = key ? saved.get(key) : undefined;
+    if (value !== undefined) element.scrollTop = value;
+  });
+  const windowY = saved.get(WINDOW_SCROLL_KEY);
+  if (windowY !== undefined) window.scrollTo(0, windowY);
+}
+
+if (typeof window.addEventListener === 'function') {
+  window.addEventListener('scroll', updateMobileTimerVisibility, { passive: true });
+  window.addEventListener('scroll', updateMobileDamageVisibility, { passive: true });
+  window.addEventListener('resize', () => {
+    updateMobileTimerVisibility();
+    updateMobileDamageVisibility();
+    render();
+  }, { passive: true });
+}
+
 function render(): void {
   // A full re-render replaces every button node. Doing that between a pointer
   // press and release swallows the click, so hold renders until the press ends.
@@ -1679,6 +1946,9 @@ function render(): void {
   }
   const view = host.view();
   if (screen === 'run' && !view) screen = 'title';
+  const epoch = `${screen}:${view?.phase.kind ?? ''}`;
+  const savedScroll = epoch === renderedEpoch ? captureScrollPositions() : null;
+  if (epoch !== renderedEpoch) resetChoiceState();
 
   const bossMusic = screen === 'run' && Boolean(
     view
@@ -1702,6 +1972,10 @@ function render(): void {
   }
   app!.insertAdjacentHTML('beforeend', noticeHtml());
   if (characterUnlock) app!.insertAdjacentHTML('beforeend', renderCharacterUnlock());
+  if (savedScroll) restoreScrollPositions(savedScroll);
+  renderedEpoch = epoch;
+  syncMobileTimer(screen === 'run' ? view : null);
+  syncMobileDamage(screen === 'run' ? (view ?? null) : null);
 
   const damageId = damageFx?.id ?? 0;
   const overRun = screen === 'run' && view?.phase.kind === 'over';
@@ -1829,7 +2103,7 @@ function renderCharacterUnlock(): string {
         <span><b>${def.maxHp}</b> HP</span>
         <span><b>${def.armor}</b> ARMOR</span>
       </div>
-      <p class="unlock-kit">${escapeHtml(kit || 'No starting gear')}</p>
+      <p class="unlock-kit">${escapeHtml(kit || 'No starting items')}</p>
       <button class="btn primary big" data-action="dismiss-unlock">ADD TO ROSTER</button>
     </div>
   </div>`;
@@ -1903,6 +2177,15 @@ function hideTip(): void {
 }
 
 document.addEventListener('pointermove', (event) => {
+  if (event.pointerType === 'touch') {
+    if (
+      longPressTarget
+      && Math.hypot(event.clientX - longPressStart.x, event.clientY - longPressStart.y) > 8
+    ) {
+      cancelLongPress();
+    }
+    return;
+  }
   const target = (event.target as Element | null)?.closest<HTMLElement>('[data-tip]');
   if (!target) {
     if (tipTarget) hideTip();
@@ -1955,7 +2238,7 @@ function renderCharacterPicker(meta: ReturnType<typeof readMeta>): string {
           <span class="character-stats">${character.maxHp} HP · ${character.armor} ARMOR</span>
           ${locked
             ? `<span class="character-lock">${escapeHtml(character.unlockHint ?? 'Locked')}</span>`
-            : `<span class="character-kit">${escapeHtml(kit || 'No starting gear')}</span>`}
+            : `<span class="character-kit">${escapeHtml(kit || 'No starting items')}</span>`}
         </button>`;
       }).join('')}
     </div>
@@ -2044,7 +2327,7 @@ function renderTitle(): string {
     ${characterPicker}
     ${ascensionPicker}
     <div class="title-facts">
-      <div><b>50</b><span>levels</span></div>
+      <div><b>40</b><span>levels</span></div>
       <div><b>2</b><span>curse choices</span></div>
       <div><b>3</b><span>base damage</span></div>
       <div><b>1</b><span>free guess</span></div>
@@ -2067,7 +2350,7 @@ function renderHelp(): string {
     <div class="rules-grid">
       <article class="rule-card">
         <h3>The run</h3>
-        <p>Fifty floors. The loop cycles <b>fight → shop → fight → curse</b>; fights, shops and curses each count as a floor, while events happen between floors and do not. Floor 27 is the <b>Miniboss</b>: draft <b>1 curse</b>, then beat two words for a slot, a full heal, and a rare choice. Floors 47, 48 and 49 are the final curse drafts. Floor 50 is the <b>Floor Boss</b>: beat three words.</p>
+        <p>Forty floors. The loop cycles <b>fight → shop → fight → curse</b>; fights, shops and curses each count as a floor, while events happen between floors and do not. Floor 23 is the <b>Miniboss</b>: draft <b>1 curse</b>, then beat two words to gain a slot and a full heal, then choose one reward. Floor 38 is the last shop, followed by the final three curse drafts. Floor 39 is the <b>Floor Boss</b>: beat three words. Floor 40 is the <b>Mysterious Room</b>: claim victory.</p>
       </article>
       <article class="rule-card">
         <h3>Damage</h3>
@@ -2168,10 +2451,10 @@ function renderStats(): string {
       </section>
 
       <section class="stats-panel">
-        <p class="panel-kicker">MOST BOUGHT GEAR</p>
+        <p class="panel-kicker">MOST BOUGHT ITEMS</p>
         ${favorites.length
           ? `<ol class="favorite-list">${favorites.map(([id, count]) => `<li><span>${escapeHtml(ITEM_BY_ID.get(id)?.name ?? id)}</span><b>${count}</b></li>`).join('')}</ol>`
-          : `<p class="empty-note">No gear bought yet.</p>`}
+          : `<p class="empty-note">No items bought yet.</p>`}
       </section>
 
       <section class="stats-panel">
@@ -2262,11 +2545,13 @@ function phaseLabel(view: RunView): string {
               ? 'SHOP OR INN'
               : phase.kind === 'shop'
                 ? 'SHOP'
-                : phase.kind === 'happening'
-                  ? 'INTERRUPTION'
-                  : phase.kind === 'purge'
-                    ? 'SETUP'
-                    : 'THE LIST';
+                : phase.kind === 'mysteriousRoom'
+                  ? 'MYSTERIOUS ROOM'
+                  : phase.kind === 'happening'
+                    ? 'INTERRUPTION'
+                    : phase.kind === 'purge'
+                      ? 'SETUP'
+                      : 'THE LIST';
 }
 
 function damageOverlayHtml(): string {
@@ -2353,12 +2638,98 @@ function renderTimer(view: RunView, board: BoardView): string {
   </div>`;
 }
 
+function updateMobileTimerVisibility(): void {
+  if (!isMobileLayout() || !mobileTimerTarget) {
+    mobileTimerRoot.classList.remove('is-visible');
+    mobileTimerRoot.setAttribute('aria-hidden', 'true');
+    return;
+  }
+  const rect = mobileTimerTarget.getBoundingClientRect();
+  const measurable = rect.height > 0 || rect.width > 0 || rect.top !== 0 || rect.bottom !== 0;
+  const offscreen = measurable && (rect.bottom <= 0 || rect.top >= window.innerHeight);
+  mobileTimerRoot.classList.toggle('is-visible', offscreen);
+  mobileTimerRoot.setAttribute('aria-hidden', offscreen ? 'false' : 'true');
+}
+
+function syncMobileTimer(view: RunView | null): void {
+  if (!isMobileLayout()) {
+    mobileTimerTarget = null;
+    mobileTimerRoot.innerHTML = '';
+    updateMobileTimerVisibility();
+    return;
+  }
+  const target = document.querySelector<HTMLElement>('.battle-rail .timer');
+  mobileTimerTarget = target;
+  const board = view && view.phase.kind === 'round' ? view.phase.board : null;
+  if (!target || !board || board.timerMode === 'hidden') {
+    mobileTimerRoot.innerHTML = '';
+    updateMobileTimerVisibility();
+    return;
+  }
+  const countUp = board.timerMode === 'countup';
+  const time = countUp ? formatTime(board.elapsedMs) : formatTime(board.remainingMs);
+  const label = countUp
+    ? 'TIME'
+    : board.timerFrozen
+      ? 'FROZEN'
+      : 'RUN ENDS IN';
+  const pct = countUp || !board.timerStartMs || board.remainingMs === null
+    ? 100
+    : Math.max(0, Math.min(100, (board.remainingMs / board.timerStartMs) * 100));
+  const urgent = !countUp && board.remainingMs !== null && board.remainingMs <= 15_000;
+  mobileTimerRoot.innerHTML = `<div class="mobile-timer ${urgent ? 'urgent' : ''} ${board.timerFrozen ? 'frozen' : ''}">
+    <span class="mobile-timer-label">${label}</span>
+    <b>${time}</b>
+    <i style="width:${pct}%"></i>
+  </div>`;
+  updateMobileTimerVisibility();
+}
+
+function updateMobileDamageVisibility(): void {
+  if (!isMobileLayout() || !mobileDamageTarget) {
+    mobileDamageRoot.classList.remove('is-visible');
+    mobileDamageRoot.setAttribute('aria-hidden', 'true');
+    return;
+  }
+  const rect = mobileDamageTarget.getBoundingClientRect();
+  const measurable = rect.height > 0 || rect.width > 0 || rect.top !== 0 || rect.bottom !== 0;
+  const offscreen = measurable && (rect.bottom <= 0 || rect.top >= window.innerHeight);
+  mobileDamageRoot.classList.toggle('is-visible', offscreen);
+  mobileDamageRoot.setAttribute('aria-hidden', offscreen ? 'false' : 'true');
+}
+
+function syncMobileDamage(view: RunView | null): void {
+  if (!isMobileLayout()) {
+    mobileDamageTarget = null;
+    if (mobileDamageRoot.innerHTML) mobileDamageRoot.innerHTML = '';
+    mobileDamageHtmlShown = '';
+    updateMobileDamageVisibility();
+    return;
+  }
+  const target = document.querySelector<HTMLElement>('.battle-rail .guess-damage');
+  mobileDamageTarget = target;
+  const board = view && view.phase.kind === 'round' ? view.phase.board : null;
+  if (!target || !board) {
+    if (mobileDamageRoot.innerHTML) mobileDamageRoot.innerHTML = '';
+    mobileDamageHtmlShown = '';
+    updateMobileDamageVisibility();
+    return;
+  }
+  const html = guessDamageHtml(board);
+  if (html !== mobileDamageHtmlShown) {
+    mobileDamageHtmlShown = html;
+    mobileDamageRoot.innerHTML = html;
+  }
+  updateMobileDamageVisibility();
+}
+
 const RAIL_NODE_LABELS: Record<NodeKind, string> = {
   round: 'Fight',
   shop: 'Shop',
   curse: 'Curse',
   happening: 'Event',
   boss: 'Boss',
+  mysteriousRoom: 'Mysterious Room',
 };
 
 const RAIL_NODE_GLYPHS: Record<NodeKind, string> = {
@@ -2367,6 +2738,7 @@ const RAIL_NODE_GLYPHS: Record<NodeKind, string> = {
   curse: '✕',
   happening: '?',
   boss: '☠',
+  mysteriousRoom: '✦',
 };
 
 interface RailFloor {
@@ -2387,6 +2759,7 @@ function railFloorAt(view: RunView, level: number): RailFloor | null {
     ?? nodes.find((node) => node.kind === 'round')
     ?? nodes.find((node) => node.kind === 'curse')
     ?? nodes.find((node) => node.kind === 'shop')
+    ?? nodes.find((node) => node.kind === 'mysteriousRoom')
     ?? nodes.find((node) => node.kind === 'happening');
   if (!primary) return null;
   return {
@@ -2539,7 +2912,6 @@ function renderBattleRail(view: RunView, bossId?: string): string {
   const playerLabel = playerDef?.name ?? 'The Soldier';
   const facts = board
     ? [
-        board.freeGuessesLeft > 0 ? `<span class="fact">FREE ${board.freeGuessesLeft}</span>` : '',
         board.shielded ? `<span class="fact shield">IMMUNE ${formatTime(board.shieldMsLeft)}</span>` : '',
         board.gauntletTotal > 1 ? `<span class="fact gauntlet">PUZZLE ${board.gauntletIndex + 1}/${board.gauntletTotal}</span>` : '',
         view.items.some((item) => item.id === 'loose-tongue' && item.equipped) ? `<span class="fact free-speech">ANY WORD</span>` : '',
@@ -2613,16 +2985,89 @@ function renderCurseRail(view: RunView): string {
   </aside>`;
 }
 
+function renderMysteriousRail(view: RunView): string {
+  return `<aside class="panel mysterious-rail" aria-label="Mysterious Room">
+    <div class="shop-rail-head">
+      <span class="panel-kicker">MYSTERIOUS ROOM</span>
+      <b class="shop-rail-floor">FLOOR ${view.level}</b>
+    </div>
+    ${renderPlayerVitals(view)}
+  </aside>`;
+}
+
+function renderMysteriousRoom(): string {
+  const counts = readMeta().mysteriousCounts;
+  const items = MYSTERIOUS_ITEMS.map((id) => {
+    const name = ITEM_BY_ID.get(id)?.name ?? id;
+    const count = counts[id] ?? 0;
+    return `<div class="mysterious-item" aria-label="${escapeHtml(`${name}: brought ${count} time${count === 1 ? '' : 's'}`)}">
+      <span class="mysterious-emoji" aria-hidden="true">${itemIcon(id)}</span>
+      <b class="mysterious-count">×${count}</b>
+    </div>`;
+  }).join('');
+  return `<div class="phase-card mysterious-room">
+    <p class="panel-kicker">MYSTERIOUS ROOM</p>
+    <div class="mysterious-items">${items}</div>
+    <button class="btn primary big" data-action="claim-victory">CLAIM VICTORY</button>
+  </div>`;
+}
+
+function renderMobileSpells(view: RunView): string {
+  if (!isMobileLayout()) return '';
+  const stacks = new Map<string, { spell: SpellView; count: number }>();
+  for (const spell of view.spells) {
+    const entry = stacks.get(spell.id);
+    if (entry) entry.count += 1;
+    else stacks.set(spell.id, { spell, count: 1 });
+  }
+  const spells = stacks.size
+    ? [...stacks.values()].map(({ spell, count }) => renderSpell(view, spell, count)).join('')
+    : `<p class="empty-note">No spells. Food and item triggers make them.</p>`;
+  return `<div class="mobile-spells ${spellsDrawerOpen ? 'open' : ''}">
+    <button class="mobile-spells-tab" data-action="toggle-spells" aria-expanded="${spellsDrawerOpen}">
+      <span>SPELLS</span><b>${view.spells.length}</b>
+    </button>
+    <div class="mobile-spells-scrim" data-action="close-spells" aria-hidden="${spellsDrawerOpen ? 'false' : 'true'}"></div>
+    <aside class="mobile-spells-drawer" aria-label="Spells" aria-hidden="${spellsDrawerOpen ? 'false' : 'true'}">
+      <div class="panel-head"><span class="panel-kicker">SPELLS</span><span class="count">${view.spells.length}</span></div>
+      <div class="spell-list" data-scroll-key="mobile-spells">${spells}</div>
+    </aside>
+  </div>`;
+}
+
+function renderMobileItemDrawers(view: RunView): string {
+  if (!isMobileLayout()) return '';
+  const owned = MOBILE_ITEM_TABS.filter((tab) => (
+    view.items.some((item) => item.id === tab.id)
+  ));
+  return owned.map((tab, index) => {
+    const item = view.items.find((entry) => entry.id === tab.id)!;
+    const open = isItemDrawerOpen(tab.key);
+    // Index 0 is always the spells tab, so item tabs start below it.
+    const tabIndex = index + 1;
+    return `<div class="mobile-item ${open ? 'open' : ''}" data-mobile-item="${tab.key}">
+      <button class="mobile-item-tab" style="--tab-index:${tabIndex}" data-action="toggle-${tab.key}" aria-expanded="${open}">
+        <span>${tab.label}</span><span class="mobile-item-tab-emoji" aria-hidden="true">${itemIcon(tab.id)}</span>
+      </button>
+      <div class="mobile-item-scrim" data-action="close-${tab.key}" aria-hidden="${open ? 'false' : 'true'}"></div>
+      <aside class="mobile-item-drawer" aria-label="${tab.title}" aria-hidden="${open ? 'false' : 'true'}">
+        <div class="panel-head"><span class="panel-kicker">${tab.title}</span><span class="count">${escapeHtml(ITEM_BY_ID.get(item.id)?.name ?? item.id)}</span></div>
+        <div class="mobile-item-body">${renderItem(view, item)}</div>
+      </aside>
+    </div>`;
+  }).join('');
+}
+
 function renderChronicle(): string {
   if (chronicleEntries.length === 0) {
-    return `<div class="chronicle"><p class="empty-note">No actions recorded yet.</p></div>`;
+    return `<div class="chronicle" data-scroll-key="chronicle"><p class="empty-note">No actions recorded yet.</p></div>`;
   }
   const rows = chronicleEntries.slice().reverse().map((entry) => `
     <div class="chronicle-entry ${entry.kind}">
       <span class="chronicle-level">L${entry.level}</span>
       <span class="chronicle-text">${escapeHtml(entry.text)}</span>
     </div>`).join('');
-  return `<div class="chronicle" aria-label="Run chronicle" aria-live="polite">${rows}</div>`;
+  return `<div class="chronicle" data-scroll-key="chronicle" aria-label="Run chronicle" aria-live="polite">${rows}</div>`;
 }
 
 function renderSidePanel(view: RunView): string {
@@ -2657,7 +3102,7 @@ function renderSidePanel(view: RunView): string {
     <section class="floorplan-panel">
       ${renderLevelBadge(view)}
     </section>
-    <section>
+    <section class="spells-section">
       <div class="panel-head"><span class="panel-kicker">SPELLS</span><span class="count">${view.spells.length}</span></div>
       <div class="spell-list">${spells}</div>
     </section>
@@ -2671,7 +3116,7 @@ function renderSidePanel(view: RunView): string {
     </section>
     ${hasList ? `<section class="blacklist-panel" tabindex="0" data-tip="${escapeHtml(blacklistTip)}" aria-label="${escapeHtml(blacklistTip)}">
       <div class="panel-head"><span class="panel-kicker">BLACKLIST</span><span class="count">${view.blacklist.length}</span></div>
-      <ol class="blacklist">${blacklist}</ol>
+      <ol class="blacklist" data-scroll-key="blacklist">${blacklist}</ol>
     </section>` : ''}
     ${(view.collectedReveals.length || view.revealed.length || view.purged.length) ? `<section>
       ${view.collectedReveals.length ? `<div class="revealed collected">
@@ -2687,13 +3132,25 @@ function renderSidePanel(view: RunView): string {
   </aside>`;
 }
 
+function slotLabel(slots: number): string {
+  if (slots <= 0) return 'NO ITEM SLOT';
+  return `${slots} ITEM SLOT${slots === 1 ? '' : 'S'}`;
+}
+
+function tagChips(tags: ItemTag[], interactive = true): string {
+  const focus = interactive ? ' tabindex="0"' : '';
+  return tags
+    .map((tag) => `<span class="tag item-tag"${focus} data-tip="${escapeHtml(ITEM_TAG_TIPS[tag])}" aria-label="${escapeHtml(ITEM_TAG_TIPS[tag])}">${tag.toUpperCase()}</span>`)
+    .join('');
+}
+
 function renderItemsPanel(view: RunView): string {
   const shop = view.phase.kind === 'shop';
   const gear = view.items.filter((item) => item.slots > 0);
   const equippedGear = gear.filter((item) => item.equipped);
   const bagged = gear.filter((item) => !item.equipped);
   const compact = shop || equippedGear.length > 4;
-  const scrollable = (compact ? gear.length : equippedGear.length) > 5
+  const scrollable = (compact ? gear.length > 5 : view.items.length > 5)
     ? ' scrollable'
     : '';
   const seedline = `<div class="seedline">SEED ${escapeHtml(host.current?.seed ?? '')}</div>`;
@@ -2709,7 +3166,7 @@ function renderItemsPanel(view: RunView): string {
         <span class="panel-kicker">ITEMS</span>
         <span class="count">${view.slots.used}/${view.slots.total}${bagged.length ? ` · ${bagged.length} BAG` : ''}</span>
       </div>
-      <div class="item-list${scrollable}">${items}</div>
+      <div class="item-list${scrollable}" data-scroll-key="items">${items}</div>
     </section>
     ${seedline}
   </aside>`;
@@ -2731,16 +3188,23 @@ function renderItemsPanel(view: RunView): string {
         : '';
       return `<div class="loadout-row ${item.equipped ? 'equipped' : 'bagged'}"
         tabindex="0" data-tip="${escapeHtml(description)}">
-        ${emoji}<b>${name}</b>${use}
+        ${emoji}<b>${name}</b><span class="slot-note">${slotLabel(item.slots)}</span>${use}
+        <div class="loadout-tags">${tagChips(item.tags)}</div>
       </div>`;
     }
+    const sellArmed = armedAction?.action === 'sell' && armedAction.id === item.instance;
+    const sellAction = sellArmed ? 'confirm-sell' : 'arm-sell';
+    const sellLabel = sellArmed
+      ? `CONFIRM SELL · ${item.sellValue} G`
+      : `SELL ${item.sellValue} G`;
     return `<div class="loadout-row ${item.equipped ? 'equipped' : 'bagged'}"
       draggable="true" tabindex="0"
       data-item="${escapeHtml(item.instance)}"
       data-action="${item.equipped ? 'unequip' : 'equip'}" data-id="${escapeHtml(item.instance)}"
       data-tip="${escapeHtml(description)}">
-      ${emoji}<b>${name}</b>
-      <button class="btn tiny item-sell" data-action="sell" data-id="${escapeHtml(item.instance)}" ${canSell ? '' : 'disabled'} aria-label="Sell ${name} for ${item.sellValue} gold">SELL ${item.sellValue} G</button>
+      ${emoji}<b>${name}</b><span class="slot-note">${slotLabel(item.slots)}</span>
+      <button class="btn tiny item-sell" data-action="${sellAction}" data-id="${escapeHtml(item.instance)}" ${canSell ? '' : 'disabled'} aria-label="${sellArmed ? 'Confirm selling' : 'Sell'} ${name} for ${item.sellValue} gold">${sellLabel}</button>
+      <div class="loadout-tags">${tagChips(item.tags)}</div>
     </div>`;
   };
 
@@ -2758,8 +3222,8 @@ function renderItemsPanel(view: RunView): string {
         <span class="panel-kicker">${shop ? 'LOADOUT' : 'ITEMS'}</span>
         <span class="count">${view.slots.used}/${view.slots.total}${shop ? ` · ${freeSlots} FREE` : ''}${bagged.length ? ` · ${bagged.length} BAG` : ''}</span>
       </div>
-      ${shop ? `<p class="hint loadout-hint">Click or drag gear to move it.${canSell ? '' : ' The Chained prevents selling.'}</p>` : ''}
-      <div class="loadout-list${scrollable}">
+      ${shop ? `<p class="hint loadout-hint">Click or drag items to move them.${canSell ? '' : ' The Chained prevents selling.'}</p>` : ''}
+      <div class="loadout-list${scrollable}" data-scroll-key="loadout">
         <div class="loadout-group"${shop ? ' data-drop="slot"' : ''}>
           <div class="loadout-group-head"><span class="panel-kicker">EQUIPPED</span><span class="count">${equippedGear.length}${shop ? `/${view.slots.total}` : ''}</span></div>
           ${equippedGear.map(row).join('')}${empties}
@@ -2768,7 +3232,7 @@ function renderItemsPanel(view: RunView): string {
           <div class="loadout-group-head"><span class="panel-kicker">BAG</span><span class="count">${bagged.length}</span></div>
           ${bagged.length
             ? bagged.map(row).join('')
-            : `<p class="empty-note">${shop ? 'Drag gear here to bag it.' : 'Nothing in the bag.'}</p>`}
+            : `<p class="empty-note">${shop ? 'Drag items here to bag them.' : 'Nothing in the bag.'}</p>`}
         </div>
       </div>
     </section>
@@ -2803,12 +3267,12 @@ function renderItem(view: RunView, item: ItemView): string {
   const rarity = !item.equipped && item.slots > 0
     ? 'BAG'
     : def?.rarity === 'rare'
-      ? 'RELIC'
+      ? 'RARE ITEM'
       : def?.rarity === 'uncommon'
         ? 'UNCOMMON'
         : def?.kind === 'consumable'
           ? 'USE'
-          : 'GEAR';
+          : 'ITEM';
   const rarityClass = def?.rarity === 'rare'
     ? 'rare'
     : def?.rarity === 'uncommon' ? 'uncommon' : '';
@@ -2820,7 +3284,9 @@ function renderItem(view: RunView, item: ItemView): string {
       ${spent ? `<span class="item-state">SPENT</span>` : ''}
       ${usedThisRound ? `<span class="item-state">USED</span>` : ''}
       <span class="tag">${rarity}</span>
+      <span class="slot-note">${slotLabel(item.slots)}</span>
     </div>
+    <div class="tag-row">${tagChips(item.tags)}</div>
     <p>${glossaryText(description)}</p>
     ${data ? `<div class="data-row">${data}</div>` : ''}
     ${!item.equipped && item.slots > 0 ? `<p class="bag-note">In the bag. Equip it in a shop.</p>` : ''}
@@ -2951,10 +3417,10 @@ function renderSummary(view: RunView, phase: Extract<PhaseView, { kind: 'summary
     </div>
     <p class="muted">${phase.outcome === 'solved'
       ? miniboss
-        ? 'The Miniboss is down. You gain an item slot and a full heal. Choose your reward.'
+        ? 'The Miniboss is down. You gain an item slot and a full heal. Choose one reward.'
         : boss
-          ? 'The Floor Boss is down. Continue to finish the run.'
-          : 'The round is clear. Choose a reward and keep moving.'
+          ? 'The Floor Boss is down. Continue to the Mysterious Room to claim the run.'
+          : 'The round is clear. Choose one reward and keep moving.'
       : phase.outcome === 'timeout'
         ? 'The clock took its cut, but the encounter still paid. No reward this time. The run continues if you do.'
         : 'The run is over. The save is gone.'}</p>
@@ -2965,17 +3431,19 @@ function renderSummary(view: RunView, phase: Extract<PhaseView, { kind: 'summary
 function renderReward(phase: Extract<PhaseView, { kind: 'reward' }>): string {
   const boss = phase.boss;
   const miniboss = phase.miniboss === true;
+  const selectedId = pendingChoice?.kind === 'reward' ? pendingChoice.id : undefined;
   return `
   <div class="phase-card reward ${boss || miniboss ? 'boss-reward' : ''}">
-    <p class="panel-kicker">${miniboss ? 'MINIBOSS REWARD' : boss ? 'BOSS RELIC' : 'REWARD'}</p>
-    <h2>${miniboss ? 'Choose your prize' : boss ? 'Claim a relic' : 'Take one'}</h2>
+    <p class="panel-kicker">${miniboss ? 'MINIBOSS REWARD' : boss ? 'BOSS REWARD' : 'REWARD'}</p>
+    <h2>${miniboss ? 'Choose one prize' : boss ? 'Choose one reward' : 'Choose one'}</h2>
     <p class="muted">${miniboss
-      ? 'Pick one: a rare meal or a rare relic. You already gained an item slot and a full heal.'
+      ? 'Choose one: a rare meal or a rare item. You already gained an item slot and a full heal.'
       : boss
-        ? 'Rare passives. Each relic uses an item slot and lasts for the rest of the run.'
-        : 'Coins plus a spell or a meal. Rarely, a find.'}</p>
+        ? 'Choose one. Rare items work while equipped, use one item slot each, and last for the rest of the run.'
+        : 'Choose one: coins, a spell, or a meal. Rarely, a rare item.'}</p>
     <div class="reward-grid">
       ${phase.options.map((option) => {
+        const def = option.kind === 'item' ? ITEM_BY_ID.get(option.def ?? '') : undefined;
         const icon = option.kind === 'item'
           ? itemIcon(option.def ?? '')
           : option.kind === 'spell'
@@ -2983,24 +3451,38 @@ function renderReward(phase: Extract<PhaseView, { kind: 'reward' }>): string {
             : option.kind === 'eat'
               ? foodIcon(option.def ?? '')
               : '🪙';
-        const isRelic = option.kind === 'item' && option.rarity === 'rare';
-        const tag = isRelic
-          ? 'RELIC'
-          : option.rarity === 'uncommon' ? 'UNCOMMON' : option.kind.toUpperCase();
-        const rarityClass = isRelic
+        const isRareItem = option.kind === 'item' && option.rarity === 'rare';
+        const isRareFood = option.kind === 'eat' && option.rarity === 'rare';
+        const tag = isRareItem
+          ? 'RARE ITEM'
+          : isRareFood
+            ? 'RARE FOOD'
+            : option.rarity === 'uncommon' ? 'UNCOMMON' : option.kind.toUpperCase();
+        const rarityClass = isRareItem || isRareFood
           ? 'rare'
           : option.rarity === 'uncommon' ? 'uncommon' : '';
         const description = option.kind === 'eat'
           ? foodDescription(option.description)
           : option.description;
+        const selected = selectedId === option.id;
+        const slots = option.kind === 'item'
+          ? def?.slots ?? (def?.kind === 'gear' ? 1 : 0)
+          : option.kind === 'spell' || option.kind === 'eat' ? 0 : null;
         return `
-        <button class="reward-card ${option.kind} ${rarityClass}" data-action="reward" data-id="${escapeHtml(option.id)}">
+        <button class="reward-card ${option.kind} ${rarityClass} ${selected ? 'selected' : ''}" data-action="select-reward" data-id="${escapeHtml(option.id)}" aria-pressed="${selected}" data-tip="${escapeHtml(description)}">
           <span class="reward-icon" aria-hidden="true">${icon}</span>
           <span class="tag">${tag}</span>
+          ${slots !== null ? `<span class="slot-note">${slotLabel(slots)}</span>` : ''}
           <b>${escapeHtml(option.label)}</b>
+          <div class="tag-row">${tagChips(itemTags(def), false)}</div>
           <span>${glossaryText(description)}</span>
+          <span class="card-select">${selected ? 'SELECTED' : 'SELECT'}</span>
         </button>`;
       }).join('')}
+    </div>
+    <div class="choice-confirm" role="status" aria-live="polite">
+      <button class="btn primary" data-action="confirm-reward" ${selectedId ? '' : 'disabled'}>${selectedId ? 'CONFIRM REWARD' : 'SELECT A REWARD'}</button>
+      <p class="hint">Tap a reward to inspect it. Nothing is claimed until you confirm.</p>
     </div>
   </div>`;
 }
@@ -3026,6 +3508,7 @@ function offerInfo(offer: Offer): { name: string; description: string; slots: nu
 function renderCurse(phase: Extract<PhaseView, { kind: 'curse' }>): string {
   const bossTotal = phase.total ?? 3;
   const bossStep = bossTotal - (phase.remaining ?? 1) + 1;
+  const selectedId = pendingChoice?.kind === 'curse' ? pendingChoice.id : undefined;
   return `
   <div class="phase-card curse-draft">
     <p class="panel-kicker">${phase.boss
@@ -3039,22 +3522,28 @@ function renderCurse(phase: Extract<PhaseView, { kind: 'curse' }>): string {
       ${phase.options.map((id) => {
         const def = CURSE_BY_ID.get(id);
         if (!def) return '';
+        const selected = selectedId === def.id;
         return `
-        <button class="curse-card" data-action="curse" data-id="${escapeHtml(def.id)}" style="--enemy:${bossColor(def.art)}">
+        <button class="curse-card ${selected ? 'selected' : ''}" data-action="select-curse" data-id="${escapeHtml(def.id)}" aria-pressed="${selected}" data-tip="${escapeHtml(`${def.name}\n${def.rules.join('\n')}`)}" style="--enemy:${bossColor(def.art)}">
           <div class="curse-card-art" aria-hidden="true">${enemyArt(def.art)}</div>
           <span class="tag">${def.tags.join(' · ').toUpperCase()}</span>
           <b>${escapeHtml(def.name)}</b>
           <p>${escapeHtml(def.description)}</p>
           <ul>${def.rules.map((rule) => `<li>${escapeHtml(rule)}</li>`).join('')}</ul>
-          <span class="curse-take">TAKE THIS CURSE →</span>
+          <span class="curse-take">${selected ? 'SELECTED' : 'SELECT'}</span>
         </button>`;
       }).join('')}
+    </div>
+    <div class="choice-confirm" role="status" aria-live="polite">
+      <button class="btn primary" data-action="confirm-curse" ${selectedId ? '' : 'disabled'}>${selectedId ? 'CONFIRM CURSE' : 'SELECT A CURSE'}</button>
+      <p class="hint">Tap a curse to inspect it. Nothing is taken until you confirm.</p>
     </div>
   </div>`;
 }
 
 function renderCurseRemovalModal(view: RunView): string {
   if (view.pendingCurseRemoval <= 0) return '';
+  const selectedId = pendingChoice?.kind === 'remove-curse' ? pendingChoice.id : undefined;
   return `
   <div class="modal">
     <div class="modal-card">
@@ -3062,11 +3551,18 @@ function renderCurseRemovalModal(view: RunView): string {
       <h2>Choose one burden</h2>
       <p class="muted">One stack is removed. Permanent stat losses already suffered are not refunded.</p>
       <div class="curse-removal-list">
-        ${view.curses.map((curse) => `
-          <button class="btn" data-action="remove-curse" data-id="${escapeHtml(curse.id)}">
+        ${view.curses.map((curse) => {
+          const selected = selectedId === curse.id;
+          return `
+          <button class="btn ${selected ? 'selected' : ''}" data-action="select-remove-curse" data-id="${escapeHtml(curse.id)}" aria-pressed="${selected}">
             ${escapeHtml(curse.name)}${curse.stacks > 1 ? ` ×${curse.stacks}` : ''}
           </button>
-        `).join('')}
+        `;
+        }).join('')}
+      </div>
+      <div class="choice-confirm" role="status" aria-live="polite">
+        <button class="btn primary" data-action="confirm-remove-curse" ${selectedId ? '' : 'disabled'}>${selectedId ? 'CONFIRM REMOVAL' : 'SELECT A CURSE'}</button>
+        <p class="hint">Tap a curse to mark it. Nothing is removed until you confirm.</p>
       </div>
     </div>
   </div>`;
@@ -3111,23 +3607,23 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
       const applies = offer.kind === 'item' || offer.kind === 'eat';
       const finalPrice = Math.max(1, offer.price - (applies ? coupon : 0));
       const cannotAfford = view.gold < finalPrice;
-      const def = offer.kind === 'item'
-        ? ITEM_BY_ID.get(offer.def)
-        : offer.kind === 'eat' ? FOOD_BY_ID.get(offer.def) : undefined;
+      const itemDef = offer.kind === 'item' ? ITEM_BY_ID.get(offer.def) : undefined;
+      const def = itemDef
+        ?? (offer.kind === 'eat' ? FOOD_BY_ID.get(offer.def) : undefined);
       const rarity = def?.shopRarity ?? def?.rarity;
       const isRare = rarity === 'rare';
-      const isRelic = offer.kind === 'item' && isRare;
+      const isRareItem = offer.kind === 'item' && isRare;
       const isUncommon = !isRare && rarity === 'uncommon';
       const kindLabel = KIND_LABELS[offer.kind];
-      const rareLabel = offer.kind === 'item' ? 'RELIC' : `RARE ${kindLabel}`;
-      const baseTag = isRelic
-        ? 'RELIC'
+      const rareLabel = offer.kind === 'item' ? 'RARE ITEM' : `RARE ${kindLabel}`;
+      const baseTag = isRareItem
+        ? 'RARE ITEM'
         : isRare
           ? rareLabel
           : isUncommon ? 'UNCOMMON' : kindLabel;
       const tag = offer.sale
-        ? isRelic
-          ? 'RELIC · 50% OFF'
+        ? isRareItem
+          ? 'RARE ITEM · 50% OFF'
           : isRare
             ? `${rareLabel} · 50% OFF`
             : isUncommon ? 'UNCOMMON · 50% OFF' : 'SALE · 50% OFF'
@@ -3140,28 +3636,33 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
         : applies && coupon > 0
           ? `<s>${offer.price} G</s> ${finalPrice} G`
           : `${offer.price} G`;
+      const armed = armedAction?.action === 'buy' && armedAction.id === offer.id;
+      const buyAction = armed ? 'confirm-buy' : 'arm-buy';
       return `
-      <article class="offer-card ${isFood ? 'food' : offer.kind} ${cannotAfford ? 'unavailable' : ''} ${offer.sale ? 'sale' : ''} ${isRare ? 'rare' : isUncommon ? 'uncommon' : ''}">
+      <article class="offer-card ${isFood ? 'food' : offer.kind} ${cannotAfford ? 'unavailable' : ''} ${offer.sale ? 'sale' : ''} ${isRare ? 'rare' : isUncommon ? 'uncommon' : ''} ${armed ? 'armed' : ''}">
         <div class="offer-top">
           <span class="item-emoji" aria-hidden="true">${info.icon}</span>
           <span class="tag"${tagTip}>${tag}</span>
         </div>
         <h3>${escapeHtml(info.name)}</h3>
+        <span class="slot-note">${slotLabel(info.slots)}</span>
+        <div class="tag-row">${tagChips(itemTags(itemDef))}</div>
         <p>${glossaryText(description)}</p>
-        <button class="btn primary" data-action="buy" data-id="${escapeHtml(offer.id)}" ${cannotAfford ? 'disabled' : ''}>${price}</button>
+        <button class="btn primary" data-action="${buyAction}" data-id="${escapeHtml(offer.id)}" ${cannotAfford ? 'disabled' : ''}>${armed ? 'CONFIRM BUY' : 'BUY'} · ${price}</button>
       </article>`;
     }).join('')
     : `<p class="empty-note">The shelves are bare. Reroll or leave.</p>`;
 
+  const rerollArmed = armedAction?.action === 'reroll';
   return `
   <div class="phase-card shop">
     ${coupon > 0 ? `<p class="hint coupon-hint">Coupon Book: the first item or food purchase costs ${coupon} less.</p>` : ''}
     <div class="offer-grid">${offers}</div>
     <div class="shop-actions">
-      <button class="btn" data-action="reroll">REROLL · ${phase.rerollCost} G</button>
+      <button class="btn ${rerollArmed ? 'armed' : ''}" data-action="${rerollArmed ? 'confirm-reroll' : 'arm-reroll'}">${rerollArmed ? 'CONFIRM REROLL' : 'REROLL'} · ${phase.rerollCost} G</button>
       <button class="btn ghost" data-action="continue">LEAVE →</button>
     </div>
-    <p class="hint">Rearrange gear in the loadout on the left. Shops carry items, foods, and one wildcard slot. Curses can remove slots. Food is eaten on purchase. One item is always half price, and each reroll costs double the last. Relics are very rare items.</p>
+    <p class="hint">Rearrange items in the loadout on the left. Shops carry items, foods, and one wildcard offer. Curses can remove item slots. Food is eaten on purchase. One item is always half price, and each reroll costs double the last. Rare items are very rare finds; each uses one item slot.</p>
   </div>`;
 }
 
@@ -3225,8 +3726,10 @@ function renderHappening(phase: Extract<PhaseView, { kind: 'happening' }>): stri
     ${resolved
       ? `<div class="resolution ${resolved.success ? 'good' : 'bad'}">${escapeHtml(resolved.text)}</div><button class="btn primary big" data-action="continue">CONTINUE →</button>`
       : `<div class="option-list">
-        ${phase.options.map((option) => `
-          <article class="happening-option ${option.locked ? 'locked' : ''}">
+        ${phase.options.map((option) => {
+          const selected = pendingChoice?.kind === 'happening' && pendingChoice.id === option.id;
+          return `
+          <article class="happening-option ${option.locked ? 'locked' : ''} ${selected ? 'selected' : ''}">
             <div>
               <b>${escapeHtml(option.label)}</b>
               <p>${glossaryText(option.description)}</p>
@@ -3243,8 +3746,9 @@ function renderHappening(phase: Extract<PhaseView, { kind: 'happening' }>): stri
             <div class="odds">
               ${option.outcomes.map((outcome) => `<span>${outcome.chancePct}% · ${escapeHtml(outcome.text)}</span>`).join('')}
             </div>
-            <button class="btn" data-action="choose" data-id="${escapeHtml(option.id)}" ${option.locked ? 'disabled' : ''}>CHOOSE</button>
-          </article>`).join('')}
+            <button class="btn ${selected ? 'primary' : ''}" data-action="${selected ? 'confirm-happening' : 'select-happening'}" data-id="${escapeHtml(option.id)}" aria-pressed="${selected}" ${option.locked ? 'disabled' : ''}>${selected ? 'CONFIRM' : 'CHOOSE'}</button>
+          </article>`;
+        }).join('')}
       </div>`}
   </div>`;
 }
@@ -3293,7 +3797,7 @@ function renderOver(phase: Extract<PhaseView, { kind: 'over' }>): string {
     <p class="kicker">RUN OVER</p>
     <h1>${victory ? 'THE LIST IS YOURS' : 'THE LIST CLOSES'}</h1>
     <p class="tagline">${victory
-      ? 'Fifty floors. Every curse. The words you gave up are the ones that carried you.'
+      ? 'Forty floors. Every curse. The words you gave up are the ones that carried you.'
       : 'The word that ended you is written below. It will not be so kind next time.'}</p>
     ${ascNote ? `<p class="ascension-result">${ascNote}</p>` : ''}
     ${reveal}
@@ -3341,6 +3845,7 @@ function renderPurgeModal(view: RunView): string {
   const letters = 'abcdefghijklmnopqrstuvwxyz'.split('');
   const setup = view.phase.kind === 'purge';
   const purgeLabel = `${view.pendingPurge} purge${view.pendingPurge === 1 ? '' : 's'} pending`;
+  const selectedLetter = pendingChoice?.kind === 'purge' ? pendingChoice.letter : undefined;
   return `
   <div class="modal">
     <div class="modal-card">
@@ -3348,9 +3853,12 @@ function renderPurgeModal(view: RunView): string {
       <h2>${setup ? `Erase ${view.pendingPurge} letter${view.pendingPurge === 1 ? '' : 's'}` : 'Erase a letter'}</h2>
       <p class="muted">${setup ? 'No word has been drawn yet, so every letter is fair game. ' : ''}The letter will never appear in a future answer, and you can never manually guess it again. Autoguesses can still use it. Choose carefully. If a purge would leave no legal words, a random purged letter is restored.</p>
       <div class="purge-grid">
-        ${letters.map((letter) => `<button class="purge-key ${view.purged.includes(letter) ? 'used' : ''}" data-action="purge" data-letter="${letter}" ${view.purged.includes(letter) ? 'disabled' : ''}>${letter.toUpperCase()}</button>`).join('')}
+        ${letters.map((letter) => `<button class="purge-key ${view.purged.includes(letter) ? 'used' : ''} ${selectedLetter === letter ? 'selected' : ''}" data-action="select-purge" data-letter="${letter}" aria-pressed="${selectedLetter === letter}" ${view.purged.includes(letter) ? 'disabled' : ''}>${letter.toUpperCase()}</button>`).join('')}
       </div>
-      <p class="hint">${purgeLabel}. ${setup ? 'The run begins after the last purge.' : 'The clock is paused while this is open.'}</p>
+      <div class="choice-confirm" role="status" aria-live="polite">
+        <button class="btn primary" data-action="confirm-purge" ${selectedLetter ? '' : 'disabled'}>${selectedLetter ? 'CONFIRM PURGE' : 'SELECT A LETTER'}</button>
+        <p class="hint">${purgeLabel}. Tap a letter to mark it. Nothing is purged until you confirm. ${setup ? 'The run begins after the last purge.' : 'The clock is paused while this is open.'}</p>
+      </div>
     </div>
   </div>`;
 }
@@ -3404,6 +3912,8 @@ function phasePanel(view: RunView): string {
       return renderCurse(phase);
     case 'shop':
       return renderShop(view, phase);
+    case 'mysteriousRoom':
+      return renderMysteriousRoom();
     case 'shopChoice':
       return renderShopChoice();
     case 'happening':
@@ -3423,7 +3933,7 @@ function renderPauseOverlay(view: RunView): string {
     : 'Take a breath. The list can wait.';
   return `
   <div class="pause-overlay">
-    <div class="pause-card">
+    <div class="pause-card" data-scroll-key="pause">
       <span class="pause-icon" aria-hidden="true">⏸</span>
       <p class="panel-kicker">PAUSED</p>
       <h2>${title}</h2>
@@ -3468,11 +3978,15 @@ function renderRun(view: RunView): string {
               ? `${renderShopRail(view)}${renderItemsPanel(view)}`
               : phase.kind === 'curse'
                 ? `${renderCurseRail(view)}${renderItemsPanel(view)}`
-                : `${renderBattleRail(view, bossId)}${renderItemsPanel(view)}`}
+                : phase.kind === 'mysteriousRoom'
+                  ? `${renderMysteriousRail(view)}${renderItemsPanel(view)}`
+                  : `${renderBattleRail(view, bossId)}${renderItemsPanel(view)}`}
           </div>
           <section class="center-column">${phasePanel(view)}</section>
           ${renderSidePanel(view)}
         </main>`}
+    ${!over ? renderMobileSpells(view) : ''}
+    ${!over ? renderMobileItemDrawers(view) : ''}
     ${damageTutorialOpen && !over ? renderDamageTutorial() : ''}
     ${renderPurgeModal(view)}
     ${renderCurseRemovalModal(view)}

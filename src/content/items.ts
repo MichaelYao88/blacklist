@@ -1,8 +1,122 @@
-import { defineItem, type Effect, type ItemCtx, type ItemDef } from '../core/types';
+import { defineItem as defineItemBase, type Effect, type ItemCtx, type ItemDef, type ItemTag } from '../core/types';
 import { rngInt, rngPick } from '../core/rng';
 import { isAllAbsent, sharedLetters, truthCounts } from '../core/score';
 import { FOODS } from './foods';
 import { SPELLS } from './spells';
+
+const ITEM_TAG_MAP: Record<string, ItemTag[]> = {
+  'early-bird': ['gold', 'time'],
+  'hat-trick': ['gold', 'guess'],
+  'brace': ['armor', 'guess'],
+  'bloom': ['guess'],
+  'patch-kit': ['guess'],
+  'four-leaf-clover': ['spell', 'food'],
+  'head-start': ['time', 'armor'],
+  'scattershot': ['guess', 'spell'],
+  'grey-market': ['gold', 'vision', 'guess'],
+  'encore': ['guess'],
+  'compound-interest': ['gold'],
+  'midas-touch': ['gold'],
+  'photosynthesis': ['guess'],
+  'adrenaline': ['armor'],
+  'placebo': ['guess'],
+  'siphon': ['spell'],
+  'gourmand': ['spell', 'food'],
+  'spellbook': ['spell', 'gold'],
+  'trophy-hunter': ['curse'],
+  'necronomicon': ['spell', 'curse'],
+  'momentum': ['guess', 'armor'],
+  'ballast': ['guess'],
+  'h-and-p': ['guess'],
+  'zed-plate': ['guess', 'armor'],
+  'gilded': ['guess', 'gold'],
+  'x-marks': ['guess', 'gold', 'armor'],
+  'black-market-ledger': ['spell', 'gold'],
+  'fast-learner': ['time', 'guess'],
+  'untouchable': ['spell', 'armor'],
+  'spellhoarder': ['spell'],
+  'loose-tongue': ['guess'],
+  'mimic-mouth': ['guess', 'spell'],
+  'vowel-tithe': ['spell', 'vision'],
+  'second-hand': ['spell'],
+  'engine': ['spell'],
+  'combustion-engine': ['spell'],
+  'genie-summon': ['guess', 'spell'],
+  'cracked-orb': ['spell'],
+  'sticky-fingers': ['spell', 'gold'],
+  'nest-egg': ['gold'],
+  'waste-basket': ['gold', 'spell'],
+  'field-kit': ['vision'],
+  'doggy-bag': ['vision', 'food'],
+  'pen-club': ['guess', 'gold'],
+  'trailblazer': ['guess', 'spell', 'vision'],
+  'bulwark': ['armor', 'spell'],
+  'ricochet': ['armor', 'guess'],
+  'guardian-angel': ['spell', 'armor'],
+  'scrap-collector': ['armor', 'gold'],
+  'boss-aegis': ['curse', 'armor'],
+  'spellplate': ['spell', 'armor'],
+  'mending-plate': ['armor'],
+  'harvest-charm': ['guess'],
+  'tithe-box': ['gold', 'spell'],
+  'growth-chart': ['time'],
+  'stopped-clock': ['time'],
+  'time-lattice': ['time', 'spell'],
+  'frozen-durian': ['food', 'time', 'guess'],
+  'omen-loom': ['spell', 'vision'],
+  'ward-engine': ['spell', 'armor'],
+  'second-skin': ['armor'],
+  'double-blind': ['guess', 'vision'],
+  'green1': ['guess', 'vision'],
+  'coupon-book': ['gold'],
+  'contrapuntal': ['spell'],
+  'trophy-room': ['curse'],
+  'loyalty-card': ['gold'],
+  'bookend': ['guess', 'gold'],
+  'last-cast': ['spell'],
+  'empty-hand': ['spell'],
+  'empty-armor': ['spell', 'armor'],
+  'empty-orb': ['spell', 'vision'],
+  'empty-phone': ['spell'],
+  'solo-note': ['guess', 'spell'],
+  'off-road': ['guess', 'spell'],
+  'detour': ['guess'],
+  'dark-echo': ['guess'],
+  'black-eye': ['guess', 'armor'],
+  'turtle-shell': ['armor'],
+  'palindrome': ['guess'],
+  'crisis-15': ['guess'],
+  'shellshock': ['armor', 'guess'],
+  'echo-chamber': ['spell', 'guess'],
+  'panic-button': ['spell'],
+  'wild-magic': ['spell', 'guess'],
+  'empty-mouth': ['spell', 'guess'],
+  'clean-slate': ['guess', 'armor'],
+  'growth-spurt': ['guess'],
+  'tally-lens': ['vision'],
+  'meal-timer': ['food', 'time'],
+  'plate-timer': ['armor', 'time'],
+  'oracle-skull': ['spell', 'vision'],
+  'thorn-crown': ['armor', 'spell'],
+  'phoenix-egg': ['spell'],
+  'heartstone': ['spell'],
+  'speed-dial': ['spell'],
+  'chrono-anchor': ['time'],
+  'vowel-sigil': ['spell', 'vision'],
+  'counterweight': ['armor', 'gold'],
+  'acquired-taste': ['food'],
+  'potluck': ['food'],
+  'evil-parrot': ['guess', 'gold'],
+  'piggy-bank': ['gold'],
+  'red-amulet': ['lore'],
+  'silver-key': ['lore'],
+  'nonsensical-map': ['lore'],
+};
+
+const defineItem = (def: ItemDef): ItemDef => defineItemBase({
+  ...def,
+  tags: ITEM_TAG_MAP[def.id] ?? [],
+});
 
 const SPELL_BITS: Record<string, number> = {
   'time-freeze': 1,
@@ -176,7 +290,7 @@ export function necronomiconPool(tier: number): Effect[][] {
   if (tier >= 3) {
     options.push(
       [necroProc('Extra Pocket — +1 item slot.'), { type: 'slots', delta: 1 }],
-      [necroProc('Relic — a rare treasure.'), { type: 'addRandomRelic' }],
+      [necroProc('Rare item — a rare treasure.'), { type: 'addRandomRelic' }],
       [necroProc('Unburden — a curse lifts.'), { type: 'removeRandomCurse', chancePct: 100 }],
       [necroProc('Bloom of Flesh — max HP doubles.'), { type: 'maxHpMultiply', factor: 2 }],
     );
@@ -184,7 +298,7 @@ export function necronomiconPool(tier: number): Effect[][] {
 
   if (tier >= 4) {
     options.push([
-      necroProc('Cursed Bargain — a relic, and a curse.'),
+      necroProc('Cursed Bargain — a rare item and a curse.'),
       { type: 'addRandomRelic' },
       { type: 'addRandomCurse' },
     ]);
@@ -885,7 +999,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'bulwark',
     name: 'Bulwark',
-    description: 'Every 10 damage blocked by armor: autocast a free random spell.',
+    description: 'Every 11 damage blocked by armor: autocast a free random spell.',
     price: 8,
     kind: 'gear',
     initial: { blocked: 0 },
@@ -893,9 +1007,9 @@ export const ITEMS: ItemDef[] = [
       onDamageTaken: (ctx, p) => {
         if (p.armorUsed <= 0) return [];
         const total = ctx.self.data.blocked + p.armorUsed;
-        const spells = Math.floor(total / 10);
+        const spells = Math.floor(total / 11);
         return [
-          { type: 'setItemData', stat: 'blocked', value: total % 10 },
+          { type: 'setItemData', stat: 'blocked', value: total % 11 },
           ...Array.from({ length: spells }, () => ({ type: 'castSpell' as const, spell: 'random' as const })),
         ];
       },
@@ -1198,7 +1312,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'contrapuntal',
     name: 'Contrapuntal',
-    description: 'Cast each of the six spell types once. On the last, become a random relic.',
+    description: 'Cast each of the six spell types once. On the last, become a random rare item.',
     price: 7,
     kind: 'gear',
     initial: { _mask: 0, types: 0 },
@@ -1616,9 +1730,9 @@ export const ITEMS: ItemDef[] = [
     },
   }),
 
-  // ── boss relics ─────────────────────────────────────────────────────────
-  // Rare passives. They take no slots, never appear in shops, and are only
-  // offered as boss prizes. Several of them feed the spell engine.
+  // ── rare items ──────────────────────────────────────────────────────────
+  // Rare finds. They use one item slot, can appear in shops and rewards, and
+  // are not passive-only. Several of them feed the spell engine.
 
   defineItem({
     id: 'oracle-skull',
