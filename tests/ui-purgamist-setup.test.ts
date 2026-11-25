@@ -20,7 +20,7 @@ describe('Purgamist setup', () => {
     expect(root.querySelector('.modal')).not.toBeNull();
     expect(document.querySelector('.countdown-overlay')).toBeNull();
     expect(root.textContent).toContain('4 purges pending');
-    expect(root.querySelector('.rail-level-value')?.textContent).toBe('0/50');
+    expect(root.querySelector('.rail-level-value')?.textContent).toBe('0/40');
   });
 
   it('starts the countdown after all four letters are purged', () => {

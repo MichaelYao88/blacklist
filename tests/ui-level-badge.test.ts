@@ -28,7 +28,7 @@ describe('persistent level display', () => {
     const badge = levelBadge();
     expect(badge).not.toBeNull();
     expect(badge?.querySelector('.rail-level-kicker')?.textContent).toBe('FLOOR');
-    expect(badge?.querySelector('.rail-level-value')?.textContent).toBe('1/50');
+    expect(badge?.querySelector('.rail-level-value')?.textContent).toBe('1/40');
   });
 
   it('shows the current floor with one past and three future floors', () => {
@@ -64,28 +64,28 @@ describe('persistent level display', () => {
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter' }));
 
     expect(root.querySelector('.summary')).not.toBeNull();
-    expect(levelBadge()?.querySelector('.rail-level-value')?.textContent).toBe('1/50');
+    expect(levelBadge()?.querySelector('.rail-level-value')?.textContent).toBe('1/40');
 
     root.querySelector<HTMLElement>('[data-action="continue"]')!.click();
     expect(root.querySelector('.reward')).not.toBeNull();
-    expect(levelBadge()?.querySelector('.rail-level-value')?.textContent).toBe('1/50');
+    expect(levelBadge()?.querySelector('.rail-level-value')?.textContent).toBe('1/40');
 
     root.querySelector<HTMLElement>('[data-action="select-reward"]')!.click();
     root.querySelector<HTMLElement>('[data-action="confirm-reward"]')!.click();
 
     if (root.querySelector('.happening')) {
-      expect(levelBadge()?.querySelector('.rail-level-value')?.textContent).toBe('1/50');
+      expect(levelBadge()?.querySelector('.rail-level-value')?.textContent).toBe('1/40');
       root.querySelector<HTMLElement>('.happening [data-action="select-happening"]:not([disabled])')!.click();
       root.querySelector<HTMLElement>('.happening [data-action="confirm-happening"]:not([disabled])')!.click();
       root.querySelector<HTMLElement>('[data-action="continue"]')!.click();
     }
 
     expect(root.querySelector('.shop-choice')).not.toBeNull();
-    expect(levelBadge()?.querySelector('.rail-level-value')?.textContent).toBe('2/50');
+    expect(levelBadge()?.querySelector('.rail-level-value')?.textContent).toBe('2/40');
 
     root.querySelector<HTMLElement>('[data-action="choose"][data-id="shop"]')!.click();
     expect(root.querySelector('.shop')).not.toBeNull();
-    expect(levelBadge()?.querySelector('.rail-level-value')?.textContent).toBe('2/50');
+    expect(levelBadge()?.querySelector('.rail-level-value')?.textContent).toBe('2/40');
     expect(root.querySelector('.battle-rail')).toBeNull();
     expect(root.querySelector('.shop-rail')).not.toBeNull();
     expect(root.querySelector('.side-panel .floorplan-panel .rail-level')).not.toBeNull();

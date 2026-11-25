@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it } from 'vitest';
-import { dismissCharacterTip, readMeta, recordFood, recordPurchase, recordPurge, recordRun, recordStart, unlockCharacter } from '../src/ui/store';
+import { dismissCharacterTip, readMeta, recordFood, recordMysteriousBrought, recordPurchase, recordPurge, recordRun, recordStart, unlockCharacter } from '../src/ui/store';
 
 const stats = (overrides: Partial<Parameters<typeof recordRun>[0]['stats']> = {}) => ({
   rounds: 10,
@@ -54,6 +54,31 @@ describe('run history store', () => {
     expect(recordPurge()).toBe(1);
     expect(recordPurge()).toBe(2);
     expect(readMeta().purgedCount).toBe(2);
+  });
+
+  it('starts Mysterious Room counters at zero and persists them across runs', () => {
+    expect(readMeta().mysteriousCounts).toEqual({
+      'red-amulet': 0,
+      'silver-key': 0,
+      'nonsensical-map': 0,
+    });
+    expect(recordMysteriousBrought('red-amulet')).toBe(1);
+    expect(recordMysteriousBrought('red-amulet')).toBe(2);
+    expect(recordMysteriousBrought('silver-key')).toBe(1);
+    expect(readMeta().mysteriousCounts).toEqual({
+      'red-amulet': 2,
+      'silver-key': 1,
+      'nonsensical-map': 0,
+    });
+  });
+
+  it('defaults missing Mysterious Room counters to zero in old meta', () => {
+    localStorage.setItem('blacklist.meta.v1', JSON.stringify({ runs: 2 }));
+    expect(readMeta().mysteriousCounts).toEqual({
+      'red-amulet': 0,
+      'silver-key': 0,
+      'nonsensical-map': 0,
+    });
   });
 
   it('remembers dismissed character tips', () => {
