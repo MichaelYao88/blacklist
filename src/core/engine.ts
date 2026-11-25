@@ -46,6 +46,7 @@ import { itemHasTag, itemTags } from './itemTags';
 const VERSION = 6;
 const WORD_LENGTH = 5;
 const MAX_LEVEL = 50;
+export const HAPPENING_CHANCE = 42;
 const LEVELS_PER_AREA = 10;
 const STARTING_ITEM_SLOTS = 4;
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyz'.split('');
@@ -4365,7 +4366,7 @@ export function createCore(content: Content): Core {
     const nodes: RunNode[] = [];
     const addRound = (level: number): void => {
       nodes.push({ kind: 'round', level });
-      if (rngChance(state, 55)) nodes.push({ kind: 'happening', level });
+      if (rngChance(state, HAPPENING_CHANCE)) nodes.push({ kind: 'happening', level });
     };
 
     // Every fight, shop and curse is its own floor. Events are inserted after
