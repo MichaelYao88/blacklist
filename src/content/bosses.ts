@@ -17,7 +17,7 @@ export const BOSSES: BossDef[] = [
       'Base damage is 5 higher than a normal encounter.',
       'No shop or curse between words.',
       'Armor refills only at the start of the encounter.',
-      'Beat both words to gain an item slot, heal to full, and choose a rare reward.',
+      'Beat both words to gain an item slot and a full heal, then choose one reward.',
     ],
   }),
   defineBoss({

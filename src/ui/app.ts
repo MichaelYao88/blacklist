@@ -1895,7 +1895,7 @@ function renderCharacterUnlock(): string {
         <span><b>${def.maxHp}</b> HP</span>
         <span><b>${def.armor}</b> ARMOR</span>
       </div>
-      <p class="unlock-kit">${escapeHtml(kit || 'No starting gear')}</p>
+      <p class="unlock-kit">${escapeHtml(kit || 'No starting items')}</p>
       <button class="btn primary big" data-action="dismiss-unlock">ADD TO ROSTER</button>
     </div>
   </div>`;
@@ -2021,7 +2021,7 @@ function renderCharacterPicker(meta: ReturnType<typeof readMeta>): string {
           <span class="character-stats">${character.maxHp} HP · ${character.armor} ARMOR</span>
           ${locked
             ? `<span class="character-lock">${escapeHtml(character.unlockHint ?? 'Locked')}</span>`
-            : `<span class="character-kit">${escapeHtml(kit || 'No starting gear')}</span>`}
+            : `<span class="character-kit">${escapeHtml(kit || 'No starting items')}</span>`}
         </button>`;
       }).join('')}
     </div>
@@ -2133,7 +2133,7 @@ function renderHelp(): string {
     <div class="rules-grid">
       <article class="rule-card">
         <h3>The run</h3>
-        <p>Fifty floors. The loop cycles <b>fight → shop → fight → curse</b>; fights, shops and curses each count as a floor, while events happen between floors and do not. Floor 27 is the <b>Miniboss</b>: draft <b>1 curse</b>, then beat two words for a slot, a full heal, and a rare choice. Floors 47, 48 and 49 are the final curse drafts. Floor 50 is the <b>Floor Boss</b>: beat three words.</p>
+        <p>Fifty floors. The loop cycles <b>fight → shop → fight → curse</b>; fights, shops and curses each count as a floor, while events happen between floors and do not. Floor 27 is the <b>Miniboss</b>: draft <b>1 curse</b>, then beat two words to gain a slot and a full heal, then choose one reward. Floors 47, 48 and 49 are the final curse drafts. Floor 50 is the <b>Floor Boss</b>: beat three words.</p>
       </article>
       <article class="rule-card">
         <h3>Damage</h3>
@@ -2234,10 +2234,10 @@ function renderStats(): string {
       </section>
 
       <section class="stats-panel">
-        <p class="panel-kicker">MOST BOUGHT GEAR</p>
+        <p class="panel-kicker">MOST BOUGHT ITEMS</p>
         ${favorites.length
           ? `<ol class="favorite-list">${favorites.map(([id, count]) => `<li><span>${escapeHtml(ITEM_BY_ID.get(id)?.name ?? id)}</span><b>${count}</b></li>`).join('')}</ol>`
-          : `<p class="empty-note">No gear bought yet.</p>`}
+          : `<p class="empty-note">No items bought yet.</p>`}
       </section>
 
       <section class="stats-panel">
@@ -2834,7 +2834,7 @@ function renderItemsPanel(view: RunView): string {
           <div class="loadout-group-head"><span class="panel-kicker">BAG</span><span class="count">${bagged.length}</span></div>
           ${bagged.length
             ? bagged.map(row).join('')
-            : `<p class="empty-note">${shop ? 'Drag gear here to bag it.' : 'Nothing in the bag.'}</p>`}
+            : `<p class="empty-note">${shop ? 'Drag items here to bag them.' : 'Nothing in the bag.'}</p>`}
         </div>
       </div>
     </section>
@@ -2869,12 +2869,12 @@ function renderItem(view: RunView, item: ItemView): string {
   const rarity = !item.equipped && item.slots > 0
     ? 'BAG'
     : def?.rarity === 'rare'
-      ? 'RELIC'
+      ? 'RARE ITEM'
       : def?.rarity === 'uncommon'
         ? 'UNCOMMON'
         : def?.kind === 'consumable'
           ? 'USE'
-          : 'GEAR';
+          : 'ITEM';
   const rarityClass = def?.rarity === 'rare'
     ? 'rare'
     : def?.rarity === 'uncommon' ? 'uncommon' : '';
@@ -3017,10 +3017,10 @@ function renderSummary(view: RunView, phase: Extract<PhaseView, { kind: 'summary
     </div>
     <p class="muted">${phase.outcome === 'solved'
       ? miniboss
-        ? 'The Miniboss is down. You gain an item slot and a full heal. Choose your reward.'
+        ? 'The Miniboss is down. You gain an item slot and a full heal. Choose one reward.'
         : boss
           ? 'The Floor Boss is down. Continue to finish the run.'
-          : 'The round is clear. Choose a reward and keep moving.'
+          : 'The round is clear. Choose one reward and keep moving.'
       : phase.outcome === 'timeout'
         ? 'The clock took its cut, but the encounter still paid. No reward this time. The run continues if you do.'
         : 'The run is over. The save is gone.'}</p>
@@ -3177,23 +3177,23 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
       const applies = offer.kind === 'item' || offer.kind === 'eat';
       const finalPrice = Math.max(1, offer.price - (applies ? coupon : 0));
       const cannotAfford = view.gold < finalPrice;
-      const def = offer.kind === 'item'
-        ? ITEM_BY_ID.get(offer.def)
-        : offer.kind === 'eat' ? FOOD_BY_ID.get(offer.def) : undefined;
+      const itemDef = offer.kind === 'item' ? ITEM_BY_ID.get(offer.def) : undefined;
+      const def = itemDef
+        ?? (offer.kind === 'eat' ? FOOD_BY_ID.get(offer.def) : undefined);
       const rarity = def?.shopRarity ?? def?.rarity;
       const isRare = rarity === 'rare';
-      const isRelic = offer.kind === 'item' && isRare;
+      const isRareItem = offer.kind === 'item' && isRare;
       const isUncommon = !isRare && rarity === 'uncommon';
       const kindLabel = KIND_LABELS[offer.kind];
-      const rareLabel = offer.kind === 'item' ? 'RELIC' : `RARE ${kindLabel}`;
-      const baseTag = isRelic
-        ? 'RELIC'
+      const rareLabel = offer.kind === 'item' ? 'RARE ITEM' : `RARE ${kindLabel}`;
+      const baseTag = isRareItem
+        ? 'RARE ITEM'
         : isRare
           ? rareLabel
           : isUncommon ? 'UNCOMMON' : kindLabel;
       const tag = offer.sale
-        ? isRelic
-          ? 'RELIC · 50% OFF'
+        ? isRareItem
+          ? 'RARE ITEM · 50% OFF'
           : isRare
             ? `${rareLabel} · 50% OFF`
             : isUncommon ? 'UNCOMMON · 50% OFF' : 'SALE · 50% OFF'

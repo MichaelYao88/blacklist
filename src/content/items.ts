@@ -176,7 +176,7 @@ export function necronomiconPool(tier: number): Effect[][] {
   if (tier >= 3) {
     options.push(
       [necroProc('Extra Pocket — +1 item slot.'), { type: 'slots', delta: 1 }],
-      [necroProc('Relic — a rare treasure.'), { type: 'addRandomRelic' }],
+      [necroProc('Rare item — a rare treasure.'), { type: 'addRandomRelic' }],
       [necroProc('Unburden — a curse lifts.'), { type: 'removeRandomCurse', chancePct: 100 }],
       [necroProc('Bloom of Flesh — max HP doubles.'), { type: 'maxHpMultiply', factor: 2 }],
     );
@@ -184,7 +184,7 @@ export function necronomiconPool(tier: number): Effect[][] {
 
   if (tier >= 4) {
     options.push([
-      necroProc('Cursed Bargain — a relic, and a curse.'),
+      necroProc('Cursed Bargain — a rare item and a curse.'),
       { type: 'addRandomRelic' },
       { type: 'addRandomCurse' },
     ]);
@@ -1198,7 +1198,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'contrapuntal',
     name: 'Contrapuntal',
-    description: 'Cast each of the six spell types once. On the last, become a random relic.',
+    description: 'Cast each of the six spell types once. On the last, become a random rare item.',
     price: 7,
     kind: 'gear',
     initial: { _mask: 0, types: 0 },
@@ -1616,9 +1616,9 @@ export const ITEMS: ItemDef[] = [
     },
   }),
 
-  // ── boss relics ─────────────────────────────────────────────────────────
-  // Rare passives. They take no slots, never appear in shops, and are only
-  // offered as boss prizes. Several of them feed the spell engine.
+  // ── rare items ──────────────────────────────────────────────────────────
+  // Rare finds. They use one item slot, can appear in shops and rewards, and
+  // are not passive-only. Several of them feed the spell engine.
 
   defineItem({
     id: 'oracle-skull',
