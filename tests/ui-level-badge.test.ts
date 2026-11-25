@@ -70,11 +70,13 @@ describe('persistent level display', () => {
     expect(root.querySelector('.reward')).not.toBeNull();
     expect(levelBadge()?.querySelector('.rail-level-value')?.textContent).toBe('1/50');
 
-    root.querySelector<HTMLElement>('[data-action="reward"]')!.click();
+    root.querySelector<HTMLElement>('[data-action="select-reward"]')!.click();
+    root.querySelector<HTMLElement>('[data-action="confirm-reward"]')!.click();
 
     if (root.querySelector('.happening')) {
       expect(levelBadge()?.querySelector('.rail-level-value')?.textContent).toBe('1/50');
-      root.querySelector<HTMLElement>('.happening [data-action="choose"]:not([disabled])')!.click();
+      root.querySelector<HTMLElement>('.happening [data-action="select-happening"]:not([disabled])')!.click();
+      root.querySelector<HTMLElement>('.happening [data-action="confirm-happening"]:not([disabled])')!.click();
       root.querySelector<HTMLElement>('[data-action="continue"]')!.click();
     }
 

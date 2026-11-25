@@ -5079,3 +5079,129 @@ button {
     width: 100%;
   }
 }
+
+/* ── item tags, slot labels, confirm-before-commit ──────────────────────── */
+
+.slot-note {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 5px;
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  color: var(--faint);
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.tag-row:empty {
+  display: none;
+}
+
+.item-tag {
+  height: 17px;
+  padding: 0 5px;
+  font-size: 0.52rem;
+  color: var(--cyan);
+  border-color: rgba(88, 180, 198, 0.4);
+  cursor: help;
+}
+
+.loadout-row {
+  flex-wrap: wrap;
+}
+
+.loadout-tags {
+  display: flex;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.loadout-tags .tag {
+  height: 14px;
+  padding: 0 4px;
+  font-size: 0.46rem;
+  letter-spacing: 0.05em;
+}
+
+.loadout-row .slot-note {
+  height: 15px;
+  font-size: 0.48rem;
+}
+
+.reward-card .card-select {
+  margin-top: auto;
+  color: var(--gold);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.reward-card.selected,
+.curse-card.selected,
+.offer-card.armed,
+.happening-option.selected {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px rgba(231, 184, 90, 0.45), 0 0 34px -14px rgba(231, 184, 90, 0.7);
+}
+
+.purge-key.selected {
+  border-color: var(--gold);
+  color: var(--gold);
+  box-shadow: 0 0 0 2px rgba(231, 184, 90, 0.45);
+}
+
+.btn.selected,
+.btn.armed {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.choice-confirm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+
+.choice-confirm .btn {
+  min-width: min(100%, 260px);
+  justify-content: center;
+}
+
+.choice-confirm .hint {
+  margin: 0;
+}
+
+.choice-confirm .btn:disabled {
+  opacity: 0.55;
+}
+
+@media (max-width: 620px) {
+  .tag-row,
+  .loadout-tags {
+    gap: 3px;
+  }
+
+  .choice-confirm {
+    position: sticky;
+    bottom: 8px;
+    background: color-mix(in srgb, var(--bg, #0d0b12) 90%, transparent);
+    border-radius: 8px;
+    padding: 12px 8px;
+  }
+}

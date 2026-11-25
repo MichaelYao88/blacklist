@@ -1206,6 +1206,7 @@ function startNewRun(preferredCharacter?: string): void {
     ascension: selectedAscension,
   });
   screen = 'run';
+  resetChoiceState();
   input = '';
   notice = null;
   paused = false;
@@ -1266,6 +1267,7 @@ function resumeRun(): void {
     sfx.play('win');
   }
   screen = 'run';
+  resetChoiceState();
   input = '';
   notice = null;
   paused = false;
@@ -1358,11 +1360,33 @@ function noteKeyboardFallback(event: KeyboardEvent, letter: string | null): void
   render();
 }
 
-document.addEventListener('pointerdown', () => {
+function cancelLongPress(): void {
+  if (longPressTimer) {
+    window.clearTimeout(longPressTimer);
+    longPressTimer = undefined;
+  }
+  longPressTarget = null;
+}
+
+document.addEventListener('pointerdown', (event) => {
   pointerHeld += 1;
+  if (event.pointerType !== 'touch') return;
+  const target = (event.target as Element | null)?.closest<HTMLElement>('[data-tip]');
+  if (!target) return;
+  cancelLongPress();
+  longPressTarget = target;
+  longPressStart = { x: event.clientX, y: event.clientY };
+  longPressTimer = window.setTimeout(() => {
+    longPressTimer = undefined;
+    if (!longPressTarget) return;
+    showTip(longPressTarget);
+    longPressClickGuardUntil = performance.now() + 700;
+    longPressTarget = null;
+  }, 450);
 }, true);
 
 function releasePointer(): void {
+  cancelLongPress();
   if (pointerHeld > 0) pointerHeld -= 1;
   if (pointerHeld === 0 && renderQueued) {
     renderQueued = false;
@@ -1381,12 +1405,27 @@ window.addEventListener('blur', () => {
 });
 
 app.addEventListener('click', (event) => {
+  if (performance.now() < longPressClickGuardUntil) {
+    longPressClickGuardUntil = 0;
+    event.preventDefault();
+    event.stopPropagation();
+    return;
+  }
   sfx.unlock();
   music.unlock();
   const target = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-action]');
-  if (!target) return;
+  if (!target) {
+    if (armedAction) {
+      clearArmedAction();
+      render();
+    }
+    return;
+  }
   event.preventDefault();
   const action = target.dataset.action;
+  if (armedAction && !action?.startsWith('confirm-')) {
+    clearArmedAction();
+  }
   switch (action) {
     case 'pause':
       paused = true;
@@ -1524,15 +1563,35 @@ app.addEventListener('click', (event) => {
     case 'use':
       dispatchCommand({ type: 'useItem', instance: target.dataset.id ?? '' });
       break;
-    case 'buy':
-      dispatchCommand({ type: 'buy', offerId: target.dataset.id ?? '' });
+    case 'arm-buy':
+      armAction('buy', target.dataset.id ?? '');
+      render();
       break;
-    case 'reroll':
-      dispatchCommand({ type: 'reroll' });
+    case 'confirm-buy': {
+      const id = target.dataset.id ?? '';
+      if (armedAction?.action === 'buy' && armedAction.id === id) {
+        dispatchCommand({ type: 'buy', offerId: id });
+      }
       break;
-    case 'sell':
-      dispatchCommand({ type: 'sell', instance: target.dataset.id ?? '' });
+    }
+    case 'arm-reroll':
+      armAction('reroll');
+      render();
       break;
+    case 'confirm-reroll':
+      if (armedAction?.action === 'reroll') dispatchCommand({ type: 'reroll' });
+      break;
+    case 'arm-sell':
+      armAction('sell', target.dataset.id ?? '');
+      render();
+      break;
+    case 'confirm-sell': {
+      const id = target.dataset.id ?? '';
+      if (armedAction?.action === 'sell' && armedAction.id === id) {
+        dispatchCommand({ type: 'sell', instance: id });
+      }
+      break;
+    }
     case 'equip':
       dispatchCommand({ type: 'equipItem', instance: target.dataset.id ?? '' });
       break;
@@ -1542,17 +1601,59 @@ app.addEventListener('click', (event) => {
     case 'choose':
       dispatchCommand({ type: 'choose', optionId: target.dataset.id ?? '' });
       break;
+    case 'select-curse':
     case 'curse':
-      dispatchCommand({ type: 'chooseCurse', curseId: target.dataset.id ?? '' });
+      pendingChoice = { kind: 'curse', id: target.dataset.id ?? '' };
+      clearArmedAction();
+      render();
       break;
+    case 'confirm-curse':
+      if (pendingChoice?.kind === 'curse') {
+        dispatchCommand({ type: 'chooseCurse', curseId: pendingChoice.id });
+      }
+      break;
+    case 'select-remove-curse':
     case 'remove-curse':
-      dispatchCommand({ type: 'removeCurse', curseId: target.dataset.id ?? '' });
+      pendingChoice = { kind: 'remove-curse', id: target.dataset.id ?? '' };
+      clearArmedAction();
+      render();
       break;
+    case 'confirm-remove-curse':
+      if (pendingChoice?.kind === 'remove-curse') {
+        dispatchCommand({ type: 'removeCurse', curseId: pendingChoice.id });
+      }
+      break;
+    case 'select-reward':
     case 'reward':
-      dispatchCommand({ type: 'chooseReward', optionId: target.dataset.id ?? '' });
+      pendingChoice = { kind: 'reward', id: target.dataset.id ?? '' };
+      clearArmedAction();
+      render();
       break;
+    case 'confirm-reward':
+      if (pendingChoice?.kind === 'reward') {
+        dispatchCommand({ type: 'chooseReward', optionId: pendingChoice.id });
+      }
+      break;
+    case 'select-purge':
     case 'purge':
-      dispatchCommand({ type: 'purgeLetter', letter: target.dataset.letter ?? '' });
+      pendingChoice = { kind: 'purge', letter: target.dataset.letter ?? '' };
+      clearArmedAction();
+      render();
+      break;
+    case 'confirm-purge':
+      if (pendingChoice?.kind === 'purge') {
+        dispatchCommand({ type: 'purgeLetter', letter: pendingChoice.letter });
+      }
+      break;
+    case 'select-happening':
+      pendingChoice = { kind: 'happening', id: target.dataset.id ?? '' };
+      clearArmedAction();
+      render();
+      break;
+    case 'confirm-happening':
+      if (pendingChoice?.kind === 'happening') {
+        dispatchCommand({ type: 'choose', optionId: pendingChoice.id });
+      }
       break;
     default:
       break;
@@ -1971,6 +2072,15 @@ function hideTip(): void {
 }
 
 document.addEventListener('pointermove', (event) => {
+  if (event.pointerType === 'touch') {
+    if (
+      longPressTarget
+      && Math.hypot(event.clientX - longPressStart.x, event.clientY - longPressStart.y) > 8
+    ) {
+      cancelLongPress();
+    }
+    return;
+  }
   const target = (event.target as Element | null)?.closest<HTMLElement>('[data-tip]');
   if (!target) {
     if (tipTarget) hideTip();
@@ -3131,6 +3241,7 @@ function offerInfo(offer: Offer): { name: string; description: string; slots: nu
 function renderCurse(phase: Extract<PhaseView, { kind: 'curse' }>): string {
   const bossTotal = phase.total ?? 3;
   const bossStep = bossTotal - (phase.remaining ?? 1) + 1;
+  const selectedId = pendingChoice?.kind === 'curse' ? pendingChoice.id : undefined;
   return `
   <div class="phase-card curse-draft">
     <p class="panel-kicker">${phase.boss
@@ -3144,22 +3255,28 @@ function renderCurse(phase: Extract<PhaseView, { kind: 'curse' }>): string {
       ${phase.options.map((id) => {
         const def = CURSE_BY_ID.get(id);
         if (!def) return '';
+        const selected = selectedId === def.id;
         return `
-        <button class="curse-card" data-action="curse" data-id="${escapeHtml(def.id)}" style="--enemy:${bossColor(def.art)}">
+        <button class="curse-card ${selected ? 'selected' : ''}" data-action="select-curse" data-id="${escapeHtml(def.id)}" aria-pressed="${selected}" data-tip="${escapeHtml(`${def.name}\n${def.rules.join('\n')}`)}" style="--enemy:${bossColor(def.art)}">
           <div class="curse-card-art" aria-hidden="true">${enemyArt(def.art)}</div>
           <span class="tag">${def.tags.join(' · ').toUpperCase()}</span>
           <b>${escapeHtml(def.name)}</b>
           <p>${escapeHtml(def.description)}</p>
           <ul>${def.rules.map((rule) => `<li>${escapeHtml(rule)}</li>`).join('')}</ul>
-          <span class="curse-take">TAKE THIS CURSE →</span>
+          <span class="curse-take">${selected ? 'SELECTED' : 'SELECT'}</span>
         </button>`;
       }).join('')}
+    </div>
+    <div class="choice-confirm" role="status" aria-live="polite">
+      <button class="btn primary" data-action="confirm-curse" ${selectedId ? '' : 'disabled'}>${selectedId ? 'CONFIRM CURSE' : 'SELECT A CURSE'}</button>
+      <p class="hint">Tap a curse to inspect it. Nothing is taken until you confirm.</p>
     </div>
   </div>`;
 }
 
 function renderCurseRemovalModal(view: RunView): string {
   if (view.pendingCurseRemoval <= 0) return '';
+  const selectedId = pendingChoice?.kind === 'remove-curse' ? pendingChoice.id : undefined;
   return `
   <div class="modal">
     <div class="modal-card">
@@ -3167,11 +3284,18 @@ function renderCurseRemovalModal(view: RunView): string {
       <h2>Choose one burden</h2>
       <p class="muted">One stack is removed. Permanent stat losses already suffered are not refunded.</p>
       <div class="curse-removal-list">
-        ${view.curses.map((curse) => `
-          <button class="btn" data-action="remove-curse" data-id="${escapeHtml(curse.id)}">
+        ${view.curses.map((curse) => {
+          const selected = selectedId === curse.id;
+          return `
+          <button class="btn ${selected ? 'selected' : ''}" data-action="select-remove-curse" data-id="${escapeHtml(curse.id)}" aria-pressed="${selected}">
             ${escapeHtml(curse.name)}${curse.stacks > 1 ? ` ×${curse.stacks}` : ''}
           </button>
-        `).join('')}
+        `;
+        }).join('')}
+      </div>
+      <div class="choice-confirm" role="status" aria-live="polite">
+        <button class="btn primary" data-action="confirm-remove-curse" ${selectedId ? '' : 'disabled'}>${selectedId ? 'CONFIRM REMOVAL' : 'SELECT A CURSE'}</button>
+        <p class="hint">Tap a curse to mark it. Nothing is removed until you confirm.</p>
       </div>
     </div>
   </div>`;
@@ -3335,8 +3459,10 @@ function renderHappening(phase: Extract<PhaseView, { kind: 'happening' }>): stri
     ${resolved
       ? `<div class="resolution ${resolved.success ? 'good' : 'bad'}">${escapeHtml(resolved.text)}</div><button class="btn primary big" data-action="continue">CONTINUE →</button>`
       : `<div class="option-list">
-        ${phase.options.map((option) => `
-          <article class="happening-option ${option.locked ? 'locked' : ''}">
+        ${phase.options.map((option) => {
+          const selected = pendingChoice?.kind === 'happening' && pendingChoice.id === option.id;
+          return `
+          <article class="happening-option ${option.locked ? 'locked' : ''} ${selected ? 'selected' : ''}">
             <div>
               <b>${escapeHtml(option.label)}</b>
               <p>${glossaryText(option.description)}</p>
@@ -3353,8 +3479,9 @@ function renderHappening(phase: Extract<PhaseView, { kind: 'happening' }>): stri
             <div class="odds">
               ${option.outcomes.map((outcome) => `<span>${outcome.chancePct}% · ${escapeHtml(outcome.text)}</span>`).join('')}
             </div>
-            <button class="btn" data-action="choose" data-id="${escapeHtml(option.id)}" ${option.locked ? 'disabled' : ''}>CHOOSE</button>
-          </article>`).join('')}
+            <button class="btn ${selected ? 'primary' : ''}" data-action="${selected ? 'confirm-happening' : 'select-happening'}" data-id="${escapeHtml(option.id)}" aria-pressed="${selected}" ${option.locked ? 'disabled' : ''}>${selected ? 'CONFIRM' : 'CHOOSE'}</button>
+          </article>`;
+        }).join('')}
       </div>`}
   </div>`;
 }
@@ -3451,6 +3578,7 @@ function renderPurgeModal(view: RunView): string {
   const letters = 'abcdefghijklmnopqrstuvwxyz'.split('');
   const setup = view.phase.kind === 'purge';
   const purgeLabel = `${view.pendingPurge} purge${view.pendingPurge === 1 ? '' : 's'} pending`;
+  const selectedLetter = pendingChoice?.kind === 'purge' ? pendingChoice.letter : undefined;
   return `
   <div class="modal">
     <div class="modal-card">
@@ -3458,9 +3586,12 @@ function renderPurgeModal(view: RunView): string {
       <h2>${setup ? `Erase ${view.pendingPurge} letter${view.pendingPurge === 1 ? '' : 's'}` : 'Erase a letter'}</h2>
       <p class="muted">${setup ? 'No word has been drawn yet, so every letter is fair game. ' : ''}The letter will never appear in a future answer, and you can never manually guess it again. Autoguesses can still use it. Choose carefully. If a purge would leave no legal words, a random purged letter is restored.</p>
       <div class="purge-grid">
-        ${letters.map((letter) => `<button class="purge-key ${view.purged.includes(letter) ? 'used' : ''}" data-action="purge" data-letter="${letter}" ${view.purged.includes(letter) ? 'disabled' : ''}>${letter.toUpperCase()}</button>`).join('')}
+        ${letters.map((letter) => `<button class="purge-key ${view.purged.includes(letter) ? 'used' : ''} ${selectedLetter === letter ? 'selected' : ''}" data-action="select-purge" data-letter="${letter}" aria-pressed="${selectedLetter === letter}" ${view.purged.includes(letter) ? 'disabled' : ''}>${letter.toUpperCase()}</button>`).join('')}
       </div>
-      <p class="hint">${purgeLabel}. ${setup ? 'The run begins after the last purge.' : 'The clock is paused while this is open.'}</p>
+      <div class="choice-confirm" role="status" aria-live="polite">
+        <button class="btn primary" data-action="confirm-purge" ${selectedLetter ? '' : 'disabled'}>${selectedLetter ? 'CONFIRM PURGE' : 'SELECT A LETTER'}</button>
+        <p class="hint">${purgeLabel}. Tap a letter to mark it. Nothing is purged until you confirm. ${setup ? 'The run begins after the last purge.' : 'The clock is paused while this is open.'}</p>
+      </div>
     </div>
   </div>`;
 }

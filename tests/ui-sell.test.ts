@@ -56,7 +56,7 @@ describe('compact shop loadout', () => {
     expect(list.slice(6).every((entry) => entry.classList.contains('bagged')))
       .toBe(true);
     for (const entry of list) {
-      expect(entry.querySelector('[data-action="sell"]')).not.toBeNull();
+      expect(entry.querySelector('[data-action="arm-sell"]')).not.toBeNull();
       expect(entry.getAttribute('draggable')).toBe('true');
       expect(entry.dataset.item).toBeTruthy();
       expect(entry.querySelector('.item-emoji')?.textContent).toBeTruthy();
@@ -64,7 +64,7 @@ describe('compact shop loadout', () => {
     expect(root.querySelectorAll('.loadout-row.empty')).toHaveLength(2);
     expect(root.querySelector('.loadout-row.empty')?.textContent).toContain('EMPTY SLOT');
     expect(row(root, 'Turtle Shell')
-      ?.querySelector<HTMLElement>('[data-action="sell"]')?.dataset.id)
+      ?.querySelector<HTMLElement>('[data-action="arm-sell"]')?.dataset.id)
       .toBe('i-hour');
   });
 
@@ -77,7 +77,7 @@ describe('compact shop loadout', () => {
     expect(tip?.classList.contains('visible')).toBe(true);
     expect(tip?.textContent).toContain('reduced by 50%');
 
-    turtle!.querySelector<HTMLElement>('[data-action="sell"]')!
+    turtle!.querySelector<HTMLElement>('[data-action="arm-sell"]')!
       .dispatchEvent(new Event('pointermove', { bubbles: true }));
     expect(tip?.classList.contains('visible')).toBe(true);
     expect(tip?.textContent).toContain('reduced by 50%');
@@ -105,7 +105,9 @@ describe('compact shop loadout', () => {
 
   it('sells from a loadout row', () => {
     row(root, 'Turtle Shell')
-      ?.querySelector<HTMLElement>('[data-action="sell"]')!.click();
+      ?.querySelector<HTMLElement>('[data-action="arm-sell"]')!.click();
+    row(root, 'Turtle Shell')
+      ?.querySelector<HTMLElement>('[data-action="confirm-sell"]')!.click();
     expect(row(root, 'Turtle Shell')).toBeNull();
   });
 });

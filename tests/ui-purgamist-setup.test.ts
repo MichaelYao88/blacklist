@@ -28,9 +28,12 @@ describe('Purgamist setup', () => {
     for (const letter of letters) {
       if (!root.querySelector('.modal')) break;
       const key = root.querySelector<HTMLButtonElement>(
-        `[data-action="purge"][data-letter="${letter}"]`,
+        `[data-action="select-purge"][data-letter="${letter}"]`,
       );
-      if (key && !key.disabled) key.click();
+      if (key && !key.disabled) {
+        key.click();
+        root.querySelector<HTMLButtonElement>('[data-action="confirm-purge"]')!.click();
+      }
     }
     expect(root.querySelector('.modal')).toBeNull();
     expect(document.querySelector('.countdown-overlay')).not.toBeNull();

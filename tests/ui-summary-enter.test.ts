@@ -28,6 +28,6 @@ describe('summary keyboard continue', () => {
     expect(root.textContent).toContain('CLAIM REWARD');
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
     expect(root.querySelector('.reward-grid')).not.toBeNull();
-    expect(root.textContent).toContain('Take one');
+    expect(root.textContent).toContain('Choose one');
   });
 });

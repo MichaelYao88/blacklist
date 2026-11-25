@@ -19,7 +19,7 @@ describe('character unlock popup', () => {
   });
 
   it('unlocks The Pathfinder on reaching the first curse and shows a large popup', () => {
-    root.querySelector<HTMLElement>('[data-action="curse"][data-id="censor"]')!.click();
+    root.querySelector<HTMLElement>('[data-action="select-curse"][data-id="censor"]')!.click();
     expect(readMeta().characters).toContain('pathfinder');
 
     const overlay = root.querySelector<HTMLElement>('.unlock-overlay');
