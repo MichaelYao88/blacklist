@@ -5448,6 +5448,7 @@ button {
   .mobile-spells-drawer .item-card,
   .mobile-spells-drawer .spell-card,
   .mobile-item-drawer .item-card {
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
+    word-break: normal;
   }
 }
