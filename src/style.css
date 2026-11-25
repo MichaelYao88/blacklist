@@ -5263,7 +5263,7 @@ button {
   padding: 8px 12px 11px;
   border: 1px solid var(--line-2);
   border-radius: 9px;
-  background: rgba(15, 12, 22, 0.94);
+  background: rgba(15, 12, 22, 0.75);
   box-shadow: 0 14px 34px -20px #000;
   backdrop-filter: blur(6px);
   overflow: hidden;
@@ -5295,7 +5295,7 @@ button {
 
 .mobile-timer.urgent {
   border-color: rgba(223, 97, 90, 0.5);
-  background: rgba(40, 16, 20, 0.95);
+  background: rgba(40, 16, 20, 0.75);
 }
 
 .mobile-timer.urgent b,
@@ -5324,7 +5324,7 @@ button {
 
 #mobile-damage-root .guess-damage {
   min-width: 132px;
-  background: rgba(15, 12, 22, 0.94);
+  background: rgba(15, 12, 22, 0.75);
   box-shadow: 0 14px 34px -20px #000;
   backdrop-filter: blur(6px);
 }
