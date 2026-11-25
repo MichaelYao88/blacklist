@@ -265,6 +265,16 @@ function closeMobileDrawers(): void {
   necroDrawerOpen = false;
 }
 
+// The floating incoming-damage panel mirrors the timer: it lives outside the
+// render tree so scroll restore and per-second renders cannot remove it.
+const mobileDamageRoot = document.createElement('div');
+mobileDamageRoot.id = 'mobile-damage-root';
+mobileDamageRoot.setAttribute('aria-live', 'polite');
+mobileDamageRoot.setAttribute('aria-hidden', 'true');
+document.body.appendChild(mobileDamageRoot);
+let mobileDamageTarget: HTMLElement | null = null;
+let mobileDamageHtmlShown = '';
+
 function renderCountdown(level: number, count: number): void {
   if (count <= 0) {
     if (countdownRoot.innerHTML) countdownRoot.innerHTML = '';
@@ -1877,6 +1887,7 @@ window.setInterval(() => {
   }
   render();
   syncMobileTimer(host.view());
+  syncMobileDamage(host.view());
 }, 1_000);
 
 document.addEventListener('visibilitychange', () => {
@@ -1918,8 +1929,10 @@ function restoreScrollPositions(saved: Map<string, number>): void {
 
 if (typeof window.addEventListener === 'function') {
   window.addEventListener('scroll', updateMobileTimerVisibility, { passive: true });
+  window.addEventListener('scroll', updateMobileDamageVisibility, { passive: true });
   window.addEventListener('resize', () => {
     updateMobileTimerVisibility();
+    updateMobileDamageVisibility();
     render();
   }, { passive: true });
 }
@@ -1962,6 +1975,7 @@ function render(): void {
   if (savedScroll) restoreScrollPositions(savedScroll);
   renderedEpoch = epoch;
   syncMobileTimer(screen === 'run' ? view : null);
+  syncMobileDamage(screen === 'run' ? (view ?? null) : null);
 
   const damageId = damageFx?.id ?? 0;
   const overRun = screen === 'run' && view?.phase.kind === 'over';
@@ -2669,6 +2683,44 @@ function syncMobileTimer(view: RunView | null): void {
     <i style="width:${pct}%"></i>
   </div>`;
   updateMobileTimerVisibility();
+}
+
+function updateMobileDamageVisibility(): void {
+  if (!isMobileLayout() || !mobileDamageTarget) {
+    mobileDamageRoot.classList.remove('is-visible');
+    mobileDamageRoot.setAttribute('aria-hidden', 'true');
+    return;
+  }
+  const rect = mobileDamageTarget.getBoundingClientRect();
+  const measurable = rect.height > 0 || rect.width > 0 || rect.top !== 0 || rect.bottom !== 0;
+  const offscreen = measurable && (rect.bottom <= 0 || rect.top >= window.innerHeight);
+  mobileDamageRoot.classList.toggle('is-visible', offscreen);
+  mobileDamageRoot.setAttribute('aria-hidden', offscreen ? 'false' : 'true');
+}
+
+function syncMobileDamage(view: RunView | null): void {
+  if (!isMobileLayout()) {
+    mobileDamageTarget = null;
+    if (mobileDamageRoot.innerHTML) mobileDamageRoot.innerHTML = '';
+    mobileDamageHtmlShown = '';
+    updateMobileDamageVisibility();
+    return;
+  }
+  const target = document.querySelector<HTMLElement>('.battle-rail .guess-damage');
+  mobileDamageTarget = target;
+  const board = view && view.phase.kind === 'round' ? view.phase.board : null;
+  if (!target || !board) {
+    if (mobileDamageRoot.innerHTML) mobileDamageRoot.innerHTML = '';
+    mobileDamageHtmlShown = '';
+    updateMobileDamageVisibility();
+    return;
+  }
+  const html = guessDamageHtml(board);
+  if (html !== mobileDamageHtmlShown) {
+    mobileDamageHtmlShown = html;
+    mobileDamageRoot.innerHTML = html;
+  }
+  updateMobileDamageVisibility();
 }
 
 const RAIL_NODE_LABELS: Record<NodeKind, string> = {

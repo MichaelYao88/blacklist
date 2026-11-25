@@ -5312,8 +5312,29 @@ button {
   display: none;
 }
 
+#mobile-damage-root {
+  display: none;
+  position: fixed;
+  top: calc(max(8px, env(safe-area-inset-top)) + 56px);
+  left: 50%;
+  z-index: 58;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+#mobile-damage-root .guess-damage {
+  min-width: 132px;
+  background: rgba(15, 12, 22, 0.94);
+  box-shadow: 0 14px 34px -20px #000;
+  backdrop-filter: blur(6px);
+}
+
 @media (max-width: 860px) {
   #mobile-timer-root.is-visible {
+    display: block;
+  }
+
+  #mobile-damage-root.is-visible {
     display: block;
   }
 
