@@ -5307,7 +5307,8 @@ button {
   border-color: rgba(88, 180, 198, 0.5);
 }
 
-.mobile-spells {
+.mobile-spells,
+.mobile-item {
   display: none;
 }
 
@@ -5320,13 +5321,15 @@ button {
     display: none;
   }
 
-  .mobile-spells {
+  .mobile-spells,
+  .mobile-item {
     display: block;
   }
 
-  .mobile-spells-tab {
+  .mobile-spells-tab,
+  .mobile-item-tab {
     position: fixed;
-    top: 46%;
+    top: calc(46% + var(--tab-index, 0) * 62px);
     left: 0;
     z-index: 61;
     display: flex;
@@ -5346,7 +5349,8 @@ button {
     box-shadow: 8px 10px 28px -20px #000;
   }
 
-  .mobile-spells-tab b {
+  .mobile-spells-tab b,
+  .mobile-item-tab-emoji {
     display: grid;
     place-items: center;
     min-width: 18px;
@@ -5360,7 +5364,8 @@ button {
     writing-mode: horizontal-tb;
   }
 
-  .mobile-spells-scrim {
+  .mobile-spells-scrim,
+  .mobile-item-scrim {
     position: fixed;
     inset: 0;
     z-index: 64;
@@ -5370,12 +5375,14 @@ button {
     transition: opacity 160ms ease;
   }
 
-  .mobile-spells.open .mobile-spells-scrim {
+  .mobile-spells.open .mobile-spells-scrim,
+  .mobile-item.open .mobile-item-scrim {
     opacity: 1;
     pointer-events: auto;
   }
 
-  .mobile-spells-drawer {
+  .mobile-spells-drawer,
+  .mobile-item-drawer {
     position: fixed;
     top: 0;
     bottom: 0;
@@ -5393,7 +5400,25 @@ button {
     transition: transform 190ms ease;
   }
 
-  .mobile-spells.open .mobile-spells-drawer {
+  .mobile-spells.open .mobile-spells-drawer,
+  .mobile-item.open .mobile-item-drawer {
     transform: translateX(0);
+  }
+
+  .mobile-item-body {
+    margin-top: 12px;
+  }
+
+  .mobile-item-body .item-card {
+    padding: 12px;
+  }
+
+  .mobile-item-body .item-top {
+    flex-wrap: wrap;
+  }
+
+  .mobile-item-body .item-top b {
+    flex: 1 1 auto;
+    min-width: auto;
   }
 }

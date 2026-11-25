@@ -243,6 +243,27 @@ mobileTimerRoot.setAttribute('aria-hidden', 'true');
 document.body.appendChild(mobileTimerRoot);
 let mobileTimerTarget: HTMLElement | null = null;
 let spellsDrawerOpen = false;
+let parrotDrawerOpen = false;
+let necroDrawerOpen = false;
+
+// Mobile item shortcuts. The drawers share the spells drawer's behaviour: one
+// open at a time, and the open flag survives the once-per-second re-render.
+const MOBILE_ITEM_TABS = [
+  { id: 'evil-parrot', key: 'parrot', label: 'PARROT', title: 'EVIL PARROT' },
+  { id: 'necronomicon', key: 'necro', label: 'NECRO', title: 'NECRONOMICON' },
+] as const;
+
+type MobileItemKey = (typeof MOBILE_ITEM_TABS)[number]['key'];
+
+function isItemDrawerOpen(key: MobileItemKey): boolean {
+  return key === 'parrot' ? parrotDrawerOpen : necroDrawerOpen;
+}
+
+function closeMobileDrawers(): void {
+  spellsDrawerOpen = false;
+  parrotDrawerOpen = false;
+  necroDrawerOpen = false;
+}
 
 function renderCountdown(level: number, count: number): void {
   if (count <= 0) {
@@ -1229,7 +1250,7 @@ function startNewRun(preferredCharacter?: string): void {
   });
   screen = 'run';
   resetChoiceState();
-  spellsDrawerOpen = false;
+  closeMobileDrawers();
   input = '';
   notice = null;
   paused = false;
@@ -1291,7 +1312,7 @@ function resumeRun(): void {
   }
   screen = 'run';
   resetChoiceState();
-  spellsDrawerOpen = false;
+  closeMobileDrawers();
   input = '';
   notice = null;
   paused = false;
@@ -1568,12 +1589,37 @@ app.addEventListener('click', (event) => {
       render();
       break;
     }
-    case 'toggle-spells':
-      spellsDrawerOpen = !spellsDrawerOpen;
+    case 'toggle-spells': {
+      const next = !spellsDrawerOpen;
+      closeMobileDrawers();
+      spellsDrawerOpen = next;
       render();
       break;
+    }
     case 'close-spells':
-      spellsDrawerOpen = false;
+      closeMobileDrawers();
+      render();
+      break;
+    case 'toggle-parrot': {
+      const next = !parrotDrawerOpen;
+      closeMobileDrawers();
+      parrotDrawerOpen = next;
+      render();
+      break;
+    }
+    case 'close-parrot':
+      closeMobileDrawers();
+      render();
+      break;
+    case 'toggle-necro': {
+      const next = !necroDrawerOpen;
+      closeMobileDrawers();
+      necroDrawerOpen = next;
+      render();
+      break;
+    }
+    case 'close-necro':
+      closeMobileDrawers();
       render();
       break;
     case 'claim-victory':
@@ -2937,6 +2983,29 @@ function renderMobileSpells(view: RunView): string {
   </div>`;
 }
 
+function renderMobileItemDrawers(view: RunView): string {
+  if (!isMobileLayout()) return '';
+  const owned = MOBILE_ITEM_TABS.filter((tab) => (
+    view.items.some((item) => item.id === tab.id)
+  ));
+  return owned.map((tab, index) => {
+    const item = view.items.find((entry) => entry.id === tab.id)!;
+    const open = isItemDrawerOpen(tab.key);
+    // Index 0 is always the spells tab, so item tabs start below it.
+    const tabIndex = index + 1;
+    return `<div class="mobile-item ${open ? 'open' : ''}" data-mobile-item="${tab.key}">
+      <button class="mobile-item-tab" style="--tab-index:${tabIndex}" data-action="toggle-${tab.key}" aria-expanded="${open}">
+        <span>${tab.label}</span><span class="mobile-item-tab-emoji" aria-hidden="true">${itemIcon(tab.id)}</span>
+      </button>
+      <div class="mobile-item-scrim" data-action="close-${tab.key}" aria-hidden="${open ? 'false' : 'true'}"></div>
+      <aside class="mobile-item-drawer" aria-label="${tab.title}" aria-hidden="${open ? 'false' : 'true'}">
+        <div class="panel-head"><span class="panel-kicker">${tab.title}</span><span class="count">${escapeHtml(ITEM_BY_ID.get(item.id)?.name ?? item.id)}</span></div>
+        <div class="mobile-item-body">${renderItem(view, item)}</div>
+      </aside>
+    </div>`;
+  }).join('');
+}
+
 function renderChronicle(): string {
   if (chronicleEntries.length === 0) {
     return `<div class="chronicle" data-scroll-key="chronicle"><p class="empty-note">No actions recorded yet.</p></div>`;
@@ -3865,6 +3934,7 @@ function renderRun(view: RunView): string {
           ${renderSidePanel(view)}
         </main>`}
     ${!over ? renderMobileSpells(view) : ''}
+    ${!over ? renderMobileItemDrawers(view) : ''}
     ${damageTutorialOpen && !over ? renderDamageTutorial() : ''}
     ${renderPurgeModal(view)}
     ${renderCurseRemovalModal(view)}
