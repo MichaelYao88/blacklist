@@ -3305,6 +3305,19 @@ export function createCore(content: Content): Core {
         };
       });
     }
+    if (def.id === 'toll-collector') {
+      state.happening.options = state.happening.options.map((option) => {
+        if (option.id !== 'pay') return option;
+        const affordable = state.gold >= 11;
+        return {
+          ...option,
+          locked: !affordable,
+          description: affordable
+            ? option.description
+            : 'You need 11 gold to pay. You cannot afford it.',
+        };
+      });
+    }
     if (def.id === 'the-bargain') {
       const items = content.items.filter(
         (item) => !item.noSpawn && item.rarity !== 'rare' && itemAvailable(state, item),
@@ -3509,6 +3522,26 @@ export function createCore(content: Content): Core {
         success: true,
         text,
       });
+      return;
+    }
+
+    if (def.id === 'toll-collector' && optionId === 'refuse') {
+      happening.resolved = {
+        option: 'refuse',
+        success: true,
+        text: 'The collector writes the debt into your curses. Choose one.',
+      };
+      emit(rt, {
+        type: 'happeningResolved',
+        happening: def.id,
+        option: 'refuse',
+        success: true,
+        text: happening.resolved.text,
+      });
+      openCurseDraft(rt, false);
+      if (state.curse) {
+        state.curse.returnToHappening = true;
+      }
       return;
     }
 
@@ -3739,6 +3772,11 @@ export function createCore(content: Content): Core {
     }
     applyCurse(rt, curseId);
     draft.chosen = curseId;
+    if (draft.returnToHappening) {
+      state.curse = undefined;
+      state.phase = 'happening';
+      return;
+    }
     if (draft.boss) {
       state.bossCursesLeft = Math.max(0, state.bossCursesLeft - 1);
       state.curse = undefined;

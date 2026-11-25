@@ -895,6 +895,34 @@ export const HAPPENINGS: HappeningDef[] = [
     ],
   }),
   defineHappening({
+    id: 'toll-collector',
+    name: 'The Toll Collector',
+    description: 'A thin man waits beside the road with a ledger and an empty hand. Every road has a debt.',
+    options: [
+      {
+        id: 'pay',
+        label: 'Pay 11 gold',
+        description: 'Settle the debt and walk on.',
+        costGold: 11,
+        outcomes: [{
+          chancePct: 100,
+          text: 'He counts the coins twice, closes the ledger, and steps aside.',
+          effects: [],
+        }],
+      },
+      {
+        id: 'refuse',
+        label: 'Refuse: draft an extra curse',
+        description: 'Keep your gold. The debt is written as a permanent curse.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'He writes the debt into your curses. Choose one.',
+          effects: [],
+        }],
+      },
+    ],
+  }),
+  defineHappening({
     id: 'peddlers-table',
     name: "The Peddler's Table",
     description: 'Three objects wait on a scrap of velvet. The peddler taps one, then another, and says nothing.',

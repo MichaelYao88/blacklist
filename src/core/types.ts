@@ -294,6 +294,8 @@ export interface CurseState {
   starting: boolean;
   /** Boss-prep curse draft before the Floor Boss. */
   boss?: boolean;
+  /** Return to an unresolved event after this extra draft. */
+  returnToHappening?: boolean;
   chosen?: CurseId;
 }
 
