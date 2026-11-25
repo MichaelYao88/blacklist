@@ -228,6 +228,22 @@ countdownRoot.setAttribute('aria-live', 'assertive');
 document.body.appendChild(countdownRoot);
 let countdownShown = 0;
 
+const MOBILE_LAYOUT_QUERY = '(max-width: 860px)';
+function isMobileLayout(): boolean {
+  return typeof window.matchMedia === 'function'
+    && window.matchMedia(MOBILE_LAYOUT_QUERY).matches;
+}
+
+// The floating timer lives outside the render tree so its position and value
+// survive the once-per-second UI refresh. It never accepts touches.
+const mobileTimerRoot = document.createElement('div');
+mobileTimerRoot.id = 'mobile-timer-root';
+mobileTimerRoot.setAttribute('aria-live', 'polite');
+mobileTimerRoot.setAttribute('aria-hidden', 'true');
+document.body.appendChild(mobileTimerRoot);
+let mobileTimerTarget: HTMLElement | null = null;
+let spellsDrawerOpen = false;
+
 function renderCountdown(level: number, count: number): void {
   if (count <= 0) {
     if (countdownRoot.innerHTML) countdownRoot.innerHTML = '';
@@ -1213,6 +1229,7 @@ function startNewRun(preferredCharacter?: string): void {
   });
   screen = 'run';
   resetChoiceState();
+  spellsDrawerOpen = false;
   input = '';
   notice = null;
   paused = false;
@@ -1274,6 +1291,7 @@ function resumeRun(): void {
   }
   screen = 'run';
   resetChoiceState();
+  spellsDrawerOpen = false;
   input = '';
   notice = null;
   paused = false;
@@ -1550,6 +1568,14 @@ app.addEventListener('click', (event) => {
       render();
       break;
     }
+    case 'toggle-spells':
+      spellsDrawerOpen = !spellsDrawerOpen;
+      render();
+      break;
+    case 'close-spells':
+      spellsDrawerOpen = false;
+      render();
+      break;
     case 'claim-victory':
       dispatchCommand({ type: 'claimVictory' });
       break;
@@ -1804,6 +1830,7 @@ window.setInterval(() => {
     }
   }
   render();
+  syncMobileTimer(host.view());
 }, 1_000);
 
 document.addEventListener('visibilitychange', () => {
@@ -1843,6 +1870,14 @@ function restoreScrollPositions(saved: Map<string, number>): void {
   if (windowY !== undefined) window.scrollTo(0, windowY);
 }
 
+if (typeof window.addEventListener === 'function') {
+  window.addEventListener('scroll', updateMobileTimerVisibility, { passive: true });
+  window.addEventListener('resize', () => {
+    updateMobileTimerVisibility();
+    render();
+  }, { passive: true });
+}
+
 function render(): void {
   // A full re-render replaces every button node. Doing that between a pointer
   // press and release swallows the click, so hold renders until the press ends.
@@ -1880,6 +1915,7 @@ function render(): void {
   if (characterUnlock) app!.insertAdjacentHTML('beforeend', renderCharacterUnlock());
   if (savedScroll) restoreScrollPositions(savedScroll);
   renderedEpoch = epoch;
+  syncMobileTimer(screen === 'run' ? view : null);
 
   const damageId = damageFx?.id ?? 0;
   const overRun = screen === 'run' && view?.phase.kind === 'over';
@@ -2542,6 +2578,53 @@ function renderTimer(view: RunView, board: BoardView): string {
   </div>`;
 }
 
+function updateMobileTimerVisibility(): void {
+  if (!isMobileLayout() || !mobileTimerTarget) {
+    mobileTimerRoot.classList.remove('is-visible');
+    mobileTimerRoot.setAttribute('aria-hidden', 'true');
+    return;
+  }
+  const rect = mobileTimerTarget.getBoundingClientRect();
+  const measurable = rect.height > 0 || rect.width > 0 || rect.top !== 0 || rect.bottom !== 0;
+  const offscreen = measurable && (rect.bottom <= 0 || rect.top >= window.innerHeight);
+  mobileTimerRoot.classList.toggle('is-visible', offscreen);
+  mobileTimerRoot.setAttribute('aria-hidden', offscreen ? 'false' : 'true');
+}
+
+function syncMobileTimer(view: RunView | null): void {
+  if (!isMobileLayout()) {
+    mobileTimerTarget = null;
+    mobileTimerRoot.innerHTML = '';
+    updateMobileTimerVisibility();
+    return;
+  }
+  const target = document.querySelector<HTMLElement>('.battle-rail .timer');
+  mobileTimerTarget = target;
+  const board = view && view.phase.kind === 'round' ? view.phase.board : null;
+  if (!target || !board || board.timerMode === 'hidden') {
+    mobileTimerRoot.innerHTML = '';
+    updateMobileTimerVisibility();
+    return;
+  }
+  const countUp = board.timerMode === 'countup';
+  const time = countUp ? formatTime(board.elapsedMs) : formatTime(board.remainingMs);
+  const label = countUp
+    ? 'TIME'
+    : board.timerFrozen
+      ? 'FROZEN'
+      : 'RUN ENDS IN';
+  const pct = countUp || !board.timerStartMs || board.remainingMs === null
+    ? 100
+    : Math.max(0, Math.min(100, (board.remainingMs / board.timerStartMs) * 100));
+  const urgent = !countUp && board.remainingMs !== null && board.remainingMs <= 15_000;
+  mobileTimerRoot.innerHTML = `<div class="mobile-timer ${urgent ? 'urgent' : ''} ${board.timerFrozen ? 'frozen' : ''}">
+    <span class="mobile-timer-label">${label}</span>
+    <b>${time}</b>
+    <i style="width:${pct}%"></i>
+  </div>`;
+  updateMobileTimerVisibility();
+}
+
 const RAIL_NODE_LABELS: Record<NodeKind, string> = {
   round: 'Fight',
   shop: 'Shop',
@@ -2832,6 +2915,29 @@ function renderMysteriousRoom(): string {
   </div>`;
 }
 
+function renderMobileSpells(view: RunView): string {
+  if (!isMobileLayout()) return '';
+  const stacks = new Map<string, { spell: SpellView; count: number }>();
+  for (const spell of view.spells) {
+    const entry = stacks.get(spell.id);
+    if (entry) entry.count += 1;
+    else stacks.set(spell.id, { spell, count: 1 });
+  }
+  const spells = stacks.size
+    ? [...stacks.values()].map(({ spell, count }) => renderSpell(view, spell, count)).join('')
+    : `<p class="empty-note">No spells. Food and item triggers make them.</p>`;
+  return `<div class="mobile-spells ${spellsDrawerOpen ? 'open' : ''}">
+    <button class="mobile-spells-tab" data-action="toggle-spells" aria-expanded="${spellsDrawerOpen}">
+      <span>SPELLS</span><b>${view.spells.length}</b>
+    </button>
+    <div class="mobile-spells-scrim" data-action="close-spells" aria-hidden="${spellsDrawerOpen ? 'false' : 'true'}"></div>
+    <aside class="mobile-spells-drawer" aria-label="Spells" aria-hidden="${spellsDrawerOpen ? 'false' : 'true'}">
+      <div class="panel-head"><span class="panel-kicker">SPELLS</span><span class="count">${view.spells.length}</span></div>
+      <div class="spell-list" data-scroll-key="mobile-spells">${spells}</div>
+    </aside>
+  </div>`;
+}
+
 function renderChronicle(): string {
   if (chronicleEntries.length === 0) {
     return `<div class="chronicle" data-scroll-key="chronicle"><p class="empty-note">No actions recorded yet.</p></div>`;
@@ -2876,7 +2982,7 @@ function renderSidePanel(view: RunView): string {
     <section class="floorplan-panel">
       ${renderLevelBadge(view)}
     </section>
-    <section>
+    <section class="spells-section">
       <div class="panel-head"><span class="panel-kicker">SPELLS</span><span class="count">${view.spells.length}</span></div>
       <div class="spell-list">${spells}</div>
     </section>
@@ -3759,6 +3865,7 @@ function renderRun(view: RunView): string {
           <section class="center-column">${phasePanel(view)}</section>
           ${renderSidePanel(view)}
         </main>`}
+    ${!over ? renderMobileSpells(view) : ''}
     ${damageTutorialOpen && !over ? renderDamageTutorial() : ''}
     ${renderPurgeModal(view)}
     ${renderCurseRemovalModal(view)}
