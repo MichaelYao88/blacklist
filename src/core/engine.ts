@@ -49,6 +49,8 @@ const MAX_LEVEL = 50;
 export const HAPPENING_CHANCE = 42;
 const LEVELS_PER_AREA = 10;
 const STARTING_ITEM_SLOTS = 4;
+const PARROT_STEAL_MS = 195_000;
+const PARROT_STEAL_GOLD = 4;
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyz'.split('');
 
 const RULES: Source = { kind: 'rules' };
@@ -1999,6 +2001,7 @@ export function createCore(content: Content): Core {
       unobscuredGuesses: 0,
       lockedSpells: [],
       hints: {},
+      parrotIdleMs: 0,
     };
 
     state.round = round;
@@ -2549,7 +2552,10 @@ export function createCore(content: Content): Core {
 
     round.totalGuesses++;
     state.stats.guesses++;
-    if (by === 'player') round.playerGuesses++;
+    if (by === 'player') {
+      round.playerGuesses++;
+      round.parrotIdleMs = 0;
+    }
     if (unobscured) round.unobscuredGuesses++;
     if (by === 'player' && round.lockedSpells.length > 0) round.lockedSpells = [];
     round.guesses.push(guess);
@@ -3979,6 +3985,23 @@ export function createCore(content: Content): Core {
 
   // ── tick ─────────────────────────────────────────────────────────────────
 
+  /** The Evil Parrot steals from anyone who stays silent too long. */
+  function advanceParrotIdle(rt: Runtime, dtMs: number): void {
+    const state = rt.state;
+    const round = state.round;
+    if (!round || dtMs <= 0) return;
+    round.parrotIdleMs = (round.parrotIdleMs ?? 0) + dtMs;
+    while (round.parrotIdleMs >= PARROT_STEAL_MS) {
+      round.parrotIdleMs -= PARROT_STEAL_MS;
+      if (state.gold > 0) {
+        const stolen = Math.min(PARROT_STEAL_GOLD, state.gold);
+        changeGold(rt, -stolen, RULES);
+        emit(rt, { type: 'message', text: `The Evil Parrot swipes ${stolen} gold.` });
+      }
+      if (isOver(state)) return;
+    }
+  }
+
   function tick(rt: Runtime, dtMs: number): void {
     const state = rt.state;
     const round = state.round;
@@ -4010,6 +4033,7 @@ export function createCore(content: Content): Core {
         elapsedMs: round.elapsedMs,
         dtMs: dt,
       });
+      advanceParrotIdle(rt, dt);
       return;
     }
 
@@ -4020,6 +4044,7 @@ export function createCore(content: Content): Core {
       elapsedMs: round.elapsedMs,
       dtMs: dt,
     });
+    advanceParrotIdle(rt, dt);
     if (isOver(state)) return;
     if (round.remainingMs <= 0) expireRound(rt);
   }
@@ -4661,6 +4686,9 @@ export function createCore(content: Content): Core {
         }
         if (typeof state.round.damageRamp !== 'number') {
           state.round.damageRamp = 0;
+        }
+        if (typeof state.round.parrotIdleMs !== 'number') {
+          state.round.parrotIdleMs = 0;
         }
       }
       if (typeof state.shopWildcardBonus !== 'number') state.shopWildcardBonus = 0;

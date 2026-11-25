@@ -176,6 +176,8 @@ export interface RoundState {
   seenPresent?: string[];
   /** Restore: vision curses are ignored for the rest of this round. */
   visionDisabled?: boolean;
+  /** Milliseconds of active round time since the last player guess. */
+  parrotIdleMs?: number;
 }
 
 export interface SummaryState {
