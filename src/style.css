@@ -5248,9 +5248,8 @@ button {
   display: none;
   position: fixed;
   top: max(8px, env(safe-area-inset-top));
-  left: 50%;
+  left: max(8px, env(safe-area-inset-left));
   z-index: 58;
-  transform: translateX(-50%);
   pointer-events: none;
 }
 
@@ -5315,10 +5314,11 @@ button {
 #mobile-damage-root {
   display: none;
   position: fixed;
-  top: calc(max(8px, env(safe-area-inset-top)) + 56px);
-  left: 50%;
+  top: max(8px, env(safe-area-inset-top));
+  right: max(8px, env(safe-area-inset-right));
+  left: auto;
   z-index: 58;
-  transform: translateX(-50%);
+  transform: none;
   pointer-events: none;
 }
 
