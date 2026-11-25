@@ -2814,7 +2814,6 @@ function renderBattleRail(view: RunView, bossId?: string): string {
   const playerLabel = playerDef?.name ?? 'The Soldier';
   const facts = board
     ? [
-        board.freeGuessesLeft > 0 ? `<span class="fact">FREE ${board.freeGuessesLeft}</span>` : '',
         board.shielded ? `<span class="fact shield">IMMUNE ${formatTime(board.shieldMsLeft)}</span>` : '',
         board.gauntletTotal > 1 ? `<span class="fact gauntlet">PUZZLE ${board.gauntletIndex + 1}/${board.gauntletTotal}</span>` : '',
         view.items.some((item) => item.id === 'loose-tongue' && item.equipped) ? `<span class="fact free-speech">ANY WORD</span>` : '',
