@@ -438,7 +438,7 @@ type PendingChoice =
   | { kind: 'purge'; letter: string }
   | { kind: 'remove-curse'; id: string };
 let pendingChoice: PendingChoice | null = null;
-type ArmedAction = { action: 'reroll' | 'sell'; id?: string };
+type ArmedAction = { action: 'sell'; id?: string };
 let armedAction: ArmedAction | null = null;
 let armedTimer: number | undefined;
 let longPressTimer: number | undefined;
@@ -1713,12 +1713,8 @@ app.addEventListener('click', (event) => {
     case 'buy':
       dispatchCommand({ type: 'buy', offerId: target.dataset.id ?? '' });
       break;
-    case 'arm-reroll':
-      armAction('reroll');
-      render();
-      break;
-    case 'confirm-reroll':
-      if (armedAction?.action === 'reroll') dispatchCommand({ type: 'reroll' });
+    case 'reroll':
+      dispatchCommand({ type: 'reroll' });
       break;
     case 'arm-sell':
       armAction('sell', target.dataset.id ?? '');
@@ -3840,13 +3836,12 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
     }).join('')
     : `<p class="empty-note">The shelves are bare. Reroll or leave.</p>`;
 
-  const rerollArmed = armedAction?.action === 'reroll';
   return `
   <div class="phase-card shop">
     ${coupon > 0 ? `<p class="hint coupon-hint">Coupon Book: the first item or food purchase costs ${coupon} less.</p>` : ''}
     <div class="offer-grid">${offers}</div>
     <div class="shop-actions">
-      <button class="btn ${rerollArmed ? 'armed' : ''}" data-action="${rerollArmed ? 'confirm-reroll' : 'arm-reroll'}">${rerollArmed ? 'CONFIRM REROLL' : 'REROLL'} · ${phase.rerollCost} G</button>
+      <button class="btn" data-action="reroll">REROLL · ${phase.rerollCost} G</button>
       <button class="btn ghost" data-action="continue">LEAVE →</button>
     </div>
     <p class="hint">Rearrange items in the loadout on the left. Shops carry items, foods, and one wildcard offer. Curses can remove item slots. Food is eaten on purchase. One item is always half price, and each reroll costs double the last. Rare items are very rare finds; each uses one item slot.</p>

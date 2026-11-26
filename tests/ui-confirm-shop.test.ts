@@ -56,13 +56,10 @@ describe('shop confirmations', () => {
     expect(saved()?.items.some((item) => item.instance === 'i-1')).toBe(false);
   });
 
-  it('arms a reroll without spending, then confirms it', () => {
+  it('rerolls immediately without a confirmation step', () => {
     const before = saved()!.gold;
-    root.querySelector<HTMLElement>('[data-action="arm-reroll"]')!.click();
-    expect(saved()?.gold).toBe(before);
-    expect(root.querySelector('[data-action="confirm-reroll"]')).not.toBeNull();
-
-    root.querySelector<HTMLElement>('[data-action="confirm-reroll"]')!.click();
+    root.querySelector<HTMLElement>('[data-action="reroll"]')!.click();
     expect(saved()!.gold).toBe(before - 2);
+    expect(root.querySelector('[data-action="confirm-reroll"]')).toBeNull();
   });
 });
