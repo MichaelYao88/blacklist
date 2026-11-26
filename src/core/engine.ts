@@ -1834,6 +1834,8 @@ export function createCore(content: Content): Core {
       }
     }
     const positionHides = guess.positionHides ? new Set(guess.positionHides) : null;
+    const beforeHide = tiles.slice();
+    const positionHidden = new Set<number>();
     for (const entry of vision) {
       for (const effect of entry.def.vision ?? []) {
         if (effect.kind === 'hidePosition') {
@@ -1843,6 +1845,7 @@ export function createCore(content: Content): Core {
             && effect.index < tiles.length
           ) {
             tiles[effect.index] = 'hidden';
+            positionHidden.add(effect.index);
           }
         } else if (effect.kind === 'hideLetters') {
           const letters = new Set(effect.letters.split(''));
@@ -1851,6 +1854,25 @@ export function createCore(content: Content): Core {
           );
         }
       }
+    }
+
+    // A hidden colored tile can leave a visible duplicate looking absent. Move
+    // that color onto the duplicate so the keyboard does not lie about the
+    // letter. Greens become yellows because the duplicate is not in that slot.
+    const transferred = new Set<number>();
+    for (const index of positionHidden) {
+      const status = beforeHide[index];
+      if (status !== 'correct' && status !== 'present' && status !== 'hit') continue;
+      const letter = guess.word[index];
+      const target = tiles.findIndex((tile, at) =>
+        at !== index
+        && !transferred.has(at)
+        && tile === 'absent'
+        && guess.word[at] === letter,
+      );
+      if (target < 0) continue;
+      tiles[target] = status === 'hit' ? 'hit' : 'present';
+      transferred.add(target);
     }
 
     const tally = state.items.some((item) => {
