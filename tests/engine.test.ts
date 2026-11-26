@@ -2168,7 +2168,7 @@ describe('new item and event batch', () => {
     expect(ITEM_BY_ID.get('midas-touch')?.description).toContain('30%');
     expect(ITEM_BY_ID.get('midas-touch')?.goldDoubleChance).toBe(30);
     expect(ITEM_BY_ID.get('miser')).toBeUndefined();
-    expect(ITEM_BY_ID.get('plate-timer')?.requiresClock).toBe(true);
+    expect(ITEM_BY_ID.get('plate-timer')).toBeUndefined();
     expect(ITEM_BY_ID.get('solo-note')?.description)
       .toContain('one yellow and no green');
     expect(ITEM_BY_ID.get('four-leaf-clover')?.description).toContain('20%');
@@ -2800,6 +2800,12 @@ describe('latest balance pass', () => {
     expect(FOOD_BY_ID.get('jumbo-hot-dog')?.price).toBe(3);
     expect(FOOD_BY_ID.get('jumbo-hot-dog')?.rarity).toBe('uncommon');
     expect(FOOD_BY_ID.get('juicy-peach')?.price).toBe(4);
+    expect(FOOD_BY_ID.get('juicy-peach')?.effects)
+      .toContainEqual({ type: 'maxHp', delta: 3 });
+    expect(FOOD_BY_ID.get('juicy-peach')?.effects)
+      .toContainEqual({ type: 'heal', amount: 3 });
+    expect(FOOD_BY_ID.get('juicy-peach')?.effects)
+      .toContainEqual({ type: 'giveSpell', spell: 'restore', chancePct: 50 });
     expect(FOOD_BY_ID.get('cherries')?.price).toBe(2);
     expect(FOOD_BY_ID.get('satchel')?.price).toBe(19);
     expect(FOOD_BY_ID.get('satchel')?.rarity).toBe('uncommon');
@@ -2811,7 +2817,7 @@ describe('latest balance pass', () => {
     expect(FOOD_BY_ID.get('reveal-the-d')?.price).toBe(18);
     expect(FOOD_BY_ID.get('reveal-the-d')?.rarity).toBe('rare');
     expect(FOOD_BY_ID.get('reveal-the-d')?.shopRarity).toBeUndefined();
-    expect(FOOD_BY_ID.get('honey-cake')?.price).toBe(6);
+    expect(FOOD_BY_ID.get('honey-cake')?.price).toBe(4);
     expect(FOOD_BY_ID.get('vitality')?.price).toBe(8);
     expect(FOOD_BY_ID.get('yin-yang')?.name).toBe('NY Cheesecake');
   });
@@ -3156,8 +3162,6 @@ describe('latest balance pass', () => {
     expect(ITEM_BY_ID.get('necronomicon')?.description).toContain('13% max HP');
     expect(ITEM_BY_ID.get('nest-egg')?.price).toBe(4);
     expect(ITEM_BY_ID.get('nest-egg')?.description).toContain('+3 gold');
-    expect(ITEM_BY_ID.get('plate-timer')?.price).toBe(7);
-    expect(ITEM_BY_ID.get('plate-timer')?.description).toContain('15s');
     expect(ITEM_BY_ID.get('second-skin')?.price).toBe(9);
     expect(ITEM_BY_ID.get('second-skin')?.rarity).toBe('uncommon');
     expect(ITEM_BY_ID.get('second-skin')?.description).not.toContain('heal');

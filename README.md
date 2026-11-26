@@ -50,7 +50,7 @@ A 40-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - Rarity uses cumulative floors: 40% pulls from rare, uncommon or common, 45% pulls from uncommon or common, and 15% pulls from common only. If a tier is empty, it falls back to the entire pool
 - Rare items you currently own will not appear again in shops or rewards. They are ordinary item finds, no longer boss-only rewards
 - Defeat reveals the answer you missed (all of them, on bosses)
-- 102 items (91 shop items + 11 rare items), 6 spells, 81 foods and 33 happenings
+- 101 items (90 shop items + 11 rare items), 6 spells, 81 foods and 33 happenings
 - New foods include **U-nagi**, **Donut Holes**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with an Omen spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout

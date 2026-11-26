@@ -101,7 +101,6 @@ const ITEM_ICONS: Record<string, string> = {
   'solo-note': '🎵',
   'tally-lens': '🛎️',
   'meal-timer': '🍽️',
-  'plate-timer': '🛡️',
   'off-road': '🚙',
   'clean-slate': '🧼',
   'growth-spurt': '🌱',

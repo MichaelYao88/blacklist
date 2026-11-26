@@ -95,7 +95,6 @@ const ITEM_TAG_MAP: Record<string, ItemTag[]> = {
   'growth-spurt': ['guess'],
   'tally-lens': ['vision'],
   'meal-timer': ['food', 'time'],
-  'plate-timer': ['armor', 'time'],
   'oracle-skull': ['spell', 'vision'],
   'thorn-crown': ['armor', 'spell'],
   'phoenix-egg': ['spell'],
@@ -1731,27 +1730,6 @@ export const ITEMS: ItemDef[] = [
       onEat: () => [{ type: 'addTime', ms: 2_000 }],
     },
   }),
-  defineItem({
-    id: 'plate-timer',
-    name: 'Plate Timer',
-    description: 'Every 10 armor lost adds 15s to the clock.',
-    price: 7,
-    kind: 'gear',
-    requiresClock: true,
-    initial: { lost: 0 },
-    on: {
-      onDamageTaken: (ctx, p) => {
-        if (p.armorUsed <= 0) return [];
-        const total = ctx.self.data.lost + p.armorUsed;
-        const seconds = Math.floor(total / 10);
-        return [
-          { type: 'setItemData', stat: 'lost', value: total % 10 },
-          ...Array.from({ length: seconds }, () => ({ type: 'addTime' as const, ms: 15_000 })),
-        ];
-      },
-    },
-  }),
-
   // ── rare items ──────────────────────────────────────────────────────────
   // Rare finds. They use one item slot, can appear in shops and rewards, and
   // are not passive-only. Several of them feed the spell engine.

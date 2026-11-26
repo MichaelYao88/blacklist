@@ -411,7 +411,7 @@ export const FOODS: FoodDef[] = [
     id: 'honey-cake',
     name: 'Honey Cake',
     description: 'Heal 6 HP and gain Omen. No slot.',
-    price: 6,
+    price: 4,
     effects: [
       { type: 'heal', amount: 6 },
       { type: 'giveSpell', spell: 'omen' },
@@ -420,10 +420,11 @@ export const FOODS: FoodDef[] = [
   defineFood({
     id: 'juicy-peach',
     name: 'Juicy Peach',
-    description: 'Heal 2 HP. 50%: Restore. No slot.',
+    description: '+3 max HP and +3 HP. 50%: Restore. No slot.',
     price: 4,
     effects: [
-      { type: 'heal', amount: 2 },
+      { type: 'maxHp', delta: 3 },
+      { type: 'heal', amount: 3 },
       { type: 'giveSpell', spell: 'restore', chancePct: 50 },
     ],
   }),
