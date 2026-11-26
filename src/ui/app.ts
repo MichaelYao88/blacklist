@@ -3825,9 +3825,12 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
       <article class="offer-card ${isFood ? 'food' : offer.kind} ${cannotAfford ? 'unavailable' : ''} ${offer.sale ? 'sale' : ''} ${isRare ? 'rare' : isUncommon ? 'uncommon' : ''}">
         <div class="offer-top">
           <span class="item-emoji" aria-hidden="true">${info.icon}</span>
-          ${offer.kind === 'spell'
-            ? '<span class="tag spell-tag">SPELL</span>'
-            : `<span class="slot-note"${slotTip}>${slotLabel(info.slots)}</span>`}
+          <div class="offer-badges">
+            ${offer.sale ? '<span class="tag sale-tag">50% OFF</span>' : ''}
+            ${offer.kind === 'spell'
+              ? '<span class="tag spell-tag">SPELL</span>'
+              : `<span class="slot-note"${slotTip}>${slotLabel(info.slots)}</span>`}
+          </div>
         </div>
         <h3>${escapeHtml(info.name)}</h3>
         <p>${glossaryText(description)}</p>

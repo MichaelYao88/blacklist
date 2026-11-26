@@ -1787,6 +1787,11 @@ button {
   border-color: rgba(139, 107, 217, 0.4);
 }
 
+.offer-card .tag.sale-tag {
+  color: var(--gold);
+  border-color: rgba(231, 184, 90, 0.55);
+}
+
 .offer-card.spell::after {
   content: '';
   position: absolute;
@@ -4816,6 +4821,14 @@ button {
   justify-content: space-between;
   width: 100%;
   gap: 8px;
+}
+
+.offer-badges {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
 .offer-top .item-emoji {

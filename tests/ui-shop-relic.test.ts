@@ -26,6 +26,7 @@ describe('shop relic labelling', () => {
         { id: 'o11', kind: 'item', def: 'scattershot', price: 10 },
         { id: 'o12', kind: 'spell', def: 'heal', price: 6 },
         { id: 'o13', kind: 'eat', def: 'hearty-meal', price: 8 },
+        { id: 'o14', kind: 'item', def: 'early-bird', price: 3, sale: true, originalPrice: 6 },
       ],
       rerollCost: 2,
       rerolls: 0,
@@ -104,6 +105,14 @@ describe('shop relic labelling', () => {
     expect(spell?.classList.contains('food')).toBe(false);
     expect(spell?.querySelector('.offer-top .slot-note')).toBeNull();
     expect(spell?.querySelector('.offer-top .tag')?.textContent?.trim()).toBe('SPELL');
+  });
+
+  it('shows a 50% OFF tag on sale offers', () => {
+    const sale = [...root.querySelectorAll<HTMLElement>('.offer-card')]
+      .find((card) => card.textContent?.includes('Early Bird'));
+    expect(sale?.classList.contains('sale')).toBe(true);
+    expect(sale?.querySelector('.offer-top .sale-tag')?.textContent?.trim()).toBe('50% OFF');
+    expect(sale?.querySelector('.offer-top .slot-note')?.textContent?.trim()).toBe('1 ITEM SLOT');
   });
 
   it('keeps the inventory in the rail column directly under the shop rail', () => {
