@@ -292,7 +292,7 @@ Pushes to `main` build the game and upload it to itch.io with [butler](https://i
 
 Vite's `base` is `./`, so script and stylesheet URLs are relative to the page. The same build loads on GitHub Pages (`/blacklist/`) and inside an itch.io iframe at whatever path itch serves.
 
-The build includes a minimal web app manifest with `"orientation": "portrait"`, and the game asks for a portrait orientation lock on the first tap and when a run starts. Orientation lock only works in a fullscreen, user-gesture context, so failures are ignored. The itch.io embed's own orientation is not controlled by butler or this repo: set **Mobile friendly** and the page orientation to **Portrait** in the itch.io project dashboard (Edit game → Embed options) for the iframe itself to fullscreen vertically.
+The build includes a minimal web app manifest with `"display": "standalone"` but no orientation hint. The game does not request fullscreen or lock the screen orientation, so it runs inline inside the itch.io embed. The embed's own fullscreen and orientation behavior is not controlled by butler or this repo: set **Mobile friendly** and the embed fullscreen options in the itch.io project dashboard (Edit game → Embed options).
 
 The workflow reads the target from repository variables `vars.ITCH_USER` and `vars.ITCH_GAME` and the API key from the `BUTLER_API_KEY` secret. It zips the files inside `dist/` (so `index.html` is the archive root, not `dist/index.html`) and pushes that zip to `ITCH_USER/ITCH_GAME:html5`.
 

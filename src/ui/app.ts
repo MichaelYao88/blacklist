@@ -86,7 +86,6 @@ import werewolfDeath from '../assets/sprites/werewolf-death.png';
 import werewolfPortrait from '../assets/sprites/werewolf-portrait.png';
 import { sfx } from './audio';
 import { music } from './music';
-import { lockPortraitOrientation } from './orientation';
 import { ASCENSION_MAX, ascensionSummary } from '../core/ascension';
 
 interface CharacterSprite {
@@ -487,13 +486,6 @@ let characterTipMute = false;
 let characterUnlock: string | null = null;
 let characterUnlockQueue: string[] = [];
 let keyboardLayoutNoticeShown = false;
-let portraitLockRequested = false;
-
-function requestPortraitOnGesture(): void {
-  if (portraitLockRequested) return;
-  portraitLockRequested = true;
-  lockPortraitOrientation();
-}
 
 function queueCharacterUnlock(id: string): void {
   if (characterUnlock === id || characterUnlockQueue.includes(id)) return;
@@ -1283,7 +1275,6 @@ function startNewRun(preferredCharacter?: string): void {
   const chosen = preferredCharacter ?? selectedCharacter;
   const character = unlocked.includes(chosen) ? chosen : 'runner';
   selectedCharacter = character;
-  lockPortraitOrientation();
   const events = host.start(seed, selectedAscension, character);
   music.beginRun();
   recordStart();
@@ -1344,7 +1335,6 @@ function resumeRun(): void {
     render();
     return;
   }
-  lockPortraitOrientation();
   const resumedView = host.view();
   if (resumedView && readMeta().characters.includes(resumedView.character)) {
     selectedCharacter = resumedView.character;
@@ -1505,7 +1495,6 @@ app.addEventListener('click', (event) => {
     event.stopPropagation();
     return;
   }
-  requestPortraitOnGesture();
   sfx.unlock();
   music.unlock();
   const target = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-action]');
