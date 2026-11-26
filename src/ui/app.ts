@@ -84,6 +84,7 @@ import werewolfDeath from '../assets/sprites/werewolf-death.png';
 import werewolfPortrait from '../assets/sprites/werewolf-portrait.png';
 import { sfx } from './audio';
 import { music } from './music';
+import { lockPortraitOrientation } from './orientation';
 import { ASCENSION_MAX, ascensionSummary } from '../core/ascension';
 
 interface CharacterSprite {
@@ -249,11 +250,21 @@ let necroDrawerOpen = false;
 // Mobile item shortcuts. The drawers share the spells drawer's behaviour: one
 // open at a time, and the open flag survives the once-per-second re-render.
 const MOBILE_ITEM_TABS = [
-  { id: 'evil-parrot', key: 'parrot', label: 'PARROT', title: 'EVIL PARROT' },
-  { id: 'necronomicon', key: 'necro', label: 'NECRO', title: 'NECRONOMICON' },
+  { id: 'necronomicon', key: 'necro', title: 'NECRONOMICON' },
+  { id: 'evil-parrot', key: 'parrot', title: 'EVIL PARROT' },
 ] as const;
 
 type MobileItemKey = (typeof MOBILE_ITEM_TABS)[number]['key'];
+
+const MOBILE_TAB_HEIGHTS = { spells: 91, item: 44 } as const;
+const MOBILE_TAB_OVERLAP = 0.1;
+const MOBILE_SPELLS_TAB_Z = 63;
+const MOBILE_ITEM_TAB_Z: Record<MobileItemKey, number> = { necro: 62, parrot: 61 };
+const MOBILE_OPEN_TAB_Z = 66;
+
+function mobileTabStep(height: number): number {
+  return Math.round(height * (1 - MOBILE_TAB_OVERLAP));
+}
 
 function isItemDrawerOpen(key: MobileItemKey): boolean {
   return key === 'parrot' ? parrotDrawerOpen : necroDrawerOpen;
@@ -465,6 +476,13 @@ let characterTipMute = false;
 let characterUnlock: string | null = null;
 let characterUnlockQueue: string[] = [];
 let keyboardLayoutNoticeShown = false;
+let portraitLockRequested = false;
+
+function requestPortraitOnGesture(): void {
+  if (portraitLockRequested) return;
+  portraitLockRequested = true;
+  lockPortraitOrientation();
+}
 
 function queueCharacterUnlock(id: string): void {
   if (characterUnlock === id || characterUnlockQueue.includes(id)) return;
@@ -1250,6 +1268,7 @@ function startNewRun(preferredCharacter?: string): void {
   const chosen = preferredCharacter ?? selectedCharacter;
   const character = unlocked.includes(chosen) ? chosen : 'runner';
   selectedCharacter = character;
+  lockPortraitOrientation();
   const events = host.start(seed, selectedAscension, character);
   music.beginRun();
   recordStart();
@@ -1308,6 +1327,7 @@ function resumeRun(): void {
     render();
     return;
   }
+  lockPortraitOrientation();
   const resumedView = host.view();
   if (resumedView && readMeta().characters.includes(resumedView.character)) {
     selectedCharacter = resumedView.character;
@@ -1466,6 +1486,7 @@ app.addEventListener('click', (event) => {
     event.stopPropagation();
     return;
   }
+  requestPortraitOnGesture();
   sfx.unlock();
   music.unlock();
   const target = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-action]');
@@ -3014,17 +3035,22 @@ function renderMysteriousRoom(): string {
 
 function renderMobileSpells(view: RunView): string {
   if (!isMobileLayout()) return '';
+  if (view.spells.length === 0) {
+    spellsDrawerOpen = false;
+    return '';
+  }
   const stacks = new Map<string, { spell: SpellView; count: number }>();
   for (const spell of view.spells) {
     const entry = stacks.get(spell.id);
     if (entry) entry.count += 1;
     else stacks.set(spell.id, { spell, count: 1 });
   }
-  const spells = stacks.size
-    ? [...stacks.values()].map(({ spell, count }) => renderSpell(view, spell, count)).join('')
-    : `<p class="empty-note">No spells. Food and item triggers make them.</p>`;
+  const spells = [...stacks.values()]
+    .map(({ spell, count }) => renderSpell(view, spell, count))
+    .join('');
+  const spellsTabZ = spellsDrawerOpen ? MOBILE_OPEN_TAB_Z : MOBILE_SPELLS_TAB_Z;
   return `<div class="mobile-spells ${spellsDrawerOpen ? 'open' : ''}">
-    <button class="mobile-spells-tab" data-action="toggle-spells" aria-expanded="${spellsDrawerOpen}">
+    <button class="mobile-spells-tab" style="--tab-offset:0px;--tab-z:${spellsTabZ};z-index:${spellsTabZ}" data-action="toggle-spells" aria-expanded="${spellsDrawerOpen}">
       <span>SPELLS</span><b>${view.spells.length}</b>
     </button>
     <div class="mobile-spells-scrim" data-action="close-spells" aria-hidden="${spellsDrawerOpen ? 'false' : 'true'}"></div>
@@ -3040,14 +3066,18 @@ function renderMobileItemDrawers(view: RunView): string {
   const owned = MOBILE_ITEM_TABS.filter((tab) => (
     view.items.some((item) => item.id === tab.id)
   ));
-  return owned.map((tab, index) => {
+  const hasSpellsTab = view.spells.length > 0;
+  let nextOffset = hasSpellsTab ? mobileTabStep(MOBILE_TAB_HEIGHTS.spells) : 0;
+  return owned.map((tab) => {
     const item = view.items.find((entry) => entry.id === tab.id)!;
     const open = isItemDrawerOpen(tab.key);
-    // Index 0 is always the spells tab, so item tabs start below it.
-    const tabIndex = index + 1;
+    const tabOffset = nextOffset;
+    nextOffset += mobileTabStep(MOBILE_TAB_HEIGHTS.item);
+    const tabZ = open ? MOBILE_OPEN_TAB_Z : MOBILE_ITEM_TAB_Z[tab.key];
+    const itemName = escapeHtml(ITEM_BY_ID.get(tab.id)?.name ?? tab.id);
     return `<div class="mobile-item ${open ? 'open' : ''}" data-mobile-item="${tab.key}">
-      <button class="mobile-item-tab" style="--tab-index:${tabIndex}" data-action="toggle-${tab.key}" aria-expanded="${open}">
-        <span>${tab.label}</span><span class="mobile-item-tab-emoji" aria-hidden="true">${itemIcon(tab.id)}</span>
+      <button class="mobile-item-tab" style="--tab-offset:${tabOffset}px;--tab-z:${tabZ};z-index:${tabZ}" data-action="toggle-${tab.key}" aria-expanded="${open}" aria-label="${itemName}" title="${itemName}">
+        <span class="mobile-item-tab-emoji" aria-hidden="true">${itemIcon(tab.id)}</span>
       </button>
       <div class="mobile-item-scrim" data-action="close-${tab.key}" aria-hidden="${open ? 'false' : 'true'}"></div>
       <aside class="mobile-item-drawer" aria-label="${tab.title}" aria-hidden="${open ? 'false' : 'true'}">

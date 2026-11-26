@@ -1,0 +1,9 @@
+{
+  "name": "BLACKLIST — a word roguelike",
+  "short_name": "BLACKLIST",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0d0b12",
+  "background_color": "#0d0b12"
+}
