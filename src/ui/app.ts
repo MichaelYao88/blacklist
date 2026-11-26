@@ -3672,7 +3672,9 @@ function renderReward(phase: Extract<PhaseView, { kind: 'reward' }>): string {
             <span class="reward-icon" aria-hidden="true">${icon}</span>
             ${option.kind === 'spell'
               ? '<span class="tag spell-tag">SPELL</span>'
-              : slots !== null ? `<span class="slot-note">${slotLabel(slots)}</span>` : ''}
+              : option.kind === 'eat'
+                ? '<span class="tag food-tag">FOOD</span>'
+                : slots !== null ? `<span class="slot-note">${slotLabel(slots)}</span>` : ''}
           </span>
           <b>${escapeHtml(option.label)}</b>
           <span>${glossaryText(description)}</span>
@@ -3829,7 +3831,9 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
             ${offer.sale ? '<span class="tag sale-tag">50% OFF</span>' : ''}
             ${offer.kind === 'spell'
               ? '<span class="tag spell-tag">SPELL</span>'
-              : `<span class="slot-note"${slotTip}>${slotLabel(info.slots)}</span>`}
+              : isFood
+                ? `<span class="tag food-tag"${slotTip}>FOOD</span>`
+                : `<span class="slot-note">${slotLabel(info.slots)}</span>`}
           </div>
         </div>
         <h3>${escapeHtml(info.name)}</h3>

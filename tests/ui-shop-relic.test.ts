@@ -64,37 +64,37 @@ describe('shop relic labelling', () => {
     expect(common?.querySelector('.offer-top .slot-note')?.textContent?.trim()).toBe('1 ITEM SLOT');
   });
 
-  it('keeps food rarity styling without text and shows no item slot', () => {
+  it('keeps food rarity styling and shows a food tag', () => {
     const rareFood = [...root.querySelectorAll<HTMLElement>('.offer-card')]
       .find((card) => card.textContent?.includes('Reveal the D'));
     expect(rareFood?.classList.contains('rare')).toBe(true);
     expect(rareFood?.classList.contains('food')).toBe(true);
-    expect(rareFood?.querySelector('.tag')).toBeNull();
-    expect(rareFood?.querySelector('.offer-top .slot-note')?.textContent?.trim()).toBe('NO ITEM SLOT');
+    expect(rareFood?.querySelector('.offer-top .slot-note')).toBeNull();
+    expect(rareFood?.querySelector('.offer-top .food-tag')?.textContent?.trim()).toBe('FOOD');
 
     const uncommonFood = [...root.querySelectorAll<HTMLElement>('.offer-card')]
       .find((card) => card.textContent?.includes('Satchel'));
     expect(uncommonFood?.classList.contains('uncommon')).toBe(true);
     expect(uncommonFood?.classList.contains('food')).toBe(true);
-    expect(uncommonFood?.querySelector('.tag')).toBeNull();
-    expect(uncommonFood?.querySelector('.offer-top .slot-note')?.textContent?.trim()).toBe('NO ITEM SLOT');
+    expect(uncommonFood?.querySelector('.offer-top .slot-note')).toBeNull();
+    expect(uncommonFood?.querySelector('.offer-top .food-tag')?.textContent?.trim()).toBe('FOOD');
 
     const commonFood = [...root.querySelectorAll<HTMLElement>('.offer-card')]
       .find((card) => card.textContent?.includes('Hearty Meal'));
     expect(commonFood?.classList.contains('food')).toBe(true);
     expect(commonFood?.classList.contains('rare')).toBe(false);
     expect(commonFood?.classList.contains('uncommon')).toBe(false);
-    expect(commonFood?.querySelector('.tag')).toBeNull();
-    expect(commonFood?.querySelector('.offer-top .slot-note')?.textContent?.trim()).toBe('NO ITEM SLOT');
+    expect(commonFood?.querySelector('.offer-top .slot-note')).toBeNull();
+    expect(commonFood?.querySelector('.offer-top .food-tag')?.textContent?.trim()).toBe('FOOD');
   });
 
   it('moves "No slot." into the food hover text', () => {
     for (const card of root.querySelectorAll<HTMLElement>('.offer-card.food')) {
       expect(card.querySelector('p')?.textContent).not.toContain('No slot');
-      const slot = card.querySelector<HTMLElement>('.offer-top .slot-note');
+      const slot = card.querySelector<HTMLElement>('.offer-top .food-tag');
       expect(slot?.dataset.tip).toBe("Food doesn't take inventory space.");
       expect(slot?.getAttribute('tabindex')).toBe('0');
-      expect(slot?.textContent?.trim()).toBe('NO ITEM SLOT');
+      expect(slot?.textContent?.trim()).toBe('FOOD');
     }
   });
 
@@ -126,16 +126,15 @@ describe('shop relic labelling', () => {
       const card = [...root.querySelectorAll<HTMLElement>('.offer-card')]
         .find((entry) => entry.textContent?.includes(name));
       expect(card?.classList.contains('uncommon')).toBe(true);
-      expect(card?.querySelector('.tag')).toBeNull();
-      expect(card?.querySelector('.offer-top .slot-note')).not.toBeNull();
+      expect(card?.querySelector('.offer-top .offer-badges')).not.toBeNull();
     }
 
     for (const name of ['A-Steak', 'Reveal the D']) {
       const card = [...root.querySelectorAll<HTMLElement>('.offer-card')]
         .find((entry) => entry.textContent?.includes(name));
       expect(card?.classList.contains('rare')).toBe(true);
-      expect(card?.querySelector('.tag')).toBeNull();
-      expect(card?.querySelector('.offer-top .slot-note')?.textContent?.trim()).toBe('NO ITEM SLOT');
+      expect(card?.querySelector('.tag')).not.toBeNull();
+      expect(card?.querySelector('.offer-top .food-tag')?.textContent?.trim()).toBe('FOOD');
     }
   });
 });

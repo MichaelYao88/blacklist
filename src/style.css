@@ -1774,7 +1774,7 @@ button {
   background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
 }
 
-.offer-card.food .slot-note {
+.offer-card.food .food-tag {
   cursor: help;
 }
 

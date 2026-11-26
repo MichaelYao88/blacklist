@@ -58,7 +58,8 @@ describe('reward copy and confirm', () => {
     expect(item.textContent).toContain('1 ITEM SLOT');
     const food = [...root.querySelectorAll<HTMLElement>('.reward-card')]
       .find((card) => card.textContent?.includes('Snack'))!;
-    expect(food.textContent).toContain('NO ITEM SLOT');
+    expect(food.querySelector('.tag')?.textContent?.trim()).toBe('FOOD');
+    expect(food.querySelector('.slot-note')).toBeNull();
   });
 
   it('selects on the first tap and claims only on confirm', () => {
