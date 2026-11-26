@@ -5350,12 +5350,13 @@ button {
   .mobile-spells-tab,
   .mobile-item-tab {
     position: fixed;
-    top: calc(25% + var(--tab-offset, 0px));
+    top: calc(20% + var(--tab-offset, 0px));
     left: 0;
     z-index: var(--tab-z, 61);
     display: flex;
     align-items: center;
     gap: 6px;
+    min-width: 40px;
     padding: 12px 9px;
     border: 1px solid var(--line-2);
     border-left: 0;
