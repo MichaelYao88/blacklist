@@ -2015,6 +2015,122 @@ if (typeof window.addEventListener === 'function') {
   }, { passive: true });
 }
 
+let renderedHtml: string | null = null;
+
+function morphKey(node: Node): string | null {
+  if (node.nodeType !== Node.ELEMENT_NODE) return null;
+  const element = node as Element;
+  const explicit = element.getAttribute('data-morph-key');
+  if (explicit) return `morph:${explicit}`;
+  if (element.id) return `id:${element.id}`;
+  if (element.hasAttribute('data-list-input')) return 'list-input';
+  const scrollKey = element.getAttribute('data-scroll-key');
+  if (scrollKey) return `scroll:${scrollKey}`;
+  const mobileItem = element.getAttribute('data-mobile-item');
+  if (mobileItem) return `mobile-item:${mobileItem}`;
+  const procId = element.getAttribute('data-proc-id');
+  if (procId) return `proc:${procId}`;
+  return null;
+}
+
+function sameNodeShape(a: Node, b: Node): boolean {
+  if (a.nodeType !== b.nodeType) return false;
+  if (a.nodeType === Node.ELEMENT_NODE) {
+    return (a as Element).tagName === (b as Element).tagName;
+  }
+  return a.nodeName === b.nodeName;
+}
+
+function findMorphMatch(start: Node | null, target: Node): Node | null {
+  const key = morphKey(target);
+  if (key) {
+    for (let candidate = start; candidate; candidate = candidate.nextSibling) {
+      if (morphKey(candidate) === key) return candidate;
+    }
+    return null;
+  }
+  return start && sameNodeShape(start, target) ? start : null;
+}
+
+function syncAttributes(oldElement: Element, newElement: Element): void {
+  for (let index = oldElement.attributes.length - 1; index >= 0; index -= 1) {
+    const name = oldElement.attributes[index].name;
+    if (!newElement.hasAttribute(name)) oldElement.removeAttribute(name);
+  }
+  for (const attribute of Array.from(newElement.attributes)) {
+    if (oldElement.getAttribute(attribute.name) !== attribute.value) {
+      oldElement.setAttribute(attribute.name, attribute.value);
+    }
+  }
+}
+
+function syncFormControlState(oldElement: Element, newElement: Element): void {
+  if (oldElement instanceof HTMLInputElement && newElement instanceof HTMLInputElement) {
+    const value = newElement.getAttribute('value') ?? '';
+    if (oldElement.value !== value) oldElement.value = value;
+    if (
+      (oldElement.type === 'checkbox' || oldElement.type === 'radio')
+      && oldElement.checked !== newElement.hasAttribute('checked')
+    ) {
+      oldElement.checked = newElement.hasAttribute('checked');
+    }
+    return;
+  }
+  if (oldElement instanceof HTMLTextAreaElement && newElement instanceof HTMLTextAreaElement) {
+    if (oldElement.value !== newElement.value) oldElement.value = newElement.value;
+    return;
+  }
+  if (oldElement instanceof HTMLSelectElement && newElement instanceof HTMLSelectElement) {
+    if (oldElement.value !== newElement.value) oldElement.value = newElement.value;
+  }
+}
+
+function morphNode(oldNode: Node, newNode: Node): Node {
+  if (oldNode.nodeType !== newNode.nodeType || oldNode.nodeName !== newNode.nodeName) {
+    return newNode.cloneNode(true);
+  }
+  if (oldNode.nodeType === Node.TEXT_NODE || oldNode.nodeType === Node.COMMENT_NODE) {
+    if (oldNode.nodeValue !== newNode.nodeValue) oldNode.nodeValue = newNode.nodeValue;
+    return oldNode;
+  }
+  if (oldNode.nodeType !== Node.ELEMENT_NODE) return oldNode;
+  syncAttributes(oldNode as Element, newNode as Element);
+  syncFormControlState(oldNode as Element, newNode as Element);
+  morphChildren(oldNode, newNode);
+  return oldNode;
+}
+
+function morphChildren(oldParent: Node, newParent: Node): void {
+  let oldChild: Node | null = oldParent.firstChild;
+  let newChild: Node | null = newParent.firstChild;
+  while (newChild) {
+    const nextNew = newChild.nextSibling;
+    const match = findMorphMatch(oldChild, newChild);
+    if (match) {
+      if (match !== oldChild) oldParent.insertBefore(match, oldChild);
+      const morphed = morphNode(match, newChild);
+      if (morphed !== match) oldParent.replaceChild(morphed, match);
+      oldChild = morphed.nextSibling;
+    } else {
+      oldParent.insertBefore(newChild.cloneNode(true), oldChild);
+    }
+    newChild = nextNew;
+  }
+  while (oldChild) {
+    const nextOld = oldChild.nextSibling;
+    oldParent.removeChild(oldChild);
+    oldChild = nextOld;
+  }
+}
+
+function morphApp(html: string): void {
+  if (html === renderedHtml) return;
+  const template = document.createElement('template');
+  template.innerHTML = html;
+  morphChildren(app!, template.content);
+  renderedHtml = html;
+}
+
 function render(): void {
   // A full re-render replaces every button node. Doing that between a pointer
   // press and release swallows the click, so hold renders until the press ends.
@@ -2048,20 +2164,23 @@ function render(): void {
   music.setBoss(bossMusic);
   if (screen === 'run' && view) music.setLevel(view.level);
 
+  let html: string;
   if (screen === 'title') {
-    app!.innerHTML = renderTitle();
+    html = renderTitle();
   } else if (screen === 'help') {
-    app!.innerHTML = renderHelp();
+    html = renderHelp();
   } else if (screen === 'stats') {
-    app!.innerHTML = renderStats();
+    html = renderStats();
   } else {
-    app!.innerHTML = renderRun(view as RunView);
+    html = renderRun(view as RunView);
   }
-  app!.insertAdjacentHTML('beforeend', noticeHtml());
-  if (characterUnlock) app!.insertAdjacentHTML('beforeend', renderCharacterUnlock());
+  html += noticeHtml();
+  if (characterUnlock) html += renderCharacterUnlock();
+  morphApp(html);
   if (listInputWasFocused) {
     const next = app!.querySelector<HTMLInputElement>('[data-list-input]');
     if (next) {
+      if (next.value !== listInputValue) next.value = listInputValue;
       next.focus();
       if (listSelection && listSelection.start !== null) {
         try {
@@ -2071,6 +2190,11 @@ function render(): void {
         }
       }
     }
+  }
+  if (epoch !== renderedEpoch) {
+    app!.querySelectorAll<HTMLElement>('[data-scroll-key]').forEach((element) => {
+      element.scrollTop = 0;
+    });
   }
   if (savedScroll) restoreScrollPositions(savedScroll);
   renderedEpoch = epoch;
@@ -2175,7 +2299,7 @@ function renderOpeningShield(view: RunView | null): void {
 
 function noticeHtml(): string {
   if (!notice) return '';
-  return `<div class="toast ${notice.kind}">${escapeHtml(notice.text)}</div>`;
+  return `<div class="toast ${notice.kind}" data-morph-key="toast">${escapeHtml(notice.text)}</div>`;
 }
 
 function renderCharacterUnlock(): string {
@@ -2192,7 +2316,7 @@ function renderCharacterUnlock(): string {
     ...curses.map((name) => `${name} curse`),
   ].join(', ');
   return `
-  <div class="unlock-overlay" role="dialog" aria-modal="true" aria-labelledby="unlock-title">
+  <div class="unlock-overlay" data-morph-key="unlock-overlay" role="dialog" aria-modal="true" aria-labelledby="unlock-title">
     <div class="unlock-card">
       <p class="kicker">CHARACTER UNLOCKED</p>
       <i class="character-portrait unlock-portrait ${characterPortraitClass(def.id)}" aria-hidden="true" style="${characterPortraitStyle(def.id)}"></i>
@@ -2368,7 +2492,7 @@ function renderCharacterTip(): string {
   const tip = characterTip ? CHARACTER_TIPS[characterTip] : undefined;
   if (!tip) return '';
   return `
-  <div class="modal character-tip-modal">
+  <div class="modal character-tip-modal" data-morph-key="character-tip">
     <div class="modal-card">
       <p class="panel-kicker">${escapeHtml(tip.kicker)}</p>
       <h2>${escapeHtml(tip.title)}</h2>
@@ -3129,7 +3253,7 @@ function renderMobileSpells(view: RunView): string {
     .map(({ spell, count }) => renderSpell(view, spell, count))
     .join('');
   const spellsTabZ = spellsDrawerOpen ? MOBILE_OPEN_TAB_Z : MOBILE_SPELLS_TAB_Z;
-  return `<div class="mobile-spells ${spellsDrawerOpen ? 'open' : ''}">
+  return `<div class="mobile-spells ${spellsDrawerOpen ? 'open' : ''}" data-morph-key="mobile-spells">
     <button class="mobile-spells-tab" style="--tab-offset:0px;--tab-z:${spellsTabZ};z-index:${spellsTabZ}" data-action="toggle-spells" aria-expanded="${spellsDrawerOpen}">
       <span>SPELLS</span><b>${view.spells.length}</b>
     </button>
@@ -3670,7 +3794,7 @@ function renderCurseRemovalModal(view: RunView): string {
   if (view.pendingCurseRemoval <= 0) return '';
   const selectedId = pendingChoice?.kind === 'remove-curse' ? pendingChoice.id : undefined;
   return `
-  <div class="modal">
+  <div class="modal" data-morph-key="curse-removal-modal">
     <div class="modal-card">
       <p class="panel-kicker">CURSE REMOVAL</p>
       <h2>Choose one burden</h2>
@@ -3949,7 +4073,7 @@ function renderOver(phase: Extract<PhaseView, { kind: 'over' }>): string {
 
 function renderDamageTutorial(): string {
   return `
-  <div class="modal damage-tutorial">
+  <div class="modal damage-tutorial" data-morph-key="damage-tutorial">
     <div class="modal-card">
       <p class="panel-kicker">DAMAGE</p>
       <h2>The monster hits back</h2>
@@ -3972,7 +4096,7 @@ function renderPurgeModal(view: RunView): string {
   const purgeLabel = `${view.pendingPurge} purge${view.pendingPurge === 1 ? '' : 's'} pending`;
   const selectedLetter = pendingChoice?.kind === 'purge' ? pendingChoice.letter : undefined;
   return `
-  <div class="modal">
+  <div class="modal" data-morph-key="purge-modal">
     <div class="modal-card">
       <p class="panel-kicker">${setup ? 'BEFORE THE FIRST FLOOR' : 'LETTER PURGE'}</p>
       <h2>${setup ? `Erase ${view.pendingPurge} letter${view.pendingPurge === 1 ? '' : 's'}` : 'Erase a letter'}</h2>
@@ -4080,7 +4204,7 @@ function renderListModal(view: RunView): string {
     : `<p class="list-possible">${escapeHtml(sentence)}</p>
        <p class="list-sample">Sample: <b>${escapeHtml((summary.sample ?? '').toUpperCase())}</b></p>`;
   return `
-  <div class="modal list-modal" role="dialog" aria-modal="true" aria-labelledby="list-title">
+  <div class="modal list-modal" data-morph-key="list-modal" role="dialog" aria-modal="true" aria-labelledby="list-title">
     <div class="modal-card list-card">
       <p class="panel-kicker">PURGAMANUAL</p>
       <h2 id="list-title">Possible words</h2>
@@ -4104,7 +4228,7 @@ function renderPauseOverlay(view: RunView): string {
     ? 'Take your time. Nothing moves until you come back.'
     : 'Take a breath. The list can wait.';
   return `
-  <div class="pause-overlay">
+  <div class="pause-overlay" data-morph-key="pause-overlay">
     <div class="pause-card" data-scroll-key="pause">
       <span class="pause-icon" aria-hidden="true">⏸</span>
       <p class="panel-kicker">PAUSED</p>
