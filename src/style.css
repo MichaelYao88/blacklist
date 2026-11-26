@@ -5476,3 +5476,122 @@ button {
     word-break: normal;
   }
 }
+
+/* ── The List glossary modal ─────────────────────────────────────────────── */
+
+.list-modal {
+  z-index: 70;
+}
+
+.list-card {
+  text-align: left;
+}
+
+.list-card h2,
+.list-card .panel-kicker {
+  text-align: center;
+}
+
+.list-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  max-height: 34vh;
+  margin: 18px 0 8px;
+  overflow-y: auto;
+}
+
+.list-chip {
+  min-width: 30px;
+  padding: 6px 8px;
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  background: linear-gradient(180deg, #241d31, #1a1524);
+  color: var(--ink);
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.list-chip.from-default {
+  border-color: rgba(139, 107, 217, 0.55);
+  color: #c9b8f5;
+  cursor: default;
+  opacity: 0.9;
+}
+
+.list-chip.from-added {
+  border-color: rgba(231, 184, 90, 0.6);
+  color: var(--gold);
+}
+
+.list-chip:hover:not(:disabled) {
+  border-color: var(--gold);
+  background: rgba(231, 184, 90, 0.12);
+}
+
+.list-input-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  margin: 14px 0;
+}
+
+.list-input {
+  flex: 1 1 150px;
+  min-width: 0;
+  max-width: 220px;
+  padding: 9px 11px;
+  border: 1px solid var(--line-2);
+  border-radius: 7px;
+  background: rgba(13, 10, 20, 0.8);
+  color: var(--ink);
+  font: inherit;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.list-input:focus {
+  outline: none;
+  border-color: var(--violet);
+  box-shadow: 0 0 0 2px rgba(139, 107, 217, 0.3);
+}
+
+.list-result {
+  min-height: 64px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: rgba(13, 10, 20, 0.45);
+  text-align: center;
+}
+
+.list-possible,
+.list-sample,
+.list-empty {
+  margin: 2px 0;
+}
+
+.list-possible b,
+.list-sample b {
+  color: var(--gold);
+  font-size: 1.15rem;
+  letter-spacing: 0.08em;
+}
+
+.list-empty b {
+  color: #ff9c96;
+}
+
+@media (max-width: 620px) {
+  .list-card {
+    padding: 18px;
+  }
+
+  .list-input {
+    max-width: none;
+  }
+}

@@ -1258,7 +1258,20 @@ export function createCore(content: Content): Core {
             type: 'parrotSuggestion',
             word,
             ...(effect.flavor ? { flavor: effect.flavor } : {}),
+            ...(effect.source ? { source: effect.source } : {}),
           });
+          if (effect.source === 'necronomicon') {
+            const cost = Math.min(
+              Math.ceil(state.maxHp * 0.06),
+              Math.max(0, state.maxHp - 1),
+            );
+            if (cost > 0) {
+              applyEffects(rt, [
+                { type: 'maxHp', delta: -cost },
+                { type: 'message', text: 'The book takes something from you...' },
+              ], source);
+            }
+          }
         }
         break;
       }
@@ -4068,6 +4081,9 @@ export function createCore(content: Content): Core {
     const state = rt.state;
     const round = state.round;
     if (!round || dtMs <= 0) return;
+    // Only the Soldier's parrot steals. Other classes still get its free
+    // whisper and paid cracker, but never the idle theft.
+    if (state.character !== 'runner') return;
     round.parrotIdleMs = (round.parrotIdleMs ?? 0) + dtMs;
     while (round.parrotIdleMs >= PARROT_STEAL_MS) {
       round.parrotIdleMs -= PARROT_STEAL_MS;

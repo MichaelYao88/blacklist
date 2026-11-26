@@ -17,6 +17,7 @@ import {
   BOSS_BY_ID,
   CHARACTERS,
   CHARACTER_BY_ID,
+  CONTENT,
   CURSE_BY_ID,
   FOOD_BY_ID,
   HAPPENING_BY_ID,
@@ -36,6 +37,7 @@ import {
 import { escapeHtml, formatTime, parrotLine, parrotStupidLine, reasonText, roman } from './format';
 import { ARMOR_TIP, ITEM_TAG_TIPS, PURGED_TIP, glossaryText } from './glossary';
 import { itemHasTag, itemTags } from '../core/itemTags';
+import { normalizeLetters, summarizeWordList } from '../core/wordcount';
 import type { ItemTag } from '../core/types';
 import { groupProcChanges, type ProcFlyGroup } from './procRewards';
 import {
@@ -208,11 +210,13 @@ parrotRoot.setAttribute('aria-live', 'polite');
 document.body.appendChild(parrotRoot);
 let parrotTimer: number | undefined;
 
-function showParrotPopup(line: string): void {
-  parrotRoot.innerHTML = `<div class="parrot-pop">
-    <span class="parrot-emoji" aria-hidden="true">🦜</span>
-    <span class="parrot-kicker">EVIL PARROT</span>
+function showParrotPopup(line: string, source?: 'necronomicon'): void {
+  const book = source === 'necronomicon';
+  parrotRoot.innerHTML = `<div class="parrot-pop ${book ? 'book-pop' : ''}">
+    <span class="parrot-emoji" aria-hidden="true">${book ? '📕' : '🦜'}</span>
+    <span class="parrot-kicker">${book ? 'NECRONOMICON' : 'EVIL PARROT'}</span>
     <span class="parrot-line">${escapeHtml(line)}</span>
+    ${book ? '<span class="parrot-line book-cost">The book takes something from you...</span>' : ''}
   </div>`;
   if (parrotTimer) window.clearTimeout(parrotTimer);
   parrotTimer = window.setTimeout(() => {
@@ -246,12 +250,17 @@ let mobileTimerTarget: HTMLElement | null = null;
 let spellsDrawerOpen = false;
 let parrotDrawerOpen = false;
 let necroDrawerOpen = false;
+let listDrawerOpen = false;
+let listModalOpen = false;
+let listAddedLetters: string[] = [];
+let listInputValue = '';
 
 // Mobile item shortcuts. The drawers share the spells drawer's behaviour: one
 // open at a time, and the open flag survives the once-per-second re-render.
 const MOBILE_ITEM_TABS = [
   { id: 'necronomicon', key: 'necro', title: 'NECRONOMICON' },
   { id: 'evil-parrot', key: 'parrot', title: 'EVIL PARROT' },
+  { id: 'the-list-glossary', key: 'list', title: 'THE LIST' },
 ] as const;
 
 type MobileItemKey = (typeof MOBILE_ITEM_TABS)[number]['key'];
@@ -259,7 +268,7 @@ type MobileItemKey = (typeof MOBILE_ITEM_TABS)[number]['key'];
 const MOBILE_TAB_HEIGHTS = { spells: 91, item: 44 } as const;
 const MOBILE_TAB_OVERLAP = 0.1;
 const MOBILE_SPELLS_TAB_Z = 63;
-const MOBILE_ITEM_TAB_Z: Record<MobileItemKey, number> = { necro: 62, parrot: 61 };
+const MOBILE_ITEM_TAB_Z: Record<MobileItemKey, number> = { necro: 62, parrot: 61, list: 60 };
 const MOBILE_OPEN_TAB_Z = 66;
 
 function mobileTabStep(height: number): number {
@@ -267,13 +276,16 @@ function mobileTabStep(height: number): number {
 }
 
 function isItemDrawerOpen(key: MobileItemKey): boolean {
-  return key === 'parrot' ? parrotDrawerOpen : necroDrawerOpen;
+  if (key === 'parrot') return parrotDrawerOpen;
+  if (key === 'list') return listDrawerOpen;
+  return necroDrawerOpen;
 }
 
 function closeMobileDrawers(): void {
   spellsDrawerOpen = false;
   parrotDrawerOpen = false;
   necroDrawerOpen = false;
+  listDrawerOpen = false;
 }
 
 // The floating incoming-damage panel mirrors the timer: it lives outside the
@@ -909,9 +921,11 @@ function logGameEvent(event: GameEvent): void {
       logChronicle('food', `Ate ${event.name}`);
       break;
     case 'parrotSuggestion':
-      logChronicle('info', event.flavor === 'stupid-cracker'
-        ? `Evil Parrot: ${parrotStupidLine(event.word)}`
-        : `Evil Parrot suggests ${event.word.toUpperCase()}`);
+      logChronicle('info', event.source === 'necronomicon'
+        ? `Necronomicon suggests ${event.word.toUpperCase()}`
+        : event.flavor === 'stupid-cracker'
+          ? `Evil Parrot: ${parrotStupidLine(event.word)}`
+          : `Evil Parrot suggests ${event.word.toUpperCase()}`);
       break;
     case 'parrotSays':
       logChronicle('info', `Evil Parrot says: ${event.text}`);
@@ -1032,7 +1046,7 @@ function processEvents(events: GameEvent[]): void {
     if (event.type === 'parrotSuggestion') {
       showParrotPopup(event.flavor === 'stupid-cracker'
         ? parrotStupidLine(event.word)
-        : parrotLine(event.word));
+        : parrotLine(event.word), event.source);
     }
     if (event.type === 'parrotSays') showParrotPopup(event.text);
     if (event.type === 'spellCast') showSpellPopup(event.spell.id, Boolean(event.auto));
@@ -1280,6 +1294,9 @@ function startNewRun(preferredCharacter?: string): void {
   screen = 'run';
   resetChoiceState();
   closeMobileDrawers();
+  listModalOpen = false;
+  listAddedLetters = [];
+  listInputValue = '';
   input = '';
   notice = null;
   paused = false;
@@ -1343,6 +1360,9 @@ function resumeRun(): void {
   screen = 'run';
   resetChoiceState();
   closeMobileDrawers();
+  listModalOpen = false;
+  listAddedLetters = [];
+  listInputValue = '';
   input = '';
   notice = null;
   paused = false;
@@ -1393,6 +1413,12 @@ function addLetter(letter: string): void {
   if (input.length >= 5) return;
   input += letter.toLowerCase();
   render();
+}
+
+function addListLetters(raw: string): void {
+  for (const letter of normalizeLetters([raw])) {
+    if (!listAddedLetters.includes(letter)) listAddedLetters.push(letter);
+  }
 }
 
 function submitGuess(): void {
@@ -1653,6 +1679,45 @@ app.addEventListener('click', (event) => {
       closeMobileDrawers();
       render();
       break;
+    case 'toggle-list': {
+      const next = !listDrawerOpen;
+      closeMobileDrawers();
+      listDrawerOpen = next;
+      render();
+      break;
+    }
+    case 'close-list':
+      closeMobileDrawers();
+      render();
+      break;
+    case 'open-list':
+      listModalOpen = true;
+      closeMobileDrawers();
+      render();
+      app!.querySelector<HTMLInputElement>('[data-list-input]')?.focus();
+      break;
+    case 'dismiss-list':
+      listModalOpen = false;
+      render();
+      break;
+    case 'list-add': {
+      const field = app!.querySelector<HTMLInputElement>('[data-list-input]');
+      addListLetters(field?.value ?? listInputValue);
+      listInputValue = '';
+      render();
+      break;
+    }
+    case 'list-remove': {
+      const letter = target.dataset.letter ?? '';
+      listAddedLetters = listAddedLetters.filter((entry) => entry !== letter);
+      render();
+      break;
+    }
+    case 'list-reset':
+      listAddedLetters = [];
+      listInputValue = '';
+      render();
+      break;
     case 'claim-victory':
       dispatchCommand({ type: 'claimVictory' });
       break;
@@ -1772,6 +1837,12 @@ app.addEventListener('click', (event) => {
   }
 });
 
+app.addEventListener('input', (event) => {
+  const target = (event.target as Element | null)?.closest<HTMLInputElement>('[data-list-input]');
+  if (!target) return;
+  listInputValue = target.value;
+});
+
 // Drag a piece of gear between the slot sockets and the bag in a shop.
 app.addEventListener('dragstart', (event) => {
   const chip = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-item]');
@@ -1815,6 +1886,30 @@ window.addEventListener('keydown', (event) => {
   const view = host.view();
   if (!view) return;
   const letter = letterFromKey(event);
+
+  if (listModalOpen) {
+    if (event.key === 'Escape' || event.code === 'Escape') {
+      event.preventDefault();
+      listModalOpen = false;
+      render();
+      return;
+    }
+    if (
+      event.key === 'Enter'
+      || event.code === 'Enter'
+      || event.code === 'NumpadEnter'
+    ) {
+      event.preventDefault();
+      const field = app!.querySelector<HTMLInputElement>('[data-list-input]');
+      addListLetters(field?.value ?? listInputValue);
+      listInputValue = '';
+      render();
+      return;
+    }
+    const inInput = (event.target as Element | null)?.closest?.('[data-list-input]');
+    if (inInput) return;
+    return;
+  }
 
   if (
     event.key === 'Escape'
@@ -1969,6 +2064,12 @@ function render(): void {
   if (screen === 'run' && !view) screen = 'title';
   const epoch = `${screen}:${view?.phase.kind ?? ''}`;
   const savedScroll = epoch === renderedEpoch ? captureScrollPositions() : null;
+  const listInputWasFocused = screen === 'run' && listModalOpen
+    && document.activeElement instanceof HTMLInputElement
+    && document.activeElement.hasAttribute('data-list-input');
+  const listCaret = listInputWasFocused
+    ? (document.activeElement as HTMLInputElement).selectionStart
+    : null;
   if (epoch !== renderedEpoch) resetChoiceState();
 
   const bossMusic = screen === 'run' && Boolean(
@@ -1993,6 +2094,19 @@ function render(): void {
   }
   app!.insertAdjacentHTML('beforeend', noticeHtml());
   if (characterUnlock) app!.insertAdjacentHTML('beforeend', renderCharacterUnlock());
+  if (listInputWasFocused) {
+    const next = app!.querySelector<HTMLInputElement>('[data-list-input]');
+    if (next) {
+      next.focus();
+      if (listCaret !== null) {
+        try {
+          next.setSelectionRange(listCaret, listCaret);
+        } catch {
+          // Some input types do not support selection; focusing is enough.
+        }
+      }
+    }
+  }
   if (savedScroll) restoreScrollPositions(savedScroll);
   renderedEpoch = epoch;
   syncMobileTimer(screen === 'run' ? view : null);
@@ -3214,9 +3328,11 @@ function renderItemsPanel(view: RunView): string {
       const usedThisRound = Boolean(def?.onUse) && (item.data._uses ?? 0) > 0;
       const canUseNow = !def?.useOnlyInRound || view.phase.kind === 'round';
       const disabled = usedThisRound || !canUseNow;
-      const use = item.equipped && def?.onUse
-        ? `<button class="btn tiny item-use" data-action="use" data-id="${escapeHtml(item.instance)}" ${disabled ? 'disabled' : ''}${disabled ? ` title="${escapeHtml(!canUseNow ? 'Only usable during a fight.' : 'Already used this round.')}"` : ''}>${usedThisRound ? 'USED' : escapeHtml(def?.useLabel ?? 'USE')}</button>`
-        : '';
+      const use = item.id === 'the-list-glossary'
+        ? '<button class="btn tiny item-use" data-action="open-list">OPEN</button>'
+        : item.equipped && def?.onUse
+          ? `<button class="btn tiny item-use" data-action="use" data-id="${escapeHtml(item.instance)}" ${disabled ? 'disabled' : ''}${disabled ? ` title="${escapeHtml(!canUseNow ? 'Only usable during a fight.' : 'Already used this round.')}"` : ''}>${usedThisRound ? 'USED' : escapeHtml(def?.useLabel ?? 'USE')}</button>`
+          : '';
       return `<div class="loadout-row ${item.equipped ? 'equipped' : 'bagged'}"
         tabindex="0" data-tip="${escapeHtml(description)}">
         ${emoji}<b>${name}</b><span class="slot-note">${slotLabel(item.slots)}</span>${use}
@@ -3265,6 +3381,15 @@ function renderItemsPanel(view: RunView): string {
             ? bagged.map(row).join('')
             : `<p class="empty-note">${shop ? 'Drag items here to bag them.' : 'Nothing in the bag.'}</p>`}
         </div>
+        ${view.items.some((item) => item.id === 'the-list-glossary') ? `<div class="loadout-group">
+          <div class="loadout-group-head"><span class="panel-kicker">TOOLS</span><span class="count">0</span></div>
+          ${view.items.filter((item) => item.id === 'the-list-glossary').map((item) => `
+            <div class="loadout-row equipped">
+              <span class="item-emoji" aria-hidden="true">${itemIcon(item.id)}</span><b>The List</b>
+              <button class="btn tiny item-use" data-action="open-list">OPEN</button>
+              <div class="loadout-tags">${tagChips(item.tags)}</div>
+            </div>`).join('')}
+        </div>` : ''}
       </div>
     </section>
     ${seedline}
@@ -3321,7 +3446,11 @@ function renderItem(view: RunView, item: ItemView): string {
     <p>${glossaryText(description)}</p>
     ${data ? `<div class="data-row">${data}</div>` : ''}
     ${!item.equipped && item.slots > 0 ? `<p class="bag-note">In the bag. Equip it in a shop.</p>` : ''}
-    ${usable ? `<button class="btn tiny" data-action="use" data-id="${escapeHtml(item.instance)}" ${useDisabled ? 'disabled' : ''}${useDisabled ? ` title="${escapeHtml(useTitle)}"` : ''}>${usedThisRound ? 'USED' : escapeHtml(def?.useLabel ?? 'USE')}</button>` : ''}
+    ${item.id === 'the-list-glossary'
+      ? '<button class="btn tiny" data-action="open-list">OPEN</button>'
+      : usable
+        ? `<button class="btn tiny" data-action="use" data-id="${escapeHtml(item.instance)}" ${useDisabled ? 'disabled' : ''}${useDisabled ? ` title="${escapeHtml(useTitle)}"` : ''}>${usedThisRound ? 'USED' : escapeHtml(def?.useLabel ?? 'USE')}</button>`
+        : ''}
   </article>`;
 }
 
@@ -3889,6 +4018,9 @@ function renderPurgeModal(view: RunView): string {
       <div class="choice-confirm" role="status" aria-live="polite">
         <button class="btn primary" data-action="confirm-purge" ${selectedLetter ? '' : 'disabled'}>${selectedLetter ? 'CONFIRM PURGE' : 'SELECT A LETTER'}</button>
         <p class="hint">${purgeLabel}. Tap a letter to mark it. Nothing is purged until you confirm. ${setup ? 'The run begins after the last purge.' : 'The clock is paused while this is open.'}</p>
+        ${view.items.some((item) => item.id === 'the-list-glossary')
+          ? '<button class="btn tiny ghost" data-action="open-list">📜 OPEN THE LIST</button>'
+          : ''}
       </div>
     </div>
   </div>`;
@@ -3956,6 +4088,61 @@ function phasePanel(view: RunView): string {
   }
 }
 
+function listDefaultExcluded(view: RunView): string[] {
+  const letters: string[] = [...view.purged];
+  if (view.phase.kind === 'round') {
+    for (const [letter, status] of Object.entries(view.phase.board.keyboard)) {
+      if (status === 'absent') letters.push(letter);
+    }
+  }
+  for (const entry of view.revealed) {
+    if (entry.status === 'absent') letters.push(entry.letter);
+  }
+  return normalizeLetters(letters);
+}
+
+function listExcluded(view: RunView): string[] {
+  return normalizeLetters([...listDefaultExcluded(view), ...listAddedLetters]);
+}
+
+function renderListModal(view: RunView): string {
+  if (!listModalOpen) return '';
+  const defaults = new Set(listDefaultExcluded(view));
+  const excluded = listExcluded(view);
+  const summary = summarizeWordList(CONTENT.answers, excluded);
+  const added = new Set(listAddedLetters);
+  const chips = excluded.length === 0
+    ? '<p class="muted list-empty">No letters ruled out yet.</p>'
+    : excluded.map((letter) => {
+      const removable = added.has(letter) && !defaults.has(letter);
+      return `<button class="letter-chip list-chip ${defaults.has(letter) ? 'from-default' : 'from-added'}" ${removable
+        ? `data-action="list-remove" data-letter="${letter}" aria-label="Remove ${letter.toUpperCase()}"`
+        : 'disabled'} title="${removable ? 'Remove added letter' : 'Ruled out or purged'}">${letter.toUpperCase()}</button>`;
+    }).join('');
+  const result = summary.count === 0
+    ? '<p class="list-empty"><b>No words remain.</b> Every answer word uses at least one of these letters.</p>'
+    : `<p class="list-possible"><b>${summary.count}</b> possible word${summary.count === 1 ? '' : 's'}</p>
+       <p class="list-sample">Sample: <b>${escapeHtml((summary.sample ?? '').toUpperCase())}</b></p>`;
+  return `
+  <div class="modal list-modal" role="dialog" aria-modal="true" aria-labelledby="list-title">
+    <div class="modal-card list-card">
+      <p class="panel-kicker">THE LIST</p>
+      <h2 id="list-title">Possible words</h2>
+      <p class="muted">Counts answer words that contain none of these letters. Positions, yellows, greens and guesses are ignored.</p>
+      <div class="list-chips" data-list-chips>${chips}</div>
+      <div class="list-input-row">
+        <input class="list-input" data-list-input type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="26" value="${escapeHtml(listInputValue)}" placeholder="Add letters" aria-label="Add excluded letters" />
+        <button class="btn tiny" data-action="list-add">ADD</button>
+        <button class="btn tiny ghost" data-action="list-reset">RESET</button>
+      </div>
+      <div class="list-result" data-list-count="${summary.count}" data-list-sample="${escapeHtml(summary.sample ?? '')}">${result}</div>
+      <div class="choice-confirm">
+        <button class="btn primary" data-action="dismiss-list">CLOSE</button>
+      </div>
+    </div>
+  </div>`;
+}
+
 function renderPauseOverlay(view: RunView): string {
   const clocked = view.curses.some((curse) => curse.id === 'clock');
   const title = clocked ? 'The clock is stopped' : 'Nothing is moving';
@@ -4021,6 +4208,7 @@ function renderRun(view: RunView): string {
     ${damageTutorialOpen && !over ? renderDamageTutorial() : ''}
     ${renderPurgeModal(view)}
     ${renderCurseRemovalModal(view)}
+    ${renderListModal(view)}
     ${paused && !over ? renderPauseOverlay(view) : ''}
   </div>`;
 }

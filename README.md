@@ -92,7 +92,7 @@ A 40-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Immunity** blocks the next hurting guess and any guess for 4 seconds after it
 - **Mending Plate** is a rare item: +1 max armor per 8 HP healed
 - **Heartstone** is a 15g rare item: autocast a free Heal at the start of every round
-- **Necronomicon** is a rare item: use it during a fight to lose 13% of your max HP for a random gift. It can only be used once per round, and it grows stronger as you feed it: fed thresholds unlock at 0, 13, 39, 79, 129, 189 and 259 max HP paid. Whisper and Twin Whispers autoguess Mythos words such as RYLEH, CTHUL and DAGON
+- **Necronomicon** is a rare item: use it during a fight to lose 13% of your max HP for a random gift. It can only be used once per round, and it grows stronger as you feed it: fed thresholds unlock at 0, 13, 39, 79, 129, 189 and 259 max HP paid. Whisper and Twin Whispers autoguess Mythos words such as RYLEH, CTHUL and DAGON. If you stay silent for 66 seconds in a fight, the book sometimes whispers a clue and takes 6% of your max HP.
 - **Growth Spurt** gives +3 max HP when you solve in 4 guesses or fewer
 - **Growth Chart** is an 8g item: every 3 max HP gained grants +1 Time Freeze
 - **Midas Touch** has a 30% chance to double every gold gain
@@ -214,10 +214,11 @@ Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title s
 
 - **The Soldier** is the default: 15 HP, 7 armor, 12 gold, the **Evil Parrot**, and no starting curses.
 - **The Pathfinder** unlocks when The Soldier reaches the first curse screen. They start with **Head Start**, **The List** curse, 21 HP, 3 armor and 9 gold.
-- **The Purgamist** unlocks after purging **6 letters** across any runs. They start with the **Evil Parrot**, **Without the D** curse, 18 HP, 5 armor, 17 gold, and purge **4 letters** of your choice on level 0, before any word is drawn.
-- **The Necromancer** unlocks after buying the **Necronomicon** once from a shop. They start with the **Necronomicon**, **Evil Parrot**, **The Sleeper** curse, 31 HP, 4 armor and 16 gold.
+- **The Purgamist** unlocks after purging **6 letters** across any runs. They start with **The List** glossary, **Without the D** curse, 18 HP, 5 armor, 17 gold, and purge **4 letters** of your choice on level 0, before any word is drawn.
+- **The Necromancer** unlocks after buying the **Necronomicon** once from a shop. They start with the **Necronomicon**, **The Sleeper** curse, 31 HP, 4 armor and 16 gold.
 - **The Gourmand** unlocks after eating 3 **Double Cheeseburgers** across any runs. They start with **Potluck**, the **Evil Parrot**, **Porcupine's Dilemma** curse, **Shop Upgrade** already eaten, 25 HP, 4 armor and 6 gold.
-- **Evil Parrot** is a 16g item that cannot be bought and sells for 8. It suggests a possible word once per round; the suggestion will not be the answer word unless it is the only one left. Bribe it for more with a cracker costing 🪙.
+- **Evil Parrot** is a 16g item that cannot be bought and sells for 8. It suggests a possible word once per round; the suggestion will not be the answer word unless it is the only one left. Bribe it for more with a cracker costing 🪙. Only The Soldier's parrot steals idle gold.
+- **The List** is a free glossary tool carried by The Purgamist. Open it any time to count how many answers avoid a set of ruled-out letters and see one sample word.
 - **The Farmer** unlocks after winning any run. They start with three **Harvest Charms**, **Early Bird**, the **Short Fuse** curse, 17 HP, 3 armor and 2 gold.
 - **The Empty Armor** unlocks after winning a run on **Ascension 1**. It starts with **Bulwark**, the character-only **Slow Mending** curse, 1 HP, 13 armor, one extra item slot and 6 gold.
 - **The Werewolf** unlocks after winning runs with **2 different characters**. It starts with **Dark Echo**, **Thorn Crown**, the **Weak Plate** and **Tight Slots** curses, 69 HP, no armor and 6 gold.
