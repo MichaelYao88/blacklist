@@ -252,7 +252,6 @@ let parrotDrawerOpen = false;
 let necroDrawerOpen = false;
 let listDrawerOpen = false;
 let listModalOpen = false;
-let listAddedLetters: string[] = [];
 let listInputValue = '';
 
 // Mobile item shortcuts. The drawers share the spells drawer's behaviour: one
@@ -1044,9 +1043,11 @@ function processEvents(events: GameEvent[]): void {
     }
     if (event.type === 'message') notify(event.text, 'info');
     if (event.type === 'parrotSuggestion') {
-      showParrotPopup(event.flavor === 'stupid-cracker'
-        ? parrotStupidLine(event.word)
-        : parrotLine(event.word), event.source);
+      showParrotPopup(event.source === 'necronomicon'
+        ? event.word.toUpperCase()
+        : event.flavor === 'stupid-cracker'
+          ? parrotStupidLine(event.word)
+          : parrotLine(event.word), event.source);
     }
     if (event.type === 'parrotSays') showParrotPopup(event.text);
     if (event.type === 'spellCast') showSpellPopup(event.spell.id, Boolean(event.auto));
@@ -1295,7 +1296,6 @@ function startNewRun(preferredCharacter?: string): void {
   resetChoiceState();
   closeMobileDrawers();
   listModalOpen = false;
-  listAddedLetters = [];
   listInputValue = '';
   input = '';
   notice = null;
@@ -1361,7 +1361,6 @@ function resumeRun(): void {
   resetChoiceState();
   closeMobileDrawers();
   listModalOpen = false;
-  listAddedLetters = [];
   listInputValue = '';
   input = '';
   notice = null;
@@ -1413,12 +1412,6 @@ function addLetter(letter: string): void {
   if (input.length >= 5) return;
   input += letter.toLowerCase();
   render();
-}
-
-function addListLetters(raw: string): void {
-  for (const letter of normalizeLetters([raw])) {
-    if (!listAddedLetters.includes(letter)) listAddedLetters.push(letter);
-  }
 }
 
 function submitGuess(): void {
@@ -1690,34 +1683,34 @@ app.addEventListener('click', (event) => {
       closeMobileDrawers();
       render();
       break;
-    case 'open-list':
+    case 'open-list': {
+      const view = host.view();
       listModalOpen = true;
+      listInputValue = view ? listDefaultExcluded(view).join('').toUpperCase() : '';
       closeMobileDrawers();
       render();
       app!.querySelector<HTMLInputElement>('[data-list-input]')?.focus();
       break;
+    }
     case 'dismiss-list':
       listModalOpen = false;
       render();
       break;
-    case 'list-add': {
-      const field = app!.querySelector<HTMLInputElement>('[data-list-input]');
-      addListLetters(field?.value ?? listInputValue);
-      listInputValue = '';
-      render();
-      break;
-    }
     case 'list-remove': {
-      const letter = target.dataset.letter ?? '';
-      listAddedLetters = listAddedLetters.filter((entry) => entry !== letter);
+      const letter = (target.dataset.letter ?? '').toLowerCase();
+      listInputValue = [...listInputValue]
+        .filter((entry) => entry.toLowerCase() !== letter)
+        .join('');
+      render();
+      app!.querySelector<HTMLInputElement>('[data-list-input]')?.focus();
+      break;
+    }
+    case 'list-reset': {
+      const view = host.view();
+      listInputValue = view ? listDefaultExcluded(view).join('').toUpperCase() : '';
       render();
       break;
     }
-    case 'list-reset':
-      listAddedLetters = [];
-      listInputValue = '';
-      render();
-      break;
     case 'claim-victory':
       dispatchCommand({ type: 'claimVictory' });
       break;
@@ -1840,7 +1833,8 @@ app.addEventListener('click', (event) => {
 app.addEventListener('input', (event) => {
   const target = (event.target as Element | null)?.closest<HTMLInputElement>('[data-list-input]');
   if (!target) return;
-  listInputValue = target.value;
+  listInputValue = target.value.toUpperCase().replace(/[^A-Z]/g, '');
+  render();
 });
 
 // Drag a piece of gear between the slot sockets and the bag in a shop.
@@ -1891,18 +1885,6 @@ window.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' || event.code === 'Escape') {
       event.preventDefault();
       listModalOpen = false;
-      render();
-      return;
-    }
-    if (
-      event.key === 'Enter'
-      || event.code === 'Enter'
-      || event.code === 'NumpadEnter'
-    ) {
-      event.preventDefault();
-      const field = app!.querySelector<HTMLInputElement>('[data-list-input]');
-      addListLetters(field?.value ?? listInputValue);
-      listInputValue = '';
       render();
       return;
     }
@@ -2067,8 +2049,11 @@ function render(): void {
   const listInputWasFocused = screen === 'run' && listModalOpen
     && document.activeElement instanceof HTMLInputElement
     && document.activeElement.hasAttribute('data-list-input');
-  const listCaret = listInputWasFocused
-    ? (document.activeElement as HTMLInputElement).selectionStart
+  const listSelection = listInputWasFocused
+    ? {
+      start: (document.activeElement as HTMLInputElement).selectionStart,
+      end: (document.activeElement as HTMLInputElement).selectionEnd,
+    }
     : null;
   if (epoch !== renderedEpoch) resetChoiceState();
 
@@ -2098,9 +2083,9 @@ function render(): void {
     const next = app!.querySelector<HTMLInputElement>('[data-list-input]');
     if (next) {
       next.focus();
-      if (listCaret !== null) {
+      if (listSelection && listSelection.start !== null) {
         try {
-          next.setSelectionRange(listCaret, listCaret);
+          next.setSelectionRange(listSelection.start, listSelection.end ?? listSelection.start);
         } catch {
           // Some input types do not support selection; focusing is enough.
         }
@@ -4101,23 +4086,20 @@ function listDefaultExcluded(view: RunView): string[] {
   return normalizeLetters(letters);
 }
 
-function listExcluded(view: RunView): string[] {
-  return normalizeLetters([...listDefaultExcluded(view), ...listAddedLetters]);
+function listExcluded(): string[] {
+  return normalizeLetters([listInputValue]);
 }
 
 function renderListModal(view: RunView): string {
   if (!listModalOpen) return '';
   const defaults = new Set(listDefaultExcluded(view));
-  const excluded = listExcluded(view);
+  const excluded = listExcluded();
   const summary = summarizeWordList(CONTENT.answers, excluded);
-  const added = new Set(listAddedLetters);
   const chips = excluded.length === 0
     ? '<p class="muted list-empty">No letters ruled out yet.</p>'
     : excluded.map((letter) => {
-      const removable = added.has(letter) && !defaults.has(letter);
-      return `<button class="letter-chip list-chip ${defaults.has(letter) ? 'from-default' : 'from-added'}" ${removable
-        ? `data-action="list-remove" data-letter="${letter}" aria-label="Remove ${letter.toUpperCase()}"`
-        : 'disabled'} title="${removable ? 'Remove added letter' : 'Ruled out or purged'}">${letter.toUpperCase()}</button>`;
+      const fromDefault = defaults.has(letter);
+      return `<button class="letter-chip list-chip ${fromDefault ? 'from-default' : 'from-added'}" data-action="list-remove" data-letter="${letter}" aria-label="Remove ${letter.toUpperCase()}" title="Remove ${letter.toUpperCase()}">${letter.toUpperCase()}</button>`;
     }).join('');
   const result = summary.count === 0
     ? '<p class="list-empty"><b>No words remain.</b> Every answer word uses at least one of these letters.</p>'
@@ -4131,8 +4113,7 @@ function renderListModal(view: RunView): string {
       <p class="muted">Counts answer words that contain none of these letters. Positions, yellows, greens and guesses are ignored.</p>
       <div class="list-chips" data-list-chips>${chips}</div>
       <div class="list-input-row">
-        <input class="list-input" data-list-input type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="26" value="${escapeHtml(listInputValue)}" placeholder="Add letters" aria-label="Add excluded letters" />
-        <button class="btn tiny" data-action="list-add">ADD</button>
+        <input class="list-input" data-list-input type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="26" value="${escapeHtml(listInputValue)}" placeholder="Letters to exclude" aria-label="Excluded letters" />
         <button class="btn tiny ghost" data-action="list-reset">RESET</button>
       </div>
       <div class="list-result" data-list-count="${summary.count}" data-list-sample="${escapeHtml(summary.sample ?? '')}">${result}</div>

@@ -70,6 +70,21 @@ describe('The List UI', () => {
     });
   });
 
+  function openList(): void {
+    root.querySelector<HTMLElement>('[data-action="open-list"]')!.click();
+  }
+
+  function listInput(): HTMLInputElement {
+    return root.querySelector<HTMLInputElement>('[data-list-input]')!;
+  }
+
+  function expectSummary(letters: string[]): void {
+    const expected = summarizeWordList(CONTENT.answers, letters);
+    const result = root.querySelector<HTMLElement>('.list-result')!;
+    expect(result.dataset.listCount).toBe(String(expected.count));
+    expect(result.dataset.listSample).toBe(expected.sample);
+  }
+
   it('shows an OPEN button on the item card', () => {
     const card = [...root.querySelectorAll<HTMLElement>('.item-card')]
       .find((entry) => entry.textContent?.includes('The List'));
@@ -78,50 +93,49 @@ describe('The List UI', () => {
     expect(card?.querySelector('[data-action="use"]')).toBeNull();
   });
 
-  it('prefills absent puzzle letters and purged letters as chips', () => {
-    root.querySelector<HTMLElement>('[data-action="open-list"]')!.click();
+  it('prefills the input with the default excluded letters', () => {
+    openList();
     expect(root.querySelector('.list-modal')).not.toBeNull();
+    expect(listInput().value).toBe('QXZ');
+    expect(root.querySelector('[data-action="list-add"]')).toBeNull();
+
     const chips = [...root.querySelectorAll<HTMLElement>('.list-chip')]
       .map((chip) => chip.textContent);
     expect(chips).toEqual(['Q', 'X', 'Z']);
-
-    const expected = summarizeWordList(CONTENT.answers, ['q', 'x', 'z']);
-    expect(root.querySelector<HTMLElement>('.list-result')?.dataset.listCount)
-      .toBe(String(expected.count));
-    expect(root.querySelector<HTMLElement>('.list-result')?.dataset.listSample)
-      .toBe(expected.sample);
+    expectSummary(['q', 'x', 'z']);
   });
 
-  it('adds letters live and only lets added letters be removed', () => {
-    typeInto(root, 'a');
-    root.querySelector<HTMLElement>('[data-action="list-add"]')!.click();
+  it('updates the count and sample live as letters are typed', () => {
+    openList();
+    typeInto(root, `${listInput().value}A`);
+    expect(listInput().value).toBe('QXZA');
+    expectSummary(['a', 'q', 'x', 'z']);
 
-    const chips = [...root.querySelectorAll<HTMLElement>('.list-chip')];
-    expect(chips.map((chip) => chip.textContent)).toEqual(['A', 'Q', 'X', 'Z']);
-    const added = chips.find((chip) => chip.textContent === 'A')!;
-    expect(added.hasAttribute('disabled')).toBe(false);
-    const expected = summarizeWordList(CONTENT.answers, ['a', 'q', 'x', 'z']);
     const result = root.querySelector<HTMLElement>('.list-result')!;
-    expect(result.dataset.listCount).toBe(String(expected.count));
-    expect(result.dataset.listSample).toBe(expected.sample);
     expect(result.textContent).toContain('Sample:');
-    expect(result.textContent).toContain((expected.sample ?? '').toUpperCase());
+  });
 
-    added.click();
+  it('removes a prefilled letter when it is deleted', () => {
+    openList();
+    typeInto(root, listInput().value.slice(0, -1));
+    expect(listInput().value).toBe('QX');
     expect([...root.querySelectorAll<HTMLElement>('.list-chip')]
-      .map((chip) => chip.textContent)).toEqual(['Q', 'X', 'Z']);
+      .map((chip) => chip.textContent)).toEqual(['Q', 'X']);
+    expectSummary(['q', 'x']);
+  });
 
-    typeInto(root, 'a');
-    root.querySelector<HTMLElement>('[data-action="list-add"]')!.click();
-    expect(root.querySelectorAll('.list-chip')).toHaveLength(4);
+  it('restores the default prefill and result on RESET', () => {
+    openList();
+    typeInto(root, 'QXA');
+    expect(listInput().value).toBe('QXA');
     root.querySelector<HTMLElement>('[data-action="list-reset"]')!.click();
-    expect([...root.querySelectorAll<HTMLElement>('.list-chip')]
-      .map((chip) => chip.textContent)).toEqual(['Q', 'X', 'Z']);
+    expect(listInput().value).toBe('QXZ');
+    expectSummary(['q', 'x', 'z']);
   });
 
   it('says when no words remain', () => {
+    openList();
     typeInto(root, 'abcdefghijklmnopqrstuvwxyz');
-    root.querySelector<HTMLElement>('[data-action="list-add"]')!.click();
     expect(root.querySelector<HTMLElement>('.list-result')?.textContent)
       .toContain('No words remain.');
     expect(root.querySelector<HTMLElement>('.list-result')?.dataset.listSample).toBe('');
