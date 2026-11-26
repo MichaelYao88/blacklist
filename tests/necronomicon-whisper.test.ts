@@ -43,9 +43,9 @@ describe('Necronomicon whisper', () => {
     expect(state.items.some((item) => item.id === 'evil-parrot')).toBe(false);
   });
 
-  it('appends exactly " Sometimes whispers." to the description', () => {
+  it('describes the idle whisper', () => {
     expect(ITEM_BY_ID.get('necronomicon')?.description).toBe(
-      'Use during a fight: lose 13% max HP for a random gift. The book grows stronger as you feed it. Once per round. Sometimes whispers.',
+      'Use during a fight: lose 13% max HP for a random gift. The book grows stronger as you feed it. Once per round. After 66 idle seconds it whispers, taking 13% max HP.',
     );
   });
 
@@ -58,14 +58,15 @@ describe('Necronomicon whisper', () => {
     expect(whispers(onTime.events)[0]).toMatchObject({ source: 'necronomicon' });
   });
 
-  it('takes ceil(6% max HP) and caps at 1 max HP', () => {
+  it('takes ceil(13% max HP) and caps at 1 max HP', () => {
     const state = necroRun('necro-cost');
     state.maxHp = 31;
     state.hp = 31;
     const result = tickFor(state, 66_000);
     expect(whispers(result.events)).toHaveLength(1);
-    expect(result.state.maxHp).toBe(29);
-    expect(result.state.hp).toBe(29);
+    expect(result.state.maxHp).toBe(26);
+    expect(result.state.hp).toBe(26);
+    expect(book(result.state).data.fed).toBe(5);
     expect(result.events.some((event) => (
       event.type === 'message' && event.text === 'The book takes something from you...'
     ))).toBe(true);

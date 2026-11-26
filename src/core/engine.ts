@@ -1262,14 +1262,21 @@ export function createCore(content: Content): Core {
           });
           if (effect.source === 'necronomicon') {
             const cost = Math.min(
-              Math.ceil(state.maxHp * 0.06),
+              Math.ceil(state.maxHp * 0.13),
               Math.max(0, state.maxHp - 1),
             );
             if (cost > 0) {
+              const item = rt.self ? findItem(state, rt.self) : undefined;
+              const fed = item
+                ? (item.data.fed ?? item.data.paid ?? 0) + cost
+                : undefined;
               applyEffects(rt, [
                 { type: 'maxHp', delta: -cost },
+                ...(fed !== undefined
+                  ? [{ type: 'setItemData' as const, stat: 'fed', value: fed }]
+                  : []),
                 { type: 'message', text: 'The book takes something from you...' },
-              ], source);
+              ], source, rt.self);
             }
           }
         }

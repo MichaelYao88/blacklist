@@ -597,7 +597,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'necronomicon',
     name: 'Necronomicon',
-    description: 'Use during a fight: lose 13% max HP for a random gift. The book grows stronger as you feed it. Once per round. Sometimes whispers.',
+    description: 'Use during a fight: lose 13% max HP for a random gift. The book grows stronger as you feed it. Once per round. After 66 idle seconds it whispers, taking 13% max HP.',
     price: 13,
     kind: 'gear',
     rarity: 'rare',
