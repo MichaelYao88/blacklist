@@ -32,6 +32,7 @@ describe('item proc reward effects', () => {
     const pop = document.querySelector<HTMLElement>('#proc-root .proc-pop');
     expect(pop).not.toBeNull();
     expect(pop?.dataset.procId).toBeTruthy();
+    expect(pop?.style.getPropertyValue('--proc-ttl')).toBe('5000ms');
     expect(pop?.textContent).toContain('+2 gold');
     expect(document.querySelector('#proc-fx-root .proc-fly-gold')).not.toBeNull();
   });

@@ -2876,7 +2876,7 @@ button {
     rgba(23, 19, 31, 0.96);
   color: var(--ink);
   box-shadow: 0 22px 60px -24px #000, 0 0 34px -18px rgba(231, 184, 90, 0.8);
-  animation: spell-pop 4000ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  animation: spell-pop 5000ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
 }
 
 .spell-popup.auto {
@@ -3563,7 +3563,7 @@ button {
   gap: 0.15em;
   font-family: var(--serif);
   text-transform: uppercase;
-  animation: free-guess-pop 2.4s cubic-bezier(0.2, 0.9, 0.25, 1) both;
+  animation: free-guess-pop 3.4s cubic-bezier(0.2, 0.9, 0.25, 1) both;
 }
 
 .free-guess-kicker,
@@ -3629,7 +3629,7 @@ button {
   border-radius: 12px;
   background: rgba(18, 14, 26, 0.96);
   box-shadow: 0 20px 60px -24px #000, 0 0 34px -18px rgba(79, 191, 135, 0.8);
-  animation: parrot-pop 4s cubic-bezier(0.2, 0.9, 0.25, 1) both;
+  animation: parrot-pop 5s cubic-bezier(0.2, 0.9, 0.25, 1) both;
 }
 
 .parrot-emoji {
@@ -3772,7 +3772,7 @@ button {
   border-radius: 8px;
   background: rgba(18, 14, 26, 0.96);
   box-shadow: 0 18px 44px -22px #000;
-  animation: proc-life var(--proc-ttl, 4000ms) ease-out both;
+  animation: proc-life var(--proc-ttl, 5000ms) ease-out both;
   transition: box-shadow 180ms ease, border-left-color 180ms ease;
 }
 

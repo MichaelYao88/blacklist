@@ -197,7 +197,7 @@ function showFreeGuessPopup(source: string): void {
   freeGuessTimer = window.setTimeout(() => {
     freeGuessRoot.innerHTML = '';
     freeGuessTimer = undefined;
-  }, 2_400);
+  }, 3_400);
 }
 
 // Evil Parrot suggestions. Display-only and outside the render tree.
@@ -219,7 +219,7 @@ function showParrotPopup(line: string, source?: 'necronomicon'): void {
   parrotTimer = window.setTimeout(() => {
     parrotRoot.innerHTML = '';
     parrotTimer = undefined;
-  }, 4_000);
+  }, 5_000);
 }
 
 // The countdown lives outside the render tree so the per-second update only
@@ -349,7 +349,7 @@ const spellPopupTimers = new Map<number, number>();
 let spellReleaseTimer: number | undefined;
 let spellPopupSeq = 0;
 const POPUP_GAP_MS = 2_000;
-const POPUP_EXTRA_MS = 2_000;
+const POPUP_EXTRA_MS = 3_000;
 const SPELL_POPUP_TTL = POPUP_GAP_MS + POPUP_EXTRA_MS;
 
 function showSpellPopup(spellId: string, auto: boolean): void {
