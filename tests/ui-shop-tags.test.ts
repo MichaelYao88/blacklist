@@ -2,12 +2,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { game } from '../src/game';
 
-function tagTexts(element: Element | null): string[] {
-  return [...(element?.querySelectorAll('.item-tag') ?? [])]
-    .map((tag) => tag.textContent?.trim() ?? '');
-}
-
-describe('multi-tag shop offers and loadout rows', () => {
+describe('shop offers and loadout rows show slot info without item tags', () => {
   let root: HTMLElement;
 
   beforeAll(async () => {
@@ -37,22 +32,27 @@ describe('multi-tag shop offers and loadout rows', () => {
     root.querySelector<HTMLElement>('[data-action="resume"]')!.click();
   });
 
-  it('shows all tags as separate chips on the offer card', () => {
+  it('shows only the slot note on the offer card', () => {
     const offer = [...root.querySelectorAll<HTMLElement>('.offer-card')]
       .find((card) => card.textContent?.includes('X Marks'));
-    expect(tagTexts(offer!)).toEqual(['GUESS', 'GOLD', 'ARMOR']);
-    expect(offer?.querySelector('.slot-note')?.textContent).toBe('1 ITEM SLOT');
-    expect(offer?.querySelector('.tag')?.textContent).toBe('UNCOMMON');
+    expect(offer).not.toBeNull();
+    expect(offer?.querySelectorAll('.item-tag').length).toBe(0);
+    expect(offer?.querySelector('.tag')).toBeNull();
+    expect(offer?.querySelector('.offer-top .slot-note')?.textContent?.trim())
+      .toBe('1 ITEM SLOT');
   });
 
-  it('shows all tags on the loadout and bag rows', () => {
+  it('removes tag chips from loadout and bag rows', () => {
     const row = [...root.querySelectorAll<HTMLElement>('.loadout-row[data-item]')]
       .find((entry) => entry.textContent?.includes('X Marks'));
     expect(row).not.toBeNull();
-    expect(tagTexts(row!)).toEqual(['GUESS', 'GOLD', 'ARMOR']);
+    expect(row?.querySelectorAll('.item-tag').length).toBe(0);
+    expect(row?.querySelector('.slot-note')?.textContent?.trim()).toBe('1 ITEM SLOT');
 
     const bag = [...root.querySelectorAll<HTMLElement>('.loadout-row.bagged')]
       .find((entry) => entry.textContent?.includes('Bloom'));
-    expect(tagTexts(bag!)).toEqual(['GUESS']);
+    expect(bag).not.toBeNull();
+    expect(bag?.querySelectorAll('.item-tag').length).toBe(0);
+    expect(bag?.querySelector('.slot-note')?.textContent?.trim()).toBe('1 ITEM SLOT');
   });
 });

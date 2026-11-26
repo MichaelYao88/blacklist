@@ -42,63 +42,68 @@ describe('shop relic labelling', () => {
     root.querySelector<HTMLElement>('[data-action="resume"]')!.click();
   });
 
-  it('marks rare item offers as RARE ITEM and styles the card', () => {
+  it('keeps rarity styling but drops rarity text on item offers', () => {
     const relic = [...root.querySelectorAll<HTMLElement>('.offer-card')]
       .find((card) => card.textContent?.includes('Mending Plate'));
     expect(relic).not.toBeNull();
     expect(relic?.classList.contains('rare')).toBe(true);
-    expect(relic?.querySelector('.tag')?.textContent?.trim()).toBe('RARE ITEM');
-    expect(relic?.querySelector('.slot-note')?.textContent?.trim()).toBe('1 ITEM SLOT');
+    expect(relic?.querySelector('.tag')).toBeNull();
+    expect(relic?.querySelector('.offer-top .slot-note')?.textContent?.trim()).toBe('1 ITEM SLOT');
 
     const uncommon = [...root.querySelectorAll<HTMLElement>('.offer-card')]
       .find((card) => card.textContent?.includes('Scattershot'));
     expect(uncommon?.classList.contains('uncommon')).toBe(true);
-    expect(uncommon?.querySelector('.tag')?.textContent?.trim()).toBe('UNCOMMON');
+    expect(uncommon?.querySelector('.tag')).toBeNull();
+    expect(uncommon?.querySelector('.offer-top .slot-note')?.textContent?.trim()).toBe('1 ITEM SLOT');
 
     const common = [...root.querySelectorAll<HTMLElement>('.offer-card')]
       .find((card) => card.textContent?.includes('Bloom'));
     expect(common?.classList.contains('rare')).toBe(false);
-    expect(common?.querySelector('.tag')?.textContent?.trim()).toBe('ITEM');
+    expect(common?.querySelector('.tag')).toBeNull();
+    expect(common?.querySelector('.offer-top .slot-note')?.textContent?.trim()).toBe('1 ITEM SLOT');
   });
 
-  it('styles rare and uncommon foods like items', () => {
+  it('keeps food rarity styling without text and shows no item slot', () => {
     const rareFood = [...root.querySelectorAll<HTMLElement>('.offer-card')]
       .find((card) => card.textContent?.includes('Reveal the D'));
     expect(rareFood?.classList.contains('rare')).toBe(true);
     expect(rareFood?.classList.contains('food')).toBe(true);
-    expect(rareFood?.querySelector('.tag')?.textContent?.trim()).toBe('RARE FOOD');
+    expect(rareFood?.querySelector('.tag')).toBeNull();
+    expect(rareFood?.querySelector('.offer-top .slot-note')?.textContent?.trim()).toBe('NO ITEM SLOT');
 
     const uncommonFood = [...root.querySelectorAll<HTMLElement>('.offer-card')]
       .find((card) => card.textContent?.includes('Satchel'));
     expect(uncommonFood?.classList.contains('uncommon')).toBe(true);
     expect(uncommonFood?.classList.contains('food')).toBe(true);
-    expect(uncommonFood?.querySelector('.tag')?.textContent?.trim()).toBe('UNCOMMON');
+    expect(uncommonFood?.querySelector('.tag')).toBeNull();
+    expect(uncommonFood?.querySelector('.offer-top .slot-note')?.textContent?.trim()).toBe('NO ITEM SLOT');
 
     const commonFood = [...root.querySelectorAll<HTMLElement>('.offer-card')]
       .find((card) => card.textContent?.includes('Hearty Meal'));
     expect(commonFood?.classList.contains('food')).toBe(true);
     expect(commonFood?.classList.contains('rare')).toBe(false);
     expect(commonFood?.classList.contains('uncommon')).toBe(false);
-    expect(commonFood?.querySelector('.tag')?.textContent?.trim()).toBe('FOOD');
+    expect(commonFood?.querySelector('.tag')).toBeNull();
+    expect(commonFood?.querySelector('.offer-top .slot-note')?.textContent?.trim()).toBe('NO ITEM SLOT');
   });
 
   it('moves "No slot." into the food hover text', () => {
     for (const card of root.querySelectorAll<HTMLElement>('.offer-card.food')) {
       expect(card.querySelector('p')?.textContent).not.toContain('No slot');
-      const tag = card.querySelector<HTMLElement>('.tag');
-      expect(tag?.dataset.tip).toBe("Food doesn't take inventory space.");
-      expect(tag?.getAttribute('tabindex')).toBe('0');
-      expect(card.querySelector('.slot-note')?.textContent?.trim()).toBe('NO ITEM SLOT');
+      const slot = card.querySelector<HTMLElement>('.offer-top .slot-note');
+      expect(slot?.dataset.tip).toBe("Food doesn't take inventory space.");
+      expect(slot?.getAttribute('tabindex')).toBe('0');
+      expect(slot?.textContent?.trim()).toBe('NO ITEM SLOT');
     }
   });
 
-  it('tags spell offers and leaves their purple squiggle to the stylesheet', () => {
+  it('shows spell offers with no item slot and no tag', () => {
     const spell = [...root.querySelectorAll<HTMLElement>('.offer-card')]
       .find((card) => card.textContent?.includes('Heal'));
     expect(spell?.classList.contains('spell')).toBe(true);
     expect(spell?.classList.contains('food')).toBe(false);
-    expect(spell?.querySelector('.tag')?.textContent?.trim()).toBe('SPELL');
-    expect(spell?.querySelector('.slot-note')?.textContent?.trim()).toBe('NO ITEM SLOT');
+    expect(spell?.querySelector('.tag')).toBeNull();
+    expect(spell?.querySelector('.offer-top .slot-note')?.textContent?.trim()).toBe('NO ITEM SLOT');
   });
 
   it('keeps the inventory in the rail column directly under the shop rail', () => {
@@ -112,14 +117,16 @@ describe('shop relic labelling', () => {
       const card = [...root.querySelectorAll<HTMLElement>('.offer-card')]
         .find((entry) => entry.textContent?.includes(name));
       expect(card?.classList.contains('uncommon')).toBe(true);
-      expect(card?.querySelector('.tag')?.textContent?.trim()).toBe('UNCOMMON');
+      expect(card?.querySelector('.tag')).toBeNull();
+      expect(card?.querySelector('.offer-top .slot-note')).not.toBeNull();
     }
 
     for (const name of ['A-Steak', 'Reveal the D']) {
       const card = [...root.querySelectorAll<HTMLElement>('.offer-card')]
         .find((entry) => entry.textContent?.includes(name));
       expect(card?.classList.contains('rare')).toBe(true);
-      expect(card?.querySelector('.tag')?.textContent?.trim()).toBe('RARE FOOD');
+      expect(card?.querySelector('.tag')).toBeNull();
+      expect(card?.querySelector('.offer-top .slot-note')?.textContent?.trim()).toBe('NO ITEM SLOT');
     }
   });
 });

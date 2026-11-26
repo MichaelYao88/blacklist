@@ -35,10 +35,8 @@ import {
   trackRunStarted,
 } from './analytics';
 import { escapeHtml, formatTime, parrotLine, parrotStupidLine, reasonText, roman } from './format';
-import { ARMOR_TIP, ITEM_TAG_TIPS, PURGED_TIP, glossaryText } from './glossary';
-import { itemHasTag, itemTags } from '../core/itemTags';
+import { ARMOR_TIP, PURGED_TIP, glossaryText } from './glossary';
 import { normalizeLetters, summarizeWordList, wordListSentence } from '../core/wordcount';
-import type { ItemTag } from '../core/types';
 import { groupProcChanges, type ProcFlyGroup } from './procRewards';
 import {
   bossColor,
@@ -3352,13 +3350,6 @@ function slotLabel(slots: number): string {
   return `${slots} ITEM SLOT${slots === 1 ? '' : 'S'}`;
 }
 
-function tagChips(tags: ItemTag[], interactive = true): string {
-  const focus = interactive ? ' tabindex="0"' : '';
-  return tags
-    .map((tag) => `<span class="tag item-tag"${focus} data-tip="${escapeHtml(ITEM_TAG_TIPS[tag])}" aria-label="${escapeHtml(ITEM_TAG_TIPS[tag])}">${tag.toUpperCase()}</span>`)
-    .join('');
-}
-
 function renderItemsPanel(view: RunView): string {
   const shop = view.phase.kind === 'shop';
   const gear = view.items.filter((item) => item.slots > 0);
@@ -3406,7 +3397,6 @@ function renderItemsPanel(view: RunView): string {
       return `<div class="loadout-row ${item.equipped ? 'equipped' : 'bagged'}"
         tabindex="0" data-tip="${escapeHtml(description)}">
         ${emoji}<b>${name}</b><span class="slot-note">${slotLabel(item.slots)}</span>${use}
-        <div class="loadout-tags">${tagChips(item.tags)}</div>
       </div>`;
     }
     const sellArmed = armedAction?.action === 'sell' && armedAction.id === item.instance;
@@ -3421,7 +3411,6 @@ function renderItemsPanel(view: RunView): string {
       data-tip="${escapeHtml(description)}">
       ${emoji}<b>${name}</b><span class="slot-note">${slotLabel(item.slots)}</span>
       <button class="btn tiny item-sell" data-action="${sellAction}" data-id="${escapeHtml(item.instance)}" ${canSell ? '' : 'disabled'} aria-label="${sellArmed ? 'Confirm selling' : 'Sell'} ${name} for ${item.sellValue} gold">${sellLabel}</button>
-      <div class="loadout-tags">${tagChips(item.tags)}</div>
     </div>`;
   };
 
@@ -3457,7 +3446,6 @@ function renderItemsPanel(view: RunView): string {
             <div class="loadout-row equipped">
               <span class="item-emoji" aria-hidden="true">${itemIcon(item.id)}</span><b>Purgamanual</b>
               <button class="btn tiny item-use" data-action="open-list">OPEN</button>
-              <div class="loadout-tags">${tagChips(item.tags)}</div>
             </div>`).join('')}
         </div>` : ''}
       </div>
@@ -3490,15 +3478,6 @@ function renderItem(view: RunView, item: ItemView): string {
   const useTitle = !canUseNow
     ? 'Only usable during a fight.'
     : usedThisRound ? 'Already used this round.' : '';
-  const rarity = !item.equipped && item.slots > 0
-    ? 'BAG'
-    : def?.rarity === 'rare'
-      ? 'RARE ITEM'
-      : def?.rarity === 'uncommon'
-        ? 'UNCOMMON'
-        : def?.kind === 'consumable'
-          ? 'USE'
-          : 'ITEM';
   const rarityClass = def?.rarity === 'rare'
     ? 'rare'
     : def?.rarity === 'uncommon' ? 'uncommon' : '';
@@ -3509,10 +3488,8 @@ function renderItem(view: RunView, item: ItemView): string {
       <b>${escapeHtml(name)}</b>
       ${spent ? `<span class="item-state">SPENT</span>` : ''}
       ${usedThisRound ? `<span class="item-state">USED</span>` : ''}
-      <span class="tag">${rarity}</span>
       <span class="slot-note">${slotLabel(item.slots)}</span>
     </div>
-    <div class="tag-row">${tagChips(item.tags)}</div>
     <p>${glossaryText(description)}</p>
     ${data ? `<div class="data-row">${data}</div>` : ''}
     ${!item.equipped && item.slots > 0 ? `<p class="bag-note">In the bag. Equip it in a shop.</p>` : ''}
@@ -3683,11 +3660,6 @@ function renderReward(phase: Extract<PhaseView, { kind: 'reward' }>): string {
               : '🪙';
         const isRareItem = option.kind === 'item' && option.rarity === 'rare';
         const isRareFood = option.kind === 'eat' && option.rarity === 'rare';
-        const tag = isRareItem
-          ? 'RARE ITEM'
-          : isRareFood
-            ? 'RARE FOOD'
-            : option.rarity === 'uncommon' ? 'UNCOMMON' : option.kind.toUpperCase();
         const rarityClass = isRareItem || isRareFood
           ? 'rare'
           : option.rarity === 'uncommon' ? 'uncommon' : '';
@@ -3700,11 +3672,11 @@ function renderReward(phase: Extract<PhaseView, { kind: 'reward' }>): string {
           : option.kind === 'spell' || option.kind === 'eat' ? 0 : null;
         return `
         <button class="reward-card ${option.kind} ${rarityClass} ${selected ? 'selected' : ''}" data-action="select-reward" data-id="${escapeHtml(option.id)}" aria-pressed="${selected}" data-tip="${escapeHtml(description)}">
-          <span class="reward-icon" aria-hidden="true">${icon}</span>
-          <span class="tag">${tag}</span>
-          ${slots !== null ? `<span class="slot-note">${slotLabel(slots)}</span>` : ''}
+          <span class="reward-top">
+            <span class="reward-icon" aria-hidden="true">${icon}</span>
+            ${slots !== null ? `<span class="slot-note">${slotLabel(slots)}</span>` : ''}
+          </span>
           <b>${escapeHtml(option.label)}</b>
-          <div class="tag-row">${tagChips(itemTags(def), false)}</div>
           <span>${glossaryText(description)}</span>
           <span class="card-select">${selected ? 'SELECTED' : 'SELECT'}</span>
         </button>`;
@@ -3842,23 +3814,8 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
         ?? (offer.kind === 'eat' ? FOOD_BY_ID.get(offer.def) : undefined);
       const rarity = def?.shopRarity ?? def?.rarity;
       const isRare = rarity === 'rare';
-      const isRareItem = offer.kind === 'item' && isRare;
       const isUncommon = !isRare && rarity === 'uncommon';
-      const kindLabel = KIND_LABELS[offer.kind];
-      const rareLabel = offer.kind === 'item' ? 'RARE ITEM' : `RARE ${kindLabel}`;
-      const baseTag = isRareItem
-        ? 'RARE ITEM'
-        : isRare
-          ? rareLabel
-          : isUncommon ? 'UNCOMMON' : kindLabel;
-      const tag = offer.sale
-        ? isRareItem
-          ? 'RARE ITEM · 50% OFF'
-          : isRare
-            ? `${rareLabel} · 50% OFF`
-            : isUncommon ? 'UNCOMMON · 50% OFF' : 'SALE · 50% OFF'
-        : baseTag;
-      const tagTip = isFood
+      const slotTip = isFood
         ? ` data-tip="${FOOD_SPACE_TIP}" tabindex="0" aria-label="${FOOD_SPACE_TIP}"`
         : '';
       const price = offer.sale && offer.originalPrice
@@ -3870,11 +3827,9 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
       <article class="offer-card ${isFood ? 'food' : offer.kind} ${cannotAfford ? 'unavailable' : ''} ${offer.sale ? 'sale' : ''} ${isRare ? 'rare' : isUncommon ? 'uncommon' : ''}">
         <div class="offer-top">
           <span class="item-emoji" aria-hidden="true">${info.icon}</span>
-          <span class="tag"${tagTip}>${tag}</span>
+          <span class="slot-note"${slotTip}>${slotLabel(info.slots)}</span>
         </div>
         <h3>${escapeHtml(info.name)}</h3>
-        <span class="slot-note">${slotLabel(info.slots)}</span>
-        <div class="tag-row">${tagChips(itemTags(itemDef))}</div>
         <p>${glossaryText(description)}</p>
         <button class="btn primary" data-action="buy" data-id="${escapeHtml(offer.id)}" ${cannotAfford ? 'disabled' : ''}>BUY · ${price}</button>
       </article>`;

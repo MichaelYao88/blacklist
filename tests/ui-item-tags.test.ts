@@ -2,12 +2,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { game } from '../src/game';
 
-function tagTexts(element: Element | null): string[] {
-  return [...(element?.querySelectorAll('.item-tag') ?? [])]
-    .map((tag) => tag.textContent?.trim() ?? '');
-}
-
-describe('multi-tag item card from an old save', () => {
+describe('item card from an old save', () => {
   let root: HTMLElement;
 
   beforeAll(async () => {
@@ -25,11 +20,12 @@ describe('multi-tag item card from an old save', () => {
     root.querySelector<HTMLElement>('[data-action="resume"]')!.click();
   });
 
-  it('loads an old save without tag fields and renders every tag', () => {
+  it('loads an old save without tag fields and shows only the slot note', () => {
     const card = [...root.querySelectorAll<HTMLElement>('.item-card')]
       .find((entry) => entry.textContent?.includes('X Marks'));
     expect(card).not.toBeNull();
-    expect(tagTexts(card!)).toEqual(['GUESS', 'GOLD', 'ARMOR']);
-    expect(card?.textContent).toContain('1 ITEM SLOT');
+    expect(card?.querySelectorAll('.item-tag').length).toBe(0);
+    expect(card?.querySelector('.tag')).toBeNull();
+    expect(card?.querySelector('.slot-note')?.textContent?.trim()).toBe('1 ITEM SLOT');
   });
 });
