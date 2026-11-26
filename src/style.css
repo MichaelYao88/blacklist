@@ -1,3 +1,11 @@
+@font-face {
+  font-family: "Metamorphous";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/metamorphous/Metamorphous-Regular.woff2") format("woff2");
+}
+
 :root {
   color-scheme: dark;
   --bg: #0b0a0f;
@@ -23,6 +31,7 @@
   --hit: #4e9aa8;
   --radius: 14px;
   --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  --book: "Metamorphous", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
   --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
@@ -3608,6 +3617,17 @@ button {
   line-height: 1.2;
 }
 
+.book-word {
+  color: var(--gold);
+  font-family: var(--book);
+  font-style: normal;
+  font-weight: 400;
+  font-size: clamp(1.85rem, 7vw, 2rem);
+  letter-spacing: 0.08em;
+  line-height: 1.15;
+  text-shadow: 0 0 18px rgba(231, 184, 90, 0.25);
+}
+
 @keyframes parrot-pop {
   0% { opacity: 0; transform: translateY(8px) scale(0.9); }
   10% { opacity: 1; transform: translateY(0) scale(1.03); }
@@ -5216,6 +5236,14 @@ button {
   text-align: center;
 }
 
+.mysterious-intro {
+  max-width: 34ch;
+  margin: -10px 0 0;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  font-style: italic;
+}
+
 .mysterious-items {
   display: flex;
   align-items: center;
@@ -5466,5 +5494,85 @@ button {
   .mobile-item-drawer .item-card {
     overflow-wrap: break-word;
     word-break: normal;
+  }
+}
+
+/* ── Purgamanual glossary modal ──────────────────────────────────────────── */
+
+.list-modal {
+  z-index: 70;
+}
+
+.list-card {
+  text-align: left;
+}
+
+.list-card h2,
+.list-card .panel-kicker {
+  text-align: center;
+}
+
+.list-input-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  margin: 14px 0;
+}
+
+.list-input {
+  flex: 1 1 150px;
+  min-width: 0;
+  max-width: 220px;
+  padding: 9px 11px;
+  border: 1px solid var(--line-2);
+  border-radius: 7px;
+  background: rgba(13, 10, 20, 0.8);
+  color: var(--ink);
+  font: inherit;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.list-input:focus {
+  outline: none;
+  border-color: var(--violet);
+  box-shadow: 0 0 0 2px rgba(139, 107, 217, 0.3);
+}
+
+.list-result {
+  min-height: 64px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: rgba(13, 10, 20, 0.45);
+  text-align: center;
+}
+
+.list-possible,
+.list-sample,
+.list-empty {
+  margin: 2px 0;
+}
+
+.list-possible b,
+.list-sample b {
+  color: var(--gold);
+  font-size: 1.15rem;
+  letter-spacing: 0.08em;
+}
+
+.list-empty b {
+  color: #ff9c96;
+}
+
+@media (max-width: 620px) {
+  .list-card {
+    padding: 18px;
+  }
+
+  .list-input {
+    max-width: none;
   }
 }

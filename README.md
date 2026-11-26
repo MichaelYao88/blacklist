@@ -2,7 +2,7 @@
 
 A word roguelike about the burdens you choose.
 
-A 40-floor curse run. The blacklist and the clock start disabled. Floors cycle fight → shop → fight → curse; fights, shops and curses each count as a floor, while events happen between floors and do not. Floor 23 is the Miniboss: draft 1 curse, then beat two words to gain a slot and a full heal, then choose one reward. Floor 38 is the last shop, followed by the final three curse drafts. Floor 39 is the Floor Boss: beat three words. Floor 40 is the Mysterious Room: claim victory. One active save, and defeat wipes it.
+A 40-floor curse run. The blacklist and the clock start disabled. Floors cycle fight → shop → fight → curse; fights, shops and curses each count as a floor, while events happen between floors and do not. Floor 23 is the Miniboss: see the intro, draft 1 curse, then beat two words to gain a slot and a full heal, then choose one reward. Floor 38 is the last shop, followed by the final three curse drafts. Floor 39 is the Floor Boss: beat three words. Floor 40 is the Mysterious Room: claim victory. One active save, and defeat wipes it.
 
 **Play:** https://michaelayao88.github.io/blacklist/
 
@@ -15,11 +15,11 @@ A 40-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - Wordle-style scoring with duplicate-letter handling
 - A 40-floor curse run: the Miniboss waits on floor 23, the Floor Boss on floor 39, and the Mysterious Room on floor 40; no starting clock, no starting blacklist
 - Round loop: `round → 42% event → shop`, then `round → 42% event → curse`
-- Floors cycle fight → shop → fight → curse; curses count as floors and events do not. The Miniboss demands 1 curse draft before its fight, and floor 38 is the final shop followed by the final three curse drafts
+- Floors cycle fight → shop → fight → curse; curses count as floors and events do not. The Miniboss opens with its intro, then demands 1 curse draft before its fight, and floor 38 is the final shop followed by the final three curse drafts
 - Curse drafts draw from the weighted pool; The List and The Clock get a 3x weight until they first appear in a draft, then normal
 - Curse drafts use the same rarity floors as shops (40% rare and below, 45% uncommon and below, 15% common only), but do not display rarity. A common curse becomes uncommon for the rest of the run after it is offered or selected
 - Hover or focus a curse in the HUD to read its rules
-- Floor 23 is the Miniboss: draft 1 curse, then beat two words. It deals **+5 base damage**, and beating it grants **+1 item slot**, a full heal, and a choice between a random rare food and a random rare item
+- Floor 23 is the Miniboss: see the intro, draft 1 curse, then beat two words. It deals **+5 base damage**, and beating it grants **+1 item slot**, a full heal, and a choice between a random rare food and a random rare item
 - Floor 38 is the final shop followed by the final three curse drafts; floor 39 is the Floor Boss: beat three words. It deals **+10 base damage**. Bosses ignore the **Second Wind** curse
 - **The Peddler's Table** is where you pick one of the Red Amulet, Silver Key or Nonsensical Map. The Mysterious Room on floor 40 remembers only those event picks: each chosen item adds one to its cross-run counter, and the room shows the three counters before you **Claim victory**
 - **Second Wind** is a rare curse: after you solve a word, a second word appears with one free guess
@@ -92,7 +92,7 @@ A 40-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Immunity** blocks the next hurting guess and any guess for 4 seconds after it
 - **Mending Plate** is a rare item: +1 max armor per 8 HP healed
 - **Heartstone** is a 15g rare item: autocast a free Heal at the start of every round
-- **Necronomicon** is a rare item: use it during a fight to lose 13% of your max HP for a random gift. It can only be used once per round, and it grows stronger as you feed it: fed thresholds unlock at 0, 13, 39, 79, 129, 189 and 259 max HP paid. Whisper and Twin Whispers autoguess Mythos words such as RYLEH, CTHUL and DAGON
+- **Necronomicon** is a rare item: use it during a fight to lose 13% of your max HP for a random gift. It can only be used once per round, and it grows stronger as you feed it: fed thresholds unlock at 0, 13, 39, 79, 129, 189 and 259 max HP paid. Whisper and Twin Whispers autoguess Mythos words such as RYLEH, CTHUL and DAGON. If you stay silent for 66 seconds in a fight, the book sometimes whispers a clue and takes 6% of your max HP.
 - **Growth Spurt** gives +3 max HP when you solve in 4 guesses or fewer
 - **Growth Chart** is an 8g item: every 3 max HP gained grants +1 Time Freeze
 - **Midas Touch** has a 30% chance to double every gold gain
@@ -214,10 +214,11 @@ Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title s
 
 - **The Soldier** is the default: 15 HP, 7 armor, 12 gold, the **Evil Parrot**, and no starting curses.
 - **The Pathfinder** unlocks when The Soldier reaches the first curse screen. They start with **Head Start**, **The List** curse, 21 HP, 3 armor and 9 gold.
-- **The Purgamist** unlocks after purging **6 letters** across any runs. They start with the **Evil Parrot**, **Without the D** curse, 18 HP, 5 armor, 17 gold, and purge **4 letters** of your choice on level 0, before any word is drawn.
-- **The Necromancer** unlocks after buying the **Necronomicon** once from a shop. They start with the **Necronomicon**, **Evil Parrot**, **The Sleeper** curse, 31 HP, 4 armor and 16 gold.
+- **The Purgamist** unlocks after purging **6 letters** across any runs. They start with the **Purgamanual** glossary, **Without the D** curse, 18 HP, 5 armor, 17 gold, and purge **4 letters** of your choice on level 0, before any word is drawn.
+- **The Necromancer** unlocks after buying the **Necronomicon** once from a shop. They start with the **Necronomicon**, **The Sleeper** curse, 31 HP, 4 armor and 16 gold.
 - **The Gourmand** unlocks after eating 3 **Double Cheeseburgers** across any runs. They start with **Potluck**, the **Evil Parrot**, **Porcupine's Dilemma** curse, **Shop Upgrade** already eaten, 25 HP, 4 armor and 6 gold.
-- **Evil Parrot** is a 16g item that cannot be bought and sells for 8. It suggests a possible word once per round; the suggestion will not be the answer word unless it is the only one left. Bribe it for more with a cracker costing 🪙.
+- **Evil Parrot** is a 16g item that cannot be bought and sells for 8. It suggests a possible word once per round; the suggestion will not be the answer word unless it is the only one left. Bribe it for more with a cracker costing 🪙. Only The Soldier's parrot steals idle gold.
+- **Purgamanual** is a free glossary tool carried by The Purgamist. Open it any time to count how many answers avoid a set of ruled-out letters and see one sample word.
 - **The Farmer** unlocks after winning any run. They start with three **Harvest Charms**, **Early Bird**, the **Short Fuse** curse, 17 HP, 3 armor and 2 gold.
 - **The Empty Armor** unlocks after winning a run on **Ascension 1**. It starts with **Bulwark**, the character-only **Slow Mending** curse, 1 HP, 13 armor, one extra item slot and 6 gold.
 - **The Werewolf** unlocks after winning runs with **2 different characters**. It starts with **Dark Echo**, **Thorn Crown**, the **Weak Plate** and **Tight Slots** curses, 69 HP, no armor and 6 gold.
@@ -291,7 +292,7 @@ Pushes to `main` build the game and upload it to itch.io with [butler](https://i
 
 Vite's `base` is `./`, so script and stylesheet URLs are relative to the page. The same build loads on GitHub Pages (`/blacklist/`) and inside an itch.io iframe at whatever path itch serves.
 
-The build includes a minimal web app manifest with `"orientation": "portrait"`, and the game asks for a portrait orientation lock on the first tap and when a run starts. Orientation lock only works in a fullscreen, user-gesture context, so failures are ignored. The itch.io embed's own orientation is not controlled by butler or this repo: set **Mobile friendly** and the page orientation to **Portrait** in the itch.io project dashboard (Edit game → Embed options) for the iframe itself to fullscreen vertically.
+The build includes a minimal web app manifest with `"display": "standalone"` but no orientation hint. The game does not request fullscreen or lock the screen orientation, so it runs inline inside the itch.io embed. The embed's own fullscreen and orientation behavior is not controlled by butler or this repo: set **Mobile friendly** and the embed fullscreen options in the itch.io project dashboard (Edit game → Embed options).
 
 The workflow reads the target from repository variables `vars.ITCH_USER` and `vars.ITCH_GAME` and the API key from the `BUTLER_API_KEY` secret. It zips the files inside `dist/` (so `index.html` is the archive root, not `dist/index.html`) and pushes that zip to `ITCH_USER/ITCH_GAME:html5`.
 

@@ -94,20 +94,13 @@ function findHappeningById(prefix: string, id: string): StepResult {
   throw new Error(`could not find happening ${id}`);
 }
 
-/** Advance into a boss and draft all of its prep curses. */
+/** Advance into a boss intro. */
 function enterBoss(state: RunState, bossId: string): StepResult {
   const bossIndex = nodeAt(state, (node) => node.kind === 'boss' && node.boss === bossId);
   state.nodeIndex = bossIndex - 1;
   state.phase = 'shop';
   state.shop = shopState();
-  let result = act(state, { type: 'continue' });
-  let picks = 0;
-  while (result.state.phase === 'curse' && picks < 10) {
-    const options = result.state.curse?.options ?? [];
-    result = act(result.state, { type: 'chooseCurse', curseId: options[0] });
-    picks++;
-  }
-  return result;
+  return act(state, { type: 'continue' });
 }
 
 function enterMiniboss(state: RunState): StepResult {
@@ -3998,15 +3991,24 @@ describe('full cursed loop', () => {
 });
 
 describe('Miniboss', () => {
-  it('drafts one curse, fights two words, and grants a slot, full heal, and rare choice', () => {
+  it('shows the intro, drafts one curse, then fights two words, granting a slot, full heal, and rare choice', () => {
     const { state } = start('miniboss-rewards');
     let result = enterMiniboss(state);
     expect(result.state.phase).toBe('bossIntro');
     expect(result.state.bossIntro?.boss).toBe('miniboss');
+    expect(result.state.bossCursesLeft).toBe(1);
 
     result.state.slots = 10;
     result.state.hp = 1;
-    let round = act(result.state, { type: 'continue' });
+    const draft = act(result.state, { type: 'continue' });
+    expect(draft.state.phase).toBe('curse');
+    expect(draft.state.curse?.boss).toBe(true);
+    let round = act(draft.state, {
+      type: 'chooseCurse',
+      curseId: draft.state.curse!.options[0],
+    });
+    expect(round.state.phase).toBe('round');
+    expect(round.state.round?.boss).toBe('miniboss');
     expect(round.state.round?.gauntletTotal).toBe(2);
     round = act(round.state, { type: 'guess', word: round.state.round!.answer });
     round = act(round.state, { type: 'guess', word: round.state.round!.answer });
@@ -4028,11 +4030,27 @@ describe('Miniboss', () => {
     expect(chosen.state.phase).not.toBe('reward');
   });
 
+  it('orders the intro, then the curse draft, then the fight', () => {
+    const { state } = start('miniboss-order');
+    let result = enterMiniboss(state);
+    expect(result.state.phase).toBe('bossIntro');
+    result = act(result.state, { type: 'continue' });
+    expect(result.state.phase).toBe('curse');
+    expect(result.state.curse?.boss).toBe(true);
+    result = act(result.state, {
+      type: 'chooseCurse',
+      curseId: result.state.curse!.options[0],
+    });
+    expect(result.state.phase).toBe('round');
+    expect(result.state.round?.boss).toBe('miniboss');
+  });
+
   it('has 5 more base damage than a normal encounter', () => {
     const { state } = start('miniboss-damage');
     let result = enterMiniboss(state);
     result.state.curses = [];
     result.state.bonusBaseDamage = 0;
+    result.state.bossCursesLeft = 0;
     result = act(result.state, { type: 'continue' });
     expect(result.state.round?.baseDamage).toBe(8);
   });
@@ -4080,8 +4098,12 @@ describe('future objects', () => {
       equipped: false,
     });
     let result = enterMiniboss(state);
+    const draft = act(result.state, { type: 'continue' });
+    result = act(draft.state, {
+      type: 'chooseCurse',
+      curseId: draft.state.curse!.options[0],
+    });
     result.state.hp = result.state.maxHp;
-    result = act(result.state, { type: 'continue' });
     result = act(result.state, { type: 'guess', word: result.state.round!.answer });
     result = act(result.state, { type: 'guess', word: result.state.round!.answer });
     expect(result.state.phase).toBe('summary');

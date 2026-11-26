@@ -597,11 +597,11 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'necronomicon',
     name: 'Necronomicon',
-    description: 'Use during a fight: lose 13% max HP for a random gift. The book grows stronger as you feed it. Once per round.',
+    description: 'Use during a fight: lose 13% max HP for a random gift. The book grows stronger as you feed it. Once per round. Sometimes whispers.',
     price: 13,
     kind: 'gear',
     rarity: 'rare',
-    initial: { fed: 0, _uses: 0 },
+    initial: { fed: 0, _uses: 0, _idleMs: 0, _whisperUsed: 0 },
     useOnlyInRound: true,
     onUse: (ctx) => {
       if (!ctx.self.equipped) {
@@ -629,7 +629,29 @@ export const ITEMS: ItemDef[] = [
       ];
     },
     on: {
-      onRoundStart: () => [{ type: 'setItemData', stat: '_uses', value: 0 }],
+      onRoundStart: () => [
+        { type: 'setItemData', stat: '_uses', value: 0 },
+        { type: 'setItemData', stat: '_idleMs', value: 0 },
+        { type: 'setItemData', stat: '_whisperUsed', value: 0 },
+      ],
+      onGuessScored: (ctx, p) => (p.guess.by === 'player'
+        ? [
+            { type: 'setItemData', stat: '_idleMs', value: 0 },
+            { type: 'setItemData', stat: '_whisperUsed', value: 0 },
+          ]
+        : []),
+      onTimerTick: (ctx, p) => {
+        if (!ctx.state.round) return [];
+        const idle = (ctx.self.data._idleMs ?? 0) + p.dtMs;
+        if ((ctx.self.data._whisperUsed ?? 0) > 0 || idle < 66_000) {
+          return [{ type: 'setItemData', stat: '_idleMs', value: idle }];
+        }
+        return [
+          { type: 'setItemData', stat: '_idleMs', value: idle },
+          { type: 'setItemData', stat: '_whisperUsed', value: 1 },
+          { type: 'parrotSuggest', source: 'necronomicon' },
+        ];
+      },
     },
   }),
   defineItem({
@@ -1962,6 +1984,17 @@ export const ITEMS: ItemDef[] = [
     dynamicDescription: (data) =>
       `Sells for ${2 + 2 * (data.held ?? 0)} gold. +2 more gold per round held.`,
     sellValue: (ctx) => 2 + 2 * (ctx.self.data.held ?? 0),
+  }),
+  defineItem({
+    id: 'the-list-glossary',
+    name: 'Purgamanual',
+    description: 'Open a glossary of possible answer words for any set of ruled-out letters. Free and always available.',
+    price: 0,
+    kind: 'gear',
+    slots: 0,
+    unique: true,
+    noSpawn: true,
+    sellValue: () => 0,
   }),
   defineItem({
     id: 'red-amulet',

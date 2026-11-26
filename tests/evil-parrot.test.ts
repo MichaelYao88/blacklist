@@ -63,7 +63,7 @@ describe('Evil Parrot', () => {
   });
 
   it('starts equipped for the four intended characters and nobody else', () => {
-    const starts = ['runner', 'purgamist', 'necromancer', 'gourmand'];
+    const starts = ['runner', 'gourmand'];
     for (const character of starts) {
       const { state } = game.newRun({ seed: `parrot-start-${character}`, character });
       const item = parrot(state);
