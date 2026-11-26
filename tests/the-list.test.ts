@@ -3,11 +3,11 @@ import { game } from '../src/game';
 import { CHARACTERS, ITEM_BY_ID } from '../src/content';
 
 describe('Purgamanual glossary item', () => {
-  it('is a free, slotless, no-spawn, unique tool with no activation', () => {
+  it('is a free, one-slot, no-spawn, unique tool with no activation', () => {
     const def = ITEM_BY_ID.get('the-list-glossary');
     expect(def?.name).toBe('Purgamanual');
     expect(def?.price).toBe(0);
-    expect(def?.slots).toBe(0);
+    expect(def?.slots).toBe(1);
     expect(def?.noSpawn).toBe(true);
     expect(def?.unique).toBe(true);
     expect(def?.useOnlyInRound).toBeFalsy();
@@ -47,6 +47,6 @@ describe('Purgamanual glossary item', () => {
     const item = view.items.find((entry) => entry.id === 'the-list-glossary');
     expect(item).toBeDefined();
     expect(item?.sellValue).toBe(0);
-    expect(item?.slots).toBe(0);
+    expect(item?.slots).toBe(1);
   });
 });

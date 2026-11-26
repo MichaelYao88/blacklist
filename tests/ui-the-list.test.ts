@@ -5,6 +5,18 @@ import { CONTENT } from '../src/content';
 import { summarizeWordList } from '../src/core/wordcount';
 
 const originalMatchMedia = window.matchMedia;
+const liveIntervals = new Set<number>();
+const realSetInterval = window.setInterval;
+window.setInterval = ((handler: () => void, timeout?: number) => {
+  const id = realSetInterval(handler, timeout);
+  liveIntervals.add(id);
+  return id;
+}) as typeof window.setInterval;
+
+function stopAppIntervals(): void {
+  for (const id of liveIntervals) window.clearInterval(id);
+  liveIntervals.clear();
+}
 
 function setMobileMatchMedia(matches: boolean): void {
   Object.defineProperty(window, 'matchMedia', {
@@ -37,6 +49,7 @@ async function boot(
   seed: string,
   seedRun: (state: ReturnType<typeof game.newRun>['state']) => void,
 ): Promise<HTMLElement> {
+  stopAppIntervals();
   setMobileMatchMedia(mobile);
   localStorage.clear();
   const { state } = game.newRun({ seed, character: 'runner' });
@@ -83,6 +96,7 @@ describe('Purgamanual UI', () => {
     const result = root.querySelector<HTMLElement>('.list-result')!;
     expect(result.dataset.listCount).toBe(String(expected.count));
     expect(result.dataset.listSample).toBe(expected.sample);
+    expect(result.dataset.listSamples).toBe(expected.samples.join(','));
   }
 
   it('shows an OPEN button on the item card', () => {
@@ -111,7 +125,7 @@ describe('Purgamanual UI', () => {
     expectSummary(['a', 'q', 'x', 'z']);
 
     const result = root.querySelector<HTMLElement>('.list-result')!;
-    expect(result.textContent).toContain('Sample:');
+    expect(result.textContent).toContain('Samples:');
   });
 
   it('removes a prefilled letter when it is deleted', () => {
@@ -142,6 +156,7 @@ describe('Purgamanual UI', () => {
     expect(root.querySelector<HTMLElement>('.list-result')?.textContent)
       .not.toContain('Sample:');
     expect(root.querySelector<HTMLElement>('.list-result')?.dataset.listSample).toBe('');
+    expect(root.querySelector<HTMLElement>('.list-result')?.dataset.listSamples).toBe('');
     root.querySelector<HTMLElement>('[data-action="dismiss-list"]')!.click();
     expect(root.querySelector('.list-modal')).toBeNull();
   });
@@ -215,8 +230,17 @@ describe('Purgamanual mobile tab', () => {
     });
     expect(root.querySelector('[data-action="toggle-list"]')).toBeNull();
   });
+
+  it('has no list tab when the Purgamanual is unequipped', async () => {
+    const root = await boot(true, 'list-mobile-bagged', (state) => {
+      state.items = [{ ...listItem(), equipped: false }];
+    });
+    expect(root.querySelector('[data-action="toggle-list"]')).toBeNull();
+  });
 });
 
 afterAll(() => {
+  stopAppIntervals();
+  window.setInterval = realSetInterval;
   window.matchMedia = originalMatchMedia;
 });

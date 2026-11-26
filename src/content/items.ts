@@ -1966,10 +1966,10 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'the-list-glossary',
     name: 'Purgamanual',
-    description: 'Open a glossary of possible answer words for any set of ruled-out letters. Free and always available.',
+    description: 'Open a glossary of possible answer words for any set of ruled-out letters. Free to open while equipped.',
     price: 0,
     kind: 'gear',
-    slots: 0,
+    slots: 1,
     unique: true,
     noSpawn: true,
     sellValue: () => 0,

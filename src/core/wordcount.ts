@@ -13,6 +13,8 @@ export interface WordListSummary {
   count: number;
   /** A stable example word, or null when nothing remains. */
   sample: string | null;
+  /** Up to two stable example words. */
+  samples: string[];
 }
 
 /** Flatten input into distinct lowercase a-z letters, sorted. */
@@ -67,10 +69,20 @@ export function summarizeWordList(
     }
     if (allowed) words.push(word);
   }
-  const sample = words.length > 0
-    ? words[stableHash(normalized.join('')) % words.length]
-    : null;
-  return { excluded: normalized, count: words.length, sample };
+  const start = words.length > 0
+    ? stableHash(normalized.join('')) % words.length
+    : -1;
+  const samples = start < 0
+    ? []
+    : words.length === 1
+      ? [words[start]]
+      : [words[start], words[(start + 1) % words.length]];
+  return {
+    excluded: normalized,
+    count: words.length,
+    sample: samples[0] ?? null,
+    samples,
+  };
 }
 
 

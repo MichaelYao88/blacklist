@@ -1671,6 +1671,10 @@ app.addEventListener('click', (event) => {
       break;
     case 'open-list': {
       const view = host.view();
+      const equipped = view?.items.some(
+        (item) => item.id === 'the-list-glossary' && item.equipped,
+      );
+      if (!equipped) break;
       listModalOpen = true;
       listInputValue = view ? listDefaultExcluded(view).join('').toUpperCase() : '';
       closeMobileDrawers();
@@ -3243,7 +3247,8 @@ function renderMobileSpells(view: RunView): string {
 function renderMobileItemDrawers(view: RunView): string {
   if (!isMobileLayout()) return '';
   const owned = MOBILE_ITEM_TABS.filter((tab) => (
-    view.items.some((item) => item.id === tab.id)
+    view.items.some((item) => item.id === tab.id
+      && (tab.id !== 'the-list-glossary' || item.equipped))
   ));
   const hasSpellsTab = view.spells.length > 0;
   let nextOffset = hasSpellsTab ? mobileTabStep(MOBILE_TAB_HEIGHTS.spells) : 0;
@@ -3386,7 +3391,9 @@ function renderItemsPanel(view: RunView): string {
       const canUseNow = !def?.useOnlyInRound || view.phase.kind === 'round';
       const disabled = usedThisRound || !canUseNow;
       const use = item.id === 'the-list-glossary'
-        ? '<button class="btn tiny item-use" data-action="open-list">OPEN</button>'
+        ? item.equipped
+          ? '<button class="btn tiny item-use" data-action="open-list">OPEN</button>'
+          : ''
         : item.equipped && def?.onUse
           ? `<button class="btn tiny item-use" data-action="use" data-id="${escapeHtml(item.instance)}" ${disabled ? 'disabled' : ''}${disabled ? ` title="${escapeHtml(!canUseNow ? 'Only usable during a fight.' : 'Already used this round.')}"` : ''}>${usedThisRound ? 'USED' : escapeHtml(def?.useLabel ?? 'USE')}</button>`
           : '';
@@ -3400,13 +3407,16 @@ function renderItemsPanel(view: RunView): string {
     const sellLabel = sellArmed
       ? `CONFIRM SELL · ${item.sellValue} G`
       : `SELL ${item.sellValue} G`;
+    const open = item.id === 'the-list-glossary' && item.equipped
+      ? '<button class="btn tiny item-use" data-action="open-list">OPEN</button>'
+      : '';
     return `<div class="loadout-row ${item.equipped ? 'equipped' : 'bagged'}"
       draggable="true" tabindex="0"
       data-item="${escapeHtml(item.instance)}"
       data-action="${item.equipped ? 'unequip' : 'equip'}" data-id="${escapeHtml(item.instance)}"
       data-tip="${escapeHtml(description)}">
       ${emoji}<b>${name}</b><span class="slot-note">${slotLabel(item.slots)}</span>
-      <button class="btn tiny item-sell" data-action="${sellAction}" data-id="${escapeHtml(item.instance)}" ${canSell ? '' : 'disabled'} aria-label="${sellArmed ? 'Confirm selling' : 'Sell'} ${name} for ${item.sellValue} gold">${sellLabel}</button>
+      ${open}<button class="btn tiny item-sell" data-action="${sellAction}" data-id="${escapeHtml(item.instance)}" ${canSell ? '' : 'disabled'} aria-label="${sellArmed ? 'Confirm selling' : 'Sell'} ${name} for ${item.sellValue} gold">${sellLabel}</button>
     </div>`;
   };
 
@@ -3436,14 +3446,6 @@ function renderItemsPanel(view: RunView): string {
             ? bagged.map(row).join('')
             : `<p class="empty-note">${shop ? 'Drag items here to bag them.' : 'Nothing in the bag.'}</p>`}
         </div>
-        ${view.items.some((item) => item.id === 'the-list-glossary') ? `<div class="loadout-group">
-          <div class="loadout-group-head"><span class="panel-kicker">TOOLS</span><span class="count">0</span></div>
-          ${view.items.filter((item) => item.id === 'the-list-glossary').map((item) => `
-            <div class="loadout-row equipped">
-              <span class="item-emoji" aria-hidden="true">${itemIcon(item.id)}</span><b>Purgamanual</b>
-              <button class="btn tiny item-use" data-action="open-list">OPEN</button>
-            </div>`).join('')}
-        </div>` : ''}
       </div>
     </section>
     ${seedline}
@@ -3490,7 +3492,9 @@ function renderItem(view: RunView, item: ItemView): string {
     ${data ? `<div class="data-row">${data}</div>` : ''}
     ${!item.equipped && item.slots > 0 ? `<p class="bag-note">In the bag. Equip it in a shop.</p>` : ''}
     ${item.id === 'the-list-glossary'
-      ? '<button class="btn tiny" data-action="open-list">OPEN</button>'
+      ? item.equipped
+        ? '<button class="btn tiny" data-action="open-list">OPEN</button>'
+        : ''
       : usable
         ? `<button class="btn tiny" data-action="use" data-id="${escapeHtml(item.instance)}" ${useDisabled ? 'disabled' : ''}${useDisabled ? ` title="${escapeHtml(useTitle)}"` : ''}>${usedThisRound ? 'USED' : escapeHtml(def?.useLabel ?? 'USE')}</button>`
         : ''}
@@ -4046,7 +4050,7 @@ function renderPurgeModal(view: RunView): string {
       <div class="choice-confirm" role="status" aria-live="polite">
         <button class="btn primary" data-action="confirm-purge" ${selectedLetter ? '' : 'disabled'}>${selectedLetter ? 'CONFIRM PURGE' : 'SELECT A LETTER'}</button>
         <p class="hint">${purgeLabel}. Tap a letter to mark it. Nothing is purged until you confirm. ${setup ? 'The run begins after the last purge.' : 'The clock is paused while this is open.'}</p>
-        ${view.items.some((item) => item.id === 'the-list-glossary')
+        ${view.items.some((item) => item.id === 'the-list-glossary' && item.equipped)
           ? '<button class="btn tiny ghost" data-action="open-list">📜 OPEN PURGAMANUAL</button>'
           : ''}
       </div>
@@ -4138,10 +4142,11 @@ function renderListModal(view: RunView): string {
   const excluded = listExcluded();
   const summary = summarizeWordList(CONTENT.answers, excluded);
   const sentence = wordListSentence(summary.count, summary.excluded);
+  const samples = summary.samples.map((word) => word.toUpperCase()).join(', ');
   const result = summary.count === 0
     ? `<p class="list-empty">${escapeHtml(sentence)}</p>`
     : `<p class="list-possible">${escapeHtml(sentence)}</p>
-       <p class="list-sample">Sample: <b>${escapeHtml((summary.sample ?? '').toUpperCase())}</b></p>`;
+       <p class="list-sample">${summary.samples.length === 1 ? 'Sample' : 'Samples'}: <b>${escapeHtml(samples)}</b></p>`;
   return `
   <div class="modal list-modal" data-morph-key="list-modal" role="dialog" aria-modal="true" aria-labelledby="list-title">
     <div class="modal-card list-card">
@@ -4152,7 +4157,7 @@ function renderListModal(view: RunView): string {
         <input class="list-input" data-list-input type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="26" value="${escapeHtml(listInputValue)}" placeholder="Letters to exclude" aria-label="Excluded letters" />
         <button class="btn tiny ghost" data-action="list-reset">RESET</button>
       </div>
-      <div class="list-result" data-list-count="${summary.count}" data-list-sample="${escapeHtml(summary.sample ?? '')}">${result}</div>
+      <div class="list-result" data-list-count="${summary.count}" data-list-sample="${escapeHtml(summary.sample ?? '')}" data-list-samples="${escapeHtml(summary.samples.join(','))}">${result}</div>
       <div class="choice-confirm">
         <button class="btn primary" data-action="dismiss-list">CLOSE</button>
       </div>

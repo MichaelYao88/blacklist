@@ -34,8 +34,22 @@ describe('Purgamanual word counter', () => {
     const first = summarizeWordList(ANSWERS, ['r', 'c']);
     const second = summarizeWordList(ANSWERS, ['C', 'R']);
     expect(first.sample).toBe(second.sample);
+    expect(first.samples).toEqual(second.samples);
     expect(first.sample).not.toBeNull();
     expect(wordsRemaining(ANSWERS, ['r', 'c'])).toContain(first.sample);
+  });
+
+  it('returns two distinct samples when at least two words remain', () => {
+    const summary = summarizeWordList(ANSWERS, ['q']);
+    expect(summary.samples).toHaveLength(2);
+    expect(new Set(summary.samples).size).toBe(2);
+    expect(summary.samples[0]).toBe(summary.sample);
+  });
+
+  it('returns one sample when only one word remains', () => {
+    const summary = summarizeWordList(ANSWERS, ['c', 'r']);
+    expect(summary.samples).toEqual(['slate']);
+    expect(summary.sample).toBe('slate');
   });
 
   it('describes a short excluded set as a sentence', () => {
