@@ -250,8 +250,8 @@ let necroDrawerOpen = false;
 // Mobile item shortcuts. The drawers share the spells drawer's behaviour: one
 // open at a time, and the open flag survives the once-per-second re-render.
 const MOBILE_ITEM_TABS = [
-  { id: 'evil-parrot', key: 'parrot', label: 'PARROT', title: 'EVIL PARROT' },
-  { id: 'necronomicon', key: 'necro', label: 'NECRO', title: 'NECRONOMICON' },
+  { id: 'evil-parrot', key: 'parrot', title: 'EVIL PARROT' },
+  { id: 'necronomicon', key: 'necro', title: 'NECRONOMICON' },
 ] as const;
 
 type MobileItemKey = (typeof MOBILE_ITEM_TABS)[number]['key'];
@@ -3061,9 +3061,10 @@ function renderMobileItemDrawers(view: RunView): string {
     const open = isItemDrawerOpen(tab.key);
     // The spells tab is index 0 when it exists; otherwise item tabs start there.
     const tabIndex = index + (hasSpellsTab ? 1 : 0);
+    const itemName = escapeHtml(ITEM_BY_ID.get(tab.id)?.name ?? tab.id);
     return `<div class="mobile-item ${open ? 'open' : ''}" data-mobile-item="${tab.key}">
-      <button class="mobile-item-tab" style="--tab-index:${tabIndex}" data-action="toggle-${tab.key}" aria-expanded="${open}">
-        <span>${tab.label}</span><span class="mobile-item-tab-emoji" aria-hidden="true">${itemIcon(tab.id)}</span>
+      <button class="mobile-item-tab" style="--tab-index:${tabIndex}" data-action="toggle-${tab.key}" aria-expanded="${open}" aria-label="${itemName}" title="${itemName}">
+        <span class="mobile-item-tab-emoji" aria-hidden="true">${itemIcon(tab.id)}</span>
       </button>
       <div class="mobile-item-scrim" data-action="close-${tab.key}" aria-hidden="${open ? 'false' : 'true'}"></div>
       <aside class="mobile-item-drawer" aria-label="${tab.title}" aria-hidden="${open ? 'false' : 'true'}">

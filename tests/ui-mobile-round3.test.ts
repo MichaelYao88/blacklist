@@ -97,10 +97,16 @@ describe('mobile parrot and Necronomicon tabs', () => {
     root = await boot(true, 'mobile-round3-items', giveParrotAndNecro);
     const tabs = root.querySelectorAll<HTMLElement>('.mobile-item-tab');
     expect(tabs).toHaveLength(2);
-    expect(root.querySelector<HTMLElement>('[data-action="toggle-parrot"]')?.textContent)
-      .toContain('PARROT');
-    expect(root.querySelector<HTMLElement>('[data-action="toggle-necro"]')?.textContent)
-      .toContain('NECRO');
+    const parrotTab = root.querySelector<HTMLElement>('[data-action="toggle-parrot"]');
+    const necroTab = root.querySelector<HTMLElement>('[data-action="toggle-necro"]');
+    expect(parrotTab?.textContent).toContain('🦜');
+    expect(parrotTab?.textContent).not.toContain('PARROT');
+    expect(necroTab?.textContent).toContain('📕');
+    expect(necroTab?.textContent).not.toContain('NECRO');
+    expect(parrotTab?.getAttribute('aria-label')).toContain('Evil Parrot');
+    expect(parrotTab?.getAttribute('title')).toContain('Evil Parrot');
+    expect(necroTab?.getAttribute('aria-label')).toContain('Necronomicon');
+    expect(necroTab?.getAttribute('title')).toContain('Necronomicon');
     expect(tabs[0].style.getPropertyValue('--tab-index')).toBe('1');
     expect(tabs[1].style.getPropertyValue('--tab-index')).toBe('2');
     expect(root.querySelector('.mobile-item')?.classList.contains('open')).toBe(false);

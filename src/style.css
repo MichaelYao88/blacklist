@@ -5370,8 +5370,7 @@ button {
     box-shadow: 8px 10px 28px -20px #000;
   }
 
-  .mobile-spells-tab b,
-  .mobile-item-tab-emoji {
+  .mobile-spells-tab b {
     display: grid;
     place-items: center;
     min-width: 18px;
@@ -5382,6 +5381,22 @@ button {
     color: var(--gold);
     font-size: 0.62rem;
     letter-spacing: 0;
+    writing-mode: horizontal-tb;
+  }
+
+  .mobile-item-tab {
+    justify-content: center;
+    min-width: 40px;
+    min-height: 44px;
+    padding: 0;
+    writing-mode: horizontal-tb;
+  }
+
+  .mobile-item-tab-emoji {
+    display: grid;
+    place-items: center;
+    font-size: 1.05rem;
+    line-height: 1;
     writing-mode: horizontal-tb;
   }
 
