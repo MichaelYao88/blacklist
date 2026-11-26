@@ -2371,7 +2371,7 @@ function renderHelp(): string {
     <div class="rules-grid">
       <article class="rule-card">
         <h3>The run</h3>
-        <p>Forty floors. The loop cycles <b>fight → shop → fight → curse</b>; fights, shops and curses each count as a floor, while events happen between floors and do not. Floor 23 is the <b>Miniboss</b>: draft <b>1 curse</b>, then beat two words to gain a slot and a full heal, then choose one reward. Floor 38 is the last shop, followed by the final three curse drafts. Floor 39 is the <b>Floor Boss</b>: beat three words. Floor 40 is the <b>Mysterious Room</b>: claim victory.</p>
+        <p>Forty floors. The loop cycles <b>fight → shop → fight → curse</b>; fights, shops and curses each count as a floor, while events happen between floors and do not. Floor 23 is the <b>Miniboss</b>: see the intro, draft <b>1 curse</b>, then beat two words to gain a slot and a full heal, then choose one reward. Floor 38 is the last shop, followed by the final three curse drafts. Floor 39 is the <b>Floor Boss</b>: beat three words. Floor 40 is the <b>Mysterious Room</b>: claim victory.</p>
       </article>
       <article class="rule-card">
         <h3>Damage</h3>
@@ -3028,6 +3028,7 @@ function renderMysteriousRoom(): string {
   }).join('');
   return `<div class="phase-card mysterious-room">
     <p class="panel-kicker">MYSTERIOUS ROOM</p>
+    <p class="muted mysterious-intro">You enter a strangely familiar room... Have you been here before?</p>
     <div class="mysterious-items">${items}</div>
     <button class="btn primary big" data-action="claim-victory">CLAIM VICTORY</button>
   </div>`;

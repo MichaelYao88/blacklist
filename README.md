@@ -2,7 +2,7 @@
 
 A word roguelike about the burdens you choose.
 
-A 40-floor curse run. The blacklist and the clock start disabled. Floors cycle fight → shop → fight → curse; fights, shops and curses each count as a floor, while events happen between floors and do not. Floor 23 is the Miniboss: draft 1 curse, then beat two words to gain a slot and a full heal, then choose one reward. Floor 38 is the last shop, followed by the final three curse drafts. Floor 39 is the Floor Boss: beat three words. Floor 40 is the Mysterious Room: claim victory. One active save, and defeat wipes it.
+A 40-floor curse run. The blacklist and the clock start disabled. Floors cycle fight → shop → fight → curse; fights, shops and curses each count as a floor, while events happen between floors and do not. Floor 23 is the Miniboss: see the intro, draft 1 curse, then beat two words to gain a slot and a full heal, then choose one reward. Floor 38 is the last shop, followed by the final three curse drafts. Floor 39 is the Floor Boss: beat three words. Floor 40 is the Mysterious Room: claim victory. One active save, and defeat wipes it.
 
 **Play:** https://michaelayao88.github.io/blacklist/
 
@@ -15,11 +15,11 @@ A 40-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - Wordle-style scoring with duplicate-letter handling
 - A 40-floor curse run: the Miniboss waits on floor 23, the Floor Boss on floor 39, and the Mysterious Room on floor 40; no starting clock, no starting blacklist
 - Round loop: `round → 42% event → shop`, then `round → 42% event → curse`
-- Floors cycle fight → shop → fight → curse; curses count as floors and events do not. The Miniboss demands 1 curse draft before its fight, and floor 38 is the final shop followed by the final three curse drafts
+- Floors cycle fight → shop → fight → curse; curses count as floors and events do not. The Miniboss opens with its intro, then demands 1 curse draft before its fight, and floor 38 is the final shop followed by the final three curse drafts
 - Curse drafts draw from the weighted pool; The List and The Clock get a 3x weight until they first appear in a draft, then normal
 - Curse drafts use the same rarity floors as shops (40% rare and below, 45% uncommon and below, 15% common only), but do not display rarity. A common curse becomes uncommon for the rest of the run after it is offered or selected
 - Hover or focus a curse in the HUD to read its rules
-- Floor 23 is the Miniboss: draft 1 curse, then beat two words. It deals **+5 base damage**, and beating it grants **+1 item slot**, a full heal, and a choice between a random rare food and a random rare item
+- Floor 23 is the Miniboss: see the intro, draft 1 curse, then beat two words. It deals **+5 base damage**, and beating it grants **+1 item slot**, a full heal, and a choice between a random rare food and a random rare item
 - Floor 38 is the final shop followed by the final three curse drafts; floor 39 is the Floor Boss: beat three words. It deals **+10 base damage**. Bosses ignore the **Second Wind** curse
 - **The Peddler's Table** is where you pick one of the Red Amulet, Silver Key or Nonsensical Map. The Mysterious Room on floor 40 remembers only those event picks: each chosen item adds one to its cross-run counter, and the room shows the three counters before you **Claim victory**
 - **Second Wind** is a rare curse: after you solve a word, a second word appears with one free guess

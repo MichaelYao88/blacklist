@@ -12,7 +12,7 @@ export const BOSSES: BossDef[] = [
     damageBonus: 5,
     timerFromCurse: true,
     rules: [
-      'Draft 1 curse before the fight.',
+      'See the intro, then draft 1 curse before the fight.',
       'Two words, back to back.',
       'Base damage is 5 higher than a normal encounter.',
       'No shop or curse between words.',

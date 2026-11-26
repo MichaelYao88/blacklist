@@ -5216,6 +5216,14 @@ button {
   text-align: center;
 }
 
+.mysterious-intro {
+  max-width: 34ch;
+  margin: -10px 0 0;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  font-style: italic;
+}
+
 .mysterious-items {
   display: flex;
   align-items: center;

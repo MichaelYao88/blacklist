@@ -41,6 +41,18 @@ describe('Mysterious Room UI', () => {
     expect(root.querySelector('.mysterious-room')?.textContent).not.toMatch(/relic/i);
   });
 
+  it('shows the atmospheric intro above the counters and claim button', () => {
+    const room = root.querySelector<HTMLElement>('.mysterious-room')!;
+    const intro = room.querySelector<HTMLElement>('.mysterious-intro');
+    const items = room.querySelector<HTMLElement>('.mysterious-items');
+    const claim = room.querySelector<HTMLElement>('[data-action="claim-victory"]');
+    expect(intro).not.toBeNull();
+    expect(intro!.textContent)
+      .toBe('You enter a strangely familiar room... Have you been here before?');
+    expect(intro!.compareDocumentPosition(items!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(intro!.compareDocumentPosition(claim!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('claim victory ends the run as a win exactly once', () => {
     const claim = root.querySelector<HTMLElement>('[data-action="claim-victory"]');
     expect(claim).not.toBeNull();

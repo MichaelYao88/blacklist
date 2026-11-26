@@ -3683,7 +3683,9 @@ export function createCore(content: Content): Core {
     const options = pickCurseOptions(state, boss ? false : starting);
     if (options.length === 0) {
       if (boss) {
-        openBossIntro(rt);
+        state.bossCursesLeft = 0;
+        state.curse = undefined;
+        startRound(rt);
       } else if (starting && state.pendingStartingCurses > 0) {
         state.pendingStartingCurses = 0;
         enterNode(rt);
@@ -3795,7 +3797,7 @@ export function createCore(content: Content): Core {
       if (state.bossCursesLeft > 0) {
         openCurseDraft(rt, false, true);
       } else {
-        openBossIntro(rt);
+        startRound(rt);
       }
       return;
     }
@@ -3851,7 +3853,6 @@ export function createCore(content: Content): Core {
     }
     state.phase = 'bossIntro';
     state.bossIntro = { boss };
-    state.bossCursesLeft = 0;
     state.round = undefined;
     emit(rt, { type: 'bossIntro', boss });
   }
@@ -3903,13 +3904,8 @@ export function createCore(content: Content): Core {
     }
     if (node.kind === 'boss' && node.boss) {
       const bossDef = bossById.get(node.boss);
-      const prep = bossDef?.prepCurses ?? 0;
-      if (prep > 0) {
-        state.bossCursesLeft = prep;
-        openCurseDraft(rt, false, true);
-      } else {
-        openBossIntro(rt);
-      }
+      state.bossCursesLeft = bossDef?.prepCurses ?? 0;
+      openBossIntro(rt);
       return;
     }
     if (node.kind === 'round' || node.kind === 'boss') {
@@ -3938,7 +3934,11 @@ export function createCore(content: Content): Core {
       return;
     }
     if (state.phase === 'bossIntro') {
-      startRound(rt);
+      if (state.bossCursesLeft > 0) {
+        openCurseDraft(rt, false, true);
+      } else {
+        startRound(rt);
+      }
       return;
     }
     if (state.phase === 'mysteriousRoom') {
