@@ -3,6 +3,18 @@ import { afterAll, describe, expect, it, vi } from 'vitest';
 import { game } from '../src/game';
 
 const originalMatchMedia = window.matchMedia;
+const liveIntervals = new Set<number>();
+const realSetInterval = window.setInterval;
+window.setInterval = ((handler: () => void, timeout?: number) => {
+  const id = realSetInterval(handler, timeout);
+  liveIntervals.add(id);
+  return id;
+}) as typeof window.setInterval;
+
+function stopAppIntervals(): void {
+  for (const id of liveIntervals) window.clearInterval(id);
+  liveIntervals.clear();
+}
 
 function setMobileMatchMedia(matches: boolean): void {
   Object.defineProperty(window, 'matchMedia', {
@@ -44,6 +56,7 @@ function saved(): ReturnType<typeof game.deserialize> {
 }
 
 async function boot(mobile: boolean, seed: string, seedRun: (state: ReturnType<typeof game.newRun>['state']) => void): Promise<HTMLElement> {
+  stopAppIntervals();
   setMobileMatchMedia(mobile);
   localStorage.clear();
   const { state } = game.newRun({ seed, character: 'runner' });
@@ -303,6 +316,8 @@ describe('desktop stays free of the mobile item shortcuts and float', () => {
 });
 
 afterAll(() => {
+  stopAppIntervals();
+  window.setInterval = realSetInterval;
   window.matchMedia = originalMatchMedia;
 });
 
