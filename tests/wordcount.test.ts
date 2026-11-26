@@ -2,12 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   normalizeLetters,
   summarizeWordList,
+  wordListSentence,
   wordsRemaining,
 } from '../src/core/wordcount';
 
 const ANSWERS = ['crane', 'slate', 'brick', 'prism', 'prowl', 'civic'];
 
-describe('The List word counter', () => {
+describe('Purgamanual word counter', () => {
   it('normalizes, dedupes, lowercases and sorts excluded letters', () => {
     expect(normalizeLetters(['C', 'a', 'c', 'B', '1', ' b '])).toEqual(['a', 'b', 'c']);
   });
@@ -35,6 +36,32 @@ describe('The List word counter', () => {
     expect(first.sample).toBe(second.sample);
     expect(first.sample).not.toBeNull();
     expect(wordsRemaining(ANSWERS, ['r', 'c'])).toContain(first.sample);
+  });
+
+  it('describes a short excluded set as a sentence', () => {
+    expect(wordListSentence(128, ['c', 'a', 's']))
+      .toBe('Without A, C, S there are 128 possible words');
+  });
+
+  it('uses singular grammar for one letter and one word', () => {
+    expect(wordListSentence(1, ['q']))
+      .toBe('Without Q there is 1 possible word');
+  });
+
+  it('handles an empty excluded set', () => {
+    expect(wordListSentence(42, []))
+      .toBe('With no letters ruled out there are 42 possible words');
+  });
+
+  it('reports zero results without a sample sentence', () => {
+    expect(wordListSentence(0, ['c', 'b', 'a']))
+      .toBe('Without A, B, C there are no possible words.');
+  });
+
+  it('summarizes long excluded sets with an ellipsis', () => {
+    const letters = 'abcdefghijklmnopqrstuvwxyz'.split('');
+    expect(wordListSentence(3, letters))
+      .toBe('Without A, B, C, D, E, F, G, H… there are 3 possible words');
   });
 
   it('uses the full answer list without being empty', () => {

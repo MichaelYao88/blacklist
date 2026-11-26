@@ -37,7 +37,7 @@ import {
 import { escapeHtml, formatTime, parrotLine, parrotStupidLine, reasonText, roman } from './format';
 import { ARMOR_TIP, ITEM_TAG_TIPS, PURGED_TIP, glossaryText } from './glossary';
 import { itemHasTag, itemTags } from '../core/itemTags';
-import { normalizeLetters, summarizeWordList } from '../core/wordcount';
+import { normalizeLetters, summarizeWordList, wordListSentence } from '../core/wordcount';
 import type { ItemTag } from '../core/types';
 import { groupProcChanges, type ProcFlyGroup } from './procRewards';
 import {
@@ -215,7 +215,7 @@ function showParrotPopup(line: string, source?: 'necronomicon'): void {
   parrotRoot.innerHTML = `<div class="parrot-pop ${book ? 'book-pop' : ''}">
     <span class="parrot-emoji" aria-hidden="true">${book ? '📕' : '🦜'}</span>
     <span class="parrot-kicker">${book ? 'NECRONOMICON' : 'EVIL PARROT'}</span>
-    <span class="parrot-line">${escapeHtml(line)}</span>
+    <span class="parrot-line${book ? ' book-word' : ''}">${escapeHtml(line)}</span>
     ${book ? '<span class="parrot-line book-cost">The book takes something from you...</span>' : ''}
   </div>`;
   if (parrotTimer) window.clearTimeout(parrotTimer);
@@ -259,7 +259,7 @@ let listInputValue = '';
 const MOBILE_ITEM_TABS = [
   { id: 'necronomicon', key: 'necro', title: 'NECRONOMICON' },
   { id: 'evil-parrot', key: 'parrot', title: 'EVIL PARROT' },
-  { id: 'the-list-glossary', key: 'list', title: 'THE LIST' },
+  { id: 'the-list-glossary', key: 'list', title: 'PURGAMANUAL' },
 ] as const;
 
 type MobileItemKey = (typeof MOBILE_ITEM_TABS)[number]['key'];
@@ -1696,15 +1696,6 @@ app.addEventListener('click', (event) => {
       listModalOpen = false;
       render();
       break;
-    case 'list-remove': {
-      const letter = (target.dataset.letter ?? '').toLowerCase();
-      listInputValue = [...listInputValue]
-        .filter((entry) => entry.toLowerCase() !== letter)
-        .join('');
-      render();
-      app!.querySelector<HTMLInputElement>('[data-list-input]')?.focus();
-      break;
-    }
     case 'list-reset': {
       const view = host.view();
       listInputValue = view ? listDefaultExcluded(view).join('').toUpperCase() : '';
@@ -3370,7 +3361,7 @@ function renderItemsPanel(view: RunView): string {
           <div class="loadout-group-head"><span class="panel-kicker">TOOLS</span><span class="count">0</span></div>
           ${view.items.filter((item) => item.id === 'the-list-glossary').map((item) => `
             <div class="loadout-row equipped">
-              <span class="item-emoji" aria-hidden="true">${itemIcon(item.id)}</span><b>The List</b>
+              <span class="item-emoji" aria-hidden="true">${itemIcon(item.id)}</span><b>Purgamanual</b>
               <button class="btn tiny item-use" data-action="open-list">OPEN</button>
               <div class="loadout-tags">${tagChips(item.tags)}</div>
             </div>`).join('')}
@@ -4004,7 +3995,7 @@ function renderPurgeModal(view: RunView): string {
         <button class="btn primary" data-action="confirm-purge" ${selectedLetter ? '' : 'disabled'}>${selectedLetter ? 'CONFIRM PURGE' : 'SELECT A LETTER'}</button>
         <p class="hint">${purgeLabel}. Tap a letter to mark it. Nothing is purged until you confirm. ${setup ? 'The run begins after the last purge.' : 'The clock is paused while this is open.'}</p>
         ${view.items.some((item) => item.id === 'the-list-glossary')
-          ? '<button class="btn tiny ghost" data-action="open-list">📜 OPEN THE LIST</button>'
+          ? '<button class="btn tiny ghost" data-action="open-list">📜 OPEN PURGAMANUAL</button>'
           : ''}
       </div>
     </div>
@@ -4092,26 +4083,19 @@ function listExcluded(): string[] {
 
 function renderListModal(view: RunView): string {
   if (!listModalOpen) return '';
-  const defaults = new Set(listDefaultExcluded(view));
   const excluded = listExcluded();
   const summary = summarizeWordList(CONTENT.answers, excluded);
-  const chips = excluded.length === 0
-    ? '<p class="muted list-empty">No letters ruled out yet.</p>'
-    : excluded.map((letter) => {
-      const fromDefault = defaults.has(letter);
-      return `<button class="letter-chip list-chip ${fromDefault ? 'from-default' : 'from-added'}" data-action="list-remove" data-letter="${letter}" aria-label="Remove ${letter.toUpperCase()}" title="Remove ${letter.toUpperCase()}">${letter.toUpperCase()}</button>`;
-    }).join('');
+  const sentence = wordListSentence(summary.count, summary.excluded);
   const result = summary.count === 0
-    ? '<p class="list-empty"><b>No words remain.</b> Every answer word uses at least one of these letters.</p>'
-    : `<p class="list-possible"><b>${summary.count}</b> possible word${summary.count === 1 ? '' : 's'}</p>
+    ? `<p class="list-empty">${escapeHtml(sentence)}</p>`
+    : `<p class="list-possible">${escapeHtml(sentence)}</p>
        <p class="list-sample">Sample: <b>${escapeHtml((summary.sample ?? '').toUpperCase())}</b></p>`;
   return `
   <div class="modal list-modal" role="dialog" aria-modal="true" aria-labelledby="list-title">
     <div class="modal-card list-card">
-      <p class="panel-kicker">THE LIST</p>
+      <p class="panel-kicker">PURGAMANUAL</p>
       <h2 id="list-title">Possible words</h2>
       <p class="muted">Counts answer words that contain none of these letters. Positions, yellows, greens and guesses are ignored.</p>
-      <div class="list-chips" data-list-chips>${chips}</div>
       <div class="list-input-row">
         <input class="list-input" data-list-input type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="26" value="${escapeHtml(listInputValue)}" placeholder="Letters to exclude" aria-label="Excluded letters" />
         <button class="btn tiny ghost" data-action="list-reset">RESET</button>

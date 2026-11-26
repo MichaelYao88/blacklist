@@ -59,7 +59,7 @@ function typeInto(root: HTMLElement, value: string): void {
   input.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
-describe('The List UI', () => {
+describe('Purgamanual UI', () => {
   let root: HTMLElement;
 
   beforeAll(async () => {
@@ -87,7 +87,7 @@ describe('The List UI', () => {
 
   it('shows an OPEN button on the item card', () => {
     const card = [...root.querySelectorAll<HTMLElement>('.item-card')]
-      .find((entry) => entry.textContent?.includes('The List'));
+      .find((entry) => entry.textContent?.includes('Purgamanual'));
     const open = card?.querySelector<HTMLElement>('[data-action="open-list"]');
     expect(open?.textContent).toContain('OPEN');
     expect(card?.querySelector('[data-action="use"]')).toBeNull();
@@ -98,10 +98,9 @@ describe('The List UI', () => {
     expect(root.querySelector('.list-modal')).not.toBeNull();
     expect(listInput().value).toBe('QXZ');
     expect(root.querySelector('[data-action="list-add"]')).toBeNull();
-
-    const chips = [...root.querySelectorAll<HTMLElement>('.list-chip')]
-      .map((chip) => chip.textContent);
-    expect(chips).toEqual(['Q', 'X', 'Z']);
+    expect(root.querySelector('.list-chip')).toBeNull();
+    expect(root.querySelector<HTMLElement>('.list-result')?.textContent)
+      .toContain('Without Q, X, Z there are');
     expectSummary(['q', 'x', 'z']);
   });
 
@@ -119,8 +118,8 @@ describe('The List UI', () => {
     openList();
     typeInto(root, listInput().value.slice(0, -1));
     expect(listInput().value).toBe('QX');
-    expect([...root.querySelectorAll<HTMLElement>('.list-chip')]
-      .map((chip) => chip.textContent)).toEqual(['Q', 'X']);
+    expect(root.querySelector<HTMLElement>('.list-result')?.textContent)
+      .toContain('Without Q, X there are');
     expectSummary(['q', 'x']);
   });
 
@@ -137,14 +136,18 @@ describe('The List UI', () => {
     openList();
     typeInto(root, 'abcdefghijklmnopqrstuvwxyz');
     expect(root.querySelector<HTMLElement>('.list-result')?.textContent)
-      .toContain('No words remain.');
+      .toContain('Without A, B, C');
+    expect(root.querySelector<HTMLElement>('.list-result')?.textContent)
+      .toContain('there are no possible words.');
+    expect(root.querySelector<HTMLElement>('.list-result')?.textContent)
+      .not.toContain('Sample:');
     expect(root.querySelector<HTMLElement>('.list-result')?.dataset.listSample).toBe('');
     root.querySelector<HTMLElement>('[data-action="dismiss-list"]')!.click();
     expect(root.querySelector('.list-modal')).toBeNull();
   });
 });
 
-describe('The List mobile tab', () => {
+describe('Purgamanual mobile tab', () => {
   it('appends a fourth 📜 tab with the expected offsets and z-order', async () => {
     const root = await boot(true, 'list-mobile-tabs', (state) => {
       state.spells = [{ instance: 's-omen', id: 'omen' }];
@@ -159,9 +162,9 @@ describe('The List mobile tab', () => {
     expect(tabs.map((tab) => tab.dataset.action)).toEqual(['toggle-necro', 'toggle-parrot', 'toggle-list']);
     const listTab = root.querySelector<HTMLElement>('[data-action="toggle-list"]')!;
     expect(listTab.textContent).toContain('📜');
-    expect(listTab.textContent).not.toContain('The List');
-    expect(listTab.getAttribute('aria-label')).toBe('The List');
-    expect(listTab.getAttribute('title')).toBe('The List');
+    expect(listTab.textContent).not.toContain('Purgamanual');
+    expect(listTab.getAttribute('aria-label')).toBe('Purgamanual');
+    expect(listTab.getAttribute('title')).toBe('Purgamanual');
     expect(root.querySelector<HTMLElement>('[data-action="toggle-spells"]')?.style.getPropertyValue('--tab-offset'))
       .toBe('0px');
     expect(root.querySelector<HTMLElement>('[data-action="toggle-necro"]')?.style.getPropertyValue('--tab-offset'))

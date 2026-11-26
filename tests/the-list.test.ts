@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { game } from '../src/game';
 import { CHARACTERS, ITEM_BY_ID } from '../src/content';
 
-describe('The List glossary item', () => {
+describe('Purgamanual glossary item', () => {
   it('is a free, slotless, no-spawn, unique tool with no activation', () => {
     const def = ITEM_BY_ID.get('the-list-glossary');
-    expect(def?.name).toBe('The List');
+    expect(def?.name).toBe('Purgamanual');
     expect(def?.price).toBe(0);
     expect(def?.slots).toBe(0);
     expect(def?.noSpawn).toBe(true);

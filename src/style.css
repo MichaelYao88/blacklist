@@ -3608,6 +3608,16 @@ button {
   line-height: 1.2;
 }
 
+.book-word {
+  color: var(--gold);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(1.85rem, 7vw, 2rem);
+  letter-spacing: 0.12em;
+  line-height: 1.15;
+  text-shadow: 0 0 18px rgba(231, 184, 90, 0.25);
+}
+
 @keyframes parrot-pop {
   0% { opacity: 0; transform: translateY(8px) scale(0.9); }
   10% { opacity: 1; transform: translateY(0) scale(1.03); }
@@ -5477,7 +5487,7 @@ button {
   }
 }
 
-/* ── The List glossary modal ─────────────────────────────────────────────── */
+/* ── Purgamanual glossary modal ──────────────────────────────────────────── */
 
 .list-modal {
   z-index: 70;
@@ -5490,45 +5500,6 @@ button {
 .list-card h2,
 .list-card .panel-kicker {
   text-align: center;
-}
-
-.list-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  justify-content: center;
-  max-height: 34vh;
-  margin: 18px 0 8px;
-  overflow-y: auto;
-}
-
-.list-chip {
-  min-width: 30px;
-  padding: 6px 8px;
-  border: 1px solid var(--line-2);
-  border-radius: 6px;
-  background: linear-gradient(180deg, #241d31, #1a1524);
-  color: var(--ink);
-  font-size: 0.8rem;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.list-chip.from-default {
-  border-color: rgba(139, 107, 217, 0.55);
-  color: #c9b8f5;
-  cursor: default;
-  opacity: 0.9;
-}
-
-.list-chip.from-added {
-  border-color: rgba(231, 184, 90, 0.6);
-  color: var(--gold);
-}
-
-.list-chip:hover:not(:disabled) {
-  border-color: var(--gold);
-  background: rgba(231, 184, 90, 0.12);
 }
 
 .list-input-row {

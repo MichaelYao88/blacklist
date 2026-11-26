@@ -214,11 +214,11 @@ Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title s
 
 - **The Soldier** is the default: 15 HP, 7 armor, 12 gold, the **Evil Parrot**, and no starting curses.
 - **The Pathfinder** unlocks when The Soldier reaches the first curse screen. They start with **Head Start**, **The List** curse, 21 HP, 3 armor and 9 gold.
-- **The Purgamist** unlocks after purging **6 letters** across any runs. They start with **The List** glossary, **Without the D** curse, 18 HP, 5 armor, 17 gold, and purge **4 letters** of your choice on level 0, before any word is drawn.
+- **The Purgamist** unlocks after purging **6 letters** across any runs. They start with the **Purgamanual** glossary, **Without the D** curse, 18 HP, 5 armor, 17 gold, and purge **4 letters** of your choice on level 0, before any word is drawn.
 - **The Necromancer** unlocks after buying the **Necronomicon** once from a shop. They start with the **Necronomicon**, **The Sleeper** curse, 31 HP, 4 armor and 16 gold.
 - **The Gourmand** unlocks after eating 3 **Double Cheeseburgers** across any runs. They start with **Potluck**, the **Evil Parrot**, **Porcupine's Dilemma** curse, **Shop Upgrade** already eaten, 25 HP, 4 armor and 6 gold.
 - **Evil Parrot** is a 16g item that cannot be bought and sells for 8. It suggests a possible word once per round; the suggestion will not be the answer word unless it is the only one left. Bribe it for more with a cracker costing 🪙. Only The Soldier's parrot steals idle gold.
-- **The List** is a free glossary tool carried by The Purgamist. Open it any time to count how many answers avoid a set of ruled-out letters and see one sample word.
+- **Purgamanual** is a free glossary tool carried by The Purgamist. Open it any time to count how many answers avoid a set of ruled-out letters and see one sample word.
 - **The Farmer** unlocks after winning any run. They start with three **Harvest Charms**, **Early Bird**, the **Short Fuse** curse, 17 HP, 3 armor and 2 gold.
 - **The Empty Armor** unlocks after winning a run on **Ascension 1**. It starts with **Bulwark**, the character-only **Slow Mending** curse, 1 HP, 13 armor, one extra item slot and 6 gold.
 - **The Werewolf** unlocks after winning runs with **2 different characters**. It starts with **Dark Echo**, **Thorn Crown**, the **Weak Plate** and **Tight Slots** curses, 69 HP, no armor and 6 gold.

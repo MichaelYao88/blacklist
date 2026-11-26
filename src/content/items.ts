@@ -1987,7 +1987,7 @@ export const ITEMS: ItemDef[] = [
   }),
   defineItem({
     id: 'the-list-glossary',
-    name: 'The List',
+    name: 'Purgamanual',
     description: 'Open a glossary of possible answer words for any set of ruled-out letters. Free and always available.',
     price: 0,
     kind: 'gear',

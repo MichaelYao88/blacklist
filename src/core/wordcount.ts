@@ -1,5 +1,5 @@
 /**
- * "The List" glossary helper.
+ * Purgamanual glossary helper.
  *
  * This is display-only math: it counts answer words that avoid a set of
  * excluded letters and picks one deterministic sample. It never touches
@@ -73,6 +73,28 @@ export function summarizeWordList(
   return { excluded: normalized, count: words.length, sample };
 }
 
+
+const MAX_LISTED_LETTERS = 8;
+
+/** A player-facing sentence describing the count and the ruled-out letters. */
+export function wordListSentence(
+  count: number,
+  excluded: readonly string[],
+): string {
+  const letters = normalizeLetters(excluded).map((letter) => letter.toUpperCase());
+  const noun = count === 1 ? 'word' : 'words';
+  const amount = count === 0 ? 'no' : String(count);
+  const verb = count === 1 ? 'is' : 'are';
+  const tail = `there ${verb} ${amount} possible ${noun}`;
+  if (letters.length === 0) {
+    return `With no letters ruled out ${tail}`;
+  }
+  const shown = letters.length > MAX_LISTED_LETTERS
+    ? `${letters.slice(0, MAX_LISTED_LETTERS).join(', ')}…`
+    : letters.join(', ');
+  const sentence = `Without ${shown} ${tail}`;
+  return count === 0 ? `${sentence}.` : sentence;
+}
 
 /** Convenience wrapper for callers that only need the count. */
 export function countWords(
