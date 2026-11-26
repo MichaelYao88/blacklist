@@ -97,8 +97,11 @@ describe('mobile parrot and Necronomicon tabs', () => {
     root = await boot(true, 'mobile-round3-items', giveParrotAndNecro);
     const tabs = root.querySelectorAll<HTMLElement>('.mobile-item-tab');
     expect(tabs).toHaveLength(2);
+    const spellsTab = root.querySelector<HTMLElement>('.mobile-spells-tab');
     const parrotTab = root.querySelector<HTMLElement>('[data-action="toggle-parrot"]');
     const necroTab = root.querySelector<HTMLElement>('[data-action="toggle-necro"]');
+    expect(tabs[0]).toBe(necroTab);
+    expect(tabs[1]).toBe(parrotTab);
     expect(parrotTab?.textContent).toContain('🦜');
     expect(parrotTab?.textContent).not.toContain('PARROT');
     expect(necroTab?.textContent).toContain('📕');
@@ -107,8 +110,12 @@ describe('mobile parrot and Necronomicon tabs', () => {
     expect(parrotTab?.getAttribute('title')).toContain('Evil Parrot');
     expect(necroTab?.getAttribute('aria-label')).toContain('Necronomicon');
     expect(necroTab?.getAttribute('title')).toContain('Necronomicon');
-    expect(tabs[0].style.getPropertyValue('--tab-index')).toBe('1');
-    expect(tabs[1].style.getPropertyValue('--tab-index')).toBe('2');
+    expect(spellsTab?.style.getPropertyValue('--tab-offset')).toBe('0px');
+    expect(necroTab?.style.getPropertyValue('--tab-offset')).toBe('82px');
+    expect(parrotTab?.style.getPropertyValue('--tab-offset')).toBe('122px');
+    expect(spellsTab?.style.getPropertyValue('--tab-z')).toBe('63');
+    expect(necroTab?.style.getPropertyValue('--tab-z')).toBe('62');
+    expect(parrotTab?.style.getPropertyValue('--tab-z')).toBe('61');
     expect(root.querySelector('.mobile-item')?.classList.contains('open')).toBe(false);
   });
 
@@ -172,6 +179,26 @@ describe('mobile parrot and Necronomicon tabs', () => {
       .toBe(false);
   });
 
+  it('raises an open tab above the other tabs', () => {
+    const z = (selector: string) => Number(
+      root.querySelector<HTMLElement>(selector)?.style.getPropertyValue('--tab-z') ?? 0,
+    );
+
+    root.querySelector<HTMLElement>('[data-action="toggle-parrot"]')!.click();
+    expect(z('[data-action="toggle-parrot"]')).toBeGreaterThan(z('[data-action="toggle-necro"]'));
+    expect(z('[data-action="toggle-parrot"]')).toBeGreaterThan(z('[data-action="toggle-spells"]'));
+
+    root.querySelector<HTMLElement>('[data-action="toggle-necro"]')!.click();
+    expect(z('[data-action="toggle-necro"]')).toBeGreaterThan(z('[data-action="toggle-parrot"]'));
+    expect(z('[data-action="toggle-necro"]')).toBeGreaterThan(z('[data-action="toggle-spells"]'));
+
+    root.querySelector<HTMLElement>('[data-action="toggle-spells"]')!.click();
+    expect(z('[data-action="toggle-spells"]')).toBeGreaterThan(z('[data-action="toggle-necro"]'));
+    expect(z('[data-action="toggle-spells"]')).toBeGreaterThan(z('[data-action="toggle-parrot"]'));
+
+    root.querySelector<HTMLElement>('[data-action="toggle-spells"]')!.click();
+  });
+
   it('uses the existing item actions from inside the drawers', () => {
     root.querySelector<HTMLElement>('[data-action="toggle-parrot"]')!.click();
     const goldBefore = saved()?.gold ?? 0;
@@ -227,7 +254,41 @@ describe('mobile item tabs only render for owned items', () => {
     expect(root.querySelector('[data-action="toggle-parrot"]')).toBeNull();
     const necroTab = root.querySelector<HTMLElement>('[data-action="toggle-necro"]');
     expect(necroTab).not.toBeNull();
-    expect(necroTab?.style.getPropertyValue('--tab-index')).toBe('1');
+    expect(necroTab?.style.getPropertyValue('--tab-offset')).toBe('82px');
+    expect(necroTab?.style.getPropertyValue('--tab-z')).toBe('62');
+  });
+
+  it('moves the parrot up under the spells tab when the book is missing', async () => {
+    const root = await boot(true, 'mobile-round3-parrot-with-spells', (state) => {
+      state.items = [
+        {
+          instance: 'i-round3-only-parrot',
+          id: 'evil-parrot',
+          data: { readyAt: 0, _suggestions: 0, _freeUsed: 0 },
+          equipped: true,
+        },
+      ];
+    });
+    const parrotTab = root.querySelector<HTMLElement>('[data-action="toggle-parrot"]');
+    expect(parrotTab?.style.getPropertyValue('--tab-offset')).toBe('82px');
+    expect(parrotTab?.style.getPropertyValue('--tab-z')).toBe('61');
+  });
+
+  it('starts the parrot at the top when it is the only tab', async () => {
+    const root = await boot(true, 'mobile-round3-parrot-only', (state) => {
+      state.spells = [];
+      state.items = [
+        {
+          instance: 'i-round3-only-parrot',
+          id: 'evil-parrot',
+          data: { readyAt: 0, _suggestions: 0, _freeUsed: 0 },
+          equipped: true,
+        },
+      ];
+    });
+    const parrotTab = root.querySelector<HTMLElement>('[data-action="toggle-parrot"]');
+    expect(root.querySelector('.mobile-spells-tab')).toBeNull();
+    expect(parrotTab?.style.getPropertyValue('--tab-offset')).toBe('0px');
   });
 });
 
@@ -246,7 +307,7 @@ afterAll(() => {
 });
 
 describe('mobile spells tab only renders when spells exist', () => {
-  it('hides the spells tab, drawer, and scrim with no spells and stacks item tabs from index 0', async () => {
+  it('hides the spells tab, drawer, and scrim with no spells and stacks item tabs from the top', async () => {
     const root = await boot(true, 'mobile-round4-no-spells', (state) => {
       state.spells = [];
       giveParrotAndNecro(state);
@@ -256,8 +317,12 @@ describe('mobile spells tab only renders when spells exist', () => {
     expect(document.querySelector('.mobile-spells-scrim')).toBeNull();
     const tabs = root.querySelectorAll<HTMLElement>('.mobile-item-tab');
     expect(tabs).toHaveLength(2);
-    expect(tabs[0].style.getPropertyValue('--tab-index')).toBe('0');
-    expect(tabs[1].style.getPropertyValue('--tab-index')).toBe('1');
+    expect(tabs[0].getAttribute('data-action')).toBe('toggle-necro');
+    expect(tabs[1].getAttribute('data-action')).toBe('toggle-parrot');
+    expect(tabs[0].style.getPropertyValue('--tab-offset')).toBe('0px');
+    expect(tabs[1].style.getPropertyValue('--tab-offset')).toBe('40px');
+    expect(tabs[0].style.getPropertyValue('--tab-z')).toBe('62');
+    expect(tabs[1].style.getPropertyValue('--tab-z')).toBe('61');
   });
 
   it('renders the spells tab when at least one spell exists', async () => {

@@ -250,11 +250,21 @@ let necroDrawerOpen = false;
 // Mobile item shortcuts. The drawers share the spells drawer's behaviour: one
 // open at a time, and the open flag survives the once-per-second re-render.
 const MOBILE_ITEM_TABS = [
-  { id: 'evil-parrot', key: 'parrot', title: 'EVIL PARROT' },
   { id: 'necronomicon', key: 'necro', title: 'NECRONOMICON' },
+  { id: 'evil-parrot', key: 'parrot', title: 'EVIL PARROT' },
 ] as const;
 
 type MobileItemKey = (typeof MOBILE_ITEM_TABS)[number]['key'];
+
+const MOBILE_TAB_HEIGHTS = { spells: 91, item: 44 } as const;
+const MOBILE_TAB_OVERLAP = 0.1;
+const MOBILE_SPELLS_TAB_Z = 63;
+const MOBILE_ITEM_TAB_Z: Record<MobileItemKey, number> = { necro: 62, parrot: 61 };
+const MOBILE_OPEN_TAB_Z = 66;
+
+function mobileTabStep(height: number): number {
+  return Math.round(height * (1 - MOBILE_TAB_OVERLAP));
+}
 
 function isItemDrawerOpen(key: MobileItemKey): boolean {
   return key === 'parrot' ? parrotDrawerOpen : necroDrawerOpen;
@@ -3038,8 +3048,9 @@ function renderMobileSpells(view: RunView): string {
   const spells = [...stacks.values()]
     .map(({ spell, count }) => renderSpell(view, spell, count))
     .join('');
+  const spellsTabZ = spellsDrawerOpen ? MOBILE_OPEN_TAB_Z : MOBILE_SPELLS_TAB_Z;
   return `<div class="mobile-spells ${spellsDrawerOpen ? 'open' : ''}">
-    <button class="mobile-spells-tab" data-action="toggle-spells" aria-expanded="${spellsDrawerOpen}">
+    <button class="mobile-spells-tab" style="--tab-offset:0px;--tab-z:${spellsTabZ};z-index:${spellsTabZ}" data-action="toggle-spells" aria-expanded="${spellsDrawerOpen}">
       <span>SPELLS</span><b>${view.spells.length}</b>
     </button>
     <div class="mobile-spells-scrim" data-action="close-spells" aria-hidden="${spellsDrawerOpen ? 'false' : 'true'}"></div>
@@ -3056,14 +3067,16 @@ function renderMobileItemDrawers(view: RunView): string {
     view.items.some((item) => item.id === tab.id)
   ));
   const hasSpellsTab = view.spells.length > 0;
-  return owned.map((tab, index) => {
+  let nextOffset = hasSpellsTab ? mobileTabStep(MOBILE_TAB_HEIGHTS.spells) : 0;
+  return owned.map((tab) => {
     const item = view.items.find((entry) => entry.id === tab.id)!;
     const open = isItemDrawerOpen(tab.key);
-    // The spells tab is index 0 when it exists; otherwise item tabs start there.
-    const tabIndex = index + (hasSpellsTab ? 1 : 0);
+    const tabOffset = nextOffset;
+    nextOffset += mobileTabStep(MOBILE_TAB_HEIGHTS.item);
+    const tabZ = open ? MOBILE_OPEN_TAB_Z : MOBILE_ITEM_TAB_Z[tab.key];
     const itemName = escapeHtml(ITEM_BY_ID.get(tab.id)?.name ?? tab.id);
     return `<div class="mobile-item ${open ? 'open' : ''}" data-mobile-item="${tab.key}">
-      <button class="mobile-item-tab" style="--tab-index:${tabIndex}" data-action="toggle-${tab.key}" aria-expanded="${open}" aria-label="${itemName}" title="${itemName}">
+      <button class="mobile-item-tab" style="--tab-offset:${tabOffset}px;--tab-z:${tabZ};z-index:${tabZ}" data-action="toggle-${tab.key}" aria-expanded="${open}" aria-label="${itemName}" title="${itemName}">
         <span class="mobile-item-tab-emoji" aria-hidden="true">${itemIcon(tab.id)}</span>
       </button>
       <div class="mobile-item-scrim" data-action="close-${tab.key}" aria-hidden="${open ? 'false' : 'true'}"></div>

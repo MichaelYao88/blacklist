@@ -5350,9 +5350,9 @@ button {
   .mobile-spells-tab,
   .mobile-item-tab {
     position: fixed;
-    top: calc(25% + var(--tab-index, 0) * 62px);
+    top: calc(25% + var(--tab-offset, 0px));
     left: 0;
-    z-index: 61;
+    z-index: var(--tab-z, 61);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -5366,7 +5366,7 @@ button {
     font-weight: 800;
     letter-spacing: 0.12em;
     writing-mode: vertical-rl;
-    transform: translateY(-50%);
+    transform: none;
     box-shadow: 8px 10px 28px -20px #000;
   }
 
