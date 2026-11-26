@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { game } from '../src/game';
+import { stopAppIntervals } from './helpers/appIntervals';
 
 const originalMatchMedia = window.matchMedia;
 
@@ -47,6 +48,7 @@ describe('mobile floating timer and spell tab', () => {
   let root: HTMLElement;
 
   beforeAll(async () => {
+    stopAppIntervals();
     setMobileMatchMedia(true);
     localStorage.clear();
     const { state } = game.newRun({ seed: 'mobile-ui', character: 'runner' });
@@ -68,6 +70,7 @@ describe('mobile floating timer and spell tab', () => {
   });
 
   afterAll(() => {
+    stopAppIntervals();
     window.matchMedia = originalMatchMedia;
   });
 
@@ -122,6 +125,7 @@ describe('mobile floating timer and spell tab', () => {
 
 describe('desktop layout stays free of mobile-only UI', () => {
   it('does not render the spell tab at the desktop breakpoint', async () => {
+    stopAppIntervals();
     setMobileMatchMedia(false);
     localStorage.clear();
     const { state } = game.newRun({ seed: 'desktop-ui', character: 'runner' });

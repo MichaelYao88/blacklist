@@ -2,6 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import { game } from '../src/game';
+import { stopAppIntervals } from './helpers/appIntervals';
 import {
   BOSSES,
   CHARACTERS,
@@ -62,6 +63,7 @@ function scanDom(root: HTMLElement, label: string): void {
 async function renderWithSave(
   state: ReturnType<typeof game.newRun>['state'],
 ): Promise<HTMLElement> {
+  stopAppIntervals();
   document.body.innerHTML = '<div id="app"></div>';
   localStorage.clear();
   localStorage.setItem('blacklist.run.v1', game.serialize(state));

@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { game } from '../src/game';
 import { CONTENT } from '../src/content';
 import { summarizeWordList } from '../src/core/wordcount';
+import { restoreAppIntervals, stopAppIntervals } from './helpers/appIntervals';
 
 const originalMatchMedia = window.matchMedia;
 
@@ -37,6 +38,7 @@ async function boot(
   seed: string,
   seedRun: (state: ReturnType<typeof game.newRun>['state']) => void,
 ): Promise<HTMLElement> {
+  stopAppIntervals();
   setMobileMatchMedia(mobile);
   localStorage.clear();
   const { state } = game.newRun({ seed, character: 'runner' });
@@ -218,5 +220,6 @@ describe('Purgamanual mobile tab', () => {
 });
 
 afterAll(() => {
+  restoreAppIntervals();
   window.matchMedia = originalMatchMedia;
 });
