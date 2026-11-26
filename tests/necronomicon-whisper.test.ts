@@ -43,9 +43,9 @@ describe('Necronomicon whisper', () => {
     expect(state.items.some((item) => item.id === 'evil-parrot')).toBe(false);
   });
 
-  it('describes the idle whisper', () => {
+  it('appends exactly " Sometimes whispers." to the description', () => {
     expect(ITEM_BY_ID.get('necronomicon')?.description).toBe(
-      'Use during a fight: lose 13% max HP for a random gift. The book grows stronger as you feed it. Once per round. After 66 idle seconds it whispers, taking 13% max HP.',
+      'Use during a fight: lose 13% max HP for a random gift. The book grows stronger as you feed it. Once per round. Sometimes whispers.',
     );
   });
 
