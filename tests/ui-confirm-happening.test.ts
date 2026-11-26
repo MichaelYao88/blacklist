@@ -7,7 +7,7 @@ function saved(): ReturnType<typeof game.deserialize> {
   return json ? game.deserialize(json) : null;
 }
 
-describe('happening option confirm', () => {
+describe('happening option choice', () => {
   let root: HTMLElement;
 
   beforeAll(async () => {
@@ -31,16 +31,10 @@ describe('happening option confirm', () => {
     root.querySelector<HTMLElement>('[data-action="resume"]')!.click();
   });
 
-  it('selects the option first and resolves on the second tap', () => {
-    const choose = root.querySelector<HTMLElement>('[data-action="select-happening"][data-id="leave"]');
+  it('resolves the option on a single click', () => {
+    const choose = root.querySelector<HTMLElement>('[data-action="choose"][data-id="leave"]');
     expect(choose?.textContent?.trim()).toBe('CHOOSE');
     choose!.click();
-    expect(saved()?.happening?.resolved).toBeUndefined();
-    expect(saved()?.phase).toBe('happening');
-
-    const confirm = root.querySelector<HTMLElement>('[data-action="confirm-happening"][data-id="leave"]');
-    expect(confirm?.textContent?.trim()).toBe('CONFIRM');
-    confirm!.click();
     expect(saved()?.happening?.resolved?.option).toBe('leave');
   });
 });

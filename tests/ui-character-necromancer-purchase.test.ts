@@ -33,8 +33,7 @@ describe('Necromancer unlock purchases', () => {
   });
 
   it('unlocks The Necromancer on the first Necronomicon purchase', () => {
-    root.querySelector<HTMLElement>('[data-action="arm-buy"][data-id="o0"]')!.click();
-    root.querySelector<HTMLElement>('[data-action="confirm-buy"][data-id="o0"]')!.click();
+    root.querySelector<HTMLElement>('[data-action="buy"][data-id="o0"]')!.click();
     expect(readMeta().purchases.necronomicon).toBe(1);
     expect(readMeta().characters).toContain('necromancer');
 

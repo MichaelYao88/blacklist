@@ -35,13 +35,11 @@ describe('Purgamist unlock purges', () => {
   });
 
   it('requires six lifetime purges and ignores ordinary food', () => {
-    root.querySelector<HTMLElement>('[data-action="arm-buy"][data-id="o0"]')!.click();
-    root.querySelector<HTMLElement>('[data-action="confirm-buy"][data-id="o0"]')!.click();
+    root.querySelector<HTMLElement>('[data-action="buy"][data-id="o0"]')!.click();
     expect(readMeta().purgedCount).toBe(5);
     expect(readMeta().characters).not.toContain('purgamist');
 
-    root.querySelector<HTMLElement>('[data-action="arm-buy"][data-id="o1"]')!.click();
-    root.querySelector<HTMLElement>('[data-action="confirm-buy"][data-id="o1"]')!.click();
+    root.querySelector<HTMLElement>('[data-action="buy"][data-id="o1"]')!.click();
     expect(readMeta().purgedCount).toBe(6);
     expect(readMeta().characters).toContain('purgamist');
 

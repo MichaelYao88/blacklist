@@ -32,8 +32,7 @@ describe('character unlock purchases', () => {
   });
 
   it('unlocks The Gourmand on the third Double Cheeseburger purchase', () => {
-    root.querySelector<HTMLElement>('[data-action="arm-buy"][data-id="o0"]')!.click();
-    root.querySelector<HTMLElement>('[data-action="confirm-buy"][data-id="o0"]')!.click();
+    root.querySelector<HTMLElement>('[data-action="buy"][data-id="o0"]')!.click();
     expect(readMeta().purchases['double-cheeseburger']).toBe(3);
     expect(readMeta().characters).toContain('gourmand');
 

@@ -7,7 +7,7 @@ function saved(): ReturnType<typeof game.deserialize> {
   return json ? game.deserialize(json) : null;
 }
 
-describe('shop arm-then-confirm', () => {
+describe('shop confirmations', () => {
   let root: HTMLElement;
 
   beforeAll(async () => {
@@ -40,19 +40,11 @@ describe('shop arm-then-confirm', () => {
     root.querySelector<HTMLElement>('[data-action="resume"]')!.click();
   });
 
-  it('arms a buy without spending, and a different command cancels it', () => {
+  it('buys immediately without a confirmation step', () => {
     expect(saved()?.gold).toBe(50);
-    root.querySelector<HTMLElement>('[data-action="arm-buy"][data-id="o0"]')!.click();
-    expect(saved()?.gold).toBe(50);
-    expect(root.querySelector('[data-action="confirm-buy"][data-id="o0"]')).not.toBeNull();
-
-    root.querySelector<HTMLElement>('[data-action="equip"][data-id="i-1"]')!.click();
-    expect(saved()?.gold).toBe(50);
-    expect(root.querySelector('[data-action="confirm-buy"][data-id="o0"]')).toBeNull();
-
-    root.querySelector<HTMLElement>('[data-action="arm-buy"][data-id="o0"]')!.click();
-    root.querySelector<HTMLElement>('[data-action="confirm-buy"][data-id="o0"]')!.click();
+    root.querySelector<HTMLElement>('[data-action="buy"][data-id="o0"]')!.click();
     expect(saved()?.gold).toBe(43);
+    expect(root.querySelector('[data-action="confirm-buy"]')).toBeNull();
   });
 
   it('arms a sale without selling, then confirms it', () => {

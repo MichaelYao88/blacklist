@@ -438,10 +438,9 @@ type PendingChoice =
   | { kind: 'curse'; id: string }
   | { kind: 'reward'; id: string }
   | { kind: 'purge'; letter: string }
-  | { kind: 'remove-curse'; id: string }
-  | { kind: 'happening'; id: string };
+  | { kind: 'remove-curse'; id: string };
 let pendingChoice: PendingChoice | null = null;
-type ArmedAction = { action: 'buy' | 'reroll' | 'sell'; id?: string };
+type ArmedAction = { action: 'reroll' | 'sell'; id?: string };
 let armedAction: ArmedAction | null = null;
 let armedTimer: number | undefined;
 let longPressTimer: number | undefined;
@@ -1713,17 +1712,9 @@ app.addEventListener('click', (event) => {
     case 'use':
       dispatchCommand({ type: 'useItem', instance: target.dataset.id ?? '' });
       break;
-    case 'arm-buy':
-      armAction('buy', target.dataset.id ?? '');
-      render();
+    case 'buy':
+      dispatchCommand({ type: 'buy', offerId: target.dataset.id ?? '' });
       break;
-    case 'confirm-buy': {
-      const id = target.dataset.id ?? '';
-      if (armedAction?.action === 'buy' && armedAction.id === id) {
-        dispatchCommand({ type: 'buy', offerId: id });
-      }
-      break;
-    }
     case 'arm-reroll':
       armAction('reroll');
       render();
@@ -1793,16 +1784,6 @@ app.addEventListener('click', (event) => {
     case 'confirm-purge':
       if (pendingChoice?.kind === 'purge') {
         dispatchCommand({ type: 'purgeLetter', letter: pendingChoice.letter });
-      }
-      break;
-    case 'select-happening':
-      pendingChoice = { kind: 'happening', id: target.dataset.id ?? '' };
-      clearArmedAction();
-      render();
-      break;
-    case 'confirm-happening':
-      if (pendingChoice?.kind === 'happening') {
-        dispatchCommand({ type: 'choose', optionId: pendingChoice.id });
       }
       break;
     default:
@@ -3885,10 +3866,8 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
         : applies && coupon > 0
           ? `<s>${offer.price} G</s> ${finalPrice} G`
           : `${offer.price} G`;
-      const armed = armedAction?.action === 'buy' && armedAction.id === offer.id;
-      const buyAction = armed ? 'confirm-buy' : 'arm-buy';
       return `
-      <article class="offer-card ${isFood ? 'food' : offer.kind} ${cannotAfford ? 'unavailable' : ''} ${offer.sale ? 'sale' : ''} ${isRare ? 'rare' : isUncommon ? 'uncommon' : ''} ${armed ? 'armed' : ''}">
+      <article class="offer-card ${isFood ? 'food' : offer.kind} ${cannotAfford ? 'unavailable' : ''} ${offer.sale ? 'sale' : ''} ${isRare ? 'rare' : isUncommon ? 'uncommon' : ''}">
         <div class="offer-top">
           <span class="item-emoji" aria-hidden="true">${info.icon}</span>
           <span class="tag"${tagTip}>${tag}</span>
@@ -3897,7 +3876,7 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
         <span class="slot-note">${slotLabel(info.slots)}</span>
         <div class="tag-row">${tagChips(itemTags(itemDef))}</div>
         <p>${glossaryText(description)}</p>
-        <button class="btn primary" data-action="${buyAction}" data-id="${escapeHtml(offer.id)}" ${cannotAfford ? 'disabled' : ''}>${armed ? 'CONFIRM BUY' : 'BUY'} · ${price}</button>
+        <button class="btn primary" data-action="buy" data-id="${escapeHtml(offer.id)}" ${cannotAfford ? 'disabled' : ''}>BUY · ${price}</button>
       </article>`;
     }).join('')
     : `<p class="empty-note">The shelves are bare. Reroll or leave.</p>`;
@@ -3976,9 +3955,8 @@ function renderHappening(phase: Extract<PhaseView, { kind: 'happening' }>): stri
       ? `<div class="resolution ${resolved.success ? 'good' : 'bad'}">${escapeHtml(resolved.text)}</div><button class="btn primary big" data-action="continue">CONTINUE →</button>`
       : `<div class="option-list">
         ${phase.options.map((option) => {
-          const selected = pendingChoice?.kind === 'happening' && pendingChoice.id === option.id;
           return `
-          <article class="happening-option ${option.locked ? 'locked' : ''} ${selected ? 'selected' : ''}">
+          <article class="happening-option ${option.locked ? 'locked' : ''}">
             <div>
               <b>${escapeHtml(option.label)}</b>
               <p>${glossaryText(option.description)}</p>
@@ -3995,7 +3973,7 @@ function renderHappening(phase: Extract<PhaseView, { kind: 'happening' }>): stri
             <div class="odds">
               ${option.outcomes.map((outcome) => `<span>${outcome.chancePct}% · ${escapeHtml(outcome.text)}</span>`).join('')}
             </div>
-            <button class="btn ${selected ? 'primary' : ''}" data-action="${selected ? 'confirm-happening' : 'select-happening'}" data-id="${escapeHtml(option.id)}" aria-pressed="${selected}" ${option.locked ? 'disabled' : ''}>${selected ? 'CONFIRM' : 'CHOOSE'}</button>
+            <button class="btn" data-action="choose" data-id="${escapeHtml(option.id)}" ${option.locked ? 'disabled' : ''}>CHOOSE</button>
           </article>`;
         }).join('')}
       </div>`}
