@@ -97,13 +97,13 @@ describe('shop relic labelling', () => {
     }
   });
 
-  it('shows spell offers with no item slot and no tag', () => {
+  it('shows a spell tag instead of a slot note on spell offers', () => {
     const spell = [...root.querySelectorAll<HTMLElement>('.offer-card')]
       .find((card) => card.textContent?.includes('Heal'));
     expect(spell?.classList.contains('spell')).toBe(true);
     expect(spell?.classList.contains('food')).toBe(false);
-    expect(spell?.querySelector('.tag')).toBeNull();
-    expect(spell?.querySelector('.offer-top .slot-note')?.textContent?.trim()).toBe('NO ITEM SLOT');
+    expect(spell?.querySelector('.offer-top .slot-note')).toBeNull();
+    expect(spell?.querySelector('.offer-top .tag')?.textContent?.trim()).toBe('SPELL');
   });
 
   it('keeps the inventory in the rail column directly under the shop rail', () => {

@@ -3674,7 +3674,9 @@ function renderReward(phase: Extract<PhaseView, { kind: 'reward' }>): string {
         <button class="reward-card ${option.kind} ${rarityClass} ${selected ? 'selected' : ''}" data-action="select-reward" data-id="${escapeHtml(option.id)}" aria-pressed="${selected}" data-tip="${escapeHtml(description)}">
           <span class="reward-top">
             <span class="reward-icon" aria-hidden="true">${icon}</span>
-            ${slots !== null ? `<span class="slot-note">${slotLabel(slots)}</span>` : ''}
+            ${option.kind === 'spell'
+              ? '<span class="tag spell-tag">SPELL</span>'
+              : slots !== null ? `<span class="slot-note">${slotLabel(slots)}</span>` : ''}
           </span>
           <b>${escapeHtml(option.label)}</b>
           <span>${glossaryText(description)}</span>
@@ -3827,7 +3829,9 @@ function renderShop(view: RunView, phase: Extract<PhaseView, { kind: 'shop' }>):
       <article class="offer-card ${isFood ? 'food' : offer.kind} ${cannotAfford ? 'unavailable' : ''} ${offer.sale ? 'sale' : ''} ${isRare ? 'rare' : isUncommon ? 'uncommon' : ''}">
         <div class="offer-top">
           <span class="item-emoji" aria-hidden="true">${info.icon}</span>
-          <span class="slot-note"${slotTip}>${slotLabel(info.slots)}</span>
+          ${offer.kind === 'spell'
+            ? '<span class="tag spell-tag">SPELL</span>'
+            : `<span class="slot-note"${slotTip}>${slotLabel(info.slots)}</span>`}
         </div>
         <h3>${escapeHtml(info.name)}</h3>
         <p>${glossaryText(description)}</p>
