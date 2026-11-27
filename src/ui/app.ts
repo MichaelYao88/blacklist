@@ -2957,6 +2957,8 @@ function syncMobileDamage(view: RunView | null): void {
   updateMobileDamageVisibility();
 }
 
+const MOBILE_VITALS_FLOAT_BOTTOM = 40;
+
 function updateMobileVitalsVisibility(): void {
   if (!isMobileLayout() || !mobileVitalsTarget) {
     mobileVitalsRoot.classList.remove('is-visible');
@@ -2965,7 +2967,10 @@ function updateMobileVitalsVisibility(): void {
   }
   const rect = mobileVitalsTarget.getBoundingClientRect();
   const measurable = rect.height > 0 || rect.width > 0 || rect.top !== 0 || rect.bottom !== 0;
-  const offscreen = measurable && (rect.bottom <= 0 || rect.top >= window.innerHeight);
+  // Float as soon as the HP bar is no longer comfortably readable, rather
+  // than waiting for the whole name/HP/armor block to leave the viewport.
+  const offscreen = measurable
+    && (rect.bottom <= MOBILE_VITALS_FLOAT_BOTTOM || rect.top >= window.innerHeight);
   mobileVitalsRoot.classList.toggle('is-visible', offscreen);
   mobileVitalsRoot.setAttribute('aria-hidden', offscreen ? 'false' : 'true');
 }
@@ -2978,7 +2983,7 @@ function syncMobileVitals(view: RunView | null): void {
     updateMobileVitalsVisibility();
     return;
   }
-  const target = document.querySelector<HTMLElement>('.mini-player');
+  const target = document.querySelector<HTMLElement>('.mini-player .big-hp');
   mobileVitalsTarget = target;
   if (!target || !view) {
     if (mobileVitalsRoot.innerHTML) mobileVitalsRoot.innerHTML = '';

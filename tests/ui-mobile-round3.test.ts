@@ -155,23 +155,28 @@ describe('mobile parrot and Necronomicon tabs', () => {
     expect(floatRoot.classList.contains('is-visible')).toBe(false);
   });
 
-  it('floats HP and armor between the timer and damage when the rail copy scrolls out of view', () => {
-    const original = root.querySelector<HTMLElement>('.battle-rail .mini-player');
+  it('floats HP and armor before the whole player block leaves the screen', () => {
+    const original = root.querySelector<HTMLElement>('.battle-rail .mini-player .big-hp');
     const floatRoot = document.getElementById('mobile-vitals-root') as HTMLElement;
     expect(original).not.toBeNull();
     expect(floatRoot).not.toBeNull();
     expect(floatRoot.textContent).toContain('100/100');
     expect(floatRoot.textContent).toContain('ARMOR 0/0');
 
-    mockRect(original!, 30, 110);
+    mockRect(original!, 60, 70);
     window.dispatchEvent(new Event('scroll'));
     expect(floatRoot.classList.contains('is-visible')).toBe(false);
 
-    mockRect(original!, -140, -40);
+    // The HP bar is still technically on screen but no longer readable.
+    mockRect(original!, -8, 32);
     window.dispatchEvent(new Event('scroll'));
     expect(floatRoot.classList.contains('is-visible')).toBe(true);
     expect(floatRoot.textContent).toContain('100/100');
     expect(floatRoot.textContent).toContain('ARMOR 0/0');
+
+    mockRect(original!, -140, -40);
+    window.dispatchEvent(new Event('scroll'));
+    expect(floatRoot.classList.contains('is-visible')).toBe(true);
 
     mockRect(original!, 40, 120);
     window.dispatchEvent(new Event('scroll'));
