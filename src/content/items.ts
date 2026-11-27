@@ -567,17 +567,11 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'spellbook',
     name: 'Spellbook',
-    description: 'Spell cast: +1 gold. The bonus increases by 1 after every spell cast.',
-    dynamicDescription: (data) =>
-      `Spell cast: +${data.gold ?? 1} gold. The bonus increases by 1 after every spell cast.`,
-    price: 8,
+    description: 'Spell cast: +1 gold.',
+    price: 4,
     kind: 'gear',
-    initial: { gold: 1 },
     on: {
-      onSpellCast: (ctx) => [
-        { type: 'gold', amount: ctx.self.data.gold },
-        { type: 'grow', stat: 'gold', by: 1 },
-      ],
+      onSpellCast: () => [{ type: 'gold', amount: 1 }],
     },
   }),
   defineItem({

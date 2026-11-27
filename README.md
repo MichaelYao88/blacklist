@@ -83,6 +83,7 @@ A 40-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - Item triggers show a compact proc pop-up with the actual result (for example **Yellow1** calling an autoguess or **Grey Market** paying gold); item procs queue 2 seconds apart and stay up 3 seconds longer; once-per-round items show **SPENT** after they fire
 - The revealed-letter panel persists between screens; in shops it is labelled **REVEALED**
 - On desktop the item list sits under the battle rail on the left; on mobile it stays at the bottom of the sidebar. Shops use a compact ranked loadout with empty-slot rows, and combat switches to the same compact list once more than four items are equipped
+- On desktop, the spells panel collapses to a header once you have four or more spells; hover or focus it to open the spell list
 - On mobile the round timer floats in a small, slightly translucent fixed box once the original timer card scrolls out of view, and the spell list moves into a left-edge **SPELLS** tab that opens over the board
 - **Grey Market** is a 7g item: every all-grey guess pays 2 gold, whether you made it or an ally did; an all-dark guess that pays nothing hides a letter
 - **Photosynthesis** is a 10g item: on solve, +2 max HP and heal 20% max HP

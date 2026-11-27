@@ -3301,6 +3301,7 @@ function renderSidePanel(view: RunView): string {
 
   const hasList = view.curses.some((curse) => curse.id === 'the-list');
   const blacklistTip = 'Blacklisted words can never be guessed again. The List adds the first guess of every round, and blacklisted words are never chosen as future answers. No limit.';
+  const collapseSpells = !isMobileLayout() && view.spells.length >= 4;
 
   const curseChips = view.curses.map((curse) => {
     const def = CURSE_BY_ID.get(curse.id);
@@ -3316,8 +3317,8 @@ function renderSidePanel(view: RunView): string {
     <section class="floorplan-panel">
       ${renderLevelBadge(view)}
     </section>
-    <section class="spells-section">
-      <div class="panel-head"><span class="panel-kicker">SPELLS</span><span class="count">${view.spells.length}</span></div>
+    <section class="spells-section${collapseSpells ? ' collapsed' : ''}"${collapseSpells ? ' tabindex="0" title="Hover or focus to expand spells"' : ''}>
+      <div class="panel-head"><span class="panel-kicker">SPELLS</span><span class="count">${view.spells.length}${collapseSpells ? ' ▾' : ''}</span></div>
       <div class="spell-list">${spells}</div>
     </section>
     <section>

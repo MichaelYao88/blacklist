@@ -2410,9 +2410,14 @@ describe('latest balance pass', () => {
       .toBe(true);
   });
 
-  it('Spellbook pays 1, then 2, then 3 gold per cast', () => {
+  it('Spellbook costs 4g and pays 1 gold flat per cast', () => {
+    const def = ITEM_BY_ID.get('spellbook');
+    expect(def?.price).toBe(4);
+    expect(def?.description).toContain('+1 gold');
+    expect(def?.dynamicDescription).toBeUndefined();
+
     const { state } = start('spellbook');
-    state.items.push({ instance: 'i-book', id: 'spellbook', data: { gold: 1 }, equipped: true });
+    state.items.push({ instance: 'i-book', id: 'spellbook', data: {}, equipped: true });
     state.spells = [
       { instance: 's-omen', id: 'omen' },
       { instance: 's-heal', id: 'heal' },
@@ -2422,11 +2427,9 @@ describe('latest balance pass', () => {
     current = act(current, { type: 'castSpell', instance: 's-omen' }).state;
     expect(current.gold).toBe(13);
     current = act(current, { type: 'castSpell', instance: 's-heal' }).state;
-    expect(current.gold).toBe(15);
+    expect(current.gold).toBe(14);
     current = act(current, { type: 'castSpell', instance: 's-immunity' }).state;
-    expect(current.gold).toBe(18);
-    expect(ITEM_BY_ID.get('spellbook')?.dynamicDescription?.({ gold: 3 }))
-      .toContain('+3 gold');
+    expect(current.gold).toBe(15);
   });
 
   it('adds 2g Leftovers and 12g Iron Ration', () => {
