@@ -216,7 +216,7 @@ Music defaults to **Dark Synthwave**. Click the **MUSIC** control on the title s
 
 - **The Soldier** is the default: 15 HP, 7 armor, 12 gold, the **Evil Parrot**, and no starting curses.
 - **The Pathfinder** unlocks when The Soldier reaches the first curse screen. They start with **Head Start**, **The List** curse, 21 HP, 3 armor and 9 gold.
-- **The Purgamist** unlocks after purging **6 letters** across any runs. They start with the **Purgamanual** glossary, **Without the D** curse, 18 HP, 5 armor, 17 gold, and purge **4 letters** of your choice on level 0, before any word is drawn.
+- **The Purgamist** unlocks after purging **6 letters** across any runs. They start with the **Purgamanual** glossary, a **Travel Inkwell**, a **Soapstone**, the **Without the D** curse, 18 HP, 5 armor and 17 gold. Resting at an inn purges a random letter; the Soapstone is consumed to purge a letter of your choice. They no longer start with free purges.
 - **The Necromancer** unlocks after buying the **Necronomicon** once from a shop. They start with the **Necronomicon**, **The Sleeper** curse, 31 HP, 4 armor and 16 gold.
 - **The Gourmand** unlocks after eating 3 **Double Cheeseburgers** across any runs. They start with **Potluck**, the **Evil Parrot**, **Porcupine's Dilemma** curse, **Shop Upgrade** already eaten, 25 HP, 4 armor and 6 gold.
 - **Evil Parrot** is a 16g item that cannot be bought and sells for 8. It suggests a possible word once per round; the suggestion will not be the answer word unless it is the only one left. Bribe it for more with a cracker costing 🪙. Only The Soldier's parrot steals idle gold.

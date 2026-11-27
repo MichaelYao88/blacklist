@@ -34,6 +34,8 @@ describe('character selection tips', () => {
     expect(modal?.textContent).toContain('PURGAMIST TIP');
     expect(modal?.textContent).toContain('14');
     expect(modal?.textContent).toContain('Y');
+    expect(modal?.textContent).toContain('Soapstone');
+    expect(modal?.textContent).toContain('Travel Inkwell');
 
     root.querySelector<HTMLElement>('[data-action="toggle-character-tip-mute"]')!.click();
     expect(root.querySelector('.tutorial-check.checked')).not.toBeNull();

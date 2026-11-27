@@ -3131,6 +3131,7 @@ export function createCore(content: Content): Core {
         type: 'message',
         text: 'The inn grants +4 max HP and restores you to full health.',
       });
+      runHook(rt, 'onInn', {});
       if (rngChance(state, 30)) {
         emit(rt, {
           type: 'message',

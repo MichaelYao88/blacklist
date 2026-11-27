@@ -74,7 +74,8 @@ export type HookName =
   | 'onReveal'
   | 'onCurseGained'
   | 'onHappening'
-  | 'onShopOpen';
+  | 'onShopOpen'
+  | 'onInn';
 
 export type RejectReason =
   | 'wrongPhase'
@@ -495,6 +496,7 @@ export interface HookPayloads {
   onCurseGained: { curse: CurseId; stacks: number };
   onHappening: { happening: HappeningId };
   onShopOpen: { offers: Offer[] };
+  onInn: Record<string, never>;
 }
 export type Reactors<C extends Ctx> = Partial<{
   [H in HookName]: (ctx: C, payload: HookPayloads[H]) => Effect[];

@@ -2492,8 +2492,9 @@ const CHARACTER_TIPS: Record<string, { kicker: string; title: string; lines: str
   },
   purgamist: {
     kicker: 'PURGAMIST TIP',
-    title: 'Pick your favorite vowel.',
+    title: 'Scrub the alphabet clean.',
     lines: [
+      'Soapstone erases a letter of your choice. The Travel Inkwell erases a random letter whenever you rest at an inn.',
       'Purge A, E, I, O and U: only 14 dictionary words remain, all with Y as the vowel.',
     ],
   },

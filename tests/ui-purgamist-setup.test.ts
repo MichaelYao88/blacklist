@@ -1,5 +1,11 @@
 // @vitest-environment happy-dom
 import { beforeAll, describe, expect, it } from 'vitest';
+import { game } from '../src/game';
+
+function saved(): ReturnType<typeof game.deserialize> {
+  const json = localStorage.getItem('blacklist.run.v1');
+  return json ? game.deserialize(json) : null;
+}
 
 describe('Purgamist setup', () => {
   let root: HTMLElement;
@@ -16,27 +22,33 @@ describe('Purgamist setup', () => {
     root.querySelector<HTMLElement>('[data-action="new-run"]')!.click();
   });
 
-  it('shows the purge modal before the round countdown starts', () => {
-    expect(root.querySelector('.modal')).not.toBeNull();
-    expect(document.querySelector('.countdown-overlay')).toBeNull();
-    expect(root.textContent).toContain('4 purges pending');
-    expect(root.querySelector('.rail-level-value')?.textContent).toBe('0/40');
-  });
-
-  it('starts the countdown after all four letters are purged', () => {
-    const letters = 'abcdefghijklmnopqrstuvwxyz'.split('');
-    for (const letter of letters) {
-      if (!root.querySelector('.modal')) break;
-      const key = root.querySelector<HTMLButtonElement>(
-        `[data-action="select-purge"][data-letter="${letter}"]`,
-      );
-      if (key && !key.disabled) {
-        key.click();
-        root.querySelector<HTMLButtonElement>('[data-action="confirm-purge"]')!.click();
-      }
-    }
+  it('starts in a live round with both tools and no purge modal', () => {
     expect(root.querySelector('.modal')).toBeNull();
     expect(document.querySelector('.countdown-overlay')).not.toBeNull();
-    expect(root.querySelector('.purged[data-tip]')?.getAttribute('data-tip')).toContain('no puzzle answer');
+    expect(root.textContent).toContain('Travel Inkwell');
+    expect(root.textContent).toContain('Soapstone');
+    expect(root.textContent).not.toContain('purges pending');
+    expect(root.querySelector('.rail-level-value')?.textContent).toContain('1/');
+    expect(saved()?.pendingPurge).toBe(0);
+  });
+
+  it('uses the soapstone to open a purge choice, then consumes it', () => {
+    const state = saved();
+    if (!state?.round) throw new Error('expected a round');
+    const answer = state.round.answer;
+    const letter = 'bcdfghjklmnpqrstvwxz'.split('').find((ch) => !answer.includes(ch))!;
+
+    root.querySelector<HTMLButtonElement>('[data-action="use"]')!.click();
+    expect(saved()?.pendingPurge).toBe(1);
+    expect(saved()?.items.some((item) => item.id === 'soapstone')).toBe(false);
+    expect(root.querySelector('.modal')).not.toBeNull();
+
+    root.querySelector<HTMLButtonElement>(
+      `[data-action="select-purge"][data-letter="${letter}"]`,
+    )!.click();
+    root.querySelector<HTMLButtonElement>('[data-action="confirm-purge"]')!.click();
+
+    expect(saved()?.pendingPurge).toBe(0);
+    expect(saved()?.purged).toContain(letter);
   });
 });

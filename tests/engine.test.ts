@@ -160,10 +160,12 @@ describe('cursed run setup', () => {
     expect(purgamist.maxHp).toBe(18);
     expect(purgamist.maxArmor).toBe(5);
     expect(purgamist.gold).toBe(17);
-    expect(purgamist.pendingPurge).toBe(4);
-    expect(purgamist.phase).toBe('purge');
-    expect(purgamist.level).toBe(0);
-    expect(purgamist.round).toBeUndefined();
+    expect(purgamist.pendingPurge).toBe(0);
+    expect(purgamist.phase).toBe('round');
+    expect(purgamist.level).toBe(1);
+    expect(purgamist.round).toBeDefined();
+    expect(purgamist.items.some((item) => item.id === 'travel-inkwell' && item.equipped)).toBe(true);
+    expect(purgamist.items.some((item) => item.id === 'soapstone' && item.equipped)).toBe(true);
     expect(purgamist.curses.some((curse) => curse.id === 'without-d')).toBe(true);
 
     const gourmand = game.newRun({ seed: 'preset-gourmand', character: 'gourmand' }).state;
@@ -3869,23 +3871,14 @@ describe('spells and foods', () => {
     expect(eaten.state.purged).toHaveLength(1);
   });
 
-  it('starts the Purgamist on level 0 with no word loaded, then begins the run', () => {
-    const { state } = game.newRun({ seed: 'purgamist-level-zero', character: 'purgamist' });
-    expect(state.phase).toBe('purge');
-    expect(state.level).toBe(0);
-    expect(state.pendingPurge).toBe(4);
-    expect(state.round).toBeUndefined();
-
-    let current = state;
-    for (const letter of ['e', 'a', 's', 'l']) {
-      const result = act(current, { type: 'purgeLetter', letter });
-      expect(result.state.purged).toContain(letter);
-      current = result.state;
-    }
-    expect(current.pendingPurge).toBe(0);
-    expect(current.phase).toBe('round');
-    expect(current.level).toBe(1);
-    expect(current.round).toBeDefined();
+  it('starts the Purgamist in a round with no free purges', () => {
+    const { state } = game.newRun({ seed: 'purgamist-no-start-purge', character: 'purgamist' });
+    expect(state.phase).toBe('round');
+    expect(state.level).toBe(1);
+    expect(state.pendingPurge).toBe(0);
+    expect(state.round).toBeDefined();
+    expect(state.items.some((item) => item.id === 'travel-inkwell')).toBe(true);
+    expect(state.items.some((item) => item.id === 'soapstone')).toBe(true);
   });
 
   it('purges a letter normally when legal words remain', () => {

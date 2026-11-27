@@ -27,6 +27,8 @@ const ITEM_ICONS: Record<string, string> = {
   'trophy-hunter': '🏆',
   necronomicon: '📕',
   'the-list-glossary': '📜',
+  'travel-inkwell': '🖋️',
+  soapstone: '🧼',
   'black-market-ledger': '📒',
   'spell-pepper': '🌶️',
   chilaquiles: '🍲',
