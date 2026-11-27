@@ -2544,8 +2544,8 @@ function renderTitle(): string {
       <button class="btn ghost big" data-action="help">HOW TO PLAY</button>
       ${meta.runs > 0 ? `<button class="btn ghost big" data-action="stats">STATS</button>` : ''}
     </div>
-    ${characterPicker}
     ${ascensionPicker}
+    ${characterPicker}
     <div class="title-facts">
       <div><b>40</b><span>levels</span></div>
       <div><b>2</b><span>curse choices</span></div>
