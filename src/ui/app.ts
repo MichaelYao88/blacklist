@@ -307,6 +307,16 @@ document.body.appendChild(mobileDamageRoot);
 let mobileDamageTarget: HTMLElement | null = null;
 let mobileDamageHtmlShown = '';
 
+// Floating HP/armor panel for mobile. It mirrors the normal mini-player when
+// that block scrolls out of view.
+const mobileVitalsRoot = document.createElement('div');
+mobileVitalsRoot.id = 'mobile-vitals-root';
+mobileVitalsRoot.setAttribute('aria-live', 'polite');
+mobileVitalsRoot.setAttribute('aria-hidden', 'true');
+document.body.appendChild(mobileVitalsRoot);
+let mobileVitalsTarget: HTMLElement | null = null;
+let mobileVitalsHtmlShown = '';
+
 function renderCountdown(level: number, count: number): void {
   if (count <= 0) {
     if (countdownRoot.innerHTML) countdownRoot.innerHTML = '';
@@ -1962,6 +1972,7 @@ window.setInterval(() => {
   render();
   syncMobileTimer(host.view());
   syncMobileDamage(host.view());
+  syncMobileVitals(host.view());
 }, 1_000);
 
 document.addEventListener('visibilitychange', () => {
@@ -2004,9 +2015,11 @@ function restoreScrollPositions(saved: Map<string, number>): void {
 if (typeof window.addEventListener === 'function') {
   window.addEventListener('scroll', updateMobileTimerVisibility, { passive: true });
   window.addEventListener('scroll', updateMobileDamageVisibility, { passive: true });
+  window.addEventListener('scroll', updateMobileVitalsVisibility, { passive: true });
   window.addEventListener('resize', () => {
     updateMobileTimerVisibility();
     updateMobileDamageVisibility();
+    updateMobileVitalsVisibility();
     render();
   }, { passive: true });
 }
@@ -2196,6 +2209,7 @@ function render(): void {
   renderedEpoch = epoch;
   syncMobileTimer(screen === 'run' ? view : null);
   syncMobileDamage(screen === 'run' ? (view ?? null) : null);
+  syncMobileVitals(screen === 'run' ? (view ?? null) : null);
 
   const damageId = damageFx?.id ?? 0;
   const overRun = screen === 'run' && view?.phase.kind === 'over';
@@ -2941,6 +2955,43 @@ function syncMobileDamage(view: RunView | null): void {
     mobileDamageRoot.innerHTML = html;
   }
   updateMobileDamageVisibility();
+}
+
+function updateMobileVitalsVisibility(): void {
+  if (!isMobileLayout() || !mobileVitalsTarget) {
+    mobileVitalsRoot.classList.remove('is-visible');
+    mobileVitalsRoot.setAttribute('aria-hidden', 'true');
+    return;
+  }
+  const rect = mobileVitalsTarget.getBoundingClientRect();
+  const measurable = rect.height > 0 || rect.width > 0 || rect.top !== 0 || rect.bottom !== 0;
+  const offscreen = measurable && (rect.bottom <= 0 || rect.top >= window.innerHeight);
+  mobileVitalsRoot.classList.toggle('is-visible', offscreen);
+  mobileVitalsRoot.setAttribute('aria-hidden', offscreen ? 'false' : 'true');
+}
+
+function syncMobileVitals(view: RunView | null): void {
+  if (!isMobileLayout()) {
+    mobileVitalsTarget = null;
+    if (mobileVitalsRoot.innerHTML) mobileVitalsRoot.innerHTML = '';
+    mobileVitalsHtmlShown = '';
+    updateMobileVitalsVisibility();
+    return;
+  }
+  const target = document.querySelector<HTMLElement>('.mini-player');
+  mobileVitalsTarget = target;
+  if (!target || !view) {
+    if (mobileVitalsRoot.innerHTML) mobileVitalsRoot.innerHTML = '';
+    mobileVitalsHtmlShown = '';
+    updateMobileVitalsVisibility();
+    return;
+  }
+  const html = `<div class="mobile-vitals">${renderPlayerVitals(view)}</div>`;
+  if (html !== mobileVitalsHtmlShown) {
+    mobileVitalsHtmlShown = html;
+    mobileVitalsRoot.innerHTML = html;
+  }
+  updateMobileVitalsVisibility();
 }
 
 const RAIL_NODE_LABELS: Record<NodeKind, string> = {

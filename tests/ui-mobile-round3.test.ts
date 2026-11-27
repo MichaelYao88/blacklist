@@ -155,6 +155,29 @@ describe('mobile parrot and Necronomicon tabs', () => {
     expect(floatRoot.classList.contains('is-visible')).toBe(false);
   });
 
+  it('floats HP and armor between the timer and damage when the rail copy scrolls out of view', () => {
+    const original = root.querySelector<HTMLElement>('.battle-rail .mini-player');
+    const floatRoot = document.getElementById('mobile-vitals-root') as HTMLElement;
+    expect(original).not.toBeNull();
+    expect(floatRoot).not.toBeNull();
+    expect(floatRoot.textContent).toContain('100/100');
+    expect(floatRoot.textContent).toContain('ARMOR 0/0');
+
+    mockRect(original!, 30, 110);
+    window.dispatchEvent(new Event('scroll'));
+    expect(floatRoot.classList.contains('is-visible')).toBe(false);
+
+    mockRect(original!, -140, -40);
+    window.dispatchEvent(new Event('scroll'));
+    expect(floatRoot.classList.contains('is-visible')).toBe(true);
+    expect(floatRoot.textContent).toContain('100/100');
+    expect(floatRoot.textContent).toContain('ARMOR 0/0');
+
+    mockRect(original!, 40, 120);
+    window.dispatchEvent(new Event('scroll'));
+    expect(floatRoot.classList.contains('is-visible')).toBe(false);
+  });
+
   it('opens one drawer at a time and closes on scrim or tab', () => {
     root.querySelector<HTMLElement>('[data-action="toggle-parrot"]')!.click();
     expect(root.querySelector('.mobile-item[data-mobile-item="parrot"]')?.classList.contains('open'))
@@ -311,6 +334,7 @@ describe('desktop stays free of the mobile item shortcuts and float', () => {
     expect(root.querySelector('.mobile-item')).toBeNull();
     expect(root.querySelector('.mobile-spells')).toBeNull();
     expect(document.querySelector('#mobile-damage-root .guess-damage')).toBeNull();
+    expect(document.querySelector('#mobile-vitals-root .mobile-vitals')).toBeNull();
     expect(root.querySelector('.battle-rail .guess-damage')).not.toBeNull();
   });
 });

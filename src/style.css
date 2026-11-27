@@ -5444,12 +5444,79 @@ button {
   backdrop-filter: blur(6px);
 }
 
+#mobile-vitals-root {
+  display: none;
+  position: fixed;
+  top: max(8px, env(safe-area-inset-top));
+  left: 50%;
+  z-index: 58;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.mobile-vitals {
+  width: 110px;
+  padding: 6px 8px;
+  border: 1px solid var(--line-2);
+  border-radius: 9px;
+  background: rgba(15, 12, 22, 0.75);
+  box-shadow: 0 14px 34px -20px #000;
+  backdrop-filter: blur(6px);
+}
+
+.mobile-vitals .mini-player {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.mobile-vitals .fighter-name {
+  display: none;
+}
+
+.mobile-vitals .fighter-head {
+  justify-content: center;
+}
+
+.mobile-vitals .hp-numbers {
+  font-size: 0.95rem;
+}
+
+.mobile-vitals .big-hp {
+  height: 7px;
+  margin-top: 3px;
+}
+
+.mobile-vitals .armor-line {
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.mobile-vitals .armor-bar {
+  height: 6px;
+}
+
+.mobile-vitals .armor-text {
+  font-size: 0.48rem;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 380px) {
+  #mobile-vitals-root {
+    top: calc(max(8px, env(safe-area-inset-top)) + 52px);
+  }
+}
+
 @media (max-width: 860px) {
   #mobile-timer-root.is-visible {
     display: block;
   }
 
   #mobile-damage-root.is-visible {
+    display: block;
+  }
+
+  #mobile-vitals-root.is-visible {
     display: block;
   }
 
