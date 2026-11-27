@@ -3142,6 +3142,23 @@ describe('latest balance pass', () => {
     expect(freezes(current)).toBe(1);
   });
 
+  it('Growth Chart triggers once for a single large max HP gain', () => {
+    const { state } = start('growth-chart-instance');
+    state.items.push({ instance: 'i-chart', id: 'growth-chart', data: {}, equipped: true });
+    state.spells = [];
+    state.phase = 'shop';
+    state.gold = 20;
+    state.shop = shopState([{ id: 'o0', kind: 'eat', def: 'vitality', price: 8 }]);
+    const chart = (s: RunState) => s.items.find((item) => item.id === 'growth-chart');
+    const freezes = (s: RunState) =>
+      s.spells.filter((spell) => spell.id === 'time-freeze').length;
+
+    const bought = act(state, { type: 'buy', offerId: 'o0' }).state;
+    expect(chart(bought)?.data.grown).toBe(2);
+    expect(freezes(bought)).toBe(1);
+    expect(ITEM_BY_ID.get('growth-chart')?.description).toContain('Once per max HP gain');
+  });
+
   it('removes the retired item batch', () => {
     expect(ITEM_BY_ID.get('dead-letter')).toBeUndefined();
     expect(ITEM_BY_ID.get('feast-of-ideas')).toBeUndefined();
@@ -4119,6 +4136,52 @@ describe('future objects', () => {
         && event.item === 'red-amulet'
         && event.text === 'stirs',
     )).toBe(true);
+  });
+});
+
+describe('The Unredaction', () => {
+  function findUnredaction(prefix: string, purged: string[]): StepResult {
+    for (let index = 0; index < 900; index++) {
+      const run = start(`${prefix}-${index}`);
+      run.state.purged = purged.slice();
+      const next = nextHappening(run.state);
+      if (next.state.happening?.id === 'unredaction') return next;
+    }
+    throw new Error('could not find The Unredaction');
+  }
+
+  it('offers two purged letters and a curse draft', () => {
+    const run = findUnredaction('unredaction', ['q', 'z', 'x']);
+    const options = run.state.happening!.options;
+    const letterIds = options.map((option) => option.id).filter((id) => id !== 'curse');
+    expect(letterIds).toHaveLength(2);
+    expect(new Set(letterIds).size).toBe(2);
+    for (const id of letterIds) expect(['q', 'z', 'x']).toContain(id);
+    expect(options.some((option) => option.id === 'curse')).toBe(true);
+  });
+
+  it('restores the chosen letter', () => {
+    const run = findUnredaction('unredaction-restore', ['q', 'z', 'x']);
+    const letter = run.state.happening!.options.find((option) => option.id !== 'curse')!.id;
+    const chosen = act(run.state, { type: 'choose', optionId: letter });
+    expect(chosen.state.purged).not.toContain(letter);
+    expect(chosen.state.happening?.resolved?.success).toBe(true);
+  });
+
+  it('opens a curse draft instead', () => {
+    const run = findUnredaction('unredaction-curse', ['q', 'z', 'x']);
+    const chosen = act(run.state, { type: 'choose', optionId: 'curse' });
+    expect(chosen.state.phase).toBe('curse');
+    expect(chosen.state.curse?.options.length).toBeGreaterThan(0);
+  });
+
+  it('does not appear with fewer than two purged letters', () => {
+    for (let index = 0; index < 200; index++) {
+      const run = start(`unredaction-one-${index}`);
+      run.state.purged = ['q'];
+      const next = nextHappening(run.state);
+      expect(next.state.happening?.id).not.toBe('unredaction');
+    }
   });
 });
 

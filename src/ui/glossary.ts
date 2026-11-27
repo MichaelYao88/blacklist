@@ -39,6 +39,10 @@ const ENTRIES: GlossaryEntry[] = [
     tip: 'Damage to your HP, not your armor. Armor soaks the monster\'s attack first; whatever is left over becomes Hit (HP damage).',
   },
   {
+    pattern: /\bmax HP gain\b/gi,
+    tip: 'A single increase to your max HP. Even if one effect grants several points at once, it counts as one gain.',
+  },
+  {
     pattern: /\bmax(?:imum)? HP\b/gi,
     tip: 'Your hit point ceiling. Healing cannot push HP past it.',
   },

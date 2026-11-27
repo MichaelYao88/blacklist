@@ -44,4 +44,10 @@ describe('glossary tooltips', () => {
     expect(html).toContain('>hit</span>');
     expect(html).toContain('>Restore</span>');
   });
+
+  it('explains a max HP gain as one instance', () => {
+    const html = glossaryText('Once per max HP gain.');
+    expect(html).toContain('>max HP gain</span>');
+    expect(html).toContain('counts as one gain');
+  });
 });

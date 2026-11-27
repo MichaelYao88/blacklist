@@ -50,7 +50,7 @@ A 40-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - Rarity uses cumulative floors: 40% pulls from rare, uncommon or common, 45% pulls from uncommon or common, and 15% pulls from common only. If a tier is empty, it falls back to the entire pool
 - Rare items you currently own will not appear again in shops or rewards. They are ordinary item finds, no longer boss-only rewards
 - Defeat reveals the answer you missed (all of them, on bosses)
-- 101 items (90 shop items + 11 rare items), 6 spells, 81 foods and 33 happenings
+- 101 items (90 shop items + 11 rare items), 6 spells, 81 foods and 34 happenings
 - New foods include **U-nagi**, **Donut Holes**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with an Omen spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
@@ -95,7 +95,7 @@ A 40-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Heartstone** is a 15g rare item: autocast a free Heal at the start of every round
 - **Necronomicon** is a rare item: use it during a fight to lose 13% of your max HP for a random gift. It can only be used once per round, and it grows stronger as you feed it: fed thresholds unlock at 0, 13, 39, 79, 129, 189 and 259 max HP paid. Whisper and Twin Whispers autoguess Mythos words such as RYLEH, CTHUL and DAGON. If you stay silent for 66 seconds in a fight, the book sometimes whispers a clue and takes 6% of your max HP.
 - **Growth Spurt** gives +3 max HP when you solve in 4 guesses or fewer
-- **Growth Chart** is an 8g item: every 3 max HP gained grants +1 Time Freeze
+- **Growth Chart** is an 8g item: every 3 max HP gained grants +1 Time Freeze, at most once per max HP gain
 - **Midas Touch** has a 30% chance to double every gold gain
 - **Oracle Skull** is a 12g uncommon item: every heal autocasts a free Omen
 - **Loyalty Card** is a 12g uncommon item: +1 item slot after every 10 shop purchases
@@ -117,6 +117,7 @@ A 40-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **The Spell Tithe** event trades one random spell for either permanent knowledge of a specific letter or a permanent purge of a specific letter; the trades are locked when you have no spells
 - **The Flesh Market** event sells half your max HP for 2 gold per point lost or all your max armor for 4 gold per point lost, and locks whichever body part you cannot spare
 - **The Peddler's Table** event offers one of three future objects: **The Red Amulet**, **The Silver Key**, or **The Nonsensical Map**. They are not sold in shops, and the Red Amulet stirs when the Miniboss falls, whether equipped or not
+- **The Unredaction** event offers two purged letters to restore or a curse draft instead; it only appears when at least two letters are purged
 - **Fortune Cookie** is a 2g food with a hidden 5× appearance weight: it queues one autoguess for the next round
 - **The Waffle** is a 6g rare food: +24s per round
 - **Momentum** is a 10g uncommon item: every 8 player guesses grants +1 max armor

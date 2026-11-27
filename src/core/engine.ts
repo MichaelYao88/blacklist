@@ -3235,7 +3235,8 @@ export function createCore(content: Content): Core {
         && (happening.id !== 'peddlers-table'
           || content.items
             .filter((item) => itemHasTag(item, 'lore'))
-            .some((item) => !state.items.some((owned) => owned.id === item.id))),
+            .some((item) => !state.items.some((owned) => owned.id === item.id)))
+        && (happening.id !== 'unredaction' || state.purged.length >= 2),
     );
     if (pool.length === 0) {
       advanceNode(rt);
@@ -3297,6 +3298,26 @@ export function createCore(content: Content): Core {
       });
       const leave = baseOptions.find((option) => option.id === 'leave');
       options = [...letterOptions, ...(leave ? [leave] : [])];
+    }
+    if (def.id === 'unredaction') {
+      const poolLetters = state.purged.slice();
+      const picks: Letter[] = [];
+      while (picks.length < 2 && poolLetters.length > 0) {
+        picks.push(poolLetters.splice(rngInt(state, poolLetters.length), 1)[0]);
+      }
+      const restoreOptions: HappeningOptionView[] = picks.map((letter) => {
+        const upper = letter.toUpperCase();
+        return {
+          id: letter,
+          label: `Restore ${upper}`,
+          description: `Unpurge ${upper}. It can appear in future answers again.`,
+          chancePct: 100,
+          outcomes: [{ chancePct: 100, text: `${upper} is restored to future answers.` }],
+        };
+      });
+      const curse = baseOptions.find((option) => option.id === 'curse');
+      options = [...restoreOptions, ...(curse ? [curse] : [])];
+      letters = picks;
     }
     if (def.id === 'spell-tithe') {
       const knowPool = ALPHABET.filter(
@@ -3506,6 +3527,21 @@ export function createCore(content: Content): Core {
       });
       return;
     }
+    if (happening.letters && def.id === 'unredaction' && happening.letters.includes(optionId as Letter)) {
+      const letter = optionId as Letter;
+      const index = state.purged.indexOf(letter);
+      if (index >= 0) state.purged.splice(index, 1);
+      const text = `${letter.toUpperCase()} is restored to future answers.`;
+      happening.resolved = { option: letter, success: true, text };
+      emit(rt, {
+        type: 'happeningResolved',
+        happening: def.id,
+        option: letter,
+        success: true,
+        text,
+      });
+      return;
+    }
     if (happening.letters && def.id === 'purge-the-letter' && happening.letters.includes(optionId as Letter)) {
       const letter = optionId as Letter;
       const chance = happening.letters.indexOf(letter) === 1 ? 80 : 100;
@@ -3537,6 +3573,20 @@ export function createCore(content: Content): Core {
     }
     if (happening.options.find((entry) => entry.id === option.id)?.locked) {
       emit(rt, { type: 'message', text: 'That option is locked.' });
+      return;
+    }
+
+    if (def.id === 'unredaction' && optionId === 'curse') {
+      const text = 'You take the curse instead. The letters stay erased.';
+      happening.resolved = { option: optionId, success: true, text };
+      emit(rt, {
+        type: 'happeningResolved',
+        happening: def.id,
+        option: optionId,
+        success: true,
+        text,
+      });
+      openCurseDraft(rt, false);
       return;
     }
 

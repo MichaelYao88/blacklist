@@ -959,6 +959,23 @@ export const HAPPENINGS: HappeningDef[] = [
       },
     ],
   }),
+  defineHappening({
+    id: 'unredaction',
+    name: 'The Unredaction',
+    description: 'A clerk with a bottle of white ink and a list of everything you crossed out.',
+    options: [
+      {
+        id: 'curse',
+        label: 'Take a curse instead',
+        description: 'Draft a curse. The letters stay erased.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'You sign the curse. The white ink stays capped.',
+          effects: [],
+        }],
+      },
+    ],
+  }),
 ];
 
 export const HAPPENING_BY_ID = new Map(HAPPENINGS.map((h) => [h.id, h]));

@@ -1152,7 +1152,7 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'growth-chart',
     name: 'Growth Chart',
-    description: 'Every 3 max HP gained: +1 Time Freeze.',
+    description: 'Every 3 max HP gained: +1 Time Freeze. Once per max HP gain.',
     price: 8,
     kind: 'gear',
     initial: { grown: 0 },
@@ -1160,10 +1160,10 @@ export const ITEMS: ItemDef[] = [
       onMaxHpChanged: (ctx, p) => {
         if (p.delta <= 0) return [];
         const total = (ctx.self.data.grown ?? 0) + p.delta;
-        const freezes = Math.floor(total / 3);
+        const proc = total >= 3;
         return [
           { type: 'setItemData', stat: 'grown', value: total % 3 },
-          ...Array.from({ length: freezes }, () => ({ type: 'giveSpell' as const, spell: 'time-freeze' as const })),
+          ...(proc ? [{ type: 'giveSpell' as const, spell: 'time-freeze' as const }] : []),
         ];
       },
     },
