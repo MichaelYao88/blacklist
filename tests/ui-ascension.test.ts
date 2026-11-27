@@ -8,7 +8,7 @@ describe('ascension title UI', () => {
     localStorage.clear();
     localStorage.setItem(
       'blacklist.meta.v1',
-      JSON.stringify({ runs: 2, wins: 1, bestAct: 5, ascension: 2 }),
+      JSON.stringify({ runs: 2, wins: 1, bestAct: 5, ascension: 2, selectedAscension: 1 }),
     );
     document.body.innerHTML = '<div id="app"></div>';
     await import('../src/ui/app');
@@ -21,6 +21,7 @@ describe('ascension title UI', () => {
       'OFF', '1', '2',
     ]);
     expect(root.textContent).toContain('Ascension 2 unlocked');
+    expect(root.querySelector('.ascension-btn.active')?.textContent?.trim()).toBe('1');
   });
 
   it('starts the next run at the selected ascension', () => {

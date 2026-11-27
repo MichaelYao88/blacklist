@@ -24,7 +24,7 @@ import {
   ITEM_BY_ID,
   SPELL_BY_ID,
 } from '../content';
-import { LocalStore, MYSTERIOUS_ITEMS, dismissCharacterTip, dismissDamageTutorial, hasSave, readMeta, recordFood, recordMysteriousBrought, recordPurchase, recordPurge, recordRun, recordStart, unlockCharacter } from './store';
+import { LocalStore, MYSTERIOUS_ITEMS, dismissCharacterTip, dismissDamageTutorial, hasSave, readMeta, recordFood, recordMysteriousBrought, recordPurchase, recordPurge, recordRun, recordStart, setSelectedAscension, unlockCharacter } from './store';
 import {
   trackBossReached,
   trackEventChoice,
@@ -1568,7 +1568,8 @@ app.addEventListener('click', (event) => {
       startNewRun(target.dataset.character);
       break;
     case 'ascension':
-      selectedAscension = Math.max(0, Math.min(ASCENSION_MAX, Number(target.dataset.level) || 0));
+      setSelectedAscension(Number(target.dataset.level) || 0);
+      selectedAscension = readMeta().selectedAscension;
       render();
       break;
     case 'character': {
@@ -2520,7 +2521,7 @@ function renderTitle(): string {
   const meta = readMeta();
   const saved = hasSave();
   const unlocked = Math.max(0, Math.min(ASCENSION_MAX, meta.ascension));
-  if (selectedAscension > unlocked) selectedAscension = unlocked;
+  selectedAscension = Math.max(0, Math.min(unlocked, meta.selectedAscension));
   const metaLine = meta.runs > 0
     ? `<p class="meta-line">${meta.wins} win${meta.wins === 1 ? '' : 's'} · ${meta.runs} run${meta.runs === 1 ? '' : 's'} · best level ${meta.bestLevel || '—'}${unlocked > 0 ? ` · Ascension ${unlocked} unlocked` : ''}</p>`
     : `<p class="meta-line">A fresh list. Nothing written yet.</p>`;

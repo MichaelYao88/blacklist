@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it } from 'vitest';
-import { dismissCharacterTip, readMeta, recordFood, recordMysteriousBrought, recordPurchase, recordPurge, recordRun, recordStart, unlockCharacter } from '../src/ui/store';
+import { dismissCharacterTip, readMeta, recordFood, recordMysteriousBrought, recordPurchase, recordPurge, recordRun, recordStart, setSelectedAscension, unlockCharacter } from '../src/ui/store';
 
 const stats = (overrides: Partial<Parameters<typeof recordRun>[0]['stats']> = {}) => ({
   rounds: 10,
@@ -175,6 +175,57 @@ describe('run history store', () => {
       stats: stats(),
     });
     expect(readMeta().ascension).toBe(10);
+  });
+
+  it('defaults the selected ascension to the newest unlock and remembers picks', () => {
+    expect(readMeta().selectedAscension).toBe(0);
+
+    recordStart();
+    recordRun({
+      result: 'victory',
+      level: 50,
+      act: 4,
+      ascension: 0,
+      character: 'runner',
+      curses: [],
+      items: [],
+      equippedItems: [],
+      stats: stats(),
+    });
+    expect(readMeta().ascension).toBe(1);
+    expect(readMeta().selectedAscension).toBe(1);
+
+    setSelectedAscension(0);
+    expect(readMeta().selectedAscension).toBe(0);
+
+    recordStart();
+    recordRun({
+      result: 'victory',
+      level: 50,
+      act: 4,
+      ascension: 0,
+      character: 'runner',
+      curses: [],
+      items: [],
+      equippedItems: [],
+      stats: stats(),
+    });
+    expect(readMeta().ascension).toBe(1);
+    expect(readMeta().selectedAscension).toBe(0);
+  });
+
+  it('falls back to the highest unlocked ascension for legacy saves and clamps picks', () => {
+    localStorage.setItem('blacklist.meta.v1', JSON.stringify({ ascension: 4 }));
+    expect(readMeta().selectedAscension).toBe(4);
+
+    localStorage.setItem(
+      'blacklist.meta.v1',
+      JSON.stringify({ ascension: 3, selectedAscension: 9 }),
+    );
+    expect(readMeta().selectedAscension).toBe(3);
+
+    setSelectedAscension(2);
+    expect(readMeta().selectedAscension).toBe(2);
   });
 
   it('tracks distinct characters that have won runs', () => {

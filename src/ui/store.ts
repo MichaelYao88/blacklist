@@ -33,6 +33,8 @@ export interface Meta {
   bestLevel: number;
   /** Highest ascension level unlocked. Beating level N unlocks N+1. */
   ascension: number;
+  /** Ascension level currently selected on the title screen. */
+  selectedAscension: number;
   /** Character ids the player has unlocked. The Soldier is always present. */
   characters: string[];
   /** Character ids that have won at least one run. */
@@ -67,6 +69,7 @@ const DEFAULT_META: Meta = {
   bestAct: 0,
   bestLevel: 0,
   ascension: 0,
+  selectedAscension: 0,
   characters: ['runner'],
   victoriousCharacters: [],
   purchases: {},
@@ -126,6 +129,10 @@ export function readMeta(): Meta {
     const raw = localStorage.getItem(META_KEY);
     if (!raw) return { ...DEFAULT_META, history: [], itemCounts: {}, curseCounts: {}, foodCounts: {}, mysteriousCounts: { ...DEFAULT_META.mysteriousCounts } };
     const parsed = JSON.parse(raw) as Partial<Meta>;
+    const ascension = Math.max(0, Math.min(ASCENSION_MAX, Number(parsed.ascension) || 0));
+    const selectedAscension = parsed.selectedAscension === undefined
+      ? ascension
+      : Math.max(0, Math.min(ascension, Math.floor(Number(parsed.selectedAscension)) || 0));
     return {
       runs: Number(parsed.runs) || 0,
       wins: Number(parsed.wins) || 0,
@@ -133,7 +140,8 @@ export function readMeta(): Meta {
       // Older saves only tracked acts. Approximate the level reached so the
       // stats page has something meaningful before the next run finishes.
       bestLevel: Number(parsed.bestLevel) || (Number(parsed.bestAct) || 0) * 10,
-      ascension: Math.max(0, Math.min(ASCENSION_MAX, Number(parsed.ascension) || 0)),
+      ascension,
+      selectedAscension,
       characters: (() => {
         const aliases: Record<string, string> = { 'maze-runner': 'pathfinder' };
         const ids = Array.isArray(parsed.characters)
@@ -220,6 +228,14 @@ function writeMeta(meta: Meta): void {
   }
 }
 
+/** Remember the ascension level chosen on the title screen. */
+export function setSelectedAscension(level: number): void {
+  const meta = readMeta();
+  const max = Math.max(0, Math.min(ASCENSION_MAX, meta.ascension));
+  meta.selectedAscension = Math.max(0, Math.min(max, Math.floor(level) || 0));
+  writeMeta(meta);
+}
+
 export function recordStart(): void {
   const meta = readMeta();
   meta.runs += 1;
@@ -240,9 +256,13 @@ export interface RunRecordInput {
 
 export function recordRun(input: RunRecordInput): void {
   const meta = readMeta();
+  const previousAscension = meta.ascension;
   if (input.result === 'victory') {
     meta.wins += 1;
     meta.ascension = Math.max(meta.ascension, Math.min(ASCENSION_MAX, input.ascension + 1));
+    if (meta.ascension > previousAscension) {
+      meta.selectedAscension = meta.ascension;
+    }
     if (input.character) {
       meta.victoriousCharacters = [...new Set([...meta.victoriousCharacters, input.character])];
     }
