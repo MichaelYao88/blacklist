@@ -146,7 +146,7 @@ A 40-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Cyrniki** is a 3g food: heal 50% of missing HP, then 50% a spell / 50% a shop reroll
 - **Babification** removes a random curse, but you must choose between resetting item slots or max armor to their starting values
 - **Short Fuse** is a common curse that stacks up to 4 times: each stack starts the damage multiplier 1 guess earlier
-- **Triggerless** is a common level-20+ curse: item and food autoguesses and round-start guesses fail 50% of the time
+- **Triggerless** is a common level-20+ curse: item and food autoguesses and autocasts fail 50% of the time
 - **Regurgitation** is an uncommon level-20+ curse: food reveals fail 50% of the time
 - **The Tax** reduces encounter gold by 40% and is unique; **The Sleeper** adds +2 damage per revealed letter in your first player guess, per stack; **The Curse Broker** charges 12g for a rare item or 15g to remove a random curse; **The Confessional** sells 45/75/100% random curse removal for 5/10/15g
 - **The Detour** offers a slot, or a trip to the Time Bakery for +8 max HP and a Time Freeze; **The Crossroads** offers a shop or a Heal plus Time Freeze; **The Trade** trades gold for a slot, a slot for gold, or two Heal spells

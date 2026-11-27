@@ -5573,7 +5573,7 @@ describe('curse rarity and trigger curses', () => {
     }
   });
 
-  it('Triggerless makes round-start autoguesses fail sometimes', () => {
+  it('Triggerless makes autoguesses fail sometimes', () => {
     let succeeded = 0;
     let failed = 0;
     for (let index = 0; index < 50; index++) {
@@ -5586,6 +5586,45 @@ describe('curse rarity and trigger curses', () => {
       else failed++;
     }
     expect(succeeded).toBeGreaterThan(0);
+    expect(failed).toBeGreaterThan(0);
+  });
+
+  it('Triggerless does not swallow fixed round-start words', () => {
+    for (let index = 0; index < 20; index++) {
+      const { state } = start(`triggerless-round-word-${index}`);
+      state.curses.push({ id: 'triggerless', stacks: 1 });
+      state.permanentRoundStartWord = 'eieio';
+      const next = nextRound(state);
+      expect(
+        next.state.round?.guesses.some(
+          (guess) => guess.by === 'friend' && guess.word === 'eieio',
+        ),
+        `seed ${index}`,
+      ).toBe(true);
+    }
+  });
+
+  it('Triggerless makes autocasts fail sometimes', () => {
+    let cast = 0;
+    let failed = 0;
+    for (let index = 0; index < 50; index++) {
+      const { state } = start(`triggerless-autocast-${index}`);
+      state.curses.push({ id: 'triggerless', stacks: 1 });
+      state.permanentRoundStartSpells = ['omen'];
+      const next = nextRound(state);
+      if (next.events.some(
+        (event) => event.type === 'spellCast' && event.auto && event.spell.id === 'omen',
+      )) {
+        cast++;
+      }
+      if (next.events.some(
+        (event) => event.type === 'message'
+          && event.text.includes('Triggerless swallows the autocast'),
+      )) {
+        failed++;
+      }
+    }
+    expect(cast).toBeGreaterThan(0);
     expect(failed).toBeGreaterThan(0);
   });
 

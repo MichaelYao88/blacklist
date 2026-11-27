@@ -383,10 +383,10 @@ export const CURSES: CurseDef[] = [
   defineCurse({
     id: 'triggerless',
     name: 'Triggerless',
-    description: 'Autoguess and round-start guess items have a 50% chance to fail.',
+    description: 'Autoguesses and autocasts have a 50% chance to fail.',
     rules: [
       'Autoguesses from items and foods fail 50% of the time.',
-      'Round-start guesses from items and foods fail 50% of the time.',
+      'Autocasts from items and foods fail 50% of the time.',
     ],
     art: 'monochrome',
     tags: ['rule'],
@@ -394,6 +394,7 @@ export const CURSES: CurseDef[] = [
     maxStacks: 1,
     minLevel: 20,
     autoguessFailChance: 50,
+    autocastFailChance: 50,
   }),
   defineCurse({
     id: 'regurgitation',

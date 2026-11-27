@@ -255,6 +255,8 @@ export interface CurseDef {
   rarity?: 'common' | 'uncommon' | 'rare';
   /** Item and food autoguesses fail this percentage of the time. */
   autoguessFailChance?: number;
+  /** Item and food autocasts fail this percentage of the time. */
+  autocastFailChance?: number;
   /** Food reveal effects fail this percentage of the time. */
   foodRevealFailChance?: number;
   /** After solving, start a second word in the same encounter. Bosses ignore it. */

@@ -143,7 +143,7 @@ export function createCore(content: Content): Core {
   const noSell = (state: RunState): boolean =>
     curseDefs(state).some((entry) => entry.def.noSell);
 
-  const curseChance = (state: RunState, key: 'autoguessFailChance' | 'foodRevealFailChance'): number =>
+  const curseChance = (state: RunState, key: 'autoguessFailChance' | 'autocastFailChance' | 'foodRevealFailChance'): number =>
     curseDefs(state).reduce(
       (highest, entry) => Math.max(highest, entry.def[key] ?? 0),
       0,
@@ -157,6 +157,11 @@ export function createCore(content: Content): Core {
 
   const autoguessFails = (state: RunState): boolean => {
     const chance = curseChance(state, 'autoguessFailChance');
+    return chance > 0 && rngChance(state, chance);
+  };
+
+  const autocastFails = (state: RunState): boolean => {
+    const chance = curseChance(state, 'autocastFailChance');
     return chance > 0 && rngChance(state, chance);
   };
 
@@ -2131,8 +2136,7 @@ export function createCore(content: Content): Core {
       const word = state.nextRoundGuess;
       state.nextRoundGuess = undefined;
       if (
-        !autoguessFails(state)
-        && word.length === WORD_LENGTH
+        word.length === WORD_LENGTH
         && !state.blacklist.includes(word)
         && !round.guesses.some((guess) => guess.word === word)
       ) {
@@ -2145,8 +2149,7 @@ export function createCore(content: Content): Core {
       const word = state.nextRoundWord;
       state.nextRoundWord = undefined;
       if (
-        !autoguessFails(state)
-        && word.length === WORD_LENGTH
+        word.length === WORD_LENGTH
         && !state.blacklist.includes(word)
         && !round.guesses.some((guess) => guess.word === word)
       ) {
@@ -2158,8 +2161,7 @@ export function createCore(content: Content): Core {
     if (state.permanentRoundStartWord) {
       const word = state.permanentRoundStartWord;
       if (
-        !autoguessFails(state)
-        && word.length === WORD_LENGTH
+        word.length === WORD_LENGTH
         && !state.blacklist.includes(word)
         && !round.guesses.some((guess) => guess.word === word)
       ) {
@@ -4101,6 +4103,10 @@ export function createCore(content: Content): Core {
     }
     rt.autoCasts++;
     if (def.usable === 'round' && (state.phase !== 'round' || !state.round)) return;
+    if (autocastFails(state)) {
+      emit(rt, { type: 'message', text: 'Triggerless swallows the autocast.' });
+      return;
+    }
     const sourceItem = rt.self ? findItem(state, rt.self)?.id : undefined;
     emit(rt, { type: 'spellCast', spell: { instance: uid(state, 's'), id: def.id }, auto: true });
     applyEffects(rt, def.cast({ state }), { kind: 'spell', spell: def.id });
