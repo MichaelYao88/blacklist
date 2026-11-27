@@ -50,7 +50,7 @@ A 40-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - Rarity uses cumulative floors: 40% pulls from rare, uncommon or common, 45% pulls from uncommon or common, and 15% pulls from common only. If a tier is empty, it falls back to the entire pool
 - Rare items you currently own will not appear again in shops or rewards. They are ordinary item finds, no longer boss-only rewards
 - Defeat reveals the answer you missed (all of them, on bosses)
-- 101 items (90 shop items + 11 rare items), 6 spells, 81 foods and 34 happenings
+- 101 items (89 shop items + 12 rare items), 6 spells, 81 foods and 34 happenings
 - New foods include **U-nagi**, **Donut Holes**, **One Bo Hue**, **Die Coke**, the **Overhealer** pair, and tradeoff meals that move HP, armor and slots around
 - Every run starts with an Omen spell
 - **Hat Trick** is a common item: solve in 3 guesses for 5 gold, then 7, 9, and so on (+2 per trigger); its card shows the live payout
@@ -72,7 +72,7 @@ A 40-floor curse run. The blacklist and the clock start disabled. Floors cycle f
 - **Second Hand** and **Counterclockwise** (formerly Engine) are 8g items that cross-cast spells on cast at 80%
 - **Last Cast** only reacts to spells you cast manually; autocast spells never trigger it
 - **Genie Summon** is an 8g uncommon item: after your 3rd player guess each round, autocast a free random spell
-- **Combustion Engine** is a 10g uncommon item with a 3x appearance weight: after you autocast a spell, it has a 30% chance to autocast a free random spell. It does not retrigger itself, and autocast chains cap at 10 spells per step
+- **Combustion Engine** is a 10g rare item with a 3x appearance weight: after you autocast a spell, it has a 25% chance to autocast a free random spell. It does not retrigger itself, and autocast chains cap at 10 spells per step
 - **Encore** now costs 7g
 - **Panacea Pouch** (formerly Spellhoarder) is a 9g item: every 3rd spell cast casts Heal
 - **Omen** ignores letters whose only revealing tile was hidden by a position curse, so it can still find them

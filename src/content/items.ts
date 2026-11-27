@@ -879,15 +879,15 @@ export const ITEMS: ItemDef[] = [
   defineItem({
     id: 'combustion-engine',
     name: 'Combustion Engine',
-    description: 'After you autocast a spell: 30% chance to autocast a free random spell.',
+    description: 'After you autocast a spell: 25% chance to autocast a free random spell.',
     price: 10,
     kind: 'gear',
-    rarity: 'uncommon',
+    rarity: 'rare',
     appearanceWeight: 3,
     on: {
       onSpellCast: (_ctx, p) =>
         p.auto && p.sourceItem !== 'combustion-engine'
-          ? [{ type: 'castSpell', spell: 'random', chancePct: 30 }]
+          ? [{ type: 'castSpell', spell: 'random', chancePct: 25 }]
           : [],
     },
   }),

@@ -4854,7 +4854,8 @@ describe('Genie Summon and Combustion Engine', () => {
     expect(next.state.round?.guesses.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('Combustion Engine triggers only on autocasts, at 30%', () => {
+  it('Combustion Engine is rare and triggers only on autocasts, at 25%', () => {
+    expect(ITEM_BY_ID.get('combustion-engine')?.rarity).toBe('rare');
     let chained = 0;
     for (let index = 0; index < 40; index++) {
       const { state } = start(`combustion-${index}`);
@@ -4886,9 +4887,9 @@ describe('Genie Summon and Combustion Engine', () => {
     expect(cast.events.some(
       (event) => event.type === 'spellCast' && event.auto,
     )).toBe(false);
-    expect(ITEM_BY_ID.get('combustion-engine')?.rarity).toBe('uncommon');
+    expect(ITEM_BY_ID.get('combustion-engine')?.rarity).toBe('rare');
     expect(ITEM_BY_ID.get('combustion-engine')?.appearanceWeight).toBe(3);
-    expect(ITEM_BY_ID.get('combustion-engine')?.description).toContain('30%');
+    expect(ITEM_BY_ID.get('combustion-engine')?.description).toContain('25%');
     expect(ITEM_BY_ID.get('engine')?.name).toBe('Counterclockwise');
   });
 });
@@ -5080,7 +5081,7 @@ describe('relic uniqueness', () => {
     .map((item) => item.id);
 
   it('never offers a relic already in the player inventory', () => {
-    expect(relicIds).toHaveLength(11);
+    expect(relicIds).toHaveLength(12);
     let sawOtherRelic = false;
     for (let index = 0; index < 60; index++) {
       const { state } = start(`relic-owned-${index}`);
