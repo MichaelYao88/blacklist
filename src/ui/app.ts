@@ -222,6 +222,19 @@ function showParrotPopup(line: string, source?: 'necronomicon'): void {
   }, 5_000);
 }
 
+function showBlacklistPopup(letter: string): void {
+  parrotRoot.innerHTML = `<div class="parrot-pop blacklist-pop">
+    <span class="parrot-emoji" aria-hidden="true">🚫</span>
+    <span class="parrot-kicker">THE BLACKLIST</span>
+    <span class="parrot-line">The blacklist has unpurged ${escapeHtml(letter.toUpperCase())} for you.</span>
+  </div>`;
+  if (parrotTimer) window.clearTimeout(parrotTimer);
+  parrotTimer = window.setTimeout(() => {
+    parrotRoot.innerHTML = '';
+    parrotTimer = undefined;
+  }, 5_000);
+}
+
 // The countdown lives outside the render tree so the per-second update only
 // swaps the number instead of rebuilding (and restarting) the whole overlay.
 const countdownRoot = document.createElement('div');
@@ -918,6 +931,9 @@ function logGameEvent(event: GameEvent): void {
     case 'parrotSays':
       logChronicle('info', `Evil Parrot says: ${event.text}`);
       break;
+    case 'blacklistUnpurged':
+      logChronicle('info', `The blacklist unpurged ${event.letter.toUpperCase()} for you.`);
+      break;
     case 'mysteriousRoomEntered':
       logChronicle('good', 'The Mysterious Room remembers what you brought.');
       break;
@@ -1039,6 +1055,7 @@ function processEvents(events: GameEvent[]): void {
           : parrotLine(event.word), event.source);
     }
     if (event.type === 'parrotSays') showParrotPopup(event.text);
+    if (event.type === 'blacklistUnpurged') showBlacklistPopup(event.letter);
     if (event.type === 'spellCast') showSpellPopup(event.spell.id, Boolean(event.auto));
     if (event.type === 'itemProc') showProc(event.item, event.text, event.changes);
     if (event.type === 'happeningResolved') {
@@ -4044,7 +4061,7 @@ function renderPurgeModal(view: RunView): string {
     <div class="modal-card">
       <p class="panel-kicker">${setup ? 'BEFORE THE FIRST FLOOR' : 'LETTER PURGE'}</p>
       <h2>${setup ? `Erase ${view.pendingPurge} letter${view.pendingPurge === 1 ? '' : 's'}` : 'Erase a letter'}</h2>
-      <p class="muted">${setup ? 'No word has been drawn yet, so every letter is fair game. ' : ''}The letter will never appear in a future answer, and you can never manually guess it again. Autoguesses can still use it. Choose carefully. If a purge would leave no legal words, a random purged letter is restored.</p>
+      <p class="muted">${setup ? 'No word has been drawn yet, so every letter is fair game. ' : ''}The letter will never appear in a future answer, and you can never manually guess it again. Autoguesses can still use it. Choose carefully. If a purge would leave no legal words, it is refused; pick another letter.</p>
       <div class="purge-grid">
         ${letters.map((letter) => `<button class="purge-key ${view.purged.includes(letter) ? 'used' : ''} ${selectedLetter === letter ? 'selected' : ''}" data-action="select-purge" data-letter="${letter}" aria-pressed="${selectedLetter === letter}" ${view.purged.includes(letter) ? 'disabled' : ''}>${letter.toUpperCase()}</button>`).join('')}
       </div>

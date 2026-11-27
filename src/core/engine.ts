@@ -526,10 +526,10 @@ export function createCore(content: Content): Core {
     legalAnswers(state).length > 0;
 
   /**
-   * Purging can never leave the run without a guessable answer. If it does,
-   * restore random purged letters until at least one word is legal again.
+   * Repair a legacy or corrupted state with no legal answers by restoring
+   * random purged letters until at least one word is legal again.
    */
-  function restoreLegalWords(rt: Runtime, attempted?: Letter): string[] {
+  function restoreLegalWords(rt: Runtime): string[] {
     const state = rt.state;
     if (legalAnswerExists(state)) return [];
     const restored: string[] = [];
@@ -541,14 +541,9 @@ export function createCore(content: Content): Core {
     if (restored.length > 0) {
       const letters = restored.map((letter) => letter.toUpperCase()).join(', ');
       const verb = restored.length === 1 ? 'was' : 'were';
-      const attemptedRestored = Boolean(attempted && restored.includes(attempted));
       emit(rt, {
         type: 'message',
-        text: attemptedRestored
-          ? `Purging ${attempted!.toUpperCase()} would leave no legal words, so it was restored.`
-          : attempted
-            ? `Purging ${attempted.toUpperCase()} left no legal words, so ${letters} ${verb} restored.`
-            : `No legal words remained, so ${letters} ${verb} restored.`,
+        text: `No legal words remained, so ${letters} ${verb} restored.`,
       });
     }
     return restored;
@@ -573,9 +568,21 @@ export function createCore(content: Content): Core {
       emit(rt, { type: 'message', text: `You cannot purge a letter that is in the current answer.` });
       return false;
     }
+    if (!legalAnswerExists(state)) restoreLegalWords(rt);
+    const blocked = new Set(state.purged);
+    blocked.add(ch);
+    const leavesLegalWord = content.answers.some((word) =>
+      !word.split('').some((letter) => blocked.has(letter)),
+    );
+    if (!leavesLegalWord) {
+      const player = state.phase === 'purge' || state.pendingPurge > 0;
+      emit(rt, {
+        type: 'message',
+        text: `Purging ${ch.toUpperCase()} would leave no legal words.${player ? ' Pick another letter.' : ''}`,
+      });
+      return false;
+    }
     state.purged.push(ch);
-    restoreLegalWords(rt, ch);
-    if (!state.purged.includes(ch)) return false;
     // If a finished round is still in state and its answer contains the letter,
     // swap that dead answer for a valid one. The real next answer is chosen when
     // the next round starts, but this keeps every stale read consistent.
@@ -1943,6 +1950,19 @@ export function createCore(content: Content): Core {
         );
       }
       if (candidates.length > 0) return pick(candidates);
+    }
+
+    // Every legal word is blacklisted. Unpurge a random letter first so new
+    // candidates can enter the pool; if that still fails, release a word below.
+    if (state.purged.length > 0) {
+      const letter = rngPick(state, state.purged);
+      state.purged = state.purged.filter((entry) => entry !== letter);
+      emit(rt, { type: 'blacklistUnpurged', letter });
+      state.usedAnswers = [];
+      for (const pool of pools) {
+        const candidates = clean(pool, true);
+        if (candidates.length > 0) return pick(candidates);
+      }
     }
 
     // Extremely late runs can have every legal word blacklisted. Release one

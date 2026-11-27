@@ -3666,6 +3666,15 @@ button {
   animation: parrot-pop 5s cubic-bezier(0.2, 0.9, 0.25, 1) both;
 }
 
+.parrot-pop.blacklist-pop {
+  border-color: rgba(223, 97, 90, 0.55);
+  box-shadow: 0 20px 60px -24px #000, 0 0 34px -18px rgba(223, 97, 90, 0.8);
+}
+
+.blacklist-pop .parrot-kicker {
+  color: var(--red);
+}
+
 .parrot-emoji {
   font-size: 2rem;
   line-height: 1;

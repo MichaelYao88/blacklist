@@ -3900,21 +3900,51 @@ describe('spells and foods', () => {
     )).toBe(false);
   });
 
-  it('restores a random letter when a purge would leave no legal words', () => {
+  it('refuses a purge that would leave no legal words', () => {
     const alphabet = 'abcdefghijklmnopqrstuvwxyz'.split('');
+    let fatal: { letter: string; purged: string[] } | null = null;
+    for (const word of CONTENT.answers) {
+      const keep = new Set(word.split(''));
+      const purged = alphabet.filter((ch) => !keep.has(ch));
+      for (const letter of keep) {
+        const blocked = new Set([...purged, letter]);
+        const legal = CONTENT.answers.some((candidate) =>
+          !candidate.split('').some((ch) => blocked.has(ch)),
+        );
+        if (!legal) {
+          fatal = { letter, purged };
+          break;
+        }
+      }
+      if (fatal) break;
+    }
+    expect(fatal).not.toBeNull();
+
     const { state } = start('purge-dead-end');
     state.phase = 'shop';
     state.pendingPurge = 1;
-    state.purged = alphabet.filter((ch) => ch !== 'q');
-    const blocked = act(state, { type: 'purgeLetter', letter: 'q' });
-    const legal = CONTENT.answers.some(
-      (word) => !word.split('').some((ch) => blocked.state.purged.includes(ch)),
-    );
-    expect(legal).toBe(true);
-    expect(blocked.state.purged.length).toBeLessThan(26);
+    state.purged = fatal!.purged as typeof state.purged;
+    const blocked = act(state, { type: 'purgeLetter', letter: fatal!.letter });
+    expect(blocked.state.purged).not.toContain(fatal!.letter);
+    expect(blocked.state.purged).toEqual(fatal!.purged);
+    expect(blocked.state.pendingPurge).toBe(1);
     expect(blocked.events.some(
-      (event) => event.type === 'message' && event.text.includes('legal words'),
+      (event) => event.type === 'message' && event.text.includes('Pick another letter'),
     )).toBe(true);
+  });
+
+  it('unpurges a random letter when every legal word is blacklisted', () => {
+    const { state } = start('blacklist-unpurge');
+    state.purged = ['z'];
+    state.blacklist = CONTENT.answers.filter((word) => !word.includes('z'));
+    state.usedAnswers = [];
+
+    const next = nextRound(state);
+    expect(next.state.purged).not.toContain('z');
+    expect(next.events.some(
+      (event) => event.type === 'blacklistUnpurged' && event.letter === 'z',
+    )).toBe(true);
+    expect(next.state.round?.answer).toContain('z');
   });
 
   it('restores letters before choosing an answer when none are legal', () => {

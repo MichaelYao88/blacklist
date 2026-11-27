@@ -1013,6 +1013,7 @@ export type GameEvent =
   | { type: 'foodEaten'; food: string; name: string }
   | { type: 'parrotSuggestion'; word: string; flavor?: 'stupid-cracker'; source?: 'necronomicon' }
   | { type: 'parrotSays'; text: string }
+  | { type: 'blacklistUnpurged'; letter: Letter }
   | { type: 'mysteriousRoomEntered'; brought: ItemId[] }
   | { type: 'attributeChanged'; stat: string; value: number }
   | { type: 'damageMultiplier'; multiplier: number }
