@@ -1354,8 +1354,9 @@ export const ITEMS: ItemDef[] = [
     id: 'trophy-room',
     name: 'Reliquary',
     description: 'Whenever you gain a curse: Gain 1 item slot.',
-    price: 10,
+    price: 18,
     kind: 'gear',
+    rarity: 'rare',
     on: {
       onCurseGained: () => [{ type: 'slots', delta: 1 }],
     },

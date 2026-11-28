@@ -1597,6 +1597,8 @@ describe('curse-triggered items', () => {
       expect(ITEM_BY_ID.get(id)?.description.startsWith('Whenever you gain a curse: Gain ')).toBe(true);
       expect(ITEM_BY_ID.get(id)?.name).not.toMatch(/boss|trophy/i);
     }
+    expect(ITEM_BY_ID.get('trophy-room')?.price).toBe(18);
+    expect(ITEM_BY_ID.get('trophy-room')?.rarity).toBe('rare');
   });
 });
 
@@ -5081,7 +5083,7 @@ describe('relic uniqueness', () => {
     .map((item) => item.id);
 
   it('never offers a relic already in the player inventory', () => {
-    expect(relicIds).toHaveLength(12);
+    expect(relicIds).toHaveLength(13);
     let sawOtherRelic = false;
     for (let index = 0; index < 60; index++) {
       const { state } = start(`relic-owned-${index}`);
