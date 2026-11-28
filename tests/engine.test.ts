@@ -1123,8 +1123,16 @@ describe('shop curses', () => {
 
   it('The Redaction costs 5/10 and its rest option triggers an eat', () => {
     const redaction = HAPPENING_BY_ID.get('redaction');
+    expect(redaction?.options.map((option) => option.id)).toEqual([
+      'free',
+      'one',
+      'two',
+      'rest',
+      'leave',
+    ]);
     expect(redaction?.options.find((option) => option.id === 'one')?.costGold).toBe(5);
     expect(redaction?.options.find((option) => option.id === 'two')?.costGold).toBe(10);
+    expect(redaction?.options.find((option) => option.id === 'free')?.costGold).toBeUndefined();
     const rest = redaction?.options.find((option) => option.id === 'rest');
     expect(rest?.outcomes[0].effects).toContainEqual({ type: 'eatBurst', count: 1 });
     expect(rest?.outcomes[0].effects)
@@ -1136,6 +1144,43 @@ describe('shop curses', () => {
     state.happening = { id: 'redaction', options: [] };
     const rested = act(state, { type: 'choose', optionId: 'rest' });
     expect(rested.state.maxHp).toBe(16);
+  });
+
+  it('The Redaction can purge 1 or 2 random letters for free', () => {
+    const redaction = HAPPENING_BY_ID.get('redaction');
+    expect(redaction?.description).toMatch(/purge 1 or 2 random letters/i);
+    const free = redaction?.options.find((option) => option.id === 'free');
+    expect(free?.costGold).toBeUndefined();
+    expect(free?.outcomes).toHaveLength(1);
+    expect(free?.outcomes[0].effects).toEqual([{
+      type: 'randomChoice',
+      options: [
+        [{ type: 'purgeRandomLetter' }],
+        [{ type: 'purgeRandomLetter' }, { type: 'purgeRandomLetter' }],
+      ],
+    }]);
+
+    const counts = new Set<number>();
+    for (let index = 0; index < 40; index++) {
+      const { state } = start(`redaction-free-${index}`);
+      state.gold = 17;
+      state.purged = ['z'];
+      state.phase = 'happening';
+      state.happening = { id: 'redaction', options: [] };
+      const chosen = act(state, { type: 'choose', optionId: 'free' });
+      expect(chosen.state.gold).toBe(17);
+      const added = chosen.state.purged.filter((letter) => letter !== 'z');
+      expect(chosen.state.purged).toContain('z');
+      expect(added).toHaveLength(chosen.state.purged.length - 1);
+      expect(added.length).toBeGreaterThanOrEqual(1);
+      expect(added.length).toBeLessThanOrEqual(2);
+      expect(new Set(chosen.state.purged).size).toBe(chosen.state.purged.length);
+      expect(chosen.events.filter((event) => event.type === 'letterPurged'))
+        .toHaveLength(added.length);
+      counts.add(added.length);
+    }
+    expect(counts.has(1)).toBe(true);
+    expect(counts.has(2)).toBe(true);
   });
 
   it('The Confessional sells 45/75/100% curse removal at 5/10/15 gold', () => {

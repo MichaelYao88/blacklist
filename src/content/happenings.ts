@@ -208,12 +208,28 @@ export const HAPPENINGS: HappeningDef[] = [
   defineHappening({
     id: 'redaction',
     name: 'The Redaction',
-    description: 'A clerk with a bottle of correction fluid and no interest in your opinion.',
+    description: 'A clerk with a bottle of correction fluid and no interest in your opinion. For free, he will purge 1 or 2 random letters.',
     options: [
+      {
+        id: 'free',
+        label: 'Let the clerk redact at random',
+        description: 'Free. Purge 1 or 2 random letters.',
+        outcomes: [{
+          chancePct: 100,
+          text: 'The clerk erases one or two random letters. They will never appear in a future answer.',
+          effects: [{
+            type: 'randomChoice',
+            options: [
+              [{ type: 'purgeRandomLetter' }],
+              [{ type: 'purgeRandomLetter' }, { type: 'purgeRandomLetter' }],
+            ],
+          }],
+        }],
+      },
       {
         id: 'one',
         label: 'Erase one letter',
-        description: '5 gold: purge one letter.',
+        description: '5 gold: purge one letter of your choice.',
         costGold: 5,
         outcomes: [{ chancePct: 100, text: 'The letter is gone. So is every word that needed it.', effects: [{ type: 'pendingPurge', count: 1 }] }],
       },
